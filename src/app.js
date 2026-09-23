@@ -396,6 +396,7 @@ async function syncWalletStage(pkg,item,stage,{openPass=false}={}){
   });
   const data=await res.json().catch(()=>({}));
   if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось подготовить Wallet pass');
+  if(openPass && !data.configured) throw new Error('Apple Wallet ещё не настроен на сервере');
   if(openPass && data.addUrl) window.location.href=data.addUrl;
   return data;
 }
