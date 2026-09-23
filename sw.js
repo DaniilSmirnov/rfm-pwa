@@ -94,13 +94,15 @@ self.addEventListener('fetch', event=>{
 
 
 self.addEventListener('push', event => {
-  event.waitUntil(self.registration.showNotification('Rally Fans Map', {
-    body: 'Есть обновление по RallyFans. Открой приложение, чтобы проверить данные.',
-    icon: '/icon.svg?v=0500',
-    badge: '/icon.svg?v=0500',
-    tag: 'rfm-update',
+  let payload={};
+  try { payload=event.data?.json?.() || {}; } catch {}
+  event.waitUntil(self.registration.showNotification(payload.title || 'Rally Fans Map', {
+    body: payload.body || 'Есть обновление по RallyFans. Открой приложение, чтобы проверить данные.',
+    icon: '/icon.svg',
+    badge: '/icon.svg',
+    tag: payload.tag || 'rfm-update',
     renotify: true,
-    data: { url: '/' }
+    data: { url: payload.url || '/' }
   }));
 });
 
