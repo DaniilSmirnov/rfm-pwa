@@ -46,3 +46,27 @@ Available Pages endpoints:
 - `POST /api/push/broadcast` — requires `Authorization: Bearer <PUSH_ADMIN_TOKEN>` and the KV binding.
 
 On iOS, Web Push is intended for the installed Home Screen PWA. Permission is requested only after the user presses the notification button.
+
+
+## Scheduled race reminders
+
+When Web Push is enabled, saved/downloaded races are scanned for parseable future schedule events. The PWA schedules a reminder 30 minutes before each event via `POST /api/push/schedule`. Reminders are stored in the `PUSH_SUBSCRIPTIONS` KV namespace and are replaced when the same race is re-scheduled, so updating an offline race refreshes its reminder queue.
+
+The Pages project exposes a protected dispatcher:
+
+```text
+GET /api/push/run-due?token=<PUSH_ADMIN_TOKEN>
+```
+
+or:
+
+```text
+POST /api/push/run-due
+Authorization: Bearer <PUSH_ADMIN_TOKEN>
+```
+
+Call this endpoint once per minute from a scheduler. Cloudflare Pages itself does not support Cron Triggers; Cron Triggers are a Workers feature. A tiny Worker cron or any external HTTP scheduler can call this endpoint while all subscription storage, reminder state and push sending remain in the Pages project.
+
+When a reminder is due, Pages stores the notification text temporarily, sends an empty Web Push, and the Service Worker resolves the pending message from `/api/push/pending`. If that lookup fails, the Service Worker shows the generic RallyFans fallback notification.
+
+Current parser accepts schedule dates such as `dd.mm.yyyy`, `dd/mm/yyyy`, `dd-mm-yyyy`, and `dd.mm`/`dd/mm`/`dd-mm` when a race year can be inferred. Unparseable schedule entries are skipped rather than guessed.
