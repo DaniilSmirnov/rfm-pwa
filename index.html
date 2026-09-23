@@ -21,7 +21,12 @@
     <section class="intro-panel">
       <div class="block-title">RALLY FANS MAP · OFFLINE</div>
       <p>Скачивай гонку заранее: карта, точки, расписание и материалы останутся в приложении без связи.</p>
-      <button id="refreshCatalogBtn" class="button primary">Обновить каталог</button>
+      <div class="actions intro-actions">
+        <button id="refreshCatalogBtn" class="button primary">Обновить каталог</button>
+        <button id="pushEnableBtn" class="button">Включить уведомления</button>
+        <button id="pushTestBtn" class="button" hidden>Тестовый пуш</button>
+      </div>
+      <p id="pushStatus" class="muted small">Уведомления ещё не настроены.</p>
     </section>
 
     <section class="rfm-section">
@@ -87,7 +92,7 @@
       </details>
       <aside id="pointActions" class="point-actions" hidden>
         <div class="point-actions-copy"><div class="eyebrow">выбранная точка</div><strong id="pointName"></strong><span id="pointCoords" class="muted"></span></div>
-        <div class="actions point-buttons"><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
+        <div class="actions point-buttons"><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
         <p id="navStatus" class="muted small"></p>
       </aside>
     </section>
