@@ -14,6 +14,8 @@ let geoWatchId = null;
 let deferredPrompt = null;
 let catalog = [];
 let selectedPoint = null;
+let compassHeading = null;
+let compassListening = false;
 async function ensureMapLibre(){
   if(!window.maplibregl) throw new Error('MapLibre 6.10.0 ESM не загрузился с CDN');
   if(typeof window.maplibregl.supported==='function' && !window.maplibregl.supported()) throw new Error('WebGL2 недоступен в этом браузере/PWA');
@@ -723,12 +725,97 @@ async function loadCatalog(){
   catch(err){ $('catalogStatus').textContent=`API недоступен: ${err.message}`; }
 }
 
+
+function toRad(v){ return v*Math.PI/180; }
+function toDeg(v){ return v*180/Math.PI; }
+function distanceMeters(a,b){
+  const R=6371000;
+  const dLat=toRad(b.lat-a.lat), dLon=toRad(b.lon-a.lon);
+  const lat1=toRad(a.lat), lat2=toRad(b.lat);
+  const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function bearingDegrees(a,b){
+  const lat1=toRad(a.lat), lat2=toRad(b.lat), dLon=toRad(b.lon-a.lon);
+  const y=Math.sin(dLon)*Math.cos(lat2);
+  const x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+  return (toDeg(Math.atan2(y,x))+360)%360;
+}
+function formatDistance(m){
+  if(!Number.isFinite(m)) return '—';
+  return m<1000 ? `${Math.round(m)} м` : `${(m/1000).toFixed(m<10000?1:0)} км`;
+}
+function compassDirection(deg){
+  const dirs=['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round((((deg%360)+360)%360)/45)%8];
+}
+function updateSpectatorCompass(){
+  const display=$('compassDisplay'), status=$('compassStatus'), arrow=$('compassArrow');
+  if(!display||!status||!arrow) return;
+  if(!selectedPoint){ display.hidden=true; status.textContent='Сначала выбери точку.'; return; }
+  if(!userPos){
+    display.hidden=true;
+    status.textContent='Нужна геопозиция для расчёта направления.';
+    return;
+  }
+  let target;
+  try{ target=normalizePoint(selectedPoint); }catch{ display.hidden=true; status.textContent='У выбранной точки некорректные координаты.'; return; }
+  const here={lat:Number(userPos.latitude),lon:Number(userPos.longitude)};
+  const bearing=bearingDegrees(here,target);
+  const distance=distanceMeters(here,target);
+  display.hidden=false;
+  $('compassDistance').textContent=formatDistance(distance);
+  $('compassBearing').textContent=`Азимут ${Math.round(bearing)}° · ${compassDirection(bearing)}`;
+  if(Number.isFinite(compassHeading)){
+    const relative=((bearing-compassHeading)+360)%360;
+    arrow.style.transform=`translate(-50%,-55%) rotate(${relative}deg)`;
+    status.textContent=`Курс телефона ${Math.round(compassHeading)}° · точность геопозиции ±${Math.round(userPos.accuracy||0)} м`;
+    status.className='muted small geo-ok';
+  }else{
+    arrow.style.transform=`translate(-50%,-55%) rotate(${bearing}deg)`;
+    status.textContent='Направление рассчитано по северу. Разреши доступ к датчику для живого компаса.';
+    status.className='muted small';
+  }
+}
+function orientationHandler(event){
+  let heading=null;
+  if(Number.isFinite(event.webkitCompassHeading)) heading=event.webkitCompassHeading;
+  else if(Number.isFinite(event.alpha)) heading=(360-event.alpha)%360;
+  if(Number.isFinite(heading)){ compassHeading=heading; updateSpectatorCompass(); }
+}
+async function enableSpectatorCompass(){
+  const btn=$('compassEnableBtn');
+  if(btn) btn.disabled=true;
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
+      const permission=await DeviceOrientationEvent.requestPermission();
+      if(permission!=='granted') throw new Error('доступ к датчику не разрешён');
+    }
+    if(!compassListening){
+      window.addEventListener('deviceorientationabsolute',orientationHandler,true);
+      window.addEventListener('deviceorientation',orientationHandler,true);
+      compassListening=true;
+    }
+    if(!userPos) await requestLocation();
+    if(btn) btn.textContent='Компас включён';
+    updateSpectatorCompass();
+  }catch(e){
+    const status=$('compassStatus');
+    if(status){ status.textContent=`Компас недоступен: ${e.message}`; status.className='muted small geo-error'; }
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
 function showPointActions(point) {
   selectedPoint=point;
   $('pointActions').hidden=false;
   $('pointName').textContent=point.name || 'Точка';
   $('pointCoords').textContent=coordinateText(point);
   $('navStatus').textContent='';
+  const compass=$('spectatorCompass'); if(compass) compass.open=false;
+  const compassBtn=$('compassEnableBtn'); if(compassBtn) compassBtn.textContent=compassListening?'Компас включён':'Включить компас';
+  updateSpectatorCompass();
   $('pointActions').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
@@ -751,6 +838,9 @@ $('sharePointBtn').onclick = async () => {
   const ok=await sharePoint(selectedPoint);
   $('navStatus').textContent=ok?(navigator.share?'Открыто системное меню «Поделиться».':'Точка скопирована.'):'Не удалось поделиться точкой.';
 };
+$('compassEnableBtn')?.addEventListener('click',enableSpectatorCompass);
+$('spectatorCompass')?.addEventListener('toggle',()=>{ if($('spectatorCompass').open) updateSpectatorCompass(); });
+
 $('copyCoordsBtn').onclick = async () => {
   if(!selectedPoint) return;
   const text=coordinateText(selectedPoint);
@@ -828,6 +918,7 @@ async function requestLocation() {
       btn.innerHTML='<img class="rfm-icon" src="/assets/location.svg" alt="" />Показать где я';
     }
     updateLiveUserPosition(userPos,{center:firstFix});
+    updateSpectatorCompass();
     firstFix=false;
   }, err => {
     if(btn) btn.disabled=false;
@@ -854,6 +945,37 @@ $('importYandexBtn').onclick = async () => {
   } catch(err) { alert(`Не удалось импортировать Yandex Constructor: ${err.message}`); btn.textContent=old; }
   finally { btn.disabled=false; }
 };
+
+async function ensurePersistentStorage(){
+  if(!navigator.storage) return {supported:false,persisted:false};
+  try{
+    const before=await navigator.storage.persisted?.();
+    const persisted=before || (navigator.storage.persist ? await navigator.storage.persist() : false);
+    return {supported:true,persisted:Boolean(persisted)};
+  }catch(e){
+    console.warn('Persistent Storage request failed',e);
+    return {supported:true,persisted:false};
+  }
+}
+
+async function setupPeriodicBackgroundSync(reg){
+  if(!reg?.periodicSync?.register) return {supported:false};
+  try{
+    let granted=true;
+    if(navigator.permissions?.query){
+      try{
+        const permission=await navigator.permissions.query({name:'periodic-background-sync'});
+        granted=permission.state==='granted';
+      }catch{}
+    }
+    if(!granted) return {supported:true,registered:false};
+    await reg.periodicSync.register('rfm-refresh-races',{minInterval:12*60*60*1000});
+    return {supported:true,registered:true};
+  }catch(e){
+    console.warn('Periodic Background Sync registration failed',e);
+    return {supported:true,registered:false};
+  }
+}
 
 async function setupServiceWorkerUpdates(){
   if(!('serviceWorker' in navigator)) return;
@@ -891,12 +1013,16 @@ async function setupServiceWorkerUpdates(){
     setInterval(check,5*60*1000);
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') check(); });
     window.addEventListener('online',check);
+    return reg;
   } catch(err) {
     console.error('Service worker registration/update failed',err);
+    return null;
   }
 }
 
-await setupServiceWorkerUpdates();
+const swRegistration=await setupServiceWorkerUpdates();
+await ensurePersistentStorage();
+await setupPeriodicBackgroundSync(swRegistration);
 await refreshPushUi();
 try {
   if(await getPushSubscription()) await scheduleAllSavedReminders();
