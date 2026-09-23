@@ -2,7 +2,7 @@ import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-
 window.maplibregl = maplibregl;
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from './db.js';
 import { normalizePackage } from './normalize.js';
-import { renderMap } from './map.js';
+import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
 import { googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
 import { downloadOfflineMap, removeOfflineMap, buildDownloadPlan } from './offline-map.js';
@@ -369,17 +369,39 @@ async function updateGeoStatus(text, cls='') { const el=$('geoStatus'); if(el){ 
 
 async function requestLocation() {
   if (!navigator.geolocation) { updateGeoStatus('Геолокация не поддерживается этим браузером.'); return; }
+
+  if (geoWatchId != null && userPos) {
+    updateLiveUserPosition(userPos,{center:true});
+    updateGeoStatus(`Геопозиция включена · точность ±${Math.round(userPos.accuracy||0)} м`,'geo-ok');
+    return;
+  }
+
   updateGeoStatus('Запрашиваю доступ к геопозиции…');
-  if (geoWatchId != null) navigator.geolocation.clearWatch(geoWatchId);
-  geoWatchId = navigator.geolocation.watchPosition(async pos => {
+  const btn=$('locateBtn');
+  if(btn) btn.disabled=true;
+  let firstFix=true;
+
+  geoWatchId = navigator.geolocation.watchPosition(pos => {
     userPos=pos.coords;
     updateGeoStatus(`Геопозиция включена · точность ±${Math.round(pos.coords.accuracy||0)} м`,'geo-ok');
-    $('locateBtn').textContent='Геопозиция включена ✓';
-    if(currentPackageId) await selectPackage(currentPackageId);
+    if(btn){
+      btn.disabled=false;
+      btn.innerHTML='<img class="rfm-icon" src="/assets/location.svg" alt="" />Показать где я';
+    }
+    updateLiveUserPosition(userPos,{center:firstFix});
+    firstFix=false;
   }, err => {
-    const msg=err.code===1?'Доступ к геопозиции запрещён. Разреши его в настройках сайта Chrome.':`Геолокация недоступна: ${err.message}`;
+    if(btn) btn.disabled=false;
+    geoWatchId=null;
+    const msg=err.code===1
+      ? 'Доступ к геопозиции запрещён. Разреши его в настройках сайта.'
+      : `Геолокация недоступна: ${err.message}`;
     updateGeoStatus(msg,'geo-error');
-  }, {enableHighAccuracy:true,timeout:15000,maximumAge:5000});
+  }, {
+    enableHighAccuracy:true,
+    timeout:15000,
+    maximumAge:3000
+  });
 }
 $('locateBtn').onclick = requestLocation;
 
