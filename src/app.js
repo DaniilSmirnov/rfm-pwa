@@ -1,3 +1,5 @@
+import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.mjs';
+window.maplibregl = maplibregl;
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from './db.js';
 import { normalizePackage } from './normalize.js';
 import { renderMap } from './map.js';
@@ -12,39 +14,10 @@ let geoWatchId = null;
 let deferredPrompt = null;
 let catalog = [];
 let selectedPoint = null;
-let mapLibreLoadPromise = null;
-
-function loadScriptOnce(src) {
-  return new Promise((resolve,reject)=>{
-    const existing=[...document.scripts].find(s=>s.src===src);
-    if(existing){
-      if(window.maplibregl) return resolve();
-      existing.addEventListener('load',resolve,{once:true});
-      existing.addEventListener('error',reject,{once:true});
-      return;
-    }
-    const s=document.createElement('script');
-    s.src=src; s.async=true; s.onload=resolve; s.onerror=()=>reject(new Error(`Не удалось загрузить ${src}`));
-    document.head.appendChild(s);
-  });
-}
-function ensureStyle(href){
-  if([...document.styleSheets].some(s=>s.href===href) || document.querySelector(`link[href="${href}"]`)) return;
-  const l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l);
-}
 async function ensureMapLibre(){
-  if(window.maplibregl) return window.maplibregl;
-  if(!mapLibreLoadPromise){
-    mapLibreLoadPromise=(async()=>{
-      ensureStyle('https://cdn.jsdelivr.net/npm/maplibre-gl@6.10.0/dist/maplibre-gl.css');
-      try { await loadScriptOnce('https://cdn.jsdelivr.net/npm/maplibre-gl@6.10.0/dist/maplibre-gl.js'); }
-      catch(e){ throw new Error(`MapLibre не загрузился: ${e.message}`); }
-      if(!window.maplibregl) throw new Error('MapLibre загрузился без глобального maplibregl');
-      if(typeof window.maplibregl.supported==='function' && !window.maplibregl.supported()) throw new Error('WebGL недоступен в этом браузере/PWA');
-      return window.maplibregl;
-    })();
-  }
-  return mapLibreLoadPromise;
+  if(!window.maplibregl) throw new Error('MapLibre 6.10.0 ESM не загрузился с CDN');
+  if(typeof window.maplibregl.supported==='function' && !window.maplibregl.supported()) throw new Error('WebGL2 недоступен в этом браузере/PWA');
+  return window.maplibregl;
 }
 
 const esc = s => String(s ?? '').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
