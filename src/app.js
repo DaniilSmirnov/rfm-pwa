@@ -788,5 +788,10 @@ async function setupServiceWorkerUpdates(){
 
 await setupServiceWorkerUpdates();
 await refreshPushUi();
+try {
+  if(await getPushSubscription()) await scheduleAllSavedReminders();
+} catch(e) {
+  console.warn('Could not refresh scheduled race reminders on startup',e);
+}
 await refreshList();
 await loadCatalog();
