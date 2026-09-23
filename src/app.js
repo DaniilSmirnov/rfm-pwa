@@ -228,7 +228,7 @@ function stageIdentity(item){
     .trim();
 
   const stageMatch=context.match(/(?:^|\s)((?:СУ|SS)\s*[-№#]?\s*\d+[A-Za-zА-Яа-я0-9/-]*)/i);
-  const hasStageWord=/\bСУ\b|\bSS\b|спец(?:иальный)?\s*участ/i.test(context);
+  const hasStageWord=/(?:СУ|SS)\s*[-№#]?\s*\d+|спец(?:иальный)?\s*участ/i.test(context);
   if(!stageMatch && !hasStageWord) return null;
 
   const name=(stageMatch?.[1] || String(item?.location||'СУ')).replace(/\s+/g,' ').trim();
@@ -266,14 +266,166 @@ function setStageSubscribed(pkg,stageKey,enabled){
   localStorage.setItem(STAGE_PUSH_PREFS_KEY,JSON.stringify(prefs));
 }
 
+const WALLET_STAGE_PREFS_KEY='rfm-wallet-stage-passes-v1';
+
+function isIOSDevice(){
+  return /iPad|iPhone|iPod/i.test(navigator.userAgent)
+    || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
+
+function loadWalletStagePrefs(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(WALLET_STAGE_PREFS_KEY)||'{}');
+    return parsed && typeof parsed==='object' ? parsed : {};
+  }catch{
+    return {};
+  }
+}
+
+function walletStageKeys(pkg){
+  const raceId=racePushPrefId(pkg);
+  const prefs=loadWalletStagePrefs();
+  return new Set(Array.isArray(prefs[raceId])?prefs[raceId]:[]);
+}
+
+function setWalletStageAdded(pkg,stageKey){
+  const raceId=racePushPrefId(pkg);
+  if(!raceId || !stageKey) return;
+  const prefs=loadWalletStagePrefs();
+  const set=new Set(Array.isArray(prefs[raceId])?prefs[raceId]:[]);
+  set.add(stageKey);
+  prefs[raceId]=[...set];
+  localStorage.setItem(WALLET_STAGE_PREFS_KEY,JSON.stringify(prefs));
+}
+
+function walletSerialForStage(pkg,stage){
+  const race=String(pkg?.raceId ?? pkg?.id ?? 'race').replace(/[^a-z0-9_-]+/gi,'-').slice(0,48);
+  const stagePart=String(stage?.key||'stage').replace(/[^a-z0-9_-]+/gi,'-').slice(0,48);
+  return `rfm-${race}-${stagePart}`;
+}
+
+function parseCoordinatePair(value){
+  const nums=String(value||'').match(/-?\d+(?:[.,]\d+)?/g)?.map(x=>Number(x.replace(',','.'))) || [];
+  if(nums.length<2) return null;
+  let a=nums[0],b=nums[1];
+  if(Math.abs(a)<=90 && Math.abs(b)<=180) return {lat:a,lon:b};
+  if(Math.abs(b)<=90 && Math.abs(a)<=180) return {lat:b,lon:a};
+  return null;
+}
+
+function pointCoordinate(feature){
+  const coords=feature?.geometry?.coordinates;
+  if(feature?.geometry?.type!=='Point' || !Array.isArray(coords) || coords.length<2) return null;
+  const lon=Number(coords[0]),lat=Number(coords[1]);
+  return Number.isFinite(lat)&&Number.isFinite(lon)?{lat,lon}:null;
+}
+
+function stageFeatureMatches(feature,stage){
+  const props=feature?.properties||{};
+  const text=Object.values(props).filter(v=>typeof v==='string'||typeof v==='number').join(' ').toLowerCase();
+  const number=String(stage?.name||'').match(/\d+/)?.[0];
+  if(number && new RegExp(`(?:су|ss)\\s*[-№#]?\\s*${number}(?:\\D|$)`,'i').test(text)) return true;
+  return text.includes(String(stage?.name||'').toLowerCase()) || text.includes(String(stage?.key||'').replace(/-/g,' '));
+}
+
+function findStageLocations(pkg,item,stage){
+  let start=parseCoordinatePair(item?.coordinates);
+  let finish=null;
+  let route=null;
+
+  for(const feature of pkg?.geojson?.features||[]){
+    if(!stageFeatureMatches(feature,stage)) continue;
+    const props=feature?.properties||{};
+    const text=Object.values(props).filter(v=>typeof v==='string'||typeof v==='number').join(' ');
+    const point=pointCoordinate(feature);
+    if(point){
+      if(/старт|start/i.test(text) && !start) start=point;
+      if(/финиш|finish/i.test(text) && !finish) finish=point;
+    }
+    if(!route && feature?.geometry?.type==='LineString' && Array.isArray(feature.geometry.coordinates)){
+      route=feature.geometry.coordinates;
+    }
+  }
+
+  if(route?.length>=2){
+    const first=route[0],last=route[route.length-1];
+    if(!start && Array.isArray(first)) start={lat:Number(first[1]),lon:Number(first[0])};
+    if(!finish && Array.isArray(last)) finish={lat:Number(last[1]),lon:Number(last[0])};
+  }
+
+  return {start:start||null,finish:finish||null};
+}
+
+function stageWalletPayload(pkg,item,stage){
+  const events=asArray(item?.events).map(event=>{
+    const at=parseScheduleDateTime(item?.date,event?.time,pkg);
+    return {
+      time:String(event?.time||'').trim(),
+      text:String(event?.text||'').trim(),
+      at:at?at.toISOString():null
+    };
+  });
+  const findAt=re=>events.find(e=>re.test(e.text))?.at||null;
+  const locations=findStageLocations(pkg,item,stage);
+  const future=events.map(e=>e.at).filter(Boolean).map(v=>new Date(v)).filter(d=>d.getTime()>Date.now()).sort((a,b)=>a-b)[0];
+
+  return {
+    serialNumber:walletSerialForStage(pkg,stage),
+    raceId:String(pkg?.raceId ?? pkg?.id ?? ''),
+    raceName:String(pkg?.name||'Rally Fans Map'),
+    stageKey:stage.key,
+    stageName:stage.name,
+    date:String(item?.date||''),
+    startLocation:locations.start,
+    finishLocation:locations.finish,
+    startAt:findAt(/старт|start/i),
+    finishAt:findAt(/финиш|finish/i),
+    closeAt:findAt(/закрыт|закрытие|перекрыт|перекрытие/i),
+    openAt:findAt(/открыт|открытие|возобнов/i),
+    relevantAt:future?.toISOString?.()||events.find(e=>e.at)?.at||null,
+    events
+  };
+}
+
+async function syncWalletStage(pkg,item,stage,{openPass=false}={}){
+  const payload=stageWalletPayload(pkg,item,stage);
+  const res=await fetch('/api/wallet/stage',{
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось подготовить Wallet pass');
+  if(openPass && data.addUrl) window.location.href=data.addUrl;
+  return data;
+}
+
+async function syncWalletPassesForPackage(pkg){
+  if(!isIOSDevice()) return 0;
+  const selected=walletStageKeys(pkg);
+  if(!selected.size) return 0;
+  let synced=0;
+  for(const item of asArray(pkg?.original?.schedule)){
+    const stage=stageIdentity(item);
+    if(!stage || !selected.has(stage.key)) continue;
+    try{
+      await syncWalletStage(pkg,item,stage);
+      synced++;
+    }catch(e){
+      console.warn('Could not refresh Wallet pass',stage.name,e);
+    }
+  }
+  return synced;
+}
+
 function classifyStageScheduleEvent(item,event){
   const eventText=String(event?.text||'').trim();
   const context=`${String(item?.location||'')} ${eventText}`.replace(/\s+/g,' ').trim();
   const lower=eventText.toLowerCase();
 
   let kind=null;
-  if(/\bзакрыт|закрытие|закрывается|закрывают|перекрыт|перекрытие/.test(lower)) kind='close';
-  else if(/\bоткрыт|открытие|открывается|открывают|возобнов/.test(lower)) kind='open';
+  if(/закрыт|закрытие|закрывается|закрывают|перекрыт|перекрытие/.test(lower)) kind='close';
+  else if(/открыт|открытие|открывается|открывают|возобнов/.test(lower)) kind='open';
   if(!kind) return null;
 
   const stageMatch=context.match(/(?:^|\s)((?:СУ|SS)\s*[-№#]?\s*\d+[A-Za-zА-Яа-я0-9/-]*)/i);
@@ -542,18 +694,28 @@ function renderSchedule(p){
   if(!schedule.length){ root.innerHTML='<p class="muted">Расписание отсутствует.</p>'; return; }
 
   const subscribed=subscribedStageKeys(p);
+  const walletAdded=walletStageKeys(p);
+  const showWallet=isIOSDevice();
 
   for(const item of schedule){
     const events=asArray(item.events);
     const stage=stageIdentity(item);
     const isSubscribed=Boolean(stage && subscribed.has(stage.key));
+    const isInWallet=Boolean(stage && walletAdded.has(stage.key));
 
     const node=document.createElement('article');
     node.className='schedule-item';
     node.innerHTML=`${item.date?`<div class="date-header">${esc(item.date)}</div>`:''}
       <div class="schedule-location-row">
         <div class="location">${esc(item.location||'Событие')}</div>
-        ${stage?`<button class="button compact stage-push-toggle ${isSubscribed?'subscribed':''}" data-stage-key="${esc(stage.key)}" type="button">${isSubscribed?'🔔 Уведомления включены':'🔔 Уведомлять'}</button>`:''}
+        ${stage?`<div class="stage-actions">
+          <button class="button compact stage-push-toggle ${isSubscribed?'subscribed':''}" data-stage-key="${esc(stage.key)}" type="button" aria-label="${isSubscribed?'Выключить уведомления':'Включить уведомления'}">
+            <span aria-hidden="true">🔔</span><span>${isSubscribed?'Включены':'Уведомлять'}</span>
+          </button>
+          ${showWallet?`<button class="button compact stage-wallet-toggle ${isInWallet?'subscribed':''}" data-wallet-stage-key="${esc(stage.key)}" type="button" aria-label="Добавить ${esc(stage.name)} в Apple Wallet">
+            <img class="rfm-icon" src="/assets/wallet.svg" alt="" /><span>${isInWallet?'Wallet ✓':'Wallet'}</span>
+          </button>`:''}
+        </div>`:''}
       </div>
       ${item.coordinates?`<div class="coordinates-line">${esc(item.coordinates)}</div>`:''}
       <div class="event-list">${events.map(e=>`<div><time>${esc(e.time||'')}</time><span>${esc(e.text||'')}</span></div>`).join('')}</div>`;
@@ -586,6 +748,27 @@ function renderSchedule(p){
         }catch(e){
           setPushStatus(`Не удалось изменить подписку ${stage.name}: ${e.message}`,'geo-error');
           toggle.disabled=false;
+        }
+      });
+    }
+
+    const walletButton=node.querySelector('[data-wallet-stage-key]');
+    if(walletButton && stage){
+      walletButton.addEventListener('click',async()=>{
+        walletButton.disabled=true;
+        try{
+          const data=await syncWalletStage(p,item,stage,{openPass:true});
+          setWalletStageAdded(p,stage.key);
+          setPushStatus(
+            data.updated
+              ? `${stage.name}: карточка Wallet обновлена.`
+              : `${stage.name}: карточка Wallet подготовлена.`,
+            'geo-ok'
+          );
+          renderSchedule(p);
+        }catch(e){
+          setPushStatus(`Wallet · ${stage.name}: ${e.message}`,'geo-error');
+          walletButton.disabled=false;
         }
       });
     }
@@ -656,6 +839,7 @@ async function selectPackage(id){
   const img=$('raceImage');
   if(p.original?.image){ img.src=assetUrl(p.original.image); img.hidden=false; img.onerror=()=>img.hidden=true; } else img.hidden=true;
   renderSchedule(p);
+  syncWalletPassesForPackage(p).catch(e=>console.warn('Wallet pass refresh failed',e));
   renderRaceMedia(p);
 }
 
