@@ -75,3 +75,14 @@ Current parser accepts schedule dates such as `dd.mm.yyyy`, `dd/mm/yyyy`, `dd-mm
 ### Per-stage notification subscriptions
 
 Scheduled race reminders are opt-in per special stage. The schedule UI shows a `🔔 Уведомлять` control for detected `СУ`/`SS` entries. Preferences are stored locally in the PWA by race and stage, and only subscribed stages produce opening/closing reminders at T-60, T-30 and T-15 minutes. Updating the choice rebuilds that race's server-side reminder queue without duplicates.
+
+
+### Apple Wallet stage passes
+
+On iOS, each detected special stage shows two side-by-side actions: push notifications and Apple Wallet. A Wallet pass uses a stable serial number per race + stage, stores the stage schedule plus inferred start/finish coordinates, and is refreshed from the PWA whenever the saved race is opened.
+
+The Pages worker implements the Wallet update web-service protocol under `/api/wallet/v1`: device registration/unregistration, listing updated serial numbers, fetching an updated pass, and Wallet logging. Pass state is stored in `WALLET_STORE` KV when bound, otherwise `PUSH_SUBSCRIPTIONS` is reused.
+
+A valid `.pkpass` must be signed with an Apple Pass Type ID certificate. Configure `WALLET_PASS_TYPE_IDENTIFIER`, `WALLET_TEAM_IDENTIFIER`, and `WALLET_SIGNER_URL`. The signer endpoint receives the pass metadata/state as JSON and must return `application/vnd.apple.pkpass`. Optional `WALLET_SIGNER_TOKEN` is sent as a Bearer token.
+
+For automatic Wallet update delivery, configure `WALLET_PUSH_PROVIDER_URL` (and optionally `WALLET_PUSH_PROVIDER_TOKEN`). The worker sends the pass type identifier, serial number, and registered Wallet push tokens to that provider after a stored pass changes. Without a push provider, Wallet's standard update web service and manual refresh still work, but automatic delivery is not triggered by this worker.
