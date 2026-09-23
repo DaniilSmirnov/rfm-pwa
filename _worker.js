@@ -182,7 +182,12 @@ async function handlePushApi(request, env, url) {
     const body=await readJson(request);
     const endpoint=body?.endpoint;
     if (!pushEndpointAllowed(endpoint)) return json({ok:false,error:'Unsupported push endpoint'},400);
-    if (env?.PUSH_SUBSCRIPTIONS) await env.PUSH_SUBSCRIPTIONS.delete(await subscriptionKey(endpoint));
+    if (env?.PUSH_SUBSCRIPTIONS) {
+      const hash=await subscriptionHash(endpoint);
+      await env.PUSH_SUBSCRIPTIONS.delete(await subscriptionKey(endpoint));
+      await env.PUSH_SUBSCRIPTIONS.delete(`pending:${hash}`);
+      await clearReminderPrefix(env.PUSH_SUBSCRIPTIONS,reminderPrefix(hash));
+    }
     return json({ok:true});
   }
 
