@@ -85,13 +85,19 @@ window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); });
 window.addEventListener('offline',updateNetwork); updateNetwork();
 
 function isStandalonePwa() {
-  return window.matchMedia?.('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
+  const modes=['standalone','fullscreen','minimal-ui'];
+  const displayMode=modes.some(mode=>window.matchMedia?.(`(display-mode: ${mode})`).matches);
+  const iosStandalone=window.navigator.standalone===true;
+  const androidAppReferrer=document.referrer?.startsWith('android-app://');
+  return Boolean(displayMode || iosStandalone || androidAppReferrer);
 }
 function syncInstallButton() {
   const btn=$('installBtn');
   if(!btn) return;
-  btn.hidden = isStandalonePwa() || !deferredPrompt;
+  const shouldHide=isStandalonePwa() || !deferredPrompt;
+  btn.hidden=shouldHide;
+  btn.setAttribute('aria-hidden',shouldHide?'true':'false');
+  btn.style.display=shouldHide?'none':'';
 }
 syncInstallButton();
 
