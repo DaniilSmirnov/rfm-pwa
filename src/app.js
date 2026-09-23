@@ -200,6 +200,64 @@ function parseScheduleDateTime(dateText,timeText,pkg){
   return result;
 }
 
+const STAGE_PUSH_PREFS_KEY='rfm-stage-push-subscriptions-v1';
+
+function normalizeStageKey(name){
+  return String(name||'')
+    .toLowerCase()
+    .replace(/ё/g,'е')
+    .replace(/[^a-zа-я0-9]+/gi,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,80);
+}
+
+function stageIdentity(item){
+  const events=asArray(item?.events);
+  const context=[item?.location,...events.map(e=>e?.text)]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g,' ')
+    .trim();
+
+  const stageMatch=context.match(/(?:^|\s)((?:СУ|SS)\s*[-№#]?\s*\d+[A-Za-zА-Яа-я0-9/-]*)/i);
+  const hasStageWord=/\bСУ\b|\bSS\b|спец(?:иальный)?\s*участ/i.test(context);
+  if(!stageMatch && !hasStageWord) return null;
+
+  const name=(stageMatch?.[1] || String(item?.location||'СУ')).replace(/\s+/g,' ').trim();
+  const key=normalizeStageKey(name);
+  return key?{key,name}:null;
+}
+
+function loadStagePushPrefs(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(STAGE_PUSH_PREFS_KEY)||'{}');
+    return parsed && typeof parsed==='object' ? parsed : {};
+  }catch{
+    return {};
+  }
+}
+
+function racePushPrefId(pkg){
+  return String(pkg?.raceId ?? pkg?.id ?? '');
+}
+
+function subscribedStageKeys(pkg){
+  const raceId=racePushPrefId(pkg);
+  const prefs=loadStagePushPrefs();
+  return new Set(Array.isArray(prefs[raceId])?prefs[raceId]:[]);
+}
+
+function setStageSubscribed(pkg,stageKey,enabled){
+  const raceId=racePushPrefId(pkg);
+  if(!raceId || !stageKey) return;
+  const prefs=loadStagePushPrefs();
+  const set=new Set(Array.isArray(prefs[raceId])?prefs[raceId]:[]);
+  if(enabled) set.add(stageKey); else set.delete(stageKey);
+  if(set.size) prefs[raceId]=[...set];
+  else delete prefs[raceId];
+  localStorage.setItem(STAGE_PUSH_PREFS_KEY,JSON.stringify(prefs));
+}
+
 function classifyStageScheduleEvent(item,event){
   const eventText=String(event?.text||'').trim();
   const context=`${String(item?.location||'')} ${eventText}`.replace(/\s+/g,' ').trim();
@@ -218,7 +276,7 @@ function classifyStageScheduleEvent(item,event){
     .replace(/\s+/g,' ')
     .trim();
 
-  return {kind,stageName,eventText};
+  return {kind,stageName,stageKey:normalizeStageKey(stageName),eventText};
 }
 
 function reminderLeadLabel(minutes){
@@ -232,11 +290,13 @@ function buildRaceReminders(pkg){
   const now=Date.now();
   const reminders=[];
   const leadTimes=[60,30,15];
+  const subscribed=subscribedStageKeys(pkg);
+  if(!subscribed.size) return reminders;
 
   for(const item of schedule){
     for(const event of asArray(item?.events)){
       const classified=classifyStageScheduleEvent(item,event);
-      if(!classified) continue;
+      if(!classified || !subscribed.has(classified.stageKey)) continue;
 
       const startsAt=parseScheduleDateTime(item?.date,event?.time,pkg);
       if(!startsAt) continue;
@@ -470,11 +530,55 @@ function renderSchedule(p){
   const schedule=asArray(p.original?.schedule);
   const root=$('scheduleList'); root.innerHTML='';
   if(!schedule.length){ root.innerHTML='<p class="muted">Расписание отсутствует.</p>'; return; }
+
+  const subscribed=subscribedStageKeys(p);
+
   for(const item of schedule){
     const events=asArray(item.events);
-    const node=document.createElement('article'); node.className='schedule-item';
-    node.innerHTML=`${item.date?`<div class="date-header">${esc(item.date)}</div>`:''}<div class="location">${esc(item.location||'Событие')}</div>${item.coordinates?`<div class="coordinates-line">${esc(item.coordinates)}</div>`:''}<div class="event-list">${events.map(e=>`<div><time>${esc(e.time||'')}</time><span>${esc(e.text||'')}</span></div>`).join('')}</div>`;
+    const stage=stageIdentity(item);
+    const isSubscribed=Boolean(stage && subscribed.has(stage.key));
+
+    const node=document.createElement('article');
+    node.className='schedule-item';
+    node.innerHTML=`${item.date?`<div class="date-header">${esc(item.date)}</div>`:''}
+      <div class="schedule-location-row">
+        <div class="location">${esc(item.location||'Событие')}</div>
+        ${stage?`<button class="button compact stage-push-toggle ${isSubscribed?'subscribed':''}" data-stage-key="${esc(stage.key)}" type="button">${isSubscribed?'🔔 Уведомления включены':'🔔 Уведомлять'}</button>`:''}
+      </div>
+      ${item.coordinates?`<div class="coordinates-line">${esc(item.coordinates)}</div>`:''}
+      <div class="event-list">${events.map(e=>`<div><time>${esc(e.time||'')}</time><span>${esc(e.text||'')}</span></div>`).join('')}</div>`;
     root.appendChild(node);
+
+    const toggle=node.querySelector('[data-stage-key]');
+    if(toggle && stage){
+      toggle.addEventListener('click',async()=>{
+        toggle.disabled=true;
+        try{
+          const shouldEnable=!subscribedStageKeys(p).has(stage.key);
+
+          if(shouldEnable && !(await getPushSubscription())){
+            await enablePushNotifications();
+            if(!(await getPushSubscription())) return;
+          }
+
+          setStageSubscribed(p,stage.key,shouldEnable);
+          const result=await scheduleRaceReminders(p);
+          setPushStatus(
+            shouldEnable
+              ? `${stage.name}: уведомления включены · за 60, 30 и 15 минут.`
+              : `${stage.name}: уведомления выключены.`,
+            'geo-ok'
+          );
+          if(result.stored===0 && shouldEnable){
+            setPushStatus(`${stage.name}: подписка сохранена, но будущих событий открытия/закрытия пока нет.`);
+          }
+          renderSchedule(p);
+        }catch(e){
+          setPushStatus(`Не удалось изменить подписку ${stage.name}: ${e.message}`,'geo-error');
+          toggle.disabled=false;
+        }
+      });
+    }
   }
 }
 
