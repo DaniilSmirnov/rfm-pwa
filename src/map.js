@@ -303,6 +303,41 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   return map;
 }
 
+export function updateLiveUserPosition(position, {center=false} = {}) {
+  if (!activeMap || !position) return false;
+  const longitude=Number(position.longitude);
+  const latitude=Number(position.latitude);
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return false;
+
+  const data={type:'FeatureCollection',features:[{
+    type:'Feature',
+    properties:{accuracy:Number(position.accuracy)||null},
+    geometry:{type:'Point',coordinates:[longitude,latitude]}
+  }]};
+
+  try {
+    const source=activeMap.getSource?.('user-position');
+    if (source?.setData) {
+      source.setData(data);
+    } else if (activeMap.isStyleLoaded?.()) {
+      activeMap.addSource('user-position',{type:'geojson',data});
+      activeMap.addLayer({id:'user-halo',type:'circle',source:'user-position',paint:{
+        'circle-radius':['interpolate',['linear'],['zoom'],5,10,14,20],
+        'circle-color':'#4da3ff','circle-opacity':0.22
+      }});
+      activeMap.addLayer({id:'user-dot',type:'circle',source:'user-position',paint:{
+        'circle-radius':['interpolate',['linear'],['zoom'],5,5,14,8],
+        'circle-color':'#4da3ff','circle-stroke-color':'#fff','circle-stroke-width':3
+      }});
+    }
+    if (center) activeMap.easeTo({center:[longitude,latitude],zoom:Math.max(activeMap.getZoom?.()||0,13),duration:700});
+    return true;
+  } catch (e) {
+    console.warn('live user position update failed',e);
+    return false;
+  }
+}
+
 function niceCoord(v){ return Math.abs(v) >= 100 ? v.toFixed(2) : v.toFixed(3); }
 
 function renderFallback(container, fc, userPos = null, onPointClick = null) {
