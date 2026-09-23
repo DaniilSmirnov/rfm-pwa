@@ -71,12 +71,12 @@ function renderPointList(p) {
   root.innerHTML = pts.map((f, i) => {
     const pt = pointFromFeature(f);
     return `<article class="point-row" data-point-index="${i}">
-      <div class="point-row-copy"><strong>${esc(pt.name)}</strong><span class="muted">${esc(coordinateText(pt))}</span></div>
+      <div class="point-row-copy"><strong><img class="rfm-icon point-icon" src="/assets/location.svg" alt="" />${esc(pt.name)}</strong><span class="muted">${esc(coordinateText(pt))}</span></div>
       <div class="point-nav-buttons">
         <button class="button compact primary" data-nav="google">Google Maps</button>
         <button class="button compact" data-nav="yandex">Yandex</button>
         <button class="button compact" data-nav="mapsme">MAPS.ME</button>
-        <button class="button compact" data-nav="copy">Копировать</button>
+        <button class="button compact" data-nav="copy"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button>
       </div>
     </article>`;
   }).join('');
@@ -140,7 +140,7 @@ async function selectPackage(id){
   currentPackageId=id; const p=await getPackage(id); if(!p)return;
   $('mapTitle').textContent=p.name;
   const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:p.id} : null;
-  $('mapSubtitle').textContent=`${om?'ИСПОЛЬЗУЕТСЯ офлайн-подложка · ':navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}сохранено ${new Date(p.savedAt).toLocaleString()}`;
+  $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}сохранено ${new Date(p.savedAt).toLocaleString()}`;
   renderMap($('map'),p.geojson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   renderPointList(p);
@@ -259,7 +259,7 @@ function setMapUiText({button,status,deleteHidden,disabled}){
 function updateOfflineMapUi(p){
   if(!p){ setMapUiText({button:'Скачать офлайн-карту',status:'Сначала выбери сохранённую гонку.',deleteHidden:true,disabled:true}); return; }
   if(p?.offlineMap?.ready){
-    setMapUiText({button:`Обновить карту (${fmtBytes(p.offlineMap.bytes||0)})`,status:`Офлайн-подложка готова · ${p.offlineMap.tileCount||0} тайлов · ${fmtBytes(p.offlineMap.bytes||0)} · z${p.offlineMap.minZoom}–${p.offlineMap.maxZoom}`,deleteHidden:false,disabled:false});
+    setMapUiText({button:`Обновить карту (${fmtBytes(p.offlineMap.bytes||0)})`,status:`Офлайн-подложка готова · ${p.offlineMap.tileCount||0} тайлов · ${p.offlineMap.vectorLayers?.length||0} слоёв · ${fmtBytes(p.offlineMap.bytes||0)} · z${p.offlineMap.minZoom}–${p.offlineMap.maxZoom}`,deleteHidden:false,disabled:false});
   } else {
     let msg='Офлайн-подложка ещё не скачана.';
     try { const plan=buildDownloadPlan(p.geojson); msg=`Будет скачано до ${plan.tiles.length} векторных тайлов · z${plan.minZoom}–${plan.maxZoom}. Размер зависит от района.`; } catch {}
