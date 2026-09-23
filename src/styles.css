@@ -112,3 +112,7 @@ main{width:var(--page);margin:0 auto calc(56px + env(safe-area-inset-bottom))}.i
 @media (display-mode: standalone){
   body{padding-bottom:max(0px,calc(var(--safe-bottom) - 14px))}
 }
+
+/* Stage actions: push + Apple Wallet */
+.stage-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}.stage-actions .button{white-space:nowrap}.stage-wallet-toggle.subscribed{background:#111;color:#fff;border-color:#111}.stage-wallet-toggle.subscribed .rfm-icon{filter:invert(1)}@media(max-width:560px){.stage-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.stage-actions .button{width:100%}}
+@media (prefers-color-scheme: dark){.stage-wallet-toggle.subscribed{background:#f5f7fa;color:#111318;border-color:#f5f7fa}.stage-wallet-toggle.subscribed .rfm-icon{filter:none}}
