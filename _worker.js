@@ -1,6 +1,169 @@
 const API_ORIGIN = 'https://api.rallyfansmap.ru';
 const BASEMAP_PM = 'https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles';
 const RFM_ICON_URL = 'https://rallyfansmap.ru/assets/icons/apple-touch-icon.png';
+const encoder = new TextEncoder();
+
+function bytesToBase64Url(bytes) {
+  let binary='';
+  const view=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+  for (const b of view) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function textToBase64Url(value) {
+  return bytesToBase64Url(encoder.encode(value));
+}
+async function sha256Base64Url(value) {
+  return bytesToBase64Url(await crypto.subtle.digest('SHA-256',encoder.encode(value)));
+}
+function pushEndpointAllowed(endpoint) {
+  try {
+    const u=new URL(endpoint);
+    if (u.protocol!=='https:') return false;
+    const h=u.hostname.toLowerCase();
+    return h==='web.push.apple.com'
+      || h.endsWith('.push.apple.com')
+      || h==='fcm.googleapis.com'
+      || h.endsWith('.googleapis.com')
+      || h==='updates.push.services.mozilla.com'
+      || h.endsWith('.push.services.mozilla.com');
+  } catch { return false; }
+}
+function pushConfigured(env) {
+  return Boolean(env?.VAPID_PUBLIC_KEY && env?.VAPID_PRIVATE_JWK && env?.VAPID_SUBJECT);
+}
+async function vapidJwt(endpoint, env) {
+  if (!pushConfigured(env)) throw new Error('Push is not configured');
+  const target=new URL(endpoint);
+  const header=textToBase64Url(JSON.stringify({typ:'JWT',alg:'ES256'}));
+  const payload=textToBase64Url(JSON.stringify({
+    aud:target.origin,
+    exp:Math.floor(Date.now()/1000)+(12*60*60),
+    sub:env.VAPID_SUBJECT
+  }));
+  const input=`${header}.${payload}`;
+  const jwk=JSON.parse(env.VAPID_PRIVATE_JWK);
+  const key=await crypto.subtle.importKey(
+    'jwk',
+    jwk,
+    {name:'ECDSA',namedCurve:'P-256'},
+    false,
+    ['sign']
+  );
+  const signature=await crypto.subtle.sign(
+    {name:'ECDSA',hash:'SHA-256'},
+    key,
+    encoder.encode(input)
+  );
+  return `${input}.${bytesToBase64Url(signature)}`;
+}
+async function sendEmptyPush(endpoint, env) {
+  if (!pushEndpointAllowed(endpoint)) return {ok:false,status:400,error:'Unsupported push endpoint'};
+  const token=await vapidJwt(endpoint,env);
+  const response=await fetch(endpoint,{
+    method:'POST',
+    headers:{
+      'TTL':'60',
+      'Urgency':'normal',
+      'Authorization':`vapid t=${token}, k=${env.VAPID_PUBLIC_KEY}`
+    }
+  });
+  return {ok:response.ok,status:response.status};
+}
+async function readJson(request) {
+  try { return await request.json(); } catch { return null; }
+}
+async function subscriptionKey(endpoint) {
+  return `sub:${await sha256Base64Url(endpoint)}`;
+}
+async function handlePushApi(request, env, url) {
+  if (url.pathname==='/api/push/config') {
+    if (request.method!=='GET') return json({ok:false,error:'Method not allowed'},405);
+    return json({
+      ok:true,
+      enabled:pushConfigured(env),
+      publicKey:pushConfigured(env)?env.VAPID_PUBLIC_KEY:null,
+      storage:Boolean(env?.PUSH_SUBSCRIPTIONS)
+    });
+  }
+
+  if (url.pathname==='/api/push/subscribe') {
+    if (request.method!=='POST') return json({ok:false,error:'Method not allowed'},405);
+    if (!pushConfigured(env)) return json({ok:false,error:'Push is not configured on Cloudflare Pages'},503);
+    const body=await readJson(request);
+    const subscription=body?.subscription || body;
+    const endpoint=subscription?.endpoint;
+    if (!pushEndpointAllowed(endpoint)) return json({ok:false,error:'Unsupported push endpoint'},400);
+    let stored=false;
+    if (env?.PUSH_SUBSCRIPTIONS) {
+      await env.PUSH_SUBSCRIPTIONS.put(
+        await subscriptionKey(endpoint),
+        JSON.stringify({subscription,createdAt:new Date().toISOString()})
+      );
+      stored=true;
+    }
+    return json({ok:true,stored});
+  }
+
+  if (url.pathname==='/api/push/unsubscribe') {
+    if (request.method!=='POST') return json({ok:false,error:'Method not allowed'},405);
+    const body=await readJson(request);
+    const endpoint=body?.endpoint;
+    if (!pushEndpointAllowed(endpoint)) return json({ok:false,error:'Unsupported push endpoint'},400);
+    if (env?.PUSH_SUBSCRIPTIONS) await env.PUSH_SUBSCRIPTIONS.delete(await subscriptionKey(endpoint));
+    return json({ok:true});
+  }
+
+  if (url.pathname==='/api/push/test') {
+    if (request.method!=='POST') return json({ok:false,error:'Method not allowed'},405);
+    if (!pushConfigured(env)) return json({ok:false,error:'Push is not configured on Cloudflare Pages'},503);
+    const body=await readJson(request);
+    const endpoint=body?.subscription?.endpoint || body?.endpoint;
+    if (!pushEndpointAllowed(endpoint)) return json({ok:false,error:'Unsupported push endpoint'},400);
+    const result=await sendEmptyPush(endpoint,env);
+    return json({ok:result.ok,status:result.status},result.ok?200:502);
+  }
+
+  if (url.pathname==='/api/push/broadcast') {
+    if (request.method!=='POST') return json({ok:false,error:'Method not allowed'},405);
+    if (!pushConfigured(env) || !env?.PUSH_SUBSCRIPTIONS) return json({ok:false,error:'Push storage/config is missing'},503);
+    const auth=request.headers.get('authorization')||'';
+    if (!env.PUSH_ADMIN_TOKEN || auth!==`Bearer ${env.PUSH_ADMIN_TOKEN}`) return json({ok:false,error:'Unauthorized'},401);
+
+    let cursor=undefined;
+    let sent=0,failed=0,removed=0;
+    do {
+      const page=await env.PUSH_SUBSCRIPTIONS.list({prefix:'sub:',cursor});
+      for (const key of page.keys) {
+        const record=await env.PUSH_SUBSCRIPTIONS.get(key.name,'json');
+        const endpoint=record?.subscription?.endpoint;
+        if (!pushEndpointAllowed(endpoint)) {
+          await env.PUSH_SUBSCRIPTIONS.delete(key.name);
+          removed++;
+          continue;
+        }
+        try {
+          const result=await sendEmptyPush(endpoint,env);
+          if (result.ok) sent++;
+          else {
+            failed++;
+            if ([404,410].includes(result.status)) {
+              await env.PUSH_SUBSCRIPTIONS.delete(key.name);
+              removed++;
+            }
+          }
+        } catch {
+          failed++;
+        }
+      }
+      cursor=page.list_complete?undefined:page.cursor;
+    } while(cursor);
+
+    return json({ok:true,sent,failed,removed});
+  }
+
+  return json({ok:false,error:'Unsupported push API path'},404);
+}
+
 
 function apiTarget(pathname) {
   // Canonical routes used by the app, plus short aliases for easier diagnostics.
@@ -172,6 +335,8 @@ export default {
         hint: 'If this endpoint works, the Cloudflare Pages Worker is active.'
       });
     }
+
+    if (url.pathname.startsWith('/api/push/')) return handlePushApi(request,env,url);
 
     if (url.pathname === '/api/yandex/constructor') return importYandexConstructor(request, url);
     if (url.pathname === '/rfm/icon.png') {
