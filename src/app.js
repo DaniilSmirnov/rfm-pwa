@@ -61,8 +61,43 @@ function updateNetwork() { const online=navigator.onLine; $('networkBadge').text
 window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); });
 window.addEventListener('offline',updateNetwork); updateNetwork();
 
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt=e; $('installBtn').hidden=false; });
-$('installBtn').onclick = async () => { if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('installBtn').hidden=true; };
+function isStandalonePwa() {
+  return window.matchMedia?.('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}
+function syncInstallButton() {
+  const btn=$('installBtn');
+  if(!btn) return;
+  btn.hidden = isStandalonePwa() || !deferredPrompt;
+}
+syncInstallButton();
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  if(isStandalonePwa()) {
+    deferredPrompt=null;
+    syncInstallButton();
+    return;
+  }
+  deferredPrompt=e;
+  syncInstallButton();
+});
+window.addEventListener('appinstalled',()=>{
+  deferredPrompt=null;
+  syncInstallButton();
+});
+window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change',syncInstallButton);
+
+$('installBtn').onclick = async () => {
+  if(isStandalonePwa() || !deferredPrompt) {
+    syncInstallButton();
+    return;
+  }
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  syncInstallButton();
+};
 
 async function refreshList() {
   const pkgs = (await getAllPackages()).sort((a,b)=>b.savedAt.localeCompare(a.savedAt));
