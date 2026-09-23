@@ -1,4 +1,4 @@
-# RallyFans Companion v0.3.5
+# RallyFans Companion v0.5.0
 
 Cloudflare Pages build based on v0.3.4.3.
 
@@ -12,4 +12,4 @@ Cloudflare Pages build based on v0.3.4.3.
 
 Deploy the whole directory/ZIP to the same Cloudflare Pages project.
 
-Health check: `/api/health` should report `0.3.5`.
+Health check: `/api/health` should report `0.5.0`.
