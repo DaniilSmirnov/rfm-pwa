@@ -35,17 +35,38 @@ function sourceColorExpression() {
   return ['case', ['==', ['slice', ['to-string', ['coalesce', ['get','kind'], '']], 0, 7], 'yandex-'], '#ffd21e', '#e63b2e'];
 }
 
-function offlineBasemapLayers(source='offline-base') {
+function basemapPalette(layerName){
+  const n=String(layerName||'').toLowerCase();
+  if(n.includes('water')) return {fill:'#bfdde8',line:'#7aaec2',circle:'#7aaec2'};
+  if(n.includes('earth')) return {fill:'#f2f0e9',line:'#d8d3c7',circle:'#d8d3c7'};
+  if(n.includes('landuse')||n.includes('landcover')) return {fill:'#dce8d2',line:'#b9c9ae',circle:'#8daa7d'};
+  if(n.includes('building')) return {fill:'#ddd8d2',line:'#c5beb6',circle:'#c5beb6'};
+  if(n.includes('road')||n.includes('transport')) return {fill:'#eee9df',line:'#b9b2a7',circle:'#b9b2a7'};
+  if(n.includes('boundar')) return {fill:'#f3f3f3',line:'#9ea2a8',circle:'#9ea2a8'};
+  if(n.includes('place')||n.includes('poi')) return {fill:'#ececec',line:'#b4b4b4',circle:'#777'};
+  return {fill:'#e5e5e5',line:'#aab0b5',circle:'#8e9499'};
+}
+
+function genericLayerTriplet(source, layerName, index){
+  const id=String(layerName).replace(/[^a-z0-9_-]/gi,'-');
+  const p=basemapPalette(layerName);
+  const lineWidth=String(layerName).toLowerCase().includes('road')
+    ? ['interpolate',['linear'],['zoom'],6,.8,10,1.7,14,4.8]
+    : ['interpolate',['linear'],['zoom'],6,.4,14,1.5];
   return [
-    {id:'base-earth',type:'fill',source,'source-layer':'earth',paint:{'fill-color':'#171c20'}},
-    {id:'base-landcover',type:'fill',source,'source-layer':'landcover',paint:{'fill-color':['match',['get','kind'],'forest','#1b2d25','wood','#1b2d25','grassland','#253326','farmland','#302f24','urban_area','#292b30','#22272b'],'fill-opacity':0.78}},
-    {id:'base-landuse',type:'fill',source,'source-layer':'landuse',paint:{'fill-color':['match',['get','kind'],'forest','#1c3027','wood','#1c3027','park','#233b2b','farmland','#333126','residential','#2a2c31','industrial','#313038','#25292d'],'fill-opacity':0.65}},
-    {id:'base-water',type:'fill',source,'source-layer':'water',filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#183847'}},
-    {id:'base-water-lines',type:'line',source,'source-layer':'water',filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#2b6074','line-width':['interpolate',['linear'],['zoom'],7,1,14,3]}},
-    {id:'base-buildings',type:'fill',source,'source-layer':'buildings',minzoom:12,paint:{'fill-color':'#3a3d42','fill-outline-color':'#4a4f55'}},
-    {id:'base-roads-casing',type:'line',source,'source-layer':'roads',paint:{'line-color':'#15181c','line-width':['interpolate',['linear'],['zoom'],6,1.5,10,3,14,8]}},
-    {id:'base-roads',type:'line',source,'source-layer':'roads',paint:{'line-color':['match',['get','kind'],'highway','#d9b36c','major_road','#c7a76f','minor_road','#90949a','path','#7f827c','rail','#787d84','#8e9298'],'line-width':['interpolate',['linear'],['zoom'],6,.7,10,1.6,14,5],'line-opacity':.9}}
+    {id:`base-${index}-${id}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':p.fill,'fill-opacity':0.9}},
+    {id:`base-${index}-${id}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':p.line,'line-width':lineWidth,'line-opacity':0.95}},
+    {id:`base-${index}-${id}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],paint:{'circle-color':p.circle,'circle-radius':['interpolate',['linear'],['zoom'],6,1.5,14,3.5],'circle-opacity':0.85}}
   ];
+}
+
+function offlineBasemapLayers(source='offline-base', offlineMap={}){
+  const metadataLayers=Array.isArray(offlineMap?.vectorLayers)
+    ? offlineMap.vectorLayers.map(v=>typeof v==='string'?v:v?.id).filter(Boolean)
+    : [];
+  const fallback=['earth','landuse','water','buildings','roads','boundaries','places','pois'];
+  const names=[...new Set(metadataLayers.length?metadataLayers:fallback)];
+  return names.flatMap((name,i)=>genericLayerTriplet(source,name,i));
 }
 
 function baseStyle(offlineMap) {
@@ -55,7 +76,7 @@ function baseStyle(offlineMap) {
     registerOfflineMapProtocol();
     resetOfflineMapDiagnostics();
     sources['offline-base']=offlineVectorSource(offlineMap.raceId,offlineMap);
-    layers.push(...offlineBasemapLayers('offline-base'));
+    layers.push(...offlineBasemapLayers('offline-base',offlineMap));
   } else if (navigator.onLine) {
     sources.osm = {type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:19,attribution:'© OpenStreetMap contributors'};
     layers.push({id:'osm',type:'raster',source:'osm',paint:{'raster-opacity':0.92}});
