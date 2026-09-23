@@ -418,6 +418,71 @@ async function notifyWalletUpdate(env,record){
   return {ok:res.ok,status:res.status,devices:pushTokens.length};
 }
 
+function walletField(key,label,value,extra={}){
+  if(value==null || value==='') return null;
+  return {key,label,value:String(value),...extra};
+}
+
+function walletLocation(value,relevantText){
+  const lat=Number(value?.lat),lon=Number(value?.lon);
+  if(!Number.isFinite(lat)||!Number.isFinite(lon)) return null;
+  return {latitude:lat,longitude:lon,relevantText};
+}
+
+function buildWalletPassJson(env,requestUrl,record){
+  const s=record.state||{};
+  const locations=[
+    walletLocation(s.startLocation,`${s.stageName||'СУ'} · старт`),
+    walletLocation(s.finishLocation,`${s.stageName||'СУ'} · финиш`)
+  ].filter(Boolean);
+
+  const scheduleText=(Array.isArray(s.events)?s.events:[])
+    .filter(e=>e?.time||e?.text)
+    .map(e=>[e.time,e.text].filter(Boolean).join(' · '))
+    .join('\n');
+
+  const secondaryFields=[
+    walletField('race','Ралли',s.raceName),
+    walletField('date','Дата',s.date)
+  ].filter(Boolean);
+
+  const auxiliaryFields=[
+    walletField('close','Закрытие',s.closeAt,{dateStyle:'PKDateStyleShort',timeStyle:'PKDateStyleShort'}),
+    walletField('open','Открытие',s.openAt,{dateStyle:'PKDateStyleShort',timeStyle:'PKDateStyleShort'})
+  ].filter(Boolean);
+
+  const backFields=[
+    walletField('start_time','Старт',s.startAt),
+    walletField('finish_time','Финиш',s.finishAt),
+    walletField('start_geo','Координаты старта',s.startLocation?`${s.startLocation.lat}, ${s.startLocation.lon}`:null),
+    walletField('finish_geo','Координаты финиша',s.finishLocation?`${s.finishLocation.lat}, ${s.finishLocation.lon}`:null),
+    walletField('schedule','Расписание',scheduleText)
+  ].filter(Boolean);
+
+  return {
+    formatVersion:1,
+    passTypeIdentifier:env.WALLET_PASS_TYPE_IDENTIFIER,
+    serialNumber:record.serialNumber,
+    teamIdentifier:env.WALLET_TEAM_IDENTIFIER,
+    organizationName:'Rally Fans Map',
+    description:`${s.raceName||'Rally Fans Map'} · ${s.stageName||'СУ'}`,
+    logoText:'Rally Fans Map Offline',
+    foregroundColor:'rgb(255,255,255)',
+    backgroundColor:'rgb(15,15,15)',
+    labelColor:'rgb(210,210,210)',
+    webServiceURL:`${requestUrl.origin}/api/wallet/v1`,
+    authenticationToken:record.authenticationToken,
+    relevantDate:s.relevantAt||undefined,
+    locations:locations.length?locations:undefined,
+    eventTicket:{
+      primaryFields:[walletField('stage','СУ',s.stageName)].filter(Boolean),
+      secondaryFields,
+      auxiliaryFields,
+      backFields
+    }
+  };
+}
+
 async function signedWalletPassResponse(env,requestUrl,record){
   if(!walletConfigured(env)) {
     return json({
@@ -430,20 +495,17 @@ async function signedWalletPassResponse(env,requestUrl,record){
   const headers={'content-type':'application/json'};
   if(env.WALLET_SIGNER_TOKEN) headers.authorization=`Bearer ${env.WALLET_SIGNER_TOKEN}`;
 
-  const webServiceURL=`${requestUrl.origin}/api/wallet/v1`;
+  const pass=buildWalletPassJson(env,requestUrl,record);
   const signer=await fetch(env.WALLET_SIGNER_URL,{
     method:'POST',
     headers,
     body:JSON.stringify({
-      formatVersion:1,
-      passTypeIdentifier:env.WALLET_PASS_TYPE_IDENTIFIER,
-      teamIdentifier:env.WALLET_TEAM_IDENTIFIER,
-      serialNumber:record.serialNumber,
-      authenticationToken:record.authenticationToken,
-      webServiceURL,
-      organizationName:'Rally Fans Map',
-      description:`${record.state?.raceName||'Rally Fans Map'} · ${record.state?.stageName||'СУ'}`,
-      state:record.state
+      pass,
+      state:record.state,
+      assets:{
+        iconUrl:`${requestUrl.origin}/rfm/icon.png`,
+        logoUrl:`${requestUrl.origin}/rfm/icon.png`
+      }
     })
   });
 
@@ -532,6 +594,7 @@ async function handleWalletApi(request,env,url){
 
     return json({
       ok:true,
+      configured:walletConfigured(env),
       updated:Boolean(existing),
       serialNumber,
       addUrl:`/api/wallet/pass/${encodeURIComponent(serialNumber)}`,
