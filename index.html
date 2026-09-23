@@ -9,6 +9,18 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <script>
+    (() => {
+      const nav = navigator;
+      const ios = /iPhone|iPad|iPod/i.test(nav.userAgent)
+        || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1);
+      const standalone = nav.standalone === true
+        || window.matchMedia?.('(display-mode: standalone)').matches
+        || window.matchMedia?.('(display-mode: fullscreen)').matches;
+      document.documentElement.dataset.ios = ios ? 'true' : 'false';
+      document.documentElement.dataset.standalone = standalone ? 'true' : 'false';
+    })();
+  </script>
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" type="image/png" href="/rfm/icon.png?v=0502" />
   <link rel="apple-touch-icon" sizes="180x180" href="/rfm/icon.png?v=0502" />
