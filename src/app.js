@@ -162,7 +162,7 @@ async function refreshPushUi() {
   }
   const sub=await getPushSubscription().catch(()=>null);
   if(sub){
-    enable.textContent='Уведомления включены ✓';
+    enable.textContent='Выключить уведомления';
     enable.classList.add('downloaded');
     test.hidden=false;
     setPushStatus('Устройство подписано на уведомления.');
@@ -182,6 +182,21 @@ async function enablePushNotifications() {
   const btn=$('pushEnableBtn');
   btn.disabled=true;
   try {
+    const reg=await navigator.serviceWorker.ready;
+    const existing=await reg.pushManager.getSubscription();
+
+    if(existing){
+      const endpoint=existing.endpoint;
+      await existing.unsubscribe();
+      fetch('/api/push/unsubscribe',{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({endpoint})
+      }).catch(()=>{});
+      setPushStatus('Уведомления выключены.');
+      return;
+    }
+
     if(Notification.permission==='denied') throw new Error('Уведомления запрещены в настройках системы');
     const permission=Notification.permission==='granted'
       ? 'granted'
@@ -192,14 +207,10 @@ async function enablePushNotifications() {
     const config=await configRes.json();
     if(!config?.enabled || !config?.publicKey) throw new Error('Push ещё не настроен на Cloudflare Pages');
 
-    const reg=await navigator.serviceWorker.ready;
-    let subscription=await reg.pushManager.getSubscription();
-    if(!subscription){
-      subscription=await reg.pushManager.subscribe({
-        userVisibleOnly:true,
-        applicationServerKey:base64UrlToUint8Array(config.publicKey)
-      });
-    }
+    const subscription=await reg.pushManager.subscribe({
+      userVisibleOnly:true,
+      applicationServerKey:base64UrlToUint8Array(config.publicKey)
+    });
 
     const saveRes=await fetch('/api/push/subscribe',{
       method:'POST',
