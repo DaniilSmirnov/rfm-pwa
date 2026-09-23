@@ -4,7 +4,7 @@ import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTil
 import { normalizePackage } from './normalize.js';
 import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
-import { googleMapsDirections, googleMapsPoint, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
+import { googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
 import { downloadOfflineMap, removeOfflineMap, buildDownloadPlan } from './offline-map.js';
 
 const $ = id => document.getElementById(id);
@@ -28,7 +28,7 @@ async function sharePoint(point) {
   if(!point) return false;
   const title=point.name || 'Точка RallyFans Map';
   const coords=coordinateText(point);
-  const url=googleMapsPoint(point);
+  const url=yandexWebFallback(point);
   const data={title,text:`${title}\n${coords}`,url};
   try {
     if(navigator.share){
