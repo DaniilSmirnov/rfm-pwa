@@ -70,3 +70,8 @@ Call this endpoint once per minute from a scheduler. Cloudflare Pages itself doe
 When a reminder is due, Pages stores the notification text temporarily, sends an empty Web Push, and the Service Worker resolves the pending message from `/api/push/pending`. If that lookup fails, the Service Worker shows the generic RallyFans fallback notification.
 
 Current parser accepts schedule dates such as `dd.mm.yyyy`, `dd/mm/yyyy`, `dd-mm-yyyy`, and `dd.mm`/`dd/mm`/`dd-mm` when a race year can be inferred. Unparseable schedule entries are skipped rather than guessed.
+
+
+### Per-stage notification subscriptions
+
+Scheduled race reminders are opt-in per special stage. The schedule UI shows a `🔔 Уведомлять` control for detected `СУ`/`SS` entries. Preferences are stored locally in the PWA by race and stage, and only subscribed stages produce opening/closing reminders at T-60, T-30 and T-15 minutes. Updating the choice rebuilds that race's server-side reminder queue without duplicates.
