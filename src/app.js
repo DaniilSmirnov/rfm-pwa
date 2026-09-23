@@ -12,6 +12,40 @@ let geoWatchId = null;
 let deferredPrompt = null;
 let catalog = [];
 let selectedPoint = null;
+let mapLibreLoadPromise = null;
+
+function loadScriptOnce(src) {
+  return new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(s=>s.src===src);
+    if(existing){
+      if(window.maplibregl) return resolve();
+      existing.addEventListener('load',resolve,{once:true});
+      existing.addEventListener('error',reject,{once:true});
+      return;
+    }
+    const s=document.createElement('script');
+    s.src=src; s.async=true; s.onload=resolve; s.onerror=()=>reject(new Error(`Не удалось загрузить ${src}`));
+    document.head.appendChild(s);
+  });
+}
+function ensureStyle(href){
+  if([...document.styleSheets].some(s=>s.href===href) || document.querySelector(`link[href="${href}"]`)) return;
+  const l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l);
+}
+async function ensureMapLibre(){
+  if(window.maplibregl) return window.maplibregl;
+  if(!mapLibreLoadPromise){
+    mapLibreLoadPromise=(async()=>{
+      ensureStyle('https://cdn.jsdelivr.net/npm/maplibre-gl@6.10.0/dist/maplibre-gl.css');
+      try { await loadScriptOnce('https://cdn.jsdelivr.net/npm/maplibre-gl@6.10.0/dist/maplibre-gl.js'); }
+      catch(e){ throw new Error(`MapLibre не загрузился: ${e.message}`); }
+      if(!window.maplibregl) throw new Error('MapLibre загрузился без глобального maplibregl');
+      if(typeof window.maplibregl.supported==='function' && !window.maplibregl.supported()) throw new Error('WebGL недоступен в этом браузере/PWA');
+      return window.maplibregl;
+    })();
+  }
+  return mapLibreLoadPromise;
+}
 
 const esc = s => String(s ?? '').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const asArray = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
@@ -159,7 +193,11 @@ function modernImages(items){ return asArray(items).map(x=>x?.image).filter(v=>t
 function unique(arr){ return [...new Set(arr)]; }
 function mediaSection(title, images, emptyText='Информация появится позже :)'){
   const list=unique(images);
-  return `<section class="race-material"><div class="full-width-line"></div><div class="block-title-row"><div class="block-title">${esc(title)}</div>${list.length>1?'<span class="slide-hint">ЛИСТАЙ →</span>':''}</div>${list.length?`<div class="media-strip">${list.map((name,i)=>`<button class="media-card" data-media-name="${esc(name)}" aria-label="Открыть ${esc(title)} ${i+1}"><img loading="lazy" src="${assetUrl(name)}" alt="${esc(title)}" /></button>`).join('')}</div>`:`<p class="gray-label">${esc(emptyText)}</p>`}</section>`;
+  const count=list.length ? ` · ${list.length}` : '';
+  return `<details class="race-material collapsible-section">
+    <summary><span class="block-title">${esc(title)}</span><span class="summary-meta">${esc(count)}</span><span class="summary-chevron">⌄</span></summary>
+    <div class="collapsible-body">${list.length?`<div class="media-strip">${list.map((name,i)=>`<button class="media-card" data-media-name="${esc(name)}" aria-label="Открыть ${esc(title)} ${i+1}"><img loading="lazy" src="${assetUrl(name)}" alt="${esc(title)}" /></button>`).join('')}</div>`:`<p class="gray-label">${esc(emptyText)}</p>`}</div>
+  </details>`;
 }
 function renderRaceMedia(p){
   const race=p.original||{};
@@ -175,7 +213,7 @@ function renderRaceMedia(p){
     mediaSection('ЗАЯВЛЕННЫЕ ЭКИПАЖИ',crews),
     mediaSection('РЕЗУЛЬТАТЫ',results),
     extra.length?mediaSection('МАТЕРИАЛЫ ГОНКИ',extra):'',
-    `<section class="race-material"><div class="full-width-line"></div><div class="block-title">КАК ЭТО БЫЛО</div>${race.how_it_was?`<div class="how-it-was">${race.how_it_was}</div>`:'<p class="gray-label">Информация появится позже :)</p>'}</section>`
+    `<details class="race-material collapsible-section"><summary><span class="block-title">КАК ЭТО БЫЛО</span><span class="summary-chevron">⌄</span></summary><div class="collapsible-body">${race.how_it_was?`<div class="how-it-was">${race.how_it_was}</div>`:'<p class="gray-label">Информация появится позже :)</p>'}</div></details>`
   ].join('');
   root.querySelectorAll('[data-media-name]').forEach(btn=>btn.addEventListener('click',()=>openImageModal(btn.dataset.mediaName)));
 }
@@ -190,6 +228,14 @@ async function selectPackage(id){
   $('mapTitle').textContent=p.name;
   const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:p.id} : null;
   $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}сохранено ${new Date(p.savedAt).toLocaleString()}`;
+  try {
+    await ensureMapLibre();
+    const diag=$('offlineMapDiag');
+    if(diag){ diag.hidden=false; diag.textContent=`MapLibre ✓ · WebGL ✓${om?` · локальная подложка ${om.tileCount||0} тайлов`:''}`; }
+  } catch(e) {
+    const diag=$('offlineMapDiag');
+    if(diag){ diag.hidden=false; diag.textContent=`Карта недоступна: ${e.message}`; }
+  }
   renderMap($('map'),p.geojson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   renderPointList(p);

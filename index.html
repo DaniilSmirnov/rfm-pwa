@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#000000" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/icon.svg" />
+  <link rel="apple-touch-icon" href="/rfm/icon.png" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="/src/styles.css" />
   <title>Rally Fans Map · Offline</title>
@@ -74,10 +75,13 @@
       <div id="map" class="map" aria-label="offline rally map"></div>
       <div id="mapLegend" class="legend"></div>
       <div class="full-width-line"></div>
-      <section class="points-panel">
-        <div class="section-head"><div><div class="block-title">ГДЕ СМОТРЕТЬ?</div><p class="muted small">Точки можно открыть во внешнем навигаторе без доступа к геопозиции PWA.</p></div></div>
-        <div id="pointList" class="point-list"></div>
-      </section>
+      <details class="points-panel collapsible-section">
+        <summary><span class="block-title">ГДЕ СМОТРЕТЬ?</span><span class="summary-chevron">⌄</span></summary>
+        <div class="collapsible-body">
+          <p class="muted small">Точки можно открыть во внешнем навигаторе без доступа к геопозиции PWA.</p>
+          <div id="pointList" class="point-list"></div>
+        </div>
+      </details>
       <aside id="pointActions" class="point-actions" hidden>
         <div class="point-actions-copy"><div class="eyebrow">выбранная точка</div><strong id="pointName"></strong><span id="pointCoords" class="muted"></span></div>
         <div class="actions point-buttons"><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>

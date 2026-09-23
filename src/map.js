@@ -194,7 +194,17 @@ export function renderMap(container, fc, userPos = null, onPointClick = null, op
   try {
     if (window.maplibregl) return renderMapLibre(container,fc,userPos,onPointClick,options);
   } catch (e) {
-    console.warn('MapLibre render failed, falling back to offline SVG map',e);
+    console.error('MapLibre render failed',e);
+    options.onMapError?.(e?.message || String(e));
+    if (options.offlineMap?.ready) {
+      if (activeMap) { try { activeMap.remove(); } catch {} activeMap=null; }
+      container.innerHTML = `<div class="empty map-engine-error"><strong>Не удалось запустить интерактивную карту.</strong><br><span>${esc(e?.message || String(e))}</span></div>`;
+      return null;
+    }
+  }
+  if (options.offlineMap?.ready) {
+    container.innerHTML = '<div class="empty map-engine-error"><strong>MapLibre не загрузился.</strong><br>Офлайн-тайлы сохранены, но движок карты недоступен.</div>';
+    return null;
   }
   return renderFallback(container,fc,userPos,onPointClick);
 }
