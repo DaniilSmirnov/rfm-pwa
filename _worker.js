@@ -208,7 +208,7 @@ async function handlePushApi(request, env, url) {
     const subscription=body?.subscription;
     const endpoint=subscription?.endpoint;
     const raceId=String(body?.raceId||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,64);
-    const reminders=Array.isArray(body?.reminders)?body.reminders.filter(validReminder).slice(0,48):[];
+    const reminders=Array.isArray(body?.reminders)?body.reminders.filter(validReminder).slice(0,192):[];
     if(!pushEndpointAllowed(endpoint) || !raceId) return json({ok:false,error:'Invalid subscription or raceId'},400);
     const subHash=await subscriptionHash(endpoint);
     await clearReminderPrefix(env.PUSH_SUBSCRIPTIONS,reminderPrefix(subHash,raceId));
