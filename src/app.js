@@ -177,6 +177,84 @@ async function refreshPushUi() {
   }
 }
 
+function raceYearHint(pkg){
+  const raw=String(pkg?.summary?.dates || pkg?.original?.dates || pkg?.original?.date_race || '');
+  const m=raw.match(/\b(20\d{2})\b/);
+  return m?Number(m[1]):new Date().getFullYear();
+}
+function parseScheduleDateTime(dateText,timeText,pkg){
+  const time=String(timeText||'').match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if(!time) return null;
+  const raw=String(dateText||'').trim();
+  let d=raw.match(/\b(\d{1,2})[.\/-](\d{1,2})[.\/-](20\d{2})\b/);
+  let day,month,year;
+  if(d){
+    day=Number(d[1]); month=Number(d[2]); year=Number(d[3]);
+  } else {
+    d=raw.match(/\b(\d{1,2})[.\/-](\d{1,2})\b/);
+    if(!d) return null;
+    day=Number(d[1]); month=Number(d[2]); year=raceYearHint(pkg);
+  }
+  const result=new Date(year,month-1,day,Number(time[1]),Number(time[2]),0,0);
+  if(result.getFullYear()!==year || result.getMonth()!==month-1 || result.getDate()!==day) return null;
+  return result;
+}
+
+function buildRaceReminders(pkg, leadMinutes=30){
+  const schedule=asArray(pkg?.original?.schedule);
+  const now=Date.now();
+  const reminders=[];
+  for(const item of schedule){
+    for(const event of asArray(item?.events)){
+      const startsAt=parseScheduleDateTime(item?.date,event?.time,pkg);
+      if(!startsAt) continue;
+      const dueAt=startsAt.getTime()-leadMinutes*60*1000;
+      if(dueAt<=now || dueAt>now+14*24*60*60*1000) continue;
+      const eventName=String(event?.text || item?.location || 'Событие').trim();
+      reminders.push({
+        dueAt,
+        title:String(pkg?.name || 'Rally Fans Map'),
+        body:`${eventName} через ${leadMinutes} мин · ${String(event?.time||'').trim()}`,
+        url:'/',
+        tag:`rfm-race-${pkg?.raceId ?? pkg?.id ?? 'race'}`,
+        ttlSeconds:Math.max(1800,leadMinutes*60)
+      });
+    }
+  }
+  return reminders.slice(0,48);
+}
+
+async function scheduleRaceReminders(pkg){
+  if(!pkg || !pushSupported()) return {stored:0,skipped:true};
+  const subscription=await getPushSubscription();
+  if(!subscription) return {stored:0,skipped:true};
+  const raceId=String(pkg.raceId ?? pkg.id ?? '').trim();
+  if(!raceId) return {stored:0,skipped:true};
+  const reminders=buildRaceReminders(pkg,30);
+  const res=await fetch('/api/push/schedule',{
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body:JSON.stringify({subscription:subscription.toJSON(),raceId,reminders})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось запланировать напоминания');
+  return {stored:Number(data.stored)||0,skipped:false};
+}
+
+async function scheduleAllSavedReminders(){
+  const pkgs=await getAllPackages();
+  let total=0;
+  for(const pkg of pkgs){
+    try{
+      const result=await scheduleRaceReminders(pkg);
+      total+=result.stored||0;
+    }catch(e){
+      console.warn('Could not schedule race reminders',pkg?.id,e);
+    }
+  }
+  return total;
+}
+
 async function enablePushNotifications() {
   if(!pushSupported()) return refreshPushUi();
   const btn=$('pushEnableBtn');
@@ -219,9 +297,14 @@ async function enablePushNotifications() {
     });
     const saved=await saveRes.json();
     if(!saveRes.ok || !saved?.ok) throw new Error(saved?.error || 'Не удалось сохранить push-подписку');
-    setPushStatus(saved.stored
-      ? 'Уведомления включены и подписка сохранена.'
-      : 'Уведомления включены. KV-хранилище ещё не подключено: доступен тестовый push.');
+    if(saved.stored){
+      const count=await scheduleAllSavedReminders();
+      setPushStatus(count
+        ? `Уведомления включены · запланировано напоминаний: ${count}.`
+        : 'Уведомления включены. Будущих событий для напоминаний пока нет.');
+    } else {
+      setPushStatus('Уведомления включены. KV-хранилище ещё не подключено: доступен тестовый push.');
+    }
   } catch(e) {
     setPushStatus(`Push: ${e.message}`,'geo-error');
   } finally {
@@ -466,7 +549,14 @@ async function downloadRace(id,button){
     if(pkg.assetNames.length){
       await cacheRaceAssets(pkg,(done,total)=>{ button.textContent=`Файлы ${done}/${total}`; });
     }
-    currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id); button.textContent='Сохранено ✓';
+    currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id);
+    try {
+      const scheduled=await scheduleRaceReminders(pkg);
+      if(scheduled.stored) setPushStatus(`Для этой гонки запланировано напоминаний: ${scheduled.stored}.`,'geo-ok');
+    } catch(e) {
+      console.warn('Push reminder scheduling skipped',e);
+    }
+    button.textContent='Сохранено ✓';
   }catch(err){ alert(`Не удалось скачать гонку: ${err.message}`); button.textContent=old; }
   finally{ button.disabled=false; }
 }
