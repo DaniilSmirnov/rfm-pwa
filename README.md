@@ -1,4 +1,4 @@
-# RallyFans Companion v0.5.4
+# RallyFans Companion v0.5.5
 
 Cloudflare Pages build based on v0.3.4.3.
 
@@ -12,7 +12,7 @@ Cloudflare Pages build based on v0.3.4.3.
 
 Deploy the whole directory/ZIP to the same Cloudflare Pages project.
 
-Health check: `/api/health` should report `0.5.4`.
+Health check: `/api/health` should report `0.5.5`.
 
 
 ## Web Share
@@ -21,7 +21,7 @@ Spectator points can be shared with the system share sheet (`navigator.share`). 
 
 ## Web Push on Cloudflare Pages
 
-The v0.5.4 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
+The v0.5.5 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
 
 Generate a VAPID key pair locally:
 
@@ -106,3 +106,8 @@ curl -X POST https://rallyfansmap.ru/api/push/broadcast \\
 ```
 
 `body` is required. `title`, `url`, `tag`, and `ttlSeconds` are optional. The worker stores the notification content in the per-subscription pending slot before sending the empty Web Push wake-up, so the service worker can display the requested title/body and open the supplied same-origin path on tap.
+
+
+### Rich offline basemap (0.5.5 Sortovala)
+
+Offline vector tiles are rendered semantically by default instead of as generic geometry. The map now distinguishes road hierarchy, land use/natural areas, water, buildings, rail/transit, boundaries, physical features and POIs. Labels are extracted directly from downloaded vector-tile properties for settlements, roads and refs, POIs, peaks/elevation, water, land features, transit and named buildings, with zoom-aware decluttering. This uses data already present in the downloaded PMTiles and does not require a separate online API.
