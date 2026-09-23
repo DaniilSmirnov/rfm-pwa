@@ -290,6 +290,16 @@ async function handlePushApi(request, env, url, ctx) {
     const auth=request.headers.get('authorization')||'';
     if (!env.PUSH_ADMIN_TOKEN || auth!==`Bearer ${env.PUSH_ADMIN_TOKEN}`) return json({ok:false,error:'Unauthorized'},401);
 
+    const body=await readJson(request);
+    const title=String(body?.title||'Rally Fans Map').trim().slice(0,120);
+    const message=String(body?.body||'').trim().slice(0,240);
+    const targetUrl=String(body?.url||'/').trim().slice(0,300);
+    const tag=String(body?.tag||`rfm-broadcast-${Date.now()}`).trim().slice(0,100);
+    const ttlSeconds=Math.max(300,Math.min(172800,Number(body?.ttlSeconds)||21600));
+
+    if(!message) return json({ok:false,error:'Broadcast body is required'},400);
+    if(!targetUrl.startsWith('/')) return json({ok:false,error:'Broadcast url must be a same-origin path'},400);
+
     let cursor=undefined;
     let sent=0,failed=0,removed=0;
     do {
@@ -303,10 +313,24 @@ async function handlePushApi(request, env, url, ctx) {
           continue;
         }
         try {
-          const result=await sendEmptyPush(endpoint,env);
+          const hash=await subscriptionHash(endpoint);
+          await env.PUSH_SUBSCRIPTIONS.put(
+            `pending:${hash}`,
+            JSON.stringify({
+              title,
+              body:message,
+              url:targetUrl,
+              tag,
+              createdAt:Date.now()
+            }),
+            {expirationTtl:ttlSeconds}
+          );
+
+          const result=await sendEmptyPush(endpoint,env,ttlSeconds);
           if (result.ok) sent++;
           else {
             failed++;
+            await env.PUSH_SUBSCRIPTIONS.delete(`pending:${hash}`);
             if ([404,410].includes(result.status)) {
               await env.PUSH_SUBSCRIPTIONS.delete(key.name);
               removed++;
@@ -319,7 +343,7 @@ async function handlePushApi(request, env, url, ctx) {
       cursor=page.list_complete?undefined:page.cursor;
     } while(cursor);
 
-    return json({ok:true,sent,failed,removed});
+    return json({ok:true,sent,failed,removed,title,body:message,url:targetUrl,tag,ttlSeconds});
   }
 
   return json({ok:false,error:'Unsupported push API path'},404);
@@ -722,7 +746,7 @@ function apiTarget(pathname) {
 
 function commonHeaders(extra = {}) {
   return {
-    'x-rfm-worker': 'rallyfans-companion-v0.5.3',
+    'x-rfm-worker': 'rallyfans-companion-v0.5.4',
     'x-content-type-options': 'nosniff',
     ...extra,
   };
@@ -865,7 +889,7 @@ export default {
       return json({
         ok: true,
         service: 'rallyfans-companion',
-        version: '0.5.3',
+        version: '0.5.4',
         upstream: API_ORIGIN,
         basemap: BASEMAP_PM,
         hint: 'If this endpoint works, the Cloudflare Pages Worker is active.'
