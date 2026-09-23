@@ -16,6 +16,40 @@ let selectedPoint = null;
 const esc = s => String(s ?? '').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const asArray = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
 function fmtBytes(n=0) { if (n<1024) return `${n} Б`; if(n<1024**2) return `${(n/1024).toFixed(1)} КБ`; return `${(n/1024**2).toFixed(1)} МБ`; }
+
+function startOfLocalDay(date=new Date()) {
+  return new Date(date.getFullYear(),date.getMonth(),date.getDate());
+}
+function parseDdMmYyyy(value) {
+  const m=String(value||'').match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);
+  if(!m) return null;
+  const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));
+  return Number.isNaN(d.getTime())?null:d;
+}
+function raceDateRange(race) {
+  const raw=String(race?.dates || race?.summary?.dates || race?.date_race || '').trim();
+  const matches=[...raw.matchAll(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/g)];
+  if(matches.length){
+    const dates=matches.map(m=>new Date(Number(m[3]),Number(m[2])-1,Number(m[1]))).filter(d=>!Number.isNaN(d.getTime()));
+    if(dates.length) return {start:dates[0],end:dates[dates.length-1]};
+  }
+  const single=parseDdMmYyyy(raw);
+  return single?{start:single,end:single}:null;
+}
+function distanceFromTodayDays(race) {
+  const range=raceDateRange(race); if(!range) return Infinity;
+  const today=startOfLocalDay();
+  const start=startOfLocalDay(range.start), end=startOfLocalDay(range.end);
+  if(today>=start && today<=end) return 0;
+  const target=today<start?start:end;
+  return Math.abs(target-today)/86400000;
+}
+function raceWithinWeek(race){ return distanceFromTodayDays(race)<=7; }
+function pickDefaultRace(rows) {
+  const dated=rows.filter(r=>Number.isFinite(distanceFromTodayDays(r)));
+  if(!dated.length) return null;
+  return dated.slice().sort((a,b)=>distanceFromTodayDays(a)-distanceFromTodayDays(b))[0] || null;
+}
 function updateNetwork() { const online=navigator.onLine; $('networkBadge').textContent=online?'онлайн':'офлайн'; $('networkBadge').className=`badge ${online?'online':'offline'}`; }
 window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); });
 window.addEventListener('offline',updateNetwork); updateNetwork();
@@ -26,17 +60,32 @@ $('installBtn').onclick = async () => { if(!deferredPrompt) return; deferredProm
 async function refreshList() {
   const pkgs = (await getAllPackages()).sort((a,b)=>b.savedAt.localeCompare(a.savedAt));
   const list=$('packageList'); list.innerHTML='';
+  const q=($('packageSearch')?.value||'').trim().toLowerCase();
+  let visible;
+  if(q){
+    visible=pkgs.filter(p=>[
+      p.name,p.summary?.stage,p.summary?.dates,p.summary?.city,p.summary?.category,p.summary?.status
+    ].some(v=>String(v||'').toLowerCase().includes(q)));
+  } else {
+    const near=pickDefaultRace(pkgs.filter(raceWithinWeek));
+    visible=near?[near]:(pkgs[0]?[pkgs[0]]:[]);
+  }
+
   if(!pkgs.length) list.innerHTML='<p class="muted">Пока ничего не скачано.</p>';
-  for(const p of pkgs){
+  else if(!visible.length) list.innerHTML='<p class="muted">Ничего не найдено.</p>';
+
+  for(const p of visible){
     const node=$('packageTpl').content.cloneNode(true); const row=node.querySelector('.package-row');
     node.querySelector('.package-name').textContent=p.name;
     const summary=[p.summary?.stage,p.summary?.dates,p.summary?.city].filter(Boolean).join(' · ');
     node.querySelector('.package-meta').textContent=summary || `${p.geojson?.features?.length||0} объектов · ${fmtBytes(p.size)}`;
     row.onclick=()=>selectPackage(p.id); list.appendChild(node);
   }
+
   const total=pkgs.reduce((s,p)=>s+(p.size||0),0); const mapStats=await getMapStorageStats();
   $('storageStats').innerHTML=`<strong>${pkgs.length} гонок</strong><span class="muted">JSON: ${fmtBytes(total)} · карты: ${fmtBytes(mapStats.bytes)} (${mapStats.count} тайлов)</span>`;
-  if (!currentPackageId && pkgs[0]) selectPackage(pkgs[0].id);
+
+  if (!currentPackageId && visible[0]) selectPackage(visible[0].id);
   renderCatalog();
 }
 
@@ -71,12 +120,12 @@ function renderPointList(p) {
   root.innerHTML = pts.map((f, i) => {
     const pt = pointFromFeature(f);
     return `<article class="point-row" data-point-index="${i}">
-      <div class="point-row-copy"><strong>${esc(pt.name)}</strong><span class="muted">${esc(coordinateText(pt))}</span></div>
+      <div class="point-row-copy"><strong><img class="rfm-icon point-icon" src="/assets/location.svg" alt="" />${esc(pt.name)}</strong><span class="muted">${esc(coordinateText(pt))}</span></div>
       <div class="point-nav-buttons">
         <button class="button compact primary" data-nav="google">Google Maps</button>
         <button class="button compact" data-nav="yandex">Yandex</button>
         <button class="button compact" data-nav="mapsme">MAPS.ME</button>
-        <button class="button compact" data-nav="copy">Копировать</button>
+        <button class="button compact" data-nav="copy"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button>
       </div>
     </article>`;
   }).join('');
@@ -140,7 +189,7 @@ async function selectPackage(id){
   currentPackageId=id; const p=await getPackage(id); if(!p)return;
   $('mapTitle').textContent=p.name;
   const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:p.id} : null;
-  $('mapSubtitle').textContent=`${om?'ИСПОЛЬЗУЕТСЯ офлайн-подложка · ':navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}сохранено ${new Date(p.savedAt).toLocaleString()}`;
+  $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}сохранено ${new Date(p.savedAt).toLocaleString()}`;
   renderMap($('map'),p.geojson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   renderPointList(p);
@@ -169,8 +218,11 @@ $('fileInput').addEventListener('change', async e => {
 
 function filteredCatalog(){
   const q=$('catalogSearch').value.trim().toLowerCase();
-  if(!q) return catalog;
-  return catalog.filter(r=>[r.name,r.city_race,r.city_race_details,r.category_race,r.stage_race,r.dates].some(v=>String(v||'').toLowerCase().includes(q)));
+  if(q){
+    return catalog.filter(r=>[r.name,r.city_race,r.city_race_details,r.category_race,r.stage_race,r.dates,r.date_race].some(v=>String(v||'').toLowerCase().includes(q)));
+  }
+  const candidate=pickDefaultRace(catalog.filter(raceWithinWeek));
+  return candidate?[candidate]:[];
 }
 
 async function downloadedIds(){ return new Set((await getAllPackages()).filter(x=>x.raceId!=null).map(x=>Number(x.raceId))); }
@@ -178,7 +230,12 @@ async function downloadedIds(){ return new Set((await getAllPackages()).filter(x
 async function renderCatalog(){
   const root=$('catalogList'); if(!root) return;
   const saved=await downloadedIds(); const rows=filteredCatalog();
-  if(!rows.length){ root.innerHTML='<p class="muted">Ничего не найдено.</p>'; return; }
+  if(!rows.length){
+    root.innerHTML=$('catalogSearch').value.trim()
+      ? '<p class="muted">Ничего не найдено.</p>'
+      : '<p class="muted">Нет гонок в пределах недели. Используй поиск.</p>';
+    return;
+  }
   root.innerHTML=rows.slice().reverse().map(r=>`<article class="catalog-row" style="--race-bg:url('${assetUrl(r.image||'')}')">
     <div class="catalog-shade"></div><div class="catalog-copy"><div class="catalog-tags"><span>${esc(r.status_race||'')}</span><span>${esc(r.stage_race||'')}</span></div><span class="catalog-date">${esc(r.dates||r.date_race||'')}</span><strong>${esc(r.name||`Ралли #${r.id}`)}</strong><span>${esc([r.city_race_details,r.city_race].filter(Boolean).join(' · '))}</span></div>
     <button class="button ${saved.has(Number(r.id))?'downloaded':'primary'}" data-race-id="${Number(r.id)}">${saved.has(Number(r.id))?'Обновить офлайн':'Скачать офлайн'}</button>
@@ -259,7 +316,8 @@ function setMapUiText({button,status,deleteHidden,disabled}){
 function updateOfflineMapUi(p){
   if(!p){ setMapUiText({button:'Скачать офлайн-карту',status:'Сначала выбери сохранённую гонку.',deleteHidden:true,disabled:true}); return; }
   if(p?.offlineMap?.ready){
-    setMapUiText({button:`Обновить карту (${fmtBytes(p.offlineMap.bytes||0)})`,status:`Офлайн-подложка готова · ${p.offlineMap.tileCount||0} тайлов · ${fmtBytes(p.offlineMap.bytes||0)} · z${p.offlineMap.minZoom}–${p.offlineMap.maxZoom}`,deleteHidden:false,disabled:false});
+    const layerNames=(p.offlineMap.vectorLayers||[]).map(v=>typeof v==='string'?v:v?.id).filter(Boolean);
+    setMapUiText({button:`Обновить карту (${fmtBytes(p.offlineMap.bytes||0)})`,status:`Офлайн-подложка готова · ${p.offlineMap.tileCount||0} тайлов · ${layerNames.length} слоёв · ${fmtBytes(p.offlineMap.bytes||0)} · z${p.offlineMap.minZoom}–${p.offlineMap.maxZoom}${layerNames.length?` · ${layerNames.slice(0,8).join(', ')}`:''}`,deleteHidden:false,disabled:false});
   } else {
     let msg='Офлайн-подложка ещё не скачана.';
     try { const plan=buildDownloadPlan(p.geojson); msg=`Будет скачано до ${plan.tiles.length} векторных тайлов · z${plan.minZoom}–${plan.maxZoom}. Размер зависит от района.`; } catch {}
@@ -285,6 +343,7 @@ for(const id of ['downloadMapBtn','downloadMapBtnTop']) if($(id)) $(id).onclick=
 for(const id of ['deleteMapBtn','deleteMapBtnTop']) if($(id)) $(id).onclick=handleDeleteMap;
 
 $('catalogSearch').addEventListener('input',renderCatalog);
+$('packageSearch')?.addEventListener('input',refreshList);
 $('refreshCatalogBtn').onclick=loadCatalog;
 $('clearBtn').onclick = async () => { if(!confirm('Удалить все сохранённые гонки, карты и изображения?'))return; await deleteAllPackages(); await clearMapTiles(); if('caches' in window) await caches.delete('rfm-race-assets-v1'); currentPackageId=null; $('raceDetails').hidden=true; $('map').innerHTML='<div class="empty">Офлайн-данные удалены</div>'; await refreshList(); };
 async function updateGeoStatus(text, cls='') { const el=$('geoStatus'); if(el){ el.textContent=text; el.className=`muted small ${cls}`; } }
