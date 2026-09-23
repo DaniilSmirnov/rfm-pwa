@@ -1,0 +1,55 @@
+name: Vendor MapLibre 6.10.0
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - .github/workflows/vendor-maplibre.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Download official MapLibre dist
+        run: |
+          set -euxo pipefail
+          rm -rf /tmp/maplibre-dist vendor/maplibre
+          mkdir -p /tmp/maplibre-dist vendor/maplibre
+          curl -fL             https://github.com/maplibre/maplibre-gl-js/releases/download/v6.10.0/dist.zip             -o /tmp/maplibre-dist.zip
+          unzip -q /tmp/maplibre-dist.zip -d /tmp/maplibre-dist
+
+          for file in maplibre-gl.mjs maplibre-gl-worker.mjs maplibre-gl-shared.mjs maplibre-gl.css; do
+            src="$(find /tmp/maplibre-dist -type f -name "$file" -print -quit)"
+            test -n "$src"
+            cp "$src" "vendor/maplibre/$file"
+          done
+
+          cat > vendor/maplibre/README.md <<'EOF'
+          # MapLibre GL JS
+
+          Vendored from the official MapLibre GL JS v6.10.0 release:
+          https://github.com/maplibre/maplibre-gl-js/releases/tag/v6.10.0
+
+          License: BSD-3-Clause.
+          EOF
+
+      - name: Commit vendored files to develop
+        run: |
+          set -euxo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/maplibre
+          if git diff --cached --quiet; then
+            echo "MapLibre vendor files are already up to date"
+            exit 0
+          fi
+          git commit -m "Vendor MapLibre GL JS 6.10.0"
+          git push origin HEAD:develop
