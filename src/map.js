@@ -57,11 +57,14 @@ function basemapClass(){
   return basemapField('highway','pmap:kind','kind','class','type','natural','landuse','amenity','tourism','shop');
 }
 
-function roadWidth(){
+function roadWidth(casing=0){
+  // MapLibre only allows ["zoom"] as the input of a top-level step/interpolate.
+  // Keep the zoom interpolation itself at the root and add casing to each stop,
+  // rather than wrapping a zoom expression in ["+", ...].
   return ['interpolate',['linear'],['zoom'],
-    6,['match',basemapClass(),'motorway',2.2,'trunk',2,'primary',1.7,'secondary',1.4,'tertiary',1.1,.7],
-    10,['match',basemapClass(),'motorway',4.2,'trunk',3.8,'primary',3.2,'secondary',2.7,'tertiary',2.2,'residential',1.6,'service',1.2,'track',1.1,1.3],
-    14,['match',basemapClass(),'motorway',9,'trunk',8,'primary',7,'secondary',6,'tertiary',5,'residential',4,'service',3,'track',2.4,'path',1.8,'footway',1.6,'cycleway',1.8,2.5]
+    6,['match',basemapClass(),'motorway',2.2+casing,'trunk',2+casing,'primary',1.7+casing,'secondary',1.4+casing,'tertiary',1.1+casing,.7+casing],
+    10,['match',basemapClass(),'motorway',4.2+casing,'trunk',3.8+casing,'primary',3.2+casing,'secondary',2.7+casing,'tertiary',2.2+casing,'residential',1.6+casing,'service',1.2+casing,'track',1.1+casing,1.3+casing],
+    14,['match',basemapClass(),'motorway',9+casing,'trunk',8+casing,'primary',7+casing,'secondary',6+casing,'tertiary',5+casing,'residential',4+casing,'service',3+casing,'track',2.4+casing,'path',1.8+casing,'footway',1.6+casing,'cycleway',1.8+casing,2.5+casing]
   ];
 }
 
@@ -142,7 +145,7 @@ function semanticBasemapLayers(source,layerName,index){
 
   if(n.includes('road') || n.includes('transport')){
     return [
-      {id:`${prefix}-casing`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#aaa49b','line-width':['+',roadWidth(),1.6],'line-opacity':.95}},
+      {id:`${prefix}-casing`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#aaa49b','line-width':roadWidth(1.6),'line-opacity':.95}},
       {id:`${prefix}-road`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':roadColor(),'line-width':roadWidth(),'line-opacity':['case',['in',basemapField('tunnel'),['literal',['yes','true','1']]],.55,.98]}}
     ];
   }
