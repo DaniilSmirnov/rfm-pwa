@@ -49,28 +49,144 @@ function sourceColorExpression() {
   return ['case', ['==', ['slice', ['to-string', ['coalesce', ['get','kind'], '']], 0, 7], 'yandex-'], '#ffd21e', '#e63b2e'];
 }
 
-function basemapPalette(layerName){
-  const n=String(layerName||'').toLowerCase();
-  if(n.includes('water')) return {fill:'#bfdde8',line:'#7aaec2',circle:'#7aaec2'};
-  if(n.includes('earth')) return {fill:'#f2f0e9',line:'#d8d3c7',circle:'#d8d3c7'};
-  if(n.includes('landuse')||n.includes('landcover')) return {fill:'#dce8d2',line:'#b9c9ae',circle:'#8daa7d'};
-  if(n.includes('building')) return {fill:'#ddd8d2',line:'#c5beb6',circle:'#c5beb6'};
-  if(n.includes('road')||n.includes('transport')) return {fill:'#eee9df',line:'#b9b2a7',circle:'#b9b2a7'};
-  if(n.includes('boundar')) return {fill:'#f3f3f3',line:'#9ea2a8',circle:'#9ea2a8'};
-  if(n.includes('place')||n.includes('poi')) return {fill:'#ececec',line:'#b4b4b4',circle:'#777'};
-  return {fill:'#e5e5e5',line:'#aab0b5',circle:'#8e9499'};
+function basemapField(...names){
+  return ['to-string',['coalesce',...names.map(name=>['get',name]),'']];
 }
 
-function genericLayerTriplet(source, layerName, index){
+function basemapClass(){
+  return basemapField('highway','pmap:kind','kind','class','type','natural','landuse','amenity','tourism','shop');
+}
+
+function roadWidth(){
+  return ['interpolate',['linear'],['zoom'],
+    6,['match',basemapClass(),'motorway',2.2,'trunk',2,'primary',1.7,'secondary',1.4,'tertiary',1.1,.7],
+    10,['match',basemapClass(),'motorway',4.2,'trunk',3.8,'primary',3.2,'secondary',2.7,'tertiary',2.2,'residential',1.6,'service',1.2,'track',1.1,1.3],
+    14,['match',basemapClass(),'motorway',9,'trunk',8,'primary',7,'secondary',6,'tertiary',5,'residential',4,'service',3,'track',2.4,'path',1.8,'footway',1.6,'cycleway',1.8,2.5]
+  ];
+}
+
+function roadColor(){
+  return ['match',basemapClass(),
+    'motorway','#d98f49',
+    'trunk','#dfa35a',
+    'primary','#e7bb6f',
+    'secondary','#ead191',
+    'tertiary','#f1dfb1',
+    'residential','#ffffff',
+    'living_street','#ffffff',
+    'service','#f7f6f2',
+    'track','#c9b48f',
+    'path','#b7a98d',
+    'footway','#b7a98d',
+    'cycleway','#93b7a0',
+    '#ebe8df'
+  ];
+}
+
+function landColor(){
+  return ['match',basemapClass(),
+    'forest','#c9ddbd','wood','#c9ddbd',
+    'grass','#dce8c7','meadow','#dce8c7','park','#d7e9c5','recreation_ground','#d7e9c5',
+    'farmland','#eadfbd','farm','#eadfbd','orchard','#dce4bf','vineyard','#dce4bf',
+    'residential','#e8e4dd','commercial','#e5dfdc','retail','#e5dfdc','industrial','#ddd8d4',
+    'cemetery','#d5dfcf','grave_yard','#d5dfcf',
+    'sand','#eee2bd','beach','#f3e5b8','wetland','#c8ded2',
+    '#e3e6db'
+  ];
+}
+
+function poiColor(){
+  return ['match',basemapClass(),
+    'fuel','#d97838','charging_station','#64a36f',
+    'parking','#6f86a7','toilets','#8a75a2',
+    'hospital','#c85f67','clinic','#c85f67','pharmacy','#c85f67',
+    'viewpoint','#7a6f55','camp_site','#5f8a62','caravan_site','#5f8a62',
+    'supermarket','#8b6b9a','convenience','#8b6b9a',
+    'cafe','#a87a54','restaurant','#a87a54',
+    'hotel','#7d6a99','motel','#7d6a99','guest_house','#7d6a99',
+    '#777f89'
+  ];
+}
+
+function semanticBasemapLayers(source,layerName,index){
   const id=String(layerName).replace(/[^a-z0-9_-]/gi,'-');
-  const p=basemapPalette(layerName);
-  const lineWidth=String(layerName).toLowerCase().includes('road')
-    ? ['interpolate',['linear'],['zoom'],6,.8,10,1.7,14,4.8]
-    : ['interpolate',['linear'],['zoom'],6,.4,14,1.5];
+  const n=String(layerName||'').toLowerCase();
+  const prefix=`base-${index}-${id}`;
+
+  if(n.includes('earth') || n==='land' || n.includes('mask')){
+    return [
+      {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#f2f0e9','fill-opacity':1}}
+    ];
+  }
+
+  if(n.includes('water')){
+    return [
+      {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#b9dce9','fill-opacity':.96}},
+      {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#79afc5','line-width':['interpolate',['linear'],['zoom'],6,.7,14,2.8],'line-opacity':.95}}
+    ];
+  }
+
+  if(n.includes('landuse') || n.includes('landcover') || n.includes('natural')){
+    return [
+      {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':landColor(),'fill-opacity':.9}},
+      {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#a9b69d','line-width':['interpolate',['linear'],['zoom'],6,.4,14,1.4],'line-opacity':.85}},
+      {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],paint:{'circle-color':'#78906f','circle-radius':['interpolate',['linear'],['zoom'],7,1.5,14,3.5],'circle-opacity':.8}}
+    ];
+  }
+
+  if(n.includes('building')){
+    return [
+      {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],minzoom:12,paint:{'fill-color':'#d6d0c9','fill-opacity':.92,'fill-outline-color':'#bcb4ac'}}
+    ];
+  }
+
+  if(n.includes('road') || n.includes('transport')){
+    return [
+      {id:`${prefix}-casing`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#aaa49b','line-width':['+',roadWidth(),1.6],'line-opacity':.95}},
+      {id:`${prefix}-road`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':roadColor(),'line-width':roadWidth(),'line-opacity':['case',['in',basemapField('tunnel'),['literal',['yes','true','1']]],.55,.98]}}
+    ];
+  }
+
+  if(n.includes('transit') || n.includes('rail')){
+    return [
+      {id:`${prefix}-rail`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#72706d','line-width':['interpolate',['linear'],['zoom'],7,.7,14,2.2],'line-dasharray':[2,1.5],'line-opacity':.9}}
+    ];
+  }
+
+  if(n.includes('boundar')){
+    return [
+      {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#8d939a','line-width':['interpolate',['linear'],['zoom'],6,.6,14,1.8],'line-dasharray':[3,2],'line-opacity':.82}}
+    ];
+  }
+
+  if(n.includes('physical_line')){
+    return [
+      {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':['match',basemapClass(),'cliff','#857c72','ridge','#9b8b76','river','#79afc5','stream','#79afc5','#aaa49b'],'line-width':['interpolate',['linear'],['zoom'],7,.5,14,1.8],'line-opacity':.82}}
+    ];
+  }
+
+  if(n.includes('poi')){
+    return [
+      {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],minzoom:11,paint:{'circle-color':poiColor(),'circle-radius':['interpolate',['linear'],['zoom'],11,2.7,14,4.8],'circle-stroke-color':'#fff','circle-stroke-width':1.2,'circle-opacity':.96}}
+    ];
+  }
+
+  if(n.includes('place')){
+    return [
+      {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],paint:{'circle-color':'#555b61','circle-radius':['interpolate',['linear'],['zoom'],6,1.5,14,3.4],'circle-opacity':.8}}
+    ];
+  }
+
+  if(n.includes('physical_point')){
+    return [
+      {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],minzoom:9,paint:{'circle-color':'#706756','circle-radius':['interpolate',['linear'],['zoom'],9,2,14,4],'circle-stroke-color':'#f7f4ed','circle-stroke-width':1,'circle-opacity':.95}}
+    ];
+  }
+
   return [
-    {id:`base-${index}-${id}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':p.fill,'fill-opacity':0.9}},
-    {id:`base-${index}-${id}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':p.line,'line-width':lineWidth,'line-opacity':0.95}},
-    {id:`base-${index}-${id}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],paint:{'circle-color':p.circle,'circle-radius':['interpolate',['linear'],['zoom'],6,1.5,14,3.5],'circle-opacity':0.85}}
+    {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#e5e5e5','fill-opacity':.72}},
+    {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#9ca3aa','line-width':['interpolate',['linear'],['zoom'],6,.4,14,1.4],'line-opacity':.82}},
+    {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],paint:{'circle-color':'#7f878e','circle-radius':['interpolate',['linear'],['zoom'],6,1.4,14,3.2],'circle-opacity':.8}}
   ];
 }
 
@@ -78,9 +194,9 @@ function offlineBasemapLayers(source='offline-base', offlineMap={}){
   const metadataLayers=Array.isArray(offlineMap?.vectorLayers)
     ? offlineMap.vectorLayers.map(v=>typeof v==='string'?v:v?.id).filter(Boolean)
     : [];
-  const fallback=['earth','landuse','water','buildings','roads','boundaries','places','pois'];
+  const fallback=['earth','land','landuse','landcover','natural','water','physical_line','buildings','roads','transit','boundaries','places','physical_point','pois'];
   const names=[...new Set(metadataLayers.length?metadataLayers:fallback)];
-  return names.flatMap((name,i)=>genericLayerTriplet(source,name,i));
+  return names.flatMap((name,i)=>semanticBasemapLayers(source,name,i));
 }
 
 function baseStyle(offlineMap) {
@@ -170,6 +286,106 @@ function installRacePointLabels(map, points, onPointClick) {
   map.on('zoom',update);
 }
 
+function offlineLabelAnchor(geometry){
+  if(!geometry) return null;
+  const coords=geometry.coordinates;
+  if(geometry.type==='Point' && Array.isArray(coords)) return coords;
+  if(geometry.type==='LineString' && Array.isArray(coords) && coords.length) return coords[Math.floor(coords.length/2)];
+  if(geometry.type==='MultiLineString' && Array.isArray(coords) && coords[0]?.length) return coords[0][Math.floor(coords[0].length/2)];
+  const ring=geometry.type==='Polygon' ? coords?.[0] : geometry.type==='MultiPolygon' ? coords?.[0]?.[0] : null;
+  if(Array.isArray(ring) && ring.length){
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const p of ring){
+      if(!Array.isArray(p)) continue;
+      const x=Number(p[0]),y=Number(p[1]);
+      if(!Number.isFinite(x)||!Number.isFinite(y)) continue;
+      minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+    }
+    if(Number.isFinite(minX)) return [(minX+maxX)/2,(minY+maxY)/2];
+  }
+  return null;
+}
+
+function offlineFeatureClass(props={}){
+  return String(props.highway || props['pmap:kind'] || props.kind || props.class || props.type || props.natural || props.landuse || props.amenity || props.tourism || props.shop || '').toLowerCase();
+}
+
+function poiPrefix(kind){
+  if(['fuel'].includes(kind)) return '⛽';
+  if(['charging_station'].includes(kind)) return '⚡';
+  if(['parking'].includes(kind)) return 'P';
+  if(['toilets'].includes(kind)) return 'WC';
+  if(['hospital','clinic','pharmacy'].includes(kind)) return '✚';
+  if(['viewpoint'].includes(kind)) return '◉';
+  if(['camp_site','caravan_site'].includes(kind)) return '△';
+  if(['supermarket','convenience'].includes(kind)) return '▣';
+  if(['cafe','restaurant'].includes(kind)) return '●';
+  if(['hotel','motel','guest_house'].includes(kind)) return '◆';
+  return '•';
+}
+
+function offlineLabelInfo(feature,zoom){
+  const props=feature?.properties||{};
+  const layerName=String(feature?.layer?.['source-layer'] || feature?.sourceLayer || '').toLowerCase();
+  const kind=offlineFeatureClass(props);
+  const name=featureName(props);
+  const ref=String(props.ref||'').trim();
+  const ele=Number(props.ele ?? props.elevation);
+  const geometry=feature?.geometry;
+  const coords=offlineLabelAnchor(geometry);
+  if(!coords || !Number.isFinite(Number(coords[0])) || !Number.isFinite(Number(coords[1]))) return null;
+
+  if(layerName.includes('place')){
+    const place=placeKind(props,layerName)||'place';
+    if(zoom<placeMinZoom(place) || !name) return null;
+    const population=Number(props.population)||0;
+    return {text:name,coords,kind:`place-${place}`,priority:placePriority(place)+Math.min(20,Math.log10(Math.max(1,population))*2)};
+  }
+
+  if(layerName.includes('road') || layerName.includes('transport')){
+    const important=['motorway','trunk','primary','secondary','tertiary'].includes(kind);
+    if(zoom<(important?9:12)) return null;
+    const text=[ref,name].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(' · ');
+    if(!text) return null;
+    const priority=important ? ({motorway:92,trunk:90,primary:86,secondary:80,tertiary:72}[kind]||70) : 48;
+    return {text,coords,kind:'road',priority};
+  }
+
+  if(layerName.includes('poi')){
+    if(zoom<12 || !name) return null;
+    return {text:`${poiPrefix(kind)} ${name}`,coords,kind:'poi',priority:['fuel','parking','toilets','hospital','clinic','viewpoint','camp_site'].includes(kind)?78:58};
+  }
+
+  if(layerName.includes('physical_point')){
+    if(zoom<10 || !name) return null;
+    const peak=['peak','volcano','hill','saddle'].includes(kind);
+    return {text:`${peak?'▲ ':''}${name}${Number.isFinite(ele)?` · ${Math.round(ele)} м`:''}`,coords,kind:'physical',priority:peak?76:56};
+  }
+
+  if(layerName.includes('water')){
+    if(zoom<10 || !name) return null;
+    return {text:name,coords,kind:'water',priority:60};
+  }
+
+  if(layerName.includes('natural') || layerName.includes('landuse') || layerName.includes('landcover')){
+    if(zoom<11 || !name) return null;
+    return {text:name,coords,kind:'land',priority:50};
+  }
+
+  if(layerName.includes('transit') || layerName.includes('rail')){
+    if(zoom<11 || (!name && !ref)) return null;
+    return {text:[ref,name].filter(Boolean).join(' · '),coords,kind:'transit',priority:54};
+  }
+
+  if(layerName.includes('building')){
+    if(zoom<14 || !name) return null;
+    return {text:name,coords,kind:'building',priority:36};
+  }
+
+  if(zoom>=13 && name) return {text:name,coords,kind:'other',priority:30};
+  return null;
+}
+
 function installOfflinePlaceLabels(map, offlineMap) {
   clearMarkers(activePlaceLabelMarkers);
   if(!offlineMap?.ready || !window.maplibregl?.Marker) return;
@@ -178,7 +394,7 @@ function installOfflinePlaceLabels(map, offlineMap) {
     clearMarkers(activePlaceLabelMarkers);
     const zoom=map.getZoom();
     const styleLayers=(map.getStyle()?.layers||[])
-      .filter(l=>l.source==='offline-base' && l.type==='circle')
+      .filter(l=>l.source==='offline-base')
       .map(l=>l.id);
     if(!styleLayers.length) return;
 
@@ -186,47 +402,40 @@ function installOfflinePlaceLabels(map, offlineMap) {
     try {
       features=map.queryRenderedFeatures(undefined,{layers:styleLayers}) || [];
     } catch(e) {
-      console.warn('place label query failed',e);
+      console.warn('offline label query failed',e);
       return;
     }
 
     const unique=new Map();
     for(const f of features) {
-      if(f?.geometry?.type!=='Point') continue;
-      const layerName=f.layer?.['source-layer'] || f.sourceLayer || '';
-      const kind=placeKind(f.properties||{},layerName);
-      if(!kind || zoom<placeMinZoom(kind)) continue;
-      const name=featureName(f.properties||{});
-      if(!name) continue;
-      const coords=f.geometry.coordinates;
-      if(!Array.isArray(coords) || !Number.isFinite(Number(coords[0])) || !Number.isFinite(Number(coords[1]))) continue;
-      const key=`${name.toLowerCase()}:${Number(coords[0]).toFixed(3)}:${Number(coords[1]).toFixed(3)}`;
-      const candidate={name,coords:[Number(coords[0]),Number(coords[1])],kind,priority:placePriority(kind)};
+      const info=offlineLabelInfo(f,zoom);
+      if(!info) continue;
+      const key=`${info.text.toLowerCase()}:${Number(info.coords[0]).toFixed(3)}:${Number(info.coords[1]).toFixed(3)}`;
       const prev=unique.get(key);
-      if(!prev || candidate.priority>prev.priority) unique.set(key,candidate);
+      if(!prev || info.priority>prev.priority) unique.set(key,info);
     }
 
-    const maxCount=zoom<8?7:zoom<10?10:zoom<12?16:24;
+    const maxCount=zoom<8?14:zoom<10?30:zoom<12?58:zoom<14?96:150;
     const selected=[];
     const occupied=[];
-    const sorted=[...unique.values()].sort((a,b)=>b.priority-a.priority || a.name.localeCompare(b.name,'ru'));
+    const sorted=[...unique.values()].sort((a,b)=>b.priority-a.priority || a.text.localeCompare(b.text,'ru'));
 
     for(const item of sorted) {
       if(selected.length>=maxCount) break;
       const p=map.project(item.coords);
-      const width=Math.min(180,Math.max(42,item.name.length*7.2));
-      const height=item.priority>=90?24:20;
+      const width=Math.min(220,Math.max(34,item.text.length*6.8));
+      const height=item.priority>=85?24:20;
       const box={left:p.x-width/2,right:p.x+width/2,top:p.y-height/2,bottom:p.y+height/2};
-      if(occupied.some(other=>boxesOverlap(box,other,6))) continue;
+      if(occupied.some(other=>boxesOverlap(box,other,2))) continue;
       occupied.push(box);
       selected.push(item);
     }
 
     for(const item of selected) {
       const el=document.createElement('div');
-      el.className=`map-label map-place-label map-place-${item.kind}`;
-      el.textContent=item.name;
-      el.title=item.name;
+      el.className=`map-label map-place-label map-info-${item.kind.replace(/[^a-z0-9_-]/gi,'-')}`;
+      el.textContent=item.text;
+      el.title=item.text;
       const marker=new window.maplibregl.Marker({element:el,anchor:'center'})
         .setLngLat(item.coords)
         .addTo(map);
