@@ -57,8 +57,7 @@
       </div>
       <div class="race-content">
         <div id="raceStats" class="race-stats"></div>
-        <div class="race-actions-line"><button id="importYandexBtn" class="button">Импорт из Yandex</button><button id="locateBtn" class="button"><img class="rfm-icon" src="/assets/location.svg" alt="" />Показать меня на карте</button></div>
-        <p id="geoStatus" class="muted small">Геопозиция ещё не запрашивалась.</p>
+        <div class="race-actions-line"><button id="importYandexBtn" class="button">Импорт из Yandex</button></div>
         <div class="offline-cta"><button id="downloadMapBtnTop" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtnTop" class="button danger" hidden>Удалить карту</button><span id="offlineMapStatusTop" class="muted small">Офлайн-подложка ещё не скачана.</span></div>
 
         <div class="full-width-line"></div>
@@ -73,6 +72,10 @@
       <div class="section-head"><div><div id="mapTitle" class="block-title">КАРТА РАЛЛИ</div><p id="mapSubtitle" class="muted">Выбери сохранённую гонку</p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button></div></div>
       <p id="offlineMapStatus" class="muted small">Офлайн-подложка ещё не скачана.</p><p id="offlineMapDiag" class="muted small" hidden></p>
       <div id="map" class="map" aria-label="offline rally map"></div>
+      <div class="map-location-controls">
+        <button id="locateBtn" class="button"><img class="rfm-icon" src="/assets/location.svg" alt="" />Показать где я</button>
+        <p id="geoStatus" class="muted small">Геопозиция ещё не запрашивалась.</p>
+      </div>
       <div id="mapLegend" class="legend"></div>
       <div class="full-width-line"></div>
       <details class="points-panel collapsible-section">

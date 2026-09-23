@@ -2,6 +2,20 @@ import { geometryBounds } from './normalize.js';
 import { registerOfflineMapProtocol, offlineVectorSource, resetOfflineMapDiagnostics } from './offline-map.js';
 
 let activeMap = null;
+let activeRaceLabelMarkers = [];
+let activePlaceLabelMarkers = [];
+
+function clearMarkers(list) {
+  for (const marker of list) {
+    try { marker.remove(); } catch {}
+  }
+  list.length = 0;
+}
+
+function clearAllLabels() {
+  clearMarkers(activeRaceLabelMarkers);
+  clearMarkers(activePlaceLabelMarkers);
+}
 
 function esc(s='') { return String(s).replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -84,10 +98,157 @@ function baseStyle(offlineMap) {
   return {version:8,sources,layers};
 }
 
+function featureName(props={}) {
+  return String(props['name:ru'] || props.name_ru || props.name || props.title || props.caption || '').trim();
+}
+
+function placeKind(props={}, layerName='') {
+  const raw=[props.place,props.kind,props.class,props.type,props.category,props.subclass]
+    .filter(Boolean).join(' ').toLowerCase();
+  const known=['city','town','village','hamlet','settlement','locality','municipality','suburb','borough','neighbourhood','neighborhood','isolated_dwelling'];
+  const hit=known.find(k=>raw.includes(k));
+  if(hit) return hit;
+  if(String(layerName).toLowerCase().includes('place')) return 'place';
+  return null;
+}
+
+function placePriority(kind) {
+  return ({
+    city:100,town:90,municipality:82,village:72,settlement:68,
+    suburb:58,borough:56,hamlet:50,neighbourhood:46,neighborhood:46,
+    locality:42,isolated_dwelling:35,place:60
+  })[kind] || 0;
+}
+
+function placeMinZoom(kind) {
+  return ({
+    city:6,town:8,municipality:8,village:10,settlement:10,
+    suburb:11,borough:11,hamlet:12,neighbourhood:12,neighborhood:12,
+    locality:12,isolated_dwelling:13,place:10
+  })[kind] ?? 11;
+}
+
+function boxesOverlap(a,b,pad=4) {
+  return !(a.right+pad<b.left || a.left-pad>b.right || a.bottom+pad<b.top || a.top-pad>b.bottom);
+}
+
+function installRacePointLabels(map, points, onPointClick) {
+  clearMarkers(activeRaceLabelMarkers);
+  const maplibregl=window.maplibregl;
+  if(!maplibregl?.Marker) return;
+
+  const labels=(points?.features||[])
+    .filter(f=>f?.geometry?.type==='Point' && Array.isArray(f.geometry.coordinates))
+    .map(f=>({feature:f,name:featureName(f.properties),coords:f.geometry.coordinates}))
+    .filter(x=>x.name);
+
+  for(const item of labels) {
+    const el=document.createElement('button');
+    el.type='button';
+    el.className='map-label map-race-label';
+    el.textContent=item.name;
+    el.title=item.name;
+    if(onPointClick) el.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      onPointClick(pointPayload(item.feature));
+    });
+    const marker=new maplibregl.Marker({element:el,anchor:'left',offset:[12,0]})
+      .setLngLat(item.coords)
+      .addTo(map);
+    activeRaceLabelMarkers.push(marker);
+  }
+
+  const update=()=>{
+    const visible=map.getZoom()>=9;
+    for(const marker of activeRaceLabelMarkers) {
+      const el=marker.getElement();
+      el.style.display=visible?'block':'none';
+    }
+  };
+  update();
+  map.on('zoom',update);
+}
+
+function installOfflinePlaceLabels(map, offlineMap) {
+  clearMarkers(activePlaceLabelMarkers);
+  if(!offlineMap?.ready || !window.maplibregl?.Marker) return;
+
+  const redraw=()=>{
+    clearMarkers(activePlaceLabelMarkers);
+    const zoom=map.getZoom();
+    const styleLayers=(map.getStyle()?.layers||[])
+      .filter(l=>l.source==='offline-base' && l.type==='circle')
+      .map(l=>l.id);
+    if(!styleLayers.length) return;
+
+    let features=[];
+    try {
+      features=map.queryRenderedFeatures(undefined,{layers:styleLayers}) || [];
+    } catch(e) {
+      console.warn('place label query failed',e);
+      return;
+    }
+
+    const unique=new Map();
+    for(const f of features) {
+      if(f?.geometry?.type!=='Point') continue;
+      const layerName=f.layer?.['source-layer'] || f.sourceLayer || '';
+      const kind=placeKind(f.properties||{},layerName);
+      if(!kind || zoom<placeMinZoom(kind)) continue;
+      const name=featureName(f.properties||{});
+      if(!name) continue;
+      const coords=f.geometry.coordinates;
+      if(!Array.isArray(coords) || !Number.isFinite(Number(coords[0])) || !Number.isFinite(Number(coords[1]))) continue;
+      const key=`${name.toLowerCase()}:${Number(coords[0]).toFixed(3)}:${Number(coords[1]).toFixed(3)}`;
+      const candidate={name,coords:[Number(coords[0]),Number(coords[1])],kind,priority:placePriority(kind)};
+      const prev=unique.get(key);
+      if(!prev || candidate.priority>prev.priority) unique.set(key,candidate);
+    }
+
+    const maxCount=zoom<8?7:zoom<10?10:zoom<12?16:24;
+    const selected=[];
+    const occupied=[];
+    const sorted=[...unique.values()].sort((a,b)=>b.priority-a.priority || a.name.localeCompare(b.name,'ru'));
+
+    for(const item of sorted) {
+      if(selected.length>=maxCount) break;
+      const p=map.project(item.coords);
+      const width=Math.min(180,Math.max(42,item.name.length*7.2));
+      const height=item.priority>=90?24:20;
+      const box={left:p.x-width/2,right:p.x+width/2,top:p.y-height/2,bottom:p.y+height/2};
+      if(occupied.some(other=>boxesOverlap(box,other,6))) continue;
+      occupied.push(box);
+      selected.push(item);
+    }
+
+    for(const item of selected) {
+      const el=document.createElement('div');
+      el.className=`map-label map-place-label map-place-${item.kind}`;
+      el.textContent=item.name;
+      el.title=item.name;
+      const marker=new window.maplibregl.Marker({element:el,anchor:'center'})
+        .setLngLat(item.coords)
+        .addTo(map);
+      activePlaceLabelMarkers.push(marker);
+    }
+  };
+
+  let scheduled=0;
+  const schedule=()=>{
+    window.clearTimeout(scheduled);
+    scheduled=window.setTimeout(redraw,80);
+  };
+  map.on('idle',schedule);
+  map.on('moveend',schedule);
+  map.on('zoomend',schedule);
+}
+
 function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   const maplibregl = window.maplibregl;
   if (!maplibregl) throw new Error('MapLibre is unavailable');
   if (activeMap) { try { activeMap.remove(); } catch {} activeMap=null; }
+  clearAllLabels();
   container.innerHTML='';
   const map = new maplibregl.Map({
     container,
@@ -130,6 +291,9 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
 
     if (bounds) map.fitBounds([[bounds.minLon,bounds.minLat],[bounds.maxLon,bounds.maxLat]],{padding:48,maxZoom:15,duration:0});
 
+    installRacePointLabels(map,points,onPointClick);
+    installOfflinePlaceLabels(map,options.offlineMap);
+
     if (onPointClick) {
       map.on('click','rfm-points',e=>{ const f=e.features?.[0]; if(f) onPointClick(pointPayload(f)); });
       map.on('mouseenter','rfm-points',()=>{ map.getCanvas().style.cursor='pointer'; });
@@ -139,10 +303,46 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   return map;
 }
 
+export function updateLiveUserPosition(position, {center=false} = {}) {
+  if (!activeMap || !position) return false;
+  const longitude=Number(position.longitude);
+  const latitude=Number(position.latitude);
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return false;
+
+  const data={type:'FeatureCollection',features:[{
+    type:'Feature',
+    properties:{accuracy:Number(position.accuracy)||null},
+    geometry:{type:'Point',coordinates:[longitude,latitude]}
+  }]};
+
+  try {
+    const source=activeMap.getSource?.('user-position');
+    if (source?.setData) {
+      source.setData(data);
+    } else if (activeMap.isStyleLoaded?.()) {
+      activeMap.addSource('user-position',{type:'geojson',data});
+      activeMap.addLayer({id:'user-halo',type:'circle',source:'user-position',paint:{
+        'circle-radius':['interpolate',['linear'],['zoom'],5,10,14,20],
+        'circle-color':'#4da3ff','circle-opacity':0.22
+      }});
+      activeMap.addLayer({id:'user-dot',type:'circle',source:'user-position',paint:{
+        'circle-radius':['interpolate',['linear'],['zoom'],5,5,14,8],
+        'circle-color':'#4da3ff','circle-stroke-color':'#fff','circle-stroke-width':3
+      }});
+    }
+    if (center) activeMap.easeTo({center:[longitude,latitude],zoom:Math.max(activeMap.getZoom?.()||0,13),duration:700});
+    return true;
+  } catch (e) {
+    console.warn('live user position update failed',e);
+    return false;
+  }
+}
+
 function niceCoord(v){ return Math.abs(v) >= 100 ? v.toFixed(2) : v.toFixed(3); }
 
 function renderFallback(container, fc, userPos = null, onPointClick = null) {
   if (activeMap) { try { activeMap.remove(); } catch {} activeMap=null; }
+  clearAllLabels();
   let bounds = geometryBounds(fc);
   bounds = expandBounds(bounds,userPos);
   if (!bounds) {
