@@ -1,4 +1,4 @@
-# RallyFans Companion v0.5.2
+# RallyFans Companion v0.5.3
 
 Cloudflare Pages build based on v0.3.4.3.
 
@@ -12,7 +12,7 @@ Cloudflare Pages build based on v0.3.4.3.
 
 Deploy the whole directory/ZIP to the same Cloudflare Pages project.
 
-Health check: `/api/health` should report `0.5.2`.
+Health check: `/api/health` should report `0.5.3`.
 
 
 ## Web Share
@@ -21,7 +21,7 @@ Spectator points can be shared with the system share sheet (`navigator.share`). 
 
 ## Web Push on Cloudflare Pages
 
-The v0.5.2 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
+The v0.5.3 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
 
 Generate a VAPID key pair locally:
 
