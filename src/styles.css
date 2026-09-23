@@ -21,3 +21,7 @@ main{width:var(--page);margin:0 auto 56px}.intro-panel,.rfm-section{background:#
 
 /* RallyFansMap source-site UI assets */
 .rfm-icon{width:18px;height:18px;display:inline-block;vertical-align:middle;flex:0 0 auto}.point-icon{margin-right:7px}.point-row-copy strong{display:flex;align-items:center}.row-arrow{width:16px;height:16px;flex:0 0 auto}.button .rfm-icon{width:16px;height:16px}.button.primary .rfm-icon{filter:invert(1)}
+
+/* Compact collapsible sections */
+.collapsible-section{border-top:1px solid #ebebeb;margin:0;padding:0}.collapsible-section>summary{list-style:none;display:flex;align-items:center;gap:10px;cursor:pointer;padding:18px 0}.collapsible-section>summary::-webkit-details-marker{display:none}.collapsible-section>summary .block-title{margin:0;flex:1}.summary-meta{color:#a3a3a3;font-size:12px;font-weight:700}.summary-chevron{font-size:22px;line-height:1;color:#a3a3a3;transition:transform .18s ease}.collapsible-section[open] .summary-chevron{transform:rotate(180deg)}.collapsible-body{padding:0 0 20px}.race-material{margin-top:0}.race-material+.race-material{margin-top:0}.points-panel{margin-top:16px}.points-panel .collapsible-body{padding-bottom:4px}
+.map-diagnostic-error{color:#a11!important}
