@@ -200,28 +200,69 @@ function parseScheduleDateTime(dateText,timeText,pkg){
   return result;
 }
 
-function buildRaceReminders(pkg, leadMinutes=30){
+function classifyStageScheduleEvent(item,event){
+  const eventText=String(event?.text||'').trim();
+  const context=`${String(item?.location||'')} ${eventText}`.replace(/\s+/g,' ').trim();
+  const lower=eventText.toLowerCase();
+
+  let kind=null;
+  if(/\bзакрыт|закрытие|закрывается|закрывают|перекрыт|перекрытие/.test(lower)) kind='close';
+  else if(/\bоткрыт|открытие|открывается|открывают|возобнов/.test(lower)) kind='open';
+  if(!kind) return null;
+
+  const stageMatch=context.match(/(?:^|\s)((?:СУ|SS)\s*[-№#]?\s*\d+[A-Za-zА-Яа-я0-9/-]*)/i);
+  const hasStageWord=/\bСУ\b|\bSS\b|спец(?:иальный)?\s*участ/i.test(context);
+  if(!stageMatch && !hasStageWord) return null;
+
+  const stageName=(stageMatch?.[1] || String(item?.location||'') || 'СУ')
+    .replace(/\s+/g,' ')
+    .trim();
+
+  return {kind,stageName,eventText};
+}
+
+function reminderLeadLabel(minutes){
+  if(minutes===60) return '1 час';
+  return `${minutes} мин`;
+}
+
+function buildRaceReminders(pkg){
   const schedule=asArray(pkg?.original?.schedule);
+  const raceId=pkg?.raceId ?? pkg?.id ?? 'race';
   const now=Date.now();
   const reminders=[];
+  const leadTimes=[60,30,15];
+
   for(const item of schedule){
     for(const event of asArray(item?.events)){
+      const classified=classifyStageScheduleEvent(item,event);
+      if(!classified) continue;
+
       const startsAt=parseScheduleDateTime(item?.date,event?.time,pkg);
       if(!startsAt) continue;
-      const dueAt=startsAt.getTime()-leadMinutes*60*1000;
-      if(dueAt<=now || dueAt>now+14*24*60*60*1000) continue;
-      const eventName=String(event?.text || item?.location || 'Событие').trim();
-      reminders.push({
-        dueAt,
-        title:String(pkg?.name || 'Rally Fans Map'),
-        body:`${eventName} через ${leadMinutes} мин · ${String(event?.time||'').trim()}`,
-        url:'/',
-        tag:`rfm-race-${pkg?.raceId ?? pkg?.id ?? 'race'}`,
-        ttlSeconds:Math.max(1800,leadMinutes*60)
-      });
+
+      for(const leadMinutes of leadTimes){
+        const dueAt=startsAt.getTime()-leadMinutes*60*1000;
+        if(dueAt<=now || dueAt>now+14*24*60*60*1000) continue;
+
+        const action=classified.kind==='close'?'Закрытие':'Открытие';
+        const stageSlug=classified.stageName.toLowerCase().replace(/[^a-zа-яё0-9]+/gi,'-').replace(/^-|-$/g,'').slice(0,40)||'stage';
+
+        reminders.push({
+          dueAt,
+          title:String(pkg?.name || 'Rally Fans Map'),
+          body:`${action} ${classified.stageName} через ${reminderLeadLabel(leadMinutes)} · ${String(event?.time||'').trim()}`,
+          url:'/',
+          tag:`rfm-race-${raceId}-${classified.kind}-${stageSlug}-${leadMinutes}`,
+          ttlSeconds:Math.max(1800,leadMinutes*60)
+        });
+      }
     }
   }
-  return reminders.slice(0,48);
+
+  return reminders
+    .sort((a,b)=>a.dueAt-b.dueAt)
+    .slice(0,192);
 }
 
 async function scheduleRaceReminders(pkg){
@@ -230,7 +271,7 @@ async function scheduleRaceReminders(pkg){
   if(!subscription) return {stored:0,skipped:true};
   const raceId=String(pkg.raceId ?? pkg.id ?? '').trim();
   if(!raceId) return {stored:0,skipped:true};
-  const reminders=buildRaceReminders(pkg,30);
+  const reminders=buildRaceReminders(pkg);
   const res=await fetch('/api/push/schedule',{
     method:'POST',
     headers:{'content-type':'application/json'},
