@@ -161,7 +161,17 @@ export async function enrichPackageWithYandex(pkg) {
   if (!pkg?.yandexMapEmbed) return { pkg, imported: 0, status: 'no-map' };
   const data = await fetchYandexConstructorFeatures(pkg.yandexMapEmbed);
   const yandexGeoJson = yandexFeaturesToGeoJson(data.features || []);
-  pkg.geojson = mergeGeoJson(pkg.geojson, yandexGeoJson);
+
+  // Constructor is a mutable remote source. Treat every import as a fresh
+  // snapshot: remove the previous Yandex-derived features first, otherwise
+  // moved/removed points remain forever and repeated refreshes create duplicates.
+  const baseGeoJson = {
+    type:'FeatureCollection',
+    features:(pkg?.geojson?.features || []).filter(
+      feature => feature?.properties?.source !== 'yandex-constructor'
+    )
+  };
+  pkg.geojson = mergeGeoJson(baseGeoJson, yandexGeoJson);
   pkg.yandexImport = {
     importedAt: new Date().toISOString(),
     constructorUrl: data.constructorUrl || null,

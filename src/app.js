@@ -86,49 +86,147 @@ function updateNetwork() { const online=navigator.onLine; $('networkBadge').text
 window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); });
 window.addEventListener('offline',updateNetwork); updateNetwork();
 
-function isStandalonePwa() {
-  const modes=['standalone','fullscreen','minimal-ui'];
-  const displayMode=modes.some(mode=>window.matchMedia?.(`(display-mode: ${mode})`).matches);
+function pwaLaunchContext() {
+  const displayModes=['standalone','fullscreen','minimal-ui'];
+  const displayMode=displayModes.find(mode=>window.matchMedia?.(`(display-mode: ${mode})`).matches) || null;
   const iosStandalone=window.navigator.standalone===true;
-  const androidAppReferrer=document.referrer?.startsWith('android-app://');
-  return Boolean(displayMode || iosStandalone || androidAppReferrer);
+  const androidAppReferrer=String(document.referrer||'').startsWith('android-app://');
+  const installedLaunch=Boolean(displayMode || iosStandalone || androidAppReferrer);
+  return {
+    installedLaunch,
+    displayMode,
+    iosStandalone,
+    androidAppReferrer,
+    browserMode:!installedLaunch
+  };
 }
-function syncInstallButton() {
-  const btn=$('installBtn');
-  if(!btn) return;
-  const shouldHide=isStandalonePwa() || !deferredPrompt;
-  btn.hidden=shouldHide;
-  btn.setAttribute('aria-hidden',shouldHide?'true':'false');
-  btn.style.display=shouldHide?'none':'';
+
+function isStandalonePwa() {
+  return pwaLaunchContext().installedLaunch;
 }
-syncInstallButton();
+
+function installInstructions() {
+  const ios=isIOSDevice();
+  if(ios){
+    return {
+      title:'Установи Rally Fans Map Offline на экран «Домой»',
+      text:'Сейчас приложение открыто как обычная вкладка браузера. На iPhone/iPad часть PWA-возможностей доступна только после установки и запуска с домашнего экрана.',
+      steps:[
+        'Нажми «Поделиться» в браузере.',
+        'Выбери «На экран Домой» / «Add to Home Screen».',
+        'Нажми «Добавить», затем открой Rally Fans Map Offline с новой иконки.'
+      ],
+      action:'Показать инструкцию'
+    };
+  }
+
+  if(deferredPrompt){
+    return {
+      title:'Установи Rally Fans Map Offline',
+      text:'Сейчас приложение открыто в браузере. Установи PWA, чтобы запускать его отдельно и надежнее использовать офлайн-режим и уведомления.',
+      steps:[],
+      action:'Установить приложение'
+    };
+  }
+
+  return {
+    title:'Открой Rally Fans Map Offline как приложение',
+    text:'Сейчас приложение открыто в браузере. Установи его через меню браузера: «Установить приложение» или «Добавить на главный экран».',
+    steps:[
+      'Открой меню браузера.',
+      'Выбери «Установить приложение» или «Добавить на главный экран».',
+      'После установки запускай Rally Fans Map Offline с иконки приложения.'
+    ],
+    action:'Как установить'
+  };
+}
+
+function syncInstallUi() {
+  const topButton=$('installBtn');
+  const prompt=$('pwaInstallPrompt');
+  const action=$('pwaInstallAction');
+  const title=$('pwaInstallTitle');
+  const text=$('pwaInstallText');
+  const steps=$('pwaInstallSteps');
+  const ctx=pwaLaunchContext();
+
+  document.documentElement.dataset.pwaInstalled=ctx.installedLaunch?'true':'false';
+  document.documentElement.dataset.pwaContext=ctx.installedLaunch?'app':'browser';
+
+  if(ctx.installedLaunch){
+    if(topButton) topButton.hidden=true;
+    if(prompt) prompt.hidden=true;
+    return;
+  }
+
+  const copy=installInstructions();
+  if(topButton){
+    topButton.hidden=false;
+    topButton.setAttribute('aria-hidden','false');
+    topButton.textContent=deferredPrompt?'Установить PWA':'Установить PWA';
+  }
+  if(prompt) prompt.hidden=false;
+  if(title) title.textContent=copy.title;
+  if(text) text.textContent=copy.text;
+  if(action) action.textContent=copy.action;
+  if(steps){
+    steps.innerHTML=copy.steps.map(step=>`<li>${esc(step)}</li>`).join('');
+    steps.hidden=!copy.steps.length;
+  }
+}
+
+async function requestPwaInstall() {
+  if(isStandalonePwa()){
+    syncInstallUi();
+    return;
+  }
+
+  if(deferredPrompt){
+    const promptEvent=deferredPrompt;
+    deferredPrompt=null;
+    promptEvent.prompt();
+    await promptEvent.userChoice.catch(()=>null);
+    syncInstallUi();
+    return;
+  }
+
+  const prompt=$('pwaInstallPrompt');
+  const steps=$('pwaInstallSteps');
+  if(prompt){
+    prompt.hidden=false;
+    prompt.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  if(steps) steps.hidden=false;
+}
+
+syncInstallUi();
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
-  if(isStandalonePwa()) {
+  if(isStandalonePwa()){
     deferredPrompt=null;
-    syncInstallButton();
+    syncInstallUi();
     return;
   }
   deferredPrompt=e;
-  syncInstallButton();
+  syncInstallUi();
 });
+
 window.addEventListener('appinstalled',()=>{
   deferredPrompt=null;
-  syncInstallButton();
+  syncInstallUi();
 });
-window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change',syncInstallButton);
 
-$('installBtn').onclick = async () => {
-  if(isStandalonePwa() || !deferredPrompt) {
-    syncInstallButton();
-    return;
-  }
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt=null;
-  syncInstallButton();
-};
+for(const mode of ['standalone','fullscreen','minimal-ui']){
+  window.matchMedia?.(`(display-mode: ${mode})`).addEventListener?.('change',syncInstallUi);
+}
+window.addEventListener('pageshow',syncInstallUi);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') syncInstallUi();
+});
+
+$('installBtn').onclick=requestPwaInstall;
+$('pwaInstallAction').onclick=requestPwaInstall;
 
 function base64UrlToUint8Array(value) {
   const padding='='.repeat((4-value.length%4)%4);
@@ -162,10 +260,12 @@ async function refreshPushUi() {
     setPushStatus('Push-уведомления не поддерживаются этим браузером.');
     return;
   }
-  if(/iPhone|iPad|iPod/i.test(navigator.userAgent) && !isStandalonePwa()){
+  if(isIOSDevice() && !isStandalonePwa()){
     enable.disabled=false;
+    enable.textContent='Сначала установить PWA';
+    enable.classList.remove('downloaded');
     test.hidden=true;
-    setPushStatus('На iOS push работает после установки PWA на экран «Домой».');
+    setPushStatus('Сейчас приложение открыто в браузере. Установи PWA на экран «Домой», затем включи уведомления.');
     return;
   }
   const sub=await getPushSubscription().catch(()=>null);
@@ -519,6 +619,11 @@ async function scheduleAllSavedReminders(){
 }
 
 async function enablePushNotifications() {
+  if(isIOSDevice() && !isStandalonePwa()){
+    syncInstallUi();
+    await requestPwaInstall();
+    return refreshPushUi();
+  }
   if(!pushSupported()) return refreshPushUi();
   const btn=$('pushEnableBtn');
   btn.disabled=true;
@@ -902,13 +1007,54 @@ async function downloadRace(id,button){
   finally{ button.disabled=false; }
 }
 
+async function refreshSavedYandexImports(){
+  if(!navigator.onLine) return {checked:0,updated:0,failed:0};
+  const packages=(await getAllPackages()).filter(pkg=>pkg?.raceId!=null);
+  let checked=0,updated=0,failed=0;
+
+  for(let pkg of packages){
+    try{
+      // Refresh the race record first in case the site changed the Constructor
+      // iframe itself, not only the points inside an existing map.
+      try{
+        const race=await fetchRace(pkg.raceId);
+        if(race?.iframe_maps) pkg.yandexMapEmbed=race.iframe_maps;
+      }catch(e){
+        console.warn('Could not refresh race before Yandex import',pkg?.raceId,e);
+      }
+
+      if(!pkg?.yandexMapEmbed) continue;
+      checked++;
+      const result=await enrichPackageWithYandex(pkg);
+      await savePackage(result.pkg);
+      updated++;
+    }catch(e){
+      failed++;
+      console.warn('Could not refresh Yandex Constructor points',pkg?.raceId,e);
+    }
+  }
+
+  if(currentPackageId && updated){
+    const current=await getPackage(currentPackageId);
+    if(current) await selectPackage(currentPackageId);
+  }
+  return {checked,updated,failed};
+}
+
 async function loadCatalog(){
   if(!navigator.onLine){ $('catalogStatus').textContent='Офлайн: доступны уже скачанные гонки.'; catalog=[]; await renderCatalog(); return; }
   $('catalogStatus').textContent='Проверяю serverless proxy…';
   try{
     await checkApiHealth();
     $('catalogStatus').textContent='Загружаю список из api.rallyfansmap.ru…';
-    catalog=await fetchRaceCatalog(); $('catalogStatus').textContent=`${catalog.length} гонок · публичный endpoint /race`; await renderCatalog();
+    catalog=await fetchRaceCatalog();
+    await renderCatalog();
+
+    $('catalogStatus').textContent='Обновляю точки Yandex сохранённых гонок…';
+    const yandex=await refreshSavedYandexImports();
+    $('catalogStatus').textContent=yandex.checked
+      ? `${catalog.length} гонок · Yandex обновлён: ${yandex.updated}${yandex.failed?` · ошибок: ${yandex.failed}`:''}`
+      : `${catalog.length} гонок · публичный endpoint /race`;
   }
   catch(err){ $('catalogStatus').textContent=`API недоступен: ${err.message}`; }
 }
