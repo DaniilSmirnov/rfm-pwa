@@ -4,7 +4,7 @@ import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTil
 import { normalizePackage } from './normalize.js';
 import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
-import { googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
+import { googleMapsDirections, googleMapsPoint, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
 import { downloadOfflineMap, removeOfflineMap, buildDownloadPlan } from './offline-map.js';
 
 const $ = id => document.getElementById(id);
@@ -23,6 +23,29 @@ async function ensureMapLibre(){
 const esc = s => String(s ?? '').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const asArray = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
 function fmtBytes(n=0) { if (n<1024) return `${n} Б`; if(n<1024**2) return `${(n/1024).toFixed(1)} КБ`; return `${(n/1024**2).toFixed(1)} МБ`; }
+
+async function sharePoint(point) {
+  if(!point) return false;
+  const title=point.name || 'Точка RallyFans Map';
+  const coords=coordinateText(point);
+  const url=googleMapsPoint(point);
+  const data={title,text:`${title}\n${coords}`,url};
+  try {
+    if(navigator.share){
+      await navigator.share(data);
+      return true;
+    }
+  } catch(e) {
+    if(e?.name==='AbortError') return false;
+  }
+  const fallback=`${title}\n${coords}\n${url}`;
+  try {
+    await navigator.clipboard.writeText(fallback);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function startOfLocalDay(date=new Date()) {
   return new Date(date.getFullYear(),date.getMonth(),date.getDate());
@@ -99,6 +122,128 @@ $('installBtn').onclick = async () => {
   syncInstallButton();
 };
 
+function base64UrlToUint8Array(value) {
+  const padding='='.repeat((4-value.length%4)%4);
+  const base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);
+  return Uint8Array.from(raw,c=>c.charCodeAt(0));
+}
+
+function pushSupported() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+function setPushStatus(text, cls='') {
+  const el=$('pushStatus');
+  if(el){ el.textContent=text; el.className=`muted small ${cls}`; }
+}
+
+async function getPushSubscription() {
+  if(!pushSupported()) return null;
+  const reg=await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+async function refreshPushUi() {
+  const enable=$('pushEnableBtn');
+  const test=$('pushTestBtn');
+  if(!enable || !test) return;
+  if(!pushSupported()){
+    enable.disabled=true;
+    test.hidden=true;
+    setPushStatus('Push-уведомления не поддерживаются этим браузером.');
+    return;
+  }
+  if(/iPhone|iPad|iPod/i.test(navigator.userAgent) && !isStandalonePwa()){
+    enable.disabled=false;
+    test.hidden=true;
+    setPushStatus('На iOS push работает после установки PWA на экран «Домой».');
+    return;
+  }
+  const sub=await getPushSubscription().catch(()=>null);
+  if(sub){
+    enable.textContent='Уведомления включены ✓';
+    enable.classList.add('downloaded');
+    test.hidden=false;
+    setPushStatus('Устройство подписано на уведомления.');
+  } else {
+    enable.textContent='Включить уведомления';
+    enable.classList.remove('downloaded');
+    test.hidden=true;
+    const p=Notification.permission;
+    setPushStatus(p==='denied'
+      ? 'Уведомления запрещены в настройках браузера/системы.'
+      : 'Уведомления ещё не включены.');
+  }
+}
+
+async function enablePushNotifications() {
+  if(!pushSupported()) return refreshPushUi();
+  const btn=$('pushEnableBtn');
+  btn.disabled=true;
+  try {
+    if(Notification.permission==='denied') throw new Error('Уведомления запрещены в настройках системы');
+    const permission=Notification.permission==='granted'
+      ? 'granted'
+      : await Notification.requestPermission();
+    if(permission!=='granted') throw new Error('Разрешение на уведомления не выдано');
+
+    const configRes=await fetch('/api/push/config',{cache:'no-store'});
+    const config=await configRes.json();
+    if(!config?.enabled || !config?.publicKey) throw new Error('Push ещё не настроен на Cloudflare Pages');
+
+    const reg=await navigator.serviceWorker.ready;
+    let subscription=await reg.pushManager.getSubscription();
+    if(!subscription){
+      subscription=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:base64UrlToUint8Array(config.publicKey)
+      });
+    }
+
+    const saveRes=await fetch('/api/push/subscribe',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({subscription:subscription.toJSON()})
+    });
+    const saved=await saveRes.json();
+    if(!saveRes.ok || !saved?.ok) throw new Error(saved?.error || 'Не удалось сохранить push-подписку');
+    setPushStatus(saved.stored
+      ? 'Уведомления включены и подписка сохранена.'
+      : 'Уведомления включены. KV-хранилище ещё не подключено: доступен тестовый push.');
+  } catch(e) {
+    setPushStatus(`Push: ${e.message}`,'geo-error');
+  } finally {
+    btn.disabled=false;
+    await refreshPushUi();
+  }
+}
+
+async function sendTestPush() {
+  const btn=$('pushTestBtn');
+  btn.disabled=true;
+  try {
+    const subscription=await getPushSubscription();
+    if(!subscription) throw new Error('Нет активной push-подписки');
+    setPushStatus('Отправляю тестовый push…');
+    const res=await fetch('/api/push/test',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({subscription:subscription.toJSON()})
+    });
+    const data=await res.json();
+    if(!res.ok || !data?.ok) throw new Error(data?.error || `Push service HTTP ${data?.status||res.status}`);
+    setPushStatus('Тестовый push отправлен. Уведомление должно появиться через несколько секунд.','geo-ok');
+  } catch(e) {
+    setPushStatus(`Тестовый push: ${e.message}`,'geo-error');
+  } finally {
+    btn.disabled=false;
+  }
+}
+
+$('pushEnableBtn')?.addEventListener('click',enablePushNotifications);
+$('pushTestBtn')?.addEventListener('click',sendTestPush);
+
 async function refreshList() {
   const pkgs = (await getAllPackages()).sort((a,b)=>b.savedAt.localeCompare(a.savedAt));
   const list=$('packageList'); list.innerHTML='';
@@ -148,6 +293,7 @@ function openPointAction(action, point) {
   if (action === 'google') { window.location.href = googleMapsDirections(point); return; }
   if (action === 'yandex') { openCustomSchemeWithFallback(yandexNavigatorLink(point), yandexWebFallback(point)); return; }
   if (action === 'mapsme') { openCustomSchemeWithFallback(mapsMeLink(point), mapsMeWebFallback()); return; }
+  if (action === 'share') { sharePoint(point); return; }
   if (action === 'copy') {
     const text = coordinateText(point);
     navigator.clipboard?.writeText(text).catch(()=>{});
@@ -167,6 +313,7 @@ function renderPointList(p) {
         <button class="button compact primary" data-nav="google">Google Maps</button>
         <button class="button compact" data-nav="yandex">Yandex</button>
         <button class="button compact" data-nav="mapsme">MAPS.ME</button>
+        <button class="button compact" data-nav="share">Поделиться</button>
         <button class="button compact" data-nav="copy"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button>
       </div>
     </article>`;
@@ -347,6 +494,11 @@ $('mapsMeBtn').onclick = () => {
   $('navStatus').textContent='Открываю MAPS.ME…';
   openCustomSchemeWithFallback(mapsMeLink(selectedPoint), mapsMeWebFallback());
 };
+$('sharePointBtn').onclick = async () => {
+  if(!selectedPoint) return;
+  const ok=await sharePoint(selectedPoint);
+  $('navStatus').textContent=ok?(navigator.share?'Открыто системное меню «Поделиться».':'Точка скопирована.'):'Не удалось поделиться точкой.';
+};
 $('copyCoordsBtn').onclick = async () => {
   if(!selectedPoint) return;
   const text=coordinateText(selectedPoint);
@@ -493,5 +645,6 @@ async function setupServiceWorkerUpdates(){
 }
 
 await setupServiceWorkerUpdates();
+await refreshPushUi();
 await refreshList();
 await loadCatalog();
