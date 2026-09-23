@@ -746,7 +746,7 @@ function apiTarget(pathname) {
 
 function commonHeaders(extra = {}) {
   return {
-    'x-rfm-worker': 'rallyfans-companion-v0.5.4',
+    'x-rfm-worker': 'rallyfans-companion-v0.5.5',
     'x-content-type-options': 'nosniff',
     ...extra,
   };
@@ -889,7 +889,7 @@ export default {
       return json({
         ok: true,
         service: 'rallyfans-companion',
-        version: '0.5.4',
+        version: '0.5.5',
         upstream: API_ORIGIN,
         basemap: BASEMAP_PM,
         hint: 'If this endpoint works, the Cloudflare Pages Worker is active.'
