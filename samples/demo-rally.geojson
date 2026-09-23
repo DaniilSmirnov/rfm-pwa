@@ -1,0 +1,10 @@
+{
+  "type":"FeatureCollection",
+  "name":"Demo Rally — offline sample",
+  "features":[
+    {"type":"Feature","properties":{"name":"СУ 1 — Лесной"},"geometry":{"type":"LineString","coordinates":[[30.20,61.11],[30.25,61.14],[30.31,61.12],[30.37,61.17],[30.43,61.15]]}},
+    {"type":"Feature","properties":{"name":"Зрительская точка A"},"geometry":{"type":"Point","coordinates":[30.31,61.12]}},
+    {"type":"Feature","properties":{"name":"Парковка"},"geometry":{"type":"Point","coordinates":[30.28,61.10]}},
+    {"type":"Feature","properties":{"name":"СУ 2 — Озёрный"},"geometry":{"type":"LineString","coordinates":[[30.48,61.20],[30.53,61.18],[30.60,61.22],[30.67,61.19]]}}
+  ]
+}
