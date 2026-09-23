@@ -148,7 +148,7 @@ async function runDueReminders(env, now=Date.now()) {
   } while(cursor);
   return {ok:true,checked,sent,failed,removed,now};
 }
-async function handlePushApi(request, env, url) {
+async function handlePushApi(request, env, url, ctx) {
   if (url.pathname==='/api/push/config') {
     if (request.method!=='GET') return json({ok:false,error:'Method not allowed'},405);
     return json({
@@ -197,7 +197,37 @@ async function handlePushApi(request, env, url) {
     const body=await readJson(request);
     const endpoint=body?.subscription?.endpoint || body?.endpoint;
     if (!pushEndpointAllowed(endpoint)) return json({ok:false,error:'Unsupported push endpoint'},400);
-    const result=await sendEmptyPush(endpoint,env);
+
+    const delaySeconds=Math.max(0,Math.min(30,Number(body?.delaySeconds)||0));
+    const sendTest=async()=>{
+      if(delaySeconds) await new Promise(resolve=>setTimeout(resolve,delaySeconds*1000));
+
+      if(env?.PUSH_SUBSCRIPTIONS){
+        const hash=await subscriptionHash(endpoint);
+        await env.PUSH_SUBSCRIPTIONS.put(
+          `pending:${hash}`,
+          JSON.stringify({
+            title:'Rally Fans Map',
+            body:delaySeconds
+              ? `Тестовый push через ${delaySeconds} секунд работает 🎉`
+              : 'Тестовый push работает 🎉',
+            url:'/',
+            tag:`rfm-test-${Date.now()}`
+          }),
+          {expirationTtl:600}
+        );
+      }
+
+      return sendEmptyPush(endpoint,env,300);
+    };
+
+    if(delaySeconds){
+      if(!ctx?.waitUntil) return json({ok:false,error:'Delayed push is unavailable in this runtime'},503);
+      ctx.waitUntil(sendTest());
+      return json({ok:true,scheduled:true,delaySeconds},202);
+    }
+
+    const result=await sendTest();
     return json({ok:result.ok,status:result.status},result.ok?200:502);
   }
 
@@ -453,7 +483,7 @@ async function proxyRfmFont(request,url){
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === '/api/health' || url.pathname === '/api/rallyfans/health') {
@@ -467,7 +497,7 @@ export default {
       });
     }
 
-    if (url.pathname.startsWith('/api/push/')) return handlePushApi(request,env,url);
+    if (url.pathname.startsWith('/api/push/')) return handlePushApi(request,env,url,ctx);
 
     if (url.pathname === '/api/yandex/constructor') return importYandexConstructor(request, url);
     if (url.pathname === '/rfm/icon.png') {
