@@ -83,3 +83,26 @@ main{width:var(--page);margin:0 auto calc(56px + env(safe-area-inset-bottom))}.i
   .map-place-label{color:#e0e4e9;text-shadow:0 1px 0 #111318,1px 0 0 #111318,-1px 0 0 #111318,0 -1px 0 #111318,0 0 3px rgba(17,19,24,.95)}
   .map-place-hamlet,.map-place-locality,.map-place-isolated_dwelling,.map-place-neighbourhood,.map-place-neighborhood,.map-place-suburb,.map-place-borough{color:#b8bec7}
 }
+
+
+/* Spectator compass */
+.spectator-compass{margin-top:8px}
+.spectator-compass>summary{padding:14px 0}
+.spectator-compass>summary .block-title{font-size:15px}
+.spectator-compass-body{display:grid;gap:12px}
+.compass-display{display:flex;align-items:center;gap:18px;padding:14px;border:1px solid #e6e7e9;border-radius:12px;background:#fff}
+.compass-dial{position:relative;width:112px;height:112px;flex:0 0 112px;border:2px solid #111;border-radius:50%;background:radial-gradient(circle at center,#fff 0 52%,#f2f2f2 53% 100%)}
+.compass-dial::before,.compass-dial::after{content:'';position:absolute;background:#c9c9c9}
+.compass-dial::before{width:1px;height:88%;left:50%;top:6%}
+.compass-dial::after{height:1px;width:88%;left:6%;top:50%}
+.compass-north{position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:2;font-size:11px;font-weight:800}
+.compass-arrow{position:absolute;left:50%;top:50%;z-index:3;transform:translate(-50%,-55%) rotate(0deg);transform-origin:50% 58%;font-size:64px;line-height:1;transition:transform .18s linear}
+.compass-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.compass-copy strong{font:600 28px/1 'RF Dewi Expanded Semibold',Arial,sans-serif}
+@media(max-width:460px){.compass-display{gap:12px}.compass-dial{width:92px;height:92px;flex-basis:92px}.compass-arrow{font-size:52px}.compass-copy strong{font-size:23px}}
+@media(prefers-color-scheme:dark){
+  .compass-display{background:#1a1e23;border-color:#30353d}
+  .compass-dial{border-color:#e5e8ec;background:radial-gradient(circle at center,#171a1f 0 52%,#23272e 53% 100%)}
+  .compass-dial::before,.compass-dial::after{background:#464c55}
+  .compass-north,.compass-arrow{color:#f5f7fa}
+}
