@@ -137,3 +137,11 @@ html[data-ios="true"][data-standalone="true"]{
 /* Stage actions: push + Apple Wallet */
 .stage-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}.stage-actions .button{white-space:nowrap}.stage-wallet-toggle.subscribed{background:#111;color:#fff;border-color:#111}.stage-wallet-toggle.subscribed .rfm-icon{filter:invert(1)}@media(max-width:560px){.stage-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.stage-actions .button{width:100%}}
 @media (prefers-color-scheme: dark){.stage-wallet-toggle.subscribed{background:#f5f7fa;color:#111318;border-color:#f5f7fa}.stage-wallet-toggle.subscribed .rfm-icon{filter:none}}
+
+
+/* Explicit install gate shown only when the current session is a browser tab. */
+.pwa-install-prompt{width:calc(var(--page) - 24px);margin:14px auto 16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fff;border:2px solid #000;border-radius:16px}
+.pwa-install-copy{min-width:0;flex:1}.pwa-install-copy .eyebrow{margin-bottom:6px}.pwa-install-copy strong{display:block;font:700 18px/1.2 'RF Dewi Expanded Bold',Arial,sans-serif}.pwa-install-copy p{margin:8px 0 0;max-width:650px;color:#666;font-size:13px;line-height:1.45}.pwa-install-steps{margin:10px 0 0;padding-left:20px;color:#444;font-size:13px;line-height:1.5}.pwa-install-prompt>.button{flex:0 0 auto}
+html[data-pwa-installed="true"] .pwa-install-prompt{display:none!important}
+@media(max-width:640px){.pwa-install-prompt{align-items:stretch;flex-direction:column}.pwa-install-prompt>.button{width:100%}}
+@media(prefers-color-scheme:dark){.pwa-install-prompt{background:#171a1f;border-color:#f5f7fa;color:#f5f7fa}.pwa-install-copy p,.pwa-install-steps{color:#b7bdc6}}
