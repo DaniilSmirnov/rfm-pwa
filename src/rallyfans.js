@@ -113,8 +113,36 @@ export function assetUrl(name) {
   return `${API_BASE}/public/${encodeURIComponent(name)}`;
 }
 
+async function tryBackgroundFetchAssets(pkg,onProgress){
+  if(!('serviceWorker' in navigator)) return null;
+  const reg=await navigator.serviceWorker.ready;
+  if(!reg.backgroundFetch?.fetch) return null;
+  const names=pkg.assetNames||[];
+  if(!names.length) return {cached:0,total:0,background:false};
+  const urls=names.map(assetUrl);
+  const id=`rfm-assets-${String(pkg.raceId??pkg.id).replace(/[^a-z0-9_-]+/gi,'-')}-${Date.now()}`;
+  try{
+    const task=await reg.backgroundFetch.fetch(id,urls,{
+      title:`Rally Fans Map · ${pkg.name||'гонка'}`,
+      icons:[{src:'/rfm/icon.png?v=0401',sizes:'180x180',type:'image/png'}]
+    });
+    task.addEventListener?.('progress',()=>{
+      const total=Number(task.downloadTotal)||0;
+      const done=Number(task.downloaded)||0;
+      const ratio=total>0?Math.min(1,done/total):0;
+      onProgress(Math.round(ratio*names.length),names.length,{background:true,downloaded:done,downloadTotal:total});
+    });
+    return {cached:0,total:names.length,background:true,id};
+  }catch(e){
+    console.warn('Background Fetch unavailable for race assets, using foreground fallback',e);
+    return null;
+  }
+}
+
 export async function cacheRaceAssets(pkg, onProgress = () => {}) {
   if (!('caches' in window)) return { cached: 0, total: 0 };
+  const bg=await tryBackgroundFetchAssets(pkg,onProgress);
+  if(bg) return bg;
   const cache = await caches.open('rfm-race-assets-v1');
   let cached = 0;
   const names = pkg.assetNames || [];
@@ -124,9 +152,9 @@ export async function cacheRaceAssets(pkg, onProgress = () => {}) {
       const r = await fetch(url);
       if (r.ok) { await cache.put(url, r.clone()); cached++; }
     } catch {}
-    onProgress(i + 1, names.length);
+    onProgress(i + 1, names.length,{background:false});
   }
-  return { cached, total: names.length };
+  return { cached, total: names.length, background:false };
 }
 
 export async function enrichPackageWithYandex(pkg) {
