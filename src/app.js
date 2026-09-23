@@ -15,7 +15,7 @@ let deferredPrompt = null;
 let catalog = [];
 let selectedPoint = null;
 async function ensureMapLibre(){
-  if(!window.maplibregl) throw new Error('Локальный MapLibre не загрузился');
+  if(!window.maplibregl) throw new Error('MapLibre 6.10.0 ESM не загрузился с CDN');
   if(typeof window.maplibregl.supported==='function' && !window.maplibregl.supported()) throw new Error('WebGL2 недоступен в этом браузере/PWA');
   return window.maplibregl;
 }
