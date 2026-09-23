@@ -1,5 +1,6 @@
 const CACHE='rfm-companion-v052';
 const ASSET_CACHE='rfm-race-assets-v1';
+const PERIODIC_CACHE='rfm-periodic-data-v1';
 const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg'];
 const EXTERNAL=[
   'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.mjs',
@@ -72,6 +73,19 @@ self.addEventListener('fetch', event=>{
     })));
     return;
   }
+  if(url.pathname==='/api/rallyfans/race' || url.pathname.startsWith('/api/rallyfans/race/')){
+    event.respondWith((async()=>{
+      const cache=await caches.open(PERIODIC_CACHE);
+      try{
+        const response=await fetch(new Request(event.request,{cache:'no-store'}));
+        if(response.ok) await cache.put(event.request,response.clone());
+        return response;
+      }catch{
+        return (await cache.match(event.request)) || Response.error();
+      }
+    })());
+    return;
+  }
   if(url.pathname.startsWith('/api/')) return;
 
   // HTML navigations must prefer the network so an old cached app shell cannot pin an old release.
@@ -135,5 +149,64 @@ self.addEventListener('notificationclick', event => {
       if ('focus' in client) return client.focus();
     }
     return self.clients.openWindow ? self.clients.openWindow(target) : undefined;
+  })());
+});
+
+
+async function savedRaceIds(){
+  return new Promise(resolve=>{
+    try{
+      const req=indexedDB.open('rallyfans-offline',2);
+      req.onerror=()=>resolve([]);
+      req.onsuccess=()=>{
+        const db=req.result;
+        if(!db.objectStoreNames.contains('packages')){ resolve([]); return; }
+        const tx=db.transaction('packages','readonly');
+        const all=tx.objectStore('packages').getAll();
+        all.onerror=()=>resolve([]);
+        all.onsuccess=()=>resolve((all.result||[]).map(p=>p?.raceId).filter(v=>v!=null));
+      };
+    }catch{ resolve([]); }
+  });
+}
+
+async function refreshPeriodicRaceData(){
+  const cache=await caches.open(PERIODIC_CACHE);
+  const urls=['/api/rallyfans/race'];
+  const ids=await savedRaceIds();
+  for(const id of [...new Set(ids)]) urls.push(`/api/rallyfans/race/${encodeURIComponent(id)}`);
+  await Promise.all(urls.map(async url=>{
+    try{
+      const response=await fetch(url,{cache:'no-store'});
+      if(response.ok) await cache.put(url,response);
+    }catch{}
+  }));
+}
+
+self.addEventListener('periodicsync',event=>{
+  if(event.tag==='rfm-refresh-races') event.waitUntil(refreshPeriodicRaceData());
+});
+
+self.addEventListener('backgroundfetchsuccess',event=>{
+  event.waitUntil((async()=>{
+    const cache=await caches.open(ASSET_CACHE);
+    const records=await event.registration.matchAll();
+    await Promise.all(records.map(async record=>{
+      const response=await record.responseReady;
+      if(response?.ok) await cache.put(record.request,response);
+    }));
+    try{ await event.updateUI({title:'Rally Fans Map · офлайн-материалы готовы'}); }catch{}
+  })());
+});
+
+self.addEventListener('backgroundfetchfail',event=>{
+  try{ event.updateUI({title:'Rally Fans Map · не удалось скачать материалы'}); }catch{}
+});
+
+self.addEventListener('backgroundfetchclick',event=>{
+  event.waitUntil((async()=>{
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    if(windows[0]) return windows[0].focus();
+    return self.clients.openWindow ? self.clients.openWindow('/') : undefined;
   })());
 });
