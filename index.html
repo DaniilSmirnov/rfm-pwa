@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icon.svg" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="/src/styles.css" />
+  <title>Rally Fans Map · Offline</title>
+</head>
+<body>
+  <header class="topbar">
+    <div><div class="brand-small">Rally Fans Map</div><h1>OFFLINE</h1></div>
+    <div class="top-actions"><button id="installBtn" class="button compact" hidden>Установить</button><span id="networkBadge" class="badge">…</span></div>
+  </header>
+
+  <main>
+    <section class="intro-panel">
+      <div class="block-title">RALLY FANS MAP · OFFLINE</div>
+      <p>Скачивай гонку заранее: карта, точки, расписание и материалы останутся в приложении без связи.</p>
+      <button id="refreshCatalogBtn" class="button primary">Обновить каталог</button>
+    </section>
+
+    <section class="rfm-section">
+      <div class="section-head">
+        <div><div class="block-title">ГОНКИ</div><p id="catalogStatus" class="muted">Загружаю…</p></div>
+        <input id="catalogSearch" class="search" placeholder="Карелия, Псков…" />
+      </div>
+      <div id="catalogList" class="catalog-list"></div>
+    </section>
+
+    <section class="grid two compact-grid">
+      <article class="rfm-section">
+        <div class="block-title">СОХРАНЕНО ОФЛАЙН</div>
+        <div id="storageStats" class="stats"></div>
+        <div id="packageList" class="package-list"></div>
+        <button id="clearBtn" class="button danger">Удалить все офлайн-данные</button>
+      </article>
+      <article class="rfm-section">
+        <div class="block-title">РУЧНОЙ ИМПОРТ</div>
+        <p class="muted">Запасной путь для GeoJSON/JSON.</p>
+        <div class="actions"><label class="button" for="fileInput">Импортировать файл</label><input id="fileInput" type="file" accept=".json,.geojson,application/json,application/geo+json" hidden multiple /></div>
+      </article>
+    </section>
+
+    <section id="raceDetails" class="race-page" hidden>
+      <div id="raceHero" class="race-hero">
+        <div class="race-hero-overlay"></div>
+        <div class="race-hero-top"><div class="brand-small light">Rally Fans Map</div><div id="raceKicker" class="race-category"></div></div>
+        <div class="race-hero-bottom"><h2 id="raceTitle"></h2><p id="raceMeta"></p></div>
+        <img id="raceImage" class="race-image-hidden" alt="" hidden />
+      </div>
+      <div class="race-content">
+        <div id="raceStats" class="race-stats"></div>
+        <div class="race-actions-line"><button id="importYandexBtn" class="button">Импорт из Yandex</button><button id="locateBtn" class="button">Показать меня на карте</button></div>
+        <p id="geoStatus" class="muted small">Геопозиция ещё не запрашивалась.</p>
+        <div class="offline-cta"><button id="downloadMapBtnTop" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtnTop" class="button danger" hidden>Удалить карту</button><span id="offlineMapStatusTop" class="muted small">Офлайн-подложка ещё не скачана.</span></div>
+
+        <div class="full-width-line"></div>
+        <div class="block-title">РАСПИСАНИЕ</div>
+        <div id="scheduleList" class="schedule-list"></div>
+
+        <div id="raceMedia"></div>
+      </div>
+    </section>
+
+    <section class="rfm-section map-card">
+      <div class="section-head"><div><div id="mapTitle" class="block-title">КАРТА РАЛЛИ</div><p id="mapSubtitle" class="muted">Выбери сохранённую гонку</p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button></div></div>
+      <p id="offlineMapStatus" class="muted small">Офлайн-подложка ещё не скачана.</p><p id="offlineMapDiag" class="muted small" hidden></p>
+      <div id="map" class="map" aria-label="offline rally map"></div>
+      <div id="mapLegend" class="legend"></div>
+      <div class="full-width-line"></div>
+      <section class="points-panel">
+        <div class="section-head"><div><div class="block-title">ГДЕ СМОТРЕТЬ?</div><p class="muted small">Точки можно открыть во внешнем навигаторе без доступа к геопозиции PWA.</p></div></div>
+        <div id="pointList" class="point-list"></div>
+      </section>
+      <aside id="pointActions" class="point-actions" hidden>
+        <div class="point-actions-copy"><div class="eyebrow">выбранная точка</div><strong id="pointName"></strong><span id="pointCoords" class="muted"></span></div>
+        <div class="actions point-buttons"><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="copyCoordsBtn" class="button">Копировать</button></div>
+        <p id="navStatus" class="muted small"></p>
+      </aside>
+    </section>
+  </main>
+
+  <div id="imageModal" class="image-modal" hidden><button id="imageModalClose" class="image-modal-close" aria-label="Закрыть">×</button><div class="image-modal-inner"><img id="imageModalImg" alt="Материал гонки" /></div></div>
+  <div id="updateBanner" class="update-banner" hidden><span id="updateText">Обновляю приложение…</span></div>
+  <footer class="app-footer"><div class="brand-small">Rally Fans Map</div><div>Companion v0.3.5</div></footer>
+
+  <template id="packageTpl"><button class="package-row"><span><strong class="package-name"></strong><small class="package-meta"></small></span><span class="chevron">›</span></button></template>
+  <script src="https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js"></script>
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>
