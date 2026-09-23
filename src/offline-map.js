@@ -48,11 +48,18 @@ function normalizeTileData(data){
   if(ArrayBuffer.isView(data)) return data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength);
   return data;
 }
+function normalizeVectorLayers(metadata){
+  const raw=Array.isArray(metadata?.vector_layers)?metadata.vector_layers:[];
+  return raw.map(layer=>typeof layer==='string'?{id:layer}:{id:layer?.id,fields:layer?.fields||{},minzoom:layer?.minzoom,maxzoom:layer?.maxzoom})
+    .filter(layer=>typeof layer.id==='string'&&layer.id.trim());
+}
+
 export async function downloadOfflineMap(pkg,onProgress=()=>{}){
   if(!window.pmtiles?.PMTiles) throw new Error('Библиотека PMTiles не загрузилась. Открой приложение онлайн и обнови страницу.');
   const plan=buildDownloadPlan(pkg.geojson); await deleteMapTiles(pkg.id);
   const archive=new window.pmtiles.PMTiles(SOURCE_URL);
-  const header=await archive.getHeader();
+  const [header,metadata]=await Promise.all([archive.getHeader(),archive.getMetadata().catch(()=>({}))]);
+  const vectorLayers=normalizeVectorLayers(metadata);
   let done=0,saved=0,bytes=0,failed=0; const started=Date.now();
   const queue=[...plan.tiles];
   async function worker(){
@@ -68,7 +75,23 @@ export async function downloadOfflineMap(pkg,onProgress=()=>{}){
   }
   await Promise.all(Array.from({length:Math.min(6,queue.length)},()=>worker()));
   if(!saved) throw new Error('Не удалось скачать ни одного тайла подложки');
-  return {ready:true,tileCount:saved,requested:plan.tiles.length,bytes,failed,bounds:plan.bounds,minZoom:plan.minZoom,maxZoom:plan.maxZoom,downloadedAt:new Date().toISOString(),source:'Protomaps / OpenStreetMap',sourceTileType:header?.tileType??null,elapsedMs:Date.now()-started};
+  return {
+    ready:true,
+    tileCount:saved,
+    requested:plan.tiles.length,
+    bytes,
+    failed,
+    bounds:plan.bounds,
+    minZoom:plan.minZoom,
+    maxZoom:plan.maxZoom,
+    downloadedAt:new Date().toISOString(),
+    source:'Protomaps / OpenStreetMap',
+    sourceTileType:header?.tileType??null,
+    vectorLayers,
+    metadataName:metadata?.name||null,
+    metadataVersion:metadata?.version||null,
+    elapsedMs:Date.now()-started
+  };
 }
 export async function removeOfflineMap(pkg){ await deleteMapTiles(pkg.id); }
 
