@@ -1,7 +1,7 @@
-const CACHE='rfm-companion-v052-safe-area';
+const CACHE='rfm-companion-v052-wallet-pass';
 const ASSET_CACHE='rfm-race-assets-v1';
 const PERIODIC_CACHE='rfm-periodic-data-v1';
-const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg'];
+const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg'];
 const EXTERNAL=[
   'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.mjs',
   'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl-worker.mjs',
