@@ -1,4 +1,4 @@
-# RallyFans Companion v0.5.3
+# RallyFans Companion v0.5.4
 
 Cloudflare Pages build based on v0.3.4.3.
 
@@ -12,7 +12,7 @@ Cloudflare Pages build based on v0.3.4.3.
 
 Deploy the whole directory/ZIP to the same Cloudflare Pages project.
 
-Health check: `/api/health` should report `0.5.3`.
+Health check: `/api/health` should report `0.5.4`.
 
 
 ## Web Share
@@ -21,7 +21,7 @@ Spectator points can be shared with the system share sheet (`navigator.share`). 
 
 ## Web Push on Cloudflare Pages
 
-The v0.5.3 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
+The v0.5.4 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
 
 Generate a VAPID key pair locally:
 
@@ -86,3 +86,23 @@ The Pages worker implements the Wallet update web-service protocol under `/api/w
 A valid `.pkpass` must be signed with an Apple Pass Type ID certificate. Configure `WALLET_PASS_TYPE_IDENTIFIER`, `WALLET_TEAM_IDENTIFIER`, and `WALLET_SIGNER_URL`. The signer endpoint receives `{ pass, state, assets }` as JSON, where `pass` is the complete dynamic event-ticket payload (including time relevance and inferred start/finish locations), and must return `application/vnd.apple.pkpass`. Optional `WALLET_SIGNER_TOKEN` is sent as a Bearer token.
 
 For automatic Wallet update delivery, configure `WALLET_PUSH_PROVIDER_URL` (and optionally `WALLET_PUSH_PROVIDER_TOKEN`). The worker sends the pass type identifier, serial number, and registered Wallet push tokens to that provider after a stored pass changes. Without a push provider, Wallet's standard update web service and manual refresh still work, but automatic delivery is not triggered by this worker.
+
+
+### Broadcast push
+
+Send a full broadcast notification to every stored Web Push subscription with the admin token:
+
+```bash
+curl -X POST https://rallyfansmap.ru/api/push/broadcast \\
+  -H "Authorization: Bearer $PUSH_ADMIN_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "title": "Rally Fans Map",
+    "body": "Расписание обновлено",
+    "url": "/",
+    "tag": "schedule-update",
+    "ttlSeconds": 21600
+  }'
+```
+
+`body` is required. `title`, `url`, `tag`, and `ttlSeconds` are optional. The worker stores the notification content in the per-subscription pending slot before sending the empty Web Push wake-up, so the service worker can display the requested title/body and open the supplied same-origin path on tap.
