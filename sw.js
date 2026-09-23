@@ -1,6 +1,6 @@
-const CACHE='rfm-companion-v035-site-style';
+const CACHE='rfm-companion-v036-dev-map-icons';
 const ASSET_CACHE='rfm-race-assets-v1';
-const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/icon.svg'];
+const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/icon.svg','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg'];
 const EXTERNAL=['https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.js','https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.css','https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js'];
 
 async function precacheFresh(){
