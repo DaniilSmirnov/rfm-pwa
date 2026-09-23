@@ -424,11 +424,11 @@ async function sendTestPush() {
     const res=await fetch('/api/push/test',{
       method:'POST',
       headers:{'content-type':'application/json'},
-      body:JSON.stringify({subscription:subscription.toJSON()})
+      body:JSON.stringify({subscription:subscription.toJSON(),delaySeconds:10})
     });
     const data=await res.json();
     if(!res.ok || !data?.ok) throw new Error(data?.error || `Push service HTTP ${data?.status||res.status}`);
-    setPushStatus('Тестовый push отправлен. Уведомление должно появиться через несколько секунд.','geo-ok');
+    setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть PWA.','geo-ok');
   } catch(e) {
     setPushStatus(`Тестовый push: ${e.message}`,'geo-error');
   } finally {
