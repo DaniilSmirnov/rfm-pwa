@@ -31,10 +31,20 @@
 <body>
   <header class="topbar">
     <div class="header-brand"><img class="header-logo" src="/rfm/icon.png?v=0502" alt="" /><div><div class="brand-small">Rally Fans Map</div><h1>OFFLINE</h1></div></div>
-    <div class="top-actions"><button id="installBtn" class="button compact" hidden>Установить</button><span id="networkBadge" class="badge">…</span></div>
+    <div class="top-actions"><button id="installBtn" class="button compact" hidden>Установить PWA</button><span id="networkBadge" class="badge">…</span></div>
   </header>
 
   <main>
+    <section id="pwaInstallPrompt" class="pwa-install-prompt" hidden aria-live="polite">
+      <div class="pwa-install-copy">
+        <div class="eyebrow">УСТАНОВКА PWA</div>
+        <strong id="pwaInstallTitle">Установи Rally Fans Map Offline</strong>
+        <p id="pwaInstallText">Сейчас приложение открыто в браузере. Для офлайн-режима, push-уведомлений и корректной работы iOS открой его как установленное PWA.</p>
+        <ol id="pwaInstallSteps" class="pwa-install-steps" hidden></ol>
+      </div>
+      <button id="pwaInstallAction" class="button primary" type="button">Установить приложение</button>
+    </section>
+
     <section class="intro-panel">
       <div class="block-title">RALLY FANS MAP · OFFLINE</div>
       <p>Скачивай гонку заранее: карта, точки, расписание и материалы останутся в приложении без связи.</p>
