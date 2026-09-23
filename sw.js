@@ -1,6 +1,6 @@
-const CACHE='rfm-companion-v050-test-push-10s';
+const CACHE='rfm-companion-v050-rallyfans-png-icon';
 const ASSET_CACHE='rfm-race-assets-v1';
-const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/icon.svg','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg'];
+const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg'];
 const EXTERNAL=[
   'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.mjs',
   'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl-worker.mjs',
@@ -115,8 +115,7 @@ self.addEventListener('push', event => {
 
     await self.registration.showNotification(payload.title || 'Rally Fans Map', {
       body: payload.body || 'Есть обновление по RallyFans. Открой приложение, чтобы проверить данные.',
-      icon: '/icon.svg',
-      badge: '/icon.svg',
+      icon: '/rfm/icon.png?v=0502',
       tag: payload.tag || 'rfm-update',
       renotify: true,
       data: { url: payload.url || '/' }
