@@ -1,5 +1,6 @@
 const API_ORIGIN = 'https://api.rallyfansmap.ru';
 const BASEMAP_PM = 'https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles';
+const RFM_ICON_URL = 'https://rallyfansmap.ru/assets/icons/apple-touch-icon.png';
 
 function apiTarget(pathname) {
   // Canonical routes used by the app, plus short aliases for easier diagnostics.
@@ -173,6 +174,16 @@ export default {
     }
 
     if (url.pathname === '/api/yandex/constructor') return importYandexConstructor(request, url);
+    if (url.pathname === '/rfm/icon.png') {
+      const upstream = await fetch(RFM_ICON_URL, { cf:{ cacheEverything:true, cacheTtl:604800 } });
+      return new Response(upstream.body, {
+        status: upstream.status,
+        headers: commonHeaders({
+          'content-type': 'image/png',
+          'cache-control': 'public, max-age=604800'
+        })
+      });
+    }
 
     if (url.pathname === '/api/basemap.pmtiles') return proxyBasemap(request);
     if (url.pathname.startsWith('/rfm/fonts/')) return proxyRfmFont(request,url);
