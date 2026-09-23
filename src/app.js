@@ -4,7 +4,7 @@ import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTil
 import { normalizePackage } from './normalize.js';
 import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
-import { googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
+import { googleMapsDirections, googleMapsPoint, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
 import { downloadOfflineMap, removeOfflineMap, buildDownloadPlan } from './offline-map.js';
 
 const $ = id => document.getElementById(id);
@@ -23,6 +23,29 @@ async function ensureMapLibre(){
 const esc = s => String(s ?? '').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const asArray = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
 function fmtBytes(n=0) { if (n<1024) return `${n} Б`; if(n<1024**2) return `${(n/1024).toFixed(1)} КБ`; return `${(n/1024**2).toFixed(1)} МБ`; }
+
+async function sharePoint(point) {
+  if(!point) return false;
+  const title=point.name || 'Точка RallyFans Map';
+  const coords=coordinateText(point);
+  const url=googleMapsPoint(point);
+  const data={title,text:`${title}\n${coords}`,url};
+  try {
+    if(navigator.share){
+      await navigator.share(data);
+      return true;
+    }
+  } catch(e) {
+    if(e?.name==='AbortError') return false;
+  }
+  const fallback=`${title}\n${coords}\n${url}`;
+  try {
+    await navigator.clipboard.writeText(fallback);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function startOfLocalDay(date=new Date()) {
   return new Date(date.getFullYear(),date.getMonth(),date.getDate());
@@ -61,8 +84,360 @@ function updateNetwork() { const online=navigator.onLine; $('networkBadge').text
 window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); });
 window.addEventListener('offline',updateNetwork); updateNetwork();
 
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt=e; $('installBtn').hidden=false; });
-$('installBtn').onclick = async () => { if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('installBtn').hidden=true; };
+function isStandalonePwa() {
+  return window.matchMedia?.('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}
+function syncInstallButton() {
+  const btn=$('installBtn');
+  if(!btn) return;
+  btn.hidden = isStandalonePwa() || !deferredPrompt;
+}
+syncInstallButton();
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  if(isStandalonePwa()) {
+    deferredPrompt=null;
+    syncInstallButton();
+    return;
+  }
+  deferredPrompt=e;
+  syncInstallButton();
+});
+window.addEventListener('appinstalled',()=>{
+  deferredPrompt=null;
+  syncInstallButton();
+});
+window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change',syncInstallButton);
+
+$('installBtn').onclick = async () => {
+  if(isStandalonePwa() || !deferredPrompt) {
+    syncInstallButton();
+    return;
+  }
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  syncInstallButton();
+};
+
+function base64UrlToUint8Array(value) {
+  const padding='='.repeat((4-value.length%4)%4);
+  const base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);
+  return Uint8Array.from(raw,c=>c.charCodeAt(0));
+}
+
+function pushSupported() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+function setPushStatus(text, cls='') {
+  const el=$('pushStatus');
+  if(el){ el.textContent=text; el.className=`muted small ${cls}`; }
+}
+
+async function getPushSubscription() {
+  if(!pushSupported()) return null;
+  const reg=await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+async function refreshPushUi() {
+  const enable=$('pushEnableBtn');
+  const test=$('pushTestBtn');
+  if(!enable || !test) return;
+  if(!pushSupported()){
+    enable.disabled=true;
+    test.hidden=true;
+    setPushStatus('Push-уведомления не поддерживаются этим браузером.');
+    return;
+  }
+  if(/iPhone|iPad|iPod/i.test(navigator.userAgent) && !isStandalonePwa()){
+    enable.disabled=false;
+    test.hidden=true;
+    setPushStatus('На iOS push работает после установки PWA на экран «Домой».');
+    return;
+  }
+  const sub=await getPushSubscription().catch(()=>null);
+  if(sub){
+    enable.textContent='Выключить уведомления';
+    enable.classList.add('downloaded');
+    test.hidden=false;
+    setPushStatus('Устройство подписано на уведомления.');
+  } else {
+    enable.textContent='Включить уведомления';
+    enable.classList.remove('downloaded');
+    test.hidden=true;
+    const p=Notification.permission;
+    setPushStatus(p==='denied'
+      ? 'Уведомления запрещены в настройках браузера/системы.'
+      : 'Уведомления ещё не включены.');
+  }
+}
+
+function raceYearHint(pkg){
+  const raw=String(pkg?.summary?.dates || pkg?.original?.dates || pkg?.original?.date_race || '');
+  const m=raw.match(/\b(20\d{2})\b/);
+  return m?Number(m[1]):new Date().getFullYear();
+}
+function parseScheduleDateTime(dateText,timeText,pkg){
+  const time=String(timeText||'').match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if(!time) return null;
+  const raw=String(dateText||'').trim();
+  let d=raw.match(/\b(\d{1,2})[.\/-](\d{1,2})[.\/-](20\d{2})\b/);
+  let day,month,year;
+  if(d){
+    day=Number(d[1]); month=Number(d[2]); year=Number(d[3]);
+  } else {
+    d=raw.match(/\b(\d{1,2})[.\/-](\d{1,2})\b/);
+    if(!d) return null;
+    day=Number(d[1]); month=Number(d[2]); year=raceYearHint(pkg);
+  }
+  const result=new Date(year,month-1,day,Number(time[1]),Number(time[2]),0,0);
+  if(result.getFullYear()!==year || result.getMonth()!==month-1 || result.getDate()!==day) return null;
+  return result;
+}
+
+const STAGE_PUSH_PREFS_KEY='rfm-stage-push-subscriptions-v1';
+
+function normalizeStageKey(name){
+  return String(name||'')
+    .toLowerCase()
+    .replace(/ё/g,'е')
+    .replace(/[^a-zа-я0-9]+/gi,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,80);
+}
+
+function stageIdentity(item){
+  const events=asArray(item?.events);
+  const context=[item?.location,...events.map(e=>e?.text)]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g,' ')
+    .trim();
+
+  const stageMatch=context.match(/(?:^|\s)((?:СУ|SS)\s*[-№#]?\s*\d+[A-Za-zА-Яа-я0-9/-]*)/i);
+  const hasStageWord=/\bСУ\b|\bSS\b|спец(?:иальный)?\s*участ/i.test(context);
+  if(!stageMatch && !hasStageWord) return null;
+
+  const name=(stageMatch?.[1] || String(item?.location||'СУ')).replace(/\s+/g,' ').trim();
+  const key=normalizeStageKey(name);
+  return key?{key,name}:null;
+}
+
+function loadStagePushPrefs(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(STAGE_PUSH_PREFS_KEY)||'{}');
+    return parsed && typeof parsed==='object' ? parsed : {};
+  }catch{
+    return {};
+  }
+}
+
+function racePushPrefId(pkg){
+  return String(pkg?.raceId ?? pkg?.id ?? '');
+}
+
+function subscribedStageKeys(pkg){
+  const raceId=racePushPrefId(pkg);
+  const prefs=loadStagePushPrefs();
+  return new Set(Array.isArray(prefs[raceId])?prefs[raceId]:[]);
+}
+
+function setStageSubscribed(pkg,stageKey,enabled){
+  const raceId=racePushPrefId(pkg);
+  if(!raceId || !stageKey) return;
+  const prefs=loadStagePushPrefs();
+  const set=new Set(Array.isArray(prefs[raceId])?prefs[raceId]:[]);
+  if(enabled) set.add(stageKey); else set.delete(stageKey);
+  if(set.size) prefs[raceId]=[...set];
+  else delete prefs[raceId];
+  localStorage.setItem(STAGE_PUSH_PREFS_KEY,JSON.stringify(prefs));
+}
+
+function classifyStageScheduleEvent(item,event){
+  const eventText=String(event?.text||'').trim();
+  const context=`${String(item?.location||'')} ${eventText}`.replace(/\s+/g,' ').trim();
+  const lower=eventText.toLowerCase();
+
+  let kind=null;
+  if(/\bзакрыт|закрытие|закрывается|закрывают|перекрыт|перекрытие/.test(lower)) kind='close';
+  else if(/\bоткрыт|открытие|открывается|открывают|возобнов/.test(lower)) kind='open';
+  if(!kind) return null;
+
+  const stageMatch=context.match(/(?:^|\s)((?:СУ|SS)\s*[-№#]?\s*\d+[A-Za-zА-Яа-я0-9/-]*)/i);
+  const hasStageWord=/\bСУ\b|\bSS\b|спец(?:иальный)?\s*участ/i.test(context);
+  if(!stageMatch && !hasStageWord) return null;
+
+  const stageName=(stageMatch?.[1] || String(item?.location||'') || 'СУ')
+    .replace(/\s+/g,' ')
+    .trim();
+
+  return {kind,stageName,stageKey:normalizeStageKey(stageName),eventText};
+}
+
+function reminderLeadLabel(minutes){
+  if(minutes===60) return '1 час';
+  return `${minutes} мин`;
+}
+
+function buildRaceReminders(pkg){
+  const schedule=asArray(pkg?.original?.schedule);
+  const raceId=pkg?.raceId ?? pkg?.id ?? 'race';
+  const now=Date.now();
+  const reminders=[];
+  const leadTimes=[60,30,15];
+  const subscribed=subscribedStageKeys(pkg);
+  if(!subscribed.size) return reminders;
+
+  for(const item of schedule){
+    for(const event of asArray(item?.events)){
+      const classified=classifyStageScheduleEvent(item,event);
+      if(!classified || !subscribed.has(classified.stageKey)) continue;
+
+      const startsAt=parseScheduleDateTime(item?.date,event?.time,pkg);
+      if(!startsAt) continue;
+
+      for(const leadMinutes of leadTimes){
+        const dueAt=startsAt.getTime()-leadMinutes*60*1000;
+        if(dueAt<=now || dueAt>now+14*24*60*60*1000) continue;
+
+        const action=classified.kind==='close'?'Закрытие':'Открытие';
+        const stageSlug=classified.stageName.toLowerCase().replace(/[^a-zа-яё0-9]+/gi,'-').replace(/^-|-$/g,'').slice(0,40)||'stage';
+
+        reminders.push({
+          dueAt,
+          title:String(pkg?.name || 'Rally Fans Map'),
+          body:`${action} ${classified.stageName} через ${reminderLeadLabel(leadMinutes)} · ${String(event?.time||'').trim()}`,
+          url:'/',
+          tag:`rfm-race-${raceId}-${classified.kind}-${stageSlug}-${leadMinutes}`,
+          ttlSeconds:Math.max(1800,leadMinutes*60)
+        });
+      }
+    }
+  }
+
+  return reminders
+    .sort((a,b)=>a.dueAt-b.dueAt)
+    .slice(0,192);
+}
+
+async function scheduleRaceReminders(pkg){
+  if(!pkg || !pushSupported()) return {stored:0,skipped:true};
+  const subscription=await getPushSubscription();
+  if(!subscription) return {stored:0,skipped:true};
+  const raceId=String(pkg.raceId ?? pkg.id ?? '').trim();
+  if(!raceId) return {stored:0,skipped:true};
+  const reminders=buildRaceReminders(pkg);
+  const res=await fetch('/api/push/schedule',{
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body:JSON.stringify({subscription:subscription.toJSON(),raceId,reminders})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось запланировать напоминания');
+  return {stored:Number(data.stored)||0,skipped:false};
+}
+
+async function scheduleAllSavedReminders(){
+  const pkgs=await getAllPackages();
+  let total=0;
+  for(const pkg of pkgs){
+    try{
+      const result=await scheduleRaceReminders(pkg);
+      total+=result.stored||0;
+    }catch(e){
+      console.warn('Could not schedule race reminders',pkg?.id,e);
+    }
+  }
+  return total;
+}
+
+async function enablePushNotifications() {
+  if(!pushSupported()) return refreshPushUi();
+  const btn=$('pushEnableBtn');
+  btn.disabled=true;
+  try {
+    const reg=await navigator.serviceWorker.ready;
+    const existing=await reg.pushManager.getSubscription();
+
+    if(existing){
+      const endpoint=existing.endpoint;
+      await existing.unsubscribe();
+      fetch('/api/push/unsubscribe',{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({endpoint})
+      }).catch(()=>{});
+      setPushStatus('Уведомления выключены.');
+      return;
+    }
+
+    if(Notification.permission==='denied') throw new Error('Уведомления запрещены в настройках системы');
+    const permission=Notification.permission==='granted'
+      ? 'granted'
+      : await Notification.requestPermission();
+    if(permission!=='granted') throw new Error('Разрешение на уведомления не выдано');
+
+    const configRes=await fetch('/api/push/config',{cache:'no-store'});
+    const config=await configRes.json();
+    if(!config?.enabled || !config?.publicKey) throw new Error('Push ещё не настроен на Cloudflare Pages');
+
+    const subscription=await reg.pushManager.subscribe({
+      userVisibleOnly:true,
+      applicationServerKey:base64UrlToUint8Array(config.publicKey)
+    });
+
+    const saveRes=await fetch('/api/push/subscribe',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({subscription:subscription.toJSON()})
+    });
+    const saved=await saveRes.json();
+    if(!saveRes.ok || !saved?.ok) throw new Error(saved?.error || 'Не удалось сохранить push-подписку');
+    if(saved.stored){
+      const count=await scheduleAllSavedReminders();
+      setPushStatus(count
+        ? `Уведомления включены · запланировано напоминаний: ${count}.`
+        : 'Уведомления включены. Будущих событий для напоминаний пока нет.');
+    } else {
+      setPushStatus('Уведомления включены. KV-хранилище ещё не подключено: доступен тестовый push.');
+    }
+  } catch(e) {
+    setPushStatus(`Push: ${e.message}`,'geo-error');
+  } finally {
+    btn.disabled=false;
+    await refreshPushUi();
+  }
+}
+
+async function sendTestPush() {
+  const btn=$('pushTestBtn');
+  btn.disabled=true;
+  try {
+    const subscription=await getPushSubscription();
+    if(!subscription) throw new Error('Нет активной push-подписки');
+    setPushStatus('Отправляю тестовый push…');
+    const res=await fetch('/api/push/test',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({subscription:subscription.toJSON(),delaySeconds:10})
+    });
+    const data=await res.json();
+    if(!res.ok || !data?.ok) throw new Error(data?.error || `Push service HTTP ${data?.status||res.status}`);
+    setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть PWA.','geo-ok');
+  } catch(e) {
+    setPushStatus(`Тестовый push: ${e.message}`,'geo-error');
+  } finally {
+    btn.disabled=false;
+  }
+}
+
+$('pushEnableBtn')?.addEventListener('click',enablePushNotifications);
+$('pushTestBtn')?.addEventListener('click',sendTestPush);
 
 async function refreshList() {
   const pkgs = (await getAllPackages()).sort((a,b)=>b.savedAt.localeCompare(a.savedAt));
@@ -113,6 +488,7 @@ function openPointAction(action, point) {
   if (action === 'google') { window.location.href = googleMapsDirections(point); return; }
   if (action === 'yandex') { openCustomSchemeWithFallback(yandexNavigatorLink(point), yandexWebFallback(point)); return; }
   if (action === 'mapsme') { openCustomSchemeWithFallback(mapsMeLink(point), mapsMeWebFallback()); return; }
+  if (action === 'share') { sharePoint(point); return; }
   if (action === 'copy') {
     const text = coordinateText(point);
     navigator.clipboard?.writeText(text).catch(()=>{});
@@ -132,6 +508,7 @@ function renderPointList(p) {
         <button class="button compact primary" data-nav="google">Google Maps</button>
         <button class="button compact" data-nav="yandex">Yandex</button>
         <button class="button compact" data-nav="mapsme">MAPS.ME</button>
+        <button class="button compact" data-nav="share">Поделиться</button>
         <button class="button compact" data-nav="copy"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button>
       </div>
     </article>`;
@@ -153,11 +530,55 @@ function renderSchedule(p){
   const schedule=asArray(p.original?.schedule);
   const root=$('scheduleList'); root.innerHTML='';
   if(!schedule.length){ root.innerHTML='<p class="muted">Расписание отсутствует.</p>'; return; }
+
+  const subscribed=subscribedStageKeys(p);
+
   for(const item of schedule){
     const events=asArray(item.events);
-    const node=document.createElement('article'); node.className='schedule-item';
-    node.innerHTML=`${item.date?`<div class="date-header">${esc(item.date)}</div>`:''}<div class="location">${esc(item.location||'Событие')}</div>${item.coordinates?`<div class="coordinates-line">${esc(item.coordinates)}</div>`:''}<div class="event-list">${events.map(e=>`<div><time>${esc(e.time||'')}</time><span>${esc(e.text||'')}</span></div>`).join('')}</div>`;
+    const stage=stageIdentity(item);
+    const isSubscribed=Boolean(stage && subscribed.has(stage.key));
+
+    const node=document.createElement('article');
+    node.className='schedule-item';
+    node.innerHTML=`${item.date?`<div class="date-header">${esc(item.date)}</div>`:''}
+      <div class="schedule-location-row">
+        <div class="location">${esc(item.location||'Событие')}</div>
+        ${stage?`<button class="button compact stage-push-toggle ${isSubscribed?'subscribed':''}" data-stage-key="${esc(stage.key)}" type="button">${isSubscribed?'🔔 Уведомления включены':'🔔 Уведомлять'}</button>`:''}
+      </div>
+      ${item.coordinates?`<div class="coordinates-line">${esc(item.coordinates)}</div>`:''}
+      <div class="event-list">${events.map(e=>`<div><time>${esc(e.time||'')}</time><span>${esc(e.text||'')}</span></div>`).join('')}</div>`;
     root.appendChild(node);
+
+    const toggle=node.querySelector('[data-stage-key]');
+    if(toggle && stage){
+      toggle.addEventListener('click',async()=>{
+        toggle.disabled=true;
+        try{
+          const shouldEnable=!subscribedStageKeys(p).has(stage.key);
+
+          if(shouldEnable && !(await getPushSubscription())){
+            await enablePushNotifications();
+            if(!(await getPushSubscription())) return;
+          }
+
+          setStageSubscribed(p,stage.key,shouldEnable);
+          const result=await scheduleRaceReminders(p);
+          setPushStatus(
+            shouldEnable
+              ? `${stage.name}: уведомления включены · за 60, 30 и 15 минут.`
+              : `${stage.name}: уведомления выключены.`,
+            'geo-ok'
+          );
+          if(result.stored===0 && shouldEnable){
+            setPushStatus(`${stage.name}: подписка сохранена, но будущих событий открытия/закрытия пока нет.`);
+          }
+          renderSchedule(p);
+        }catch(e){
+          setPushStatus(`Не удалось изменить подписку ${stage.name}: ${e.message}`,'geo-error');
+          toggle.disabled=false;
+        }
+      });
+    }
   }
 }
 
@@ -273,7 +694,14 @@ async function downloadRace(id,button){
     if(pkg.assetNames.length){
       await cacheRaceAssets(pkg,(done,total)=>{ button.textContent=`Файлы ${done}/${total}`; });
     }
-    currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id); button.textContent='Сохранено ✓';
+    currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id);
+    try {
+      const scheduled=await scheduleRaceReminders(pkg);
+      if(scheduled.stored) setPushStatus(`Для этой гонки запланировано напоминаний: ${scheduled.stored}.`,'geo-ok');
+    } catch(e) {
+      console.warn('Push reminder scheduling skipped',e);
+    }
+    button.textContent='Сохранено ✓';
   }catch(err){ alert(`Не удалось скачать гонку: ${err.message}`); button.textContent=old; }
   finally{ button.disabled=false; }
 }
@@ -311,6 +739,11 @@ $('mapsMeBtn').onclick = () => {
   if(!selectedPoint) return;
   $('navStatus').textContent='Открываю MAPS.ME…';
   openCustomSchemeWithFallback(mapsMeLink(selectedPoint), mapsMeWebFallback());
+};
+$('sharePointBtn').onclick = async () => {
+  if(!selectedPoint) return;
+  const ok=await sharePoint(selectedPoint);
+  $('navStatus').textContent=ok?(navigator.share?'Открыто системное меню «Поделиться».':'Точка скопирована.'):'Не удалось поделиться точкой.';
 };
 $('copyCoordsBtn').onclick = async () => {
   if(!selectedPoint) return;
@@ -458,5 +891,11 @@ async function setupServiceWorkerUpdates(){
 }
 
 await setupServiceWorkerUpdates();
+await refreshPushUi();
+try {
+  if(await getPushSubscription()) await scheduleAllSavedReminders();
+} catch(e) {
+  console.warn('Could not refresh scheduled race reminders on startup',e);
+}
 await refreshList();
 await loadCatalog();

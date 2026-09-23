@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="icon" href="/icon.svg" />
-  <link rel="apple-touch-icon" href="/rfm/icon.png" />
+  <link rel="icon" href="/icon.svg?v=0401" />
+  <link rel="apple-touch-icon" href="/rfm/icon.png?v=0401" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="/src/styles.css" />
   <title>Rally Fans Map · Offline</title>
 </head>
 <body>
   <header class="topbar">
-    <div><div class="brand-small">Rally Fans Map</div><h1>OFFLINE</h1></div>
+    <div class="header-brand"><img class="header-logo" src="/icon.svg?v=0401" alt="" /><div><div class="brand-small">Rally Fans Map</div><h1>OFFLINE</h1></div></div>
     <div class="top-actions"><button id="installBtn" class="button compact" hidden>Установить</button><span id="networkBadge" class="badge">…</span></div>
   </header>
 
@@ -21,7 +21,12 @@
     <section class="intro-panel">
       <div class="block-title">RALLY FANS MAP · OFFLINE</div>
       <p>Скачивай гонку заранее: карта, точки, расписание и материалы останутся в приложении без связи.</p>
-      <button id="refreshCatalogBtn" class="button primary">Обновить каталог</button>
+      <div class="actions intro-actions">
+        <button id="refreshCatalogBtn" class="button primary">Обновить каталог</button>
+        <button id="pushEnableBtn" class="button">Включить уведомления</button>
+        <button id="pushTestBtn" class="button" hidden>Тестовый пуш через 10 сек</button>
+      </div>
+      <p id="pushStatus" class="muted small">Уведомления ещё не настроены.</p>
     </section>
 
     <section class="rfm-section">
@@ -87,7 +92,7 @@
       </details>
       <aside id="pointActions" class="point-actions" hidden>
         <div class="point-actions-copy"><div class="eyebrow">выбранная точка</div><strong id="pointName"></strong><span id="pointCoords" class="muted"></span></div>
-        <div class="actions point-buttons"><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
+        <div class="actions point-buttons"><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
         <p id="navStatus" class="muted small"></p>
       </aside>
     </section>
@@ -95,7 +100,7 @@
 
   <div id="imageModal" class="image-modal" hidden><button id="imageModalClose" class="image-modal-close" aria-label="Закрыть">×</button><div class="image-modal-inner"><img id="imageModalImg" alt="Материал гонки" /></div></div>
   <div id="updateBanner" class="update-banner" hidden><span id="updateText">Обновляю приложение…</span></div>
-  <footer class="app-footer"><div class="brand-small">Rally Fans Map</div><div>Companion v0.4.0</div></footer>
+  <footer class="app-footer"><div class="brand-small">Rally Fans Map</div><div>Companion v0.5.0</div></footer>
 
   <template id="packageTpl"><button class="package-row"><span><strong class="package-name"></strong><small class="package-meta"></small></span><img class="row-arrow" src="/assets/arrow-right.svg" alt="" /></button></template>
   <script src="https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js"></script>

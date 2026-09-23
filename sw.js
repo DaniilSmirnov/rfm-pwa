@@ -1,4 +1,4 @@
-const CACHE='rfm-companion-v040-live-location';
+const CACHE='rfm-companion-v050-test-push-10s';
 const ASSET_CACHE='rfm-race-assets-v1';
 const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/icon.svg','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg'];
 const EXTERNAL=[
@@ -90,4 +90,51 @@ self.addEventListener('fetch', event=>{
     if(response.ok) caches.open(CACHE).then(c=>c.put(event.request,response.clone()));
     return response;
   }).catch(()=>caches.match('/index.html'))));
+});
+
+
+self.addEventListener('push', event => {
+  event.waitUntil((async()=>{
+    let payload={};
+    try { payload=event.data?.json?.() || {}; } catch {}
+
+    if(!payload.title){
+      try{
+        const subscription=await self.registration.pushManager.getSubscription();
+        if(subscription?.endpoint){
+          const response=await fetch('/api/push/pending',{
+            method:'POST',
+            headers:{'content-type':'application/json'},
+            body:JSON.stringify({endpoint:subscription.endpoint})
+          });
+          const data=await response.json();
+          if(response.ok && data?.pending) payload=data.pending;
+        }
+      }catch{}
+    }
+
+    await self.registration.showNotification(payload.title || 'Rally Fans Map', {
+      body: payload.body || 'Есть обновление по RallyFans. Открой приложение, чтобы проверить данные.',
+      icon: '/icon.svg',
+      badge: '/icon.svg',
+      tag: payload.tag || 'rfm-update',
+      renotify: true,
+      data: { url: payload.url || '/' }
+    });
+  })());
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = event.notification?.data?.url || '/';
+  event.waitUntil((async()=>{
+    const clientsList = await self.clients.matchAll({ type:'window', includeUncontrolled:true });
+    for (const client of clientsList) {
+      if ('navigate' in client) {
+        try { await client.navigate(target); } catch {}
+      }
+      if ('focus' in client) return client.focus();
+    }
+    return self.clients.openWindow ? self.clients.openWindow(target) : undefined;
+  })());
 });
