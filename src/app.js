@@ -902,13 +902,54 @@ async function downloadRace(id,button){
   finally{ button.disabled=false; }
 }
 
+async function refreshSavedYandexImports(){
+  if(!navigator.onLine) return {checked:0,updated:0,failed:0};
+  const packages=(await getAllPackages()).filter(pkg=>pkg?.raceId!=null);
+  let checked=0,updated=0,failed=0;
+
+  for(let pkg of packages){
+    try{
+      // Refresh the race record first in case the site changed the Constructor
+      // iframe itself, not only the points inside an existing map.
+      try{
+        const race=await fetchRace(pkg.raceId);
+        if(race?.iframe_maps) pkg.yandexMapEmbed=race.iframe_maps;
+      }catch(e){
+        console.warn('Could not refresh race before Yandex import',pkg?.raceId,e);
+      }
+
+      if(!pkg?.yandexMapEmbed) continue;
+      checked++;
+      const result=await enrichPackageWithYandex(pkg);
+      await savePackage(result.pkg);
+      updated++;
+    }catch(e){
+      failed++;
+      console.warn('Could not refresh Yandex Constructor points',pkg?.raceId,e);
+    }
+  }
+
+  if(currentPackageId && updated){
+    const current=await getPackage(currentPackageId);
+    if(current) await selectPackage(currentPackageId);
+  }
+  return {checked,updated,failed};
+}
+
 async function loadCatalog(){
   if(!navigator.onLine){ $('catalogStatus').textContent='Офлайн: доступны уже скачанные гонки.'; catalog=[]; await renderCatalog(); return; }
   $('catalogStatus').textContent='Проверяю serverless proxy…';
   try{
     await checkApiHealth();
     $('catalogStatus').textContent='Загружаю список из api.rallyfansmap.ru…';
-    catalog=await fetchRaceCatalog(); $('catalogStatus').textContent=`${catalog.length} гонок · публичный endpoint /race`; await renderCatalog();
+    catalog=await fetchRaceCatalog();
+    await renderCatalog();
+
+    $('catalogStatus').textContent='Обновляю точки Yandex сохранённых гонок…';
+    const yandex=await refreshSavedYandexImports();
+    $('catalogStatus').textContent=yandex.checked
+      ? `${catalog.length} гонок · Yandex обновлён: ${yandex.updated}${yandex.failed?` · ошибок: ${yandex.failed}`:''}`
+      : `${catalog.length} гонок · публичный endpoint /race`;
   }
   catch(err){ $('catalogStatus').textContent=`API недоступен: ${err.message}`; }
 }
