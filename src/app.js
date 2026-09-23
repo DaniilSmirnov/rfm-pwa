@@ -260,10 +260,12 @@ async function refreshPushUi() {
     setPushStatus('Push-уведомления не поддерживаются этим браузером.');
     return;
   }
-  if(/iPhone|iPad|iPod/i.test(navigator.userAgent) && !isStandalonePwa()){
+  if(isIOSDevice() && !isStandalonePwa()){
     enable.disabled=false;
+    enable.textContent='Сначала установить PWA';
+    enable.classList.remove('downloaded');
     test.hidden=true;
-    setPushStatus('На iOS push работает после установки PWA на экран «Домой».');
+    setPushStatus('Сейчас приложение открыто в браузере. Установи PWA на экран «Домой», затем включи уведомления.');
     return;
   }
   const sub=await getPushSubscription().catch(()=>null);
@@ -617,6 +619,11 @@ async function scheduleAllSavedReminders(){
 }
 
 async function enablePushNotifications() {
+  if(isIOSDevice() && !isStandalonePwa()){
+    syncInstallUi();
+    await requestPwaInstall();
+    return refreshPushUi();
+  }
   if(!pushSupported()) return refreshPushUi();
   const btn=$('pushEnableBtn');
   btn.disabled=true;
