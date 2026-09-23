@@ -267,6 +267,7 @@ function setStageSubscribed(pkg,stageKey,enabled){
 }
 
 const WALLET_STAGE_PREFS_KEY='rfm-wallet-stage-passes-v1';
+const WALLET_STAGE_FEATURE_ENABLED=false;
 
 function isIOSDevice(){
   return /iPad|iPhone|iPod/i.test(navigator.userAgent)
@@ -402,7 +403,7 @@ async function syncWalletStage(pkg,item,stage,{openPass=false}={}){
 }
 
 async function syncWalletPassesForPackage(pkg){
-  if(!isIOSDevice()) return 0;
+  if(!WALLET_STAGE_FEATURE_ENABLED || !isIOSDevice()) return 0;
   const selected=walletStageKeys(pkg);
   if(!selected.size) return 0;
   let synced=0;
@@ -696,7 +697,7 @@ function renderSchedule(p){
 
   const subscribed=subscribedStageKeys(p);
   const walletAdded=walletStageKeys(p);
-  const showWallet=isIOSDevice();
+  const showWallet=WALLET_STAGE_FEATURE_ENABLED && isIOSDevice();
 
   for(const item of schedule){
     const events=asArray(item.events);
