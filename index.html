@@ -99,6 +99,18 @@
         <div class="point-actions-copy"><div class="eyebrow">выбранная точка</div><strong id="pointName"></strong><span id="pointCoords" class="muted"></span></div>
         <div class="actions point-buttons"><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
         <p id="navStatus" class="muted small"></p>
+        <details id="spectatorCompass" class="spectator-compass collapsible-section">
+          <summary><span class="block-title">КОМПАС ЗРИТЕЛЯ</span><span class="summary-chevron">⌄</span></summary>
+          <div class="collapsible-body spectator-compass-body">
+            <p class="muted small">Показывает направление и расстояние до выбранной точки прямо по положению телефона.</p>
+            <button id="compassEnableBtn" class="button" type="button">Включить компас</button>
+            <div id="compassDisplay" class="compass-display" hidden>
+              <div class="compass-dial" aria-hidden="true"><span class="compass-north">N</span><span id="compassArrow" class="compass-arrow">↑</span></div>
+              <div class="compass-copy"><strong id="compassDistance">—</strong><span id="compassBearing" class="muted">—</span></div>
+            </div>
+            <p id="compassStatus" class="muted small">Компас выключен.</p>
+          </div>
+        </details>
       </aside>
     </section>
   </main>
