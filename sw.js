@@ -1,4 +1,4 @@
-const CACHE='rfm-companion-v050-stage-reminders-refresh';
+const CACHE='rfm-companion-v050-stage-opt-in';
 const ASSET_CACHE='rfm-race-assets-v1';
 const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/icon.svg','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg'];
 const EXTERNAL=[
