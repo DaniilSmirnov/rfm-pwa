@@ -4,7 +4,7 @@ import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTil
 import { normalizePackage } from './normalize.js';
 import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
-import { googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
+import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
 import { downloadOfflineMap, removeOfflineMap, buildDownloadPlan } from './offline-map.js';
 
 const $ = id => document.getElementById(id);
@@ -761,7 +761,7 @@ function updateSpectatorCompass(){
     return;
   }
   let target;
-  try{ target=normalizePoint(selectedPoint); }catch{ display.hidden=true; status.textContent='У выбранной точки некорректные координаты.'; return; }
+  try{ target=normalizePoint(selectedPoint); }catch(e){ display.hidden=true; status.textContent=`Не удалось определить координаты точки: ${e?.message || 'неизвестная ошибка'}`; return; }
   const here={lat:Number(userPos.latitude),lon:Number(userPos.longitude)};
   const bearing=bearingDegrees(here,target);
   const distance=distanceMeters(here,target);
