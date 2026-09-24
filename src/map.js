@@ -40,6 +40,13 @@ function splitFeatures(fc={type:'FeatureCollection',features:[]}) {
   };
 }
 
+function routePayload(feature) {
+  return {
+    name:String(feature?.properties?.name || feature?.properties?.title || feature?.properties?.caption || 'Участок'),
+    geometry:feature?.geometry || null
+  };
+}
+
 function pointPayload(feature) {
   const c=feature?.geometry?.coordinates || [];
   return {lat:Number(c[1]),lon:Number(c[0]),name:String(feature?.properties?.name || feature?.properties?.title || 'Точка')};
@@ -254,6 +261,15 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
 
     installRacePointLabels(map,points,onPointClick);
     installBasemapInspector(map,options.offlineMap);
+
+    if(options.onRouteClick){
+      map.on('click','rfm-lines',e=>{
+        const feature=e.features?.[0];
+        if(feature) options.onRouteClick(routePayload(feature));
+      });
+      map.on('mouseenter','rfm-lines',()=>{ map.getCanvas().style.cursor='pointer'; });
+      map.on('mouseleave','rfm-lines',()=>{ map.getCanvas().style.cursor=''; });
+    }
 
     if (onPointClick) {
       map.on('click','rfm-points',e=>{ const f=e.features?.[0]; if(f) onPointClick(pointPayload(f)); });

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ensurePersistentStorage, setupPeriodicBackgroundSync } from '../../src/app/runtime.js';
+import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync } from '../../src/app/runtime.js';
 
 const originalStorageDescriptor=Object.getOwnPropertyDescriptor(navigator,'storage');
 const originalPermissionsDescriptor=Object.getOwnPropertyDescriptor(navigator,'permissions');
@@ -58,5 +58,16 @@ describe('periodic sync runtime',()=>{
     setNavigator('permissions',undefined);
     const register=vi.fn(async()=>{});
     expect(await setupPeriodicBackgroundSync({periodicSync:{register}})).toEqual({supported:true,registered:true});
+  });
+});
+
+describe('background Rally Pack refresh runtime',()=>{
+  it('asks the active worker to refresh packs',()=>{
+    const postMessage=vi.fn();
+    expect(requestRallyPackBackgroundRefresh({active:{postMessage}})).toBe(true);
+    expect(postMessage).toHaveBeenCalledWith({type:'REFRESH_RALLY_PACKS'});
+  });
+  it('degrades when there is no active worker',()=>{
+    expect(requestRallyPackBackgroundRefresh({})).toBe(false);
   });
 });

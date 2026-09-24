@@ -12,7 +12,7 @@ import { startOfLocalDay, raceDateRange, distanceFromTodayDays, raceWithinWeek, 
 import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from './app/geo.js';
 import { setupPushUi, getPushSubscription, refreshPushUi, setPushStatus, scheduleRaceReminders, scheduleAllSavedReminders } from './app/push-client.js';
 import { FAVORITES_KEY, pointKey, favoritesForPackage, isFavoritePoint, setFavoritePoint, loadCarPoint, saveCarPoint, deleteCarPoint } from './app/local-points.js';
-import { ensurePersistentStorage, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from './app/runtime.js';
+import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from './app/runtime.js';
 import { renderPointList as renderPointListUi } from './app/point-list.js';
 import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
 import { renderSchedule } from './app/schedule-ui.js';
@@ -21,6 +21,9 @@ import { setupPwaInstall } from './app/pwa.js';
 import { downloadRallyPack } from './app/rally-pack.js';
 import { rallyPackProgressText } from './app/rally-pack-ui.js';
 import { createTerrainControls } from './app/terrain-controls.js';
+import { showPointElevation, showRouteElevationProfile } from './app/elevation-ui.js';
+import { processCachedRallyPackUpdates } from './app/rally-pack-update.js';
+import { renderRallyPackUpdateStatus } from './app/rally-pack-update-ui.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -113,7 +116,7 @@ async function sharePoint(point) {
 }
 
 function updateNetwork() { const online=navigator.onLine; $('networkBadge').textContent=online?'онлайн':'офлайн'; $('networkBadge').className=`badge ${online?'online':'offline'}`; }
-window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); });
+window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); requestRallyPackBackgroundRefresh(swRegistration); });
 window.addEventListener('offline',updateNetwork); updateNetwork();
 
 async function refreshList() {
@@ -178,7 +181,7 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   terrainControls.update(p);
   renderPointList(p);
@@ -201,6 +204,7 @@ async function selectPackage(id){
   renderSchedule(p);
   syncWalletPassesForPackage(p).catch(e=>console.warn('Wallet pass refresh failed',e));
   renderRaceMedia(p);
+  renderRallyPackUpdateStatus(p);
 }
 
 async function importObject(data, source){ const pkg=normalizePackage(data,source); await savePackage(pkg); currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id); return pkg; }
@@ -346,6 +350,7 @@ function showPointActions(point) {
   $('pointName').textContent=point.name || 'Точка';
   $('pointCoords').textContent=coordinateText(point);
   $('navStatus').textContent='';
+  getPackage(currentPackageId).then(pkg=>showPointElevation(pkg?.terrain,point)).catch(()=>{});
   const compass=$('spectatorCompass'); if(compass) compass.open=false;
   const compassBtn=$('compassEnableBtn'); if(compassBtn) compassBtn.textContent=compassListening?'Компас включён':'Включить компас';
   updateSpectatorCompass();
@@ -579,6 +584,8 @@ $('importYandexBtn').onclick = async () => {
 const swRegistration=await setupServiceWorkerUpdates();
 await ensurePersistentStorage();
 await setupPeriodicBackgroundSync(swRegistration);
+requestRallyPackBackgroundRefresh(swRegistration);
+await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(e=>console.warn('Smart Rally Pack update failed',e));
 await refreshPushUi();
 try {
   if(await getPushSubscription()) await scheduleAllSavedReminders();
@@ -586,6 +593,13 @@ try {
   console.warn('Could not refresh scheduled race reminders on startup',e);
 }
 await refreshList();
+window.addEventListener('rfm:periodic-update',async()=>{
+  const result=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(()=>null);
+  if(result?.applied||result?.pending){
+    await refreshList();
+    if(currentPackageId) await selectPackage(currentPackageId);
+  }
+});
 window.addEventListener('rfm:background-fetch',event=>{
   const detail=event.detail||{};
   const status=$('catalogStatus');
