@@ -22,15 +22,15 @@
     })();
   </script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="icon" type="image/png" href="/rfm/icon.png?v=0502" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/rfm/icon.png?v=0502" />
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.css" />
+  <link rel="icon" type="image/png" href="/rfm/icon.png?v=__APP_VERSION_CACHE__" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/rfm/icon.png?v=__APP_VERSION_CACHE__" />
+  <link rel="stylesheet" href="/vendor/maplibre-gl/maplibre-gl.css" />
   <link rel="stylesheet" href="/src/styles.css" />
   <title>Rally Fans Map Offline</title>
 </head>
 <body>
   <header class="topbar">
-    <div class="header-brand"><img class="header-logo" src="/rfm/icon.png?v=0502" alt="" /><div><div class="brand-small">Rally Fans Map</div><h1>OFFLINE</h1></div></div>
+    <div class="header-brand"><img class="header-logo" src="/rfm/icon.png?v=__APP_VERSION_CACHE__" alt="" /><div><div class="brand-small">Rally Fans Map</div><h1>OFFLINE</h1></div></div>
     <div class="top-actions"><button id="installBtn" class="button compact" hidden>Установить PWA</button><span id="networkBadge" class="badge">…</span></div>
   </header>
 
@@ -172,10 +172,10 @@
 
   <div id="imageModal" class="image-modal" hidden><button id="imageModalClose" class="image-modal-close" aria-label="Закрыть">×</button><div class="image-modal-inner"><img id="imageModalImg" alt="Материал гонки" /></div></div>
   <div id="updateBanner" class="update-banner" hidden><span id="updateText">Обновляю приложение…</span></div>
-  <footer class="app-footer"><div class="brand-small">Rally Fans Map</div><div>Companion v0.6.1 · Sortovala</div></footer>
+  <footer class="app-footer"><div class="brand-small">Rally Fans Map</div><div>Companion v__APP_VERSION__ · __APP_CODENAME__</div></footer>
 
   <template id="packageTpl"><button class="package-row"><span><strong class="package-name"></strong><small class="package-meta"></small></span><img class="row-arrow" src="/assets/arrow-right.svg" alt="" /></button></template>
-  <script src="https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js"></script>
+  <script src="/vendor/pmtiles/pmtiles.js"></script>
   <script type="module" src="/src/app.js"></script>
 </body>
 </html>
