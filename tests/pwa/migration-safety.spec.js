@@ -122,7 +122,7 @@ async function seedSavedRace(page,{offlineMap=false,withAssets=false}={}){
       }
     }
 
-    localStorage.setItem('rfm-favorites',JSON.stringify({
+    localStorage.setItem('rfm-favorite-points-v1',JSON.stringify({
       'race-901':[{
         name:'Offline spectator point',
         lat:61.7,
@@ -315,7 +315,7 @@ test.describe('PWA migration safety',()=>{
         tx.oncomplete=()=>resolve({
           packages:packages.result?.length||0,
           tiles:tiles.result?.length||0,
-          favorites:localStorage.getItem('rfm-favorites')
+          favorites:localStorage.getItem('rfm-favorite-points-v1')
         });
         tx.onerror=()=>reject(tx.error);
       });
@@ -373,7 +373,7 @@ test.describe('PWA migration safety',()=>{
         const request=tx.objectStore('packages').get('race-901');
         request.onsuccess=()=>resolve({
           name:request.result?.name,
-          favorites:localStorage.getItem('rfm-favorites')
+          favorites:localStorage.getItem('rfm-favorite-points-v1')
         });
         request.onerror=()=>reject(request.error);
       });
@@ -393,7 +393,7 @@ test.describe('PWA migration safety',()=>{
         const request=tx.objectStore('packages').get('race-901');
         request.onsuccess=()=>resolve({
           name:request.result?.name,
-          favorites:localStorage.getItem('rfm-favorites')
+          favorites:localStorage.getItem('rfm-favorite-points-v1')
         });
         request.onerror=()=>reject(request.error);
       });
