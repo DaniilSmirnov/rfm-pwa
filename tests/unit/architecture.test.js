@@ -13,17 +13,41 @@ describe('architecture guardrails',()=>{
   it('keeps Wallet logic out of Worker entrypoint',()=>expect(read('_worker.js')).not.toContain('function buildWalletPassJson'));
   it('keeps schedule timezone logic out of app entrypoint',()=>expect(read('src/app.js')).not.toContain('RACE_REGION_TIMEZONES'));
   it('keeps sanitizer out of app entrypoint',()=>expect(read('src/app.js')).not.toContain('SAFE_RICH_HTML_TAGS'));
-  it('pre-caches every extracted app module',()=>{
-    const sw=read('sw.js');
-    for(const path of ['catalog-dates','export','geo','local-points','preferences','push-client','pwa','runtime','sanitize','schedule','wallet-client','race-media','point-list','schedule-ui','rally-pack','rally-pack-ui','terrain-controls','elevation','elevation-ui','rally-pack-update','rally-pack-update-ui','telemetry']){
-      expect(sw).toContain('/src/app/'+path+'.js');
-    }
+
+  it('uses Vite for the client production bundle',()=>{
+    const pkg=JSON.parse(read('package.json'));
+    const config=read('vite.config.js');
+    const build=read('scripts/build.mjs');
+    expect(pkg.devDependencies.vite).toBeTruthy();
+    expect(config).toContain("outDir:'dist'");
+    expect(config).toContain("manifest:true");
+    expect(build).toContain("build as viteBuild");
   });
-  it('pre-caches extracted map modules',()=>{
+
+  it('injects the built asset graph into the service worker instead of precaching source modules',()=>{
     const sw=read('sw.js');
-    for(const path of ['style','terrain','terrain-control','viewport-policy']) expect(sw).toContain('/src/map/'+path+'.js');
+    const build=read('scripts/build.mjs');
+    expect(sw).toContain('/*__BUILD_ASSETS__*/[]');
+    expect(sw).not.toContain('/src/app.js');
+    expect(sw).not.toContain('/src/map.js');
+    expect(build).toContain("const shell=['/'");
+    expect(build).toContain("sw.replace(shellPlaceholder,JSON.stringify(uniqueShell))");
   });
-  it('pre-caches terrain downloader',()=>expect(read('sw.js')).toContain('/src/terrain-offline.js'));
+
+  it('prunes obsolete Vite chunks without clearing unrelated runtime cache entries',()=>{
+    const sw=read('sw.js');
+    expect(sw).toContain("url.pathname.startsWith('/assets/')");
+    expect(sw).toContain('!expected.has(url.pathname)');
+    expect(sw).toContain('cache.delete(request)');
+  });
+
+  it('keeps Cloudflare Worker modules outside the client Vite bundle',()=>{
+    const build=read('scripts/build.mjs');
+    expect(build).toContain("resolve(root,'src/worker')");
+    expect(build).toContain("resolve(publicDir,'src/worker')");
+    expect(build).toContain("path.startsWith('src/worker/')");
+  });
+
   it('configures sampled Cloudflare error traces',()=>{
     const wrangler=read('wrangler.toml');
     expect(wrangler).toContain('binding = "ERROR_TRACES"');
@@ -31,13 +55,17 @@ describe('architecture guardrails',()=>{
     expect(wrangler).toContain('ERROR_TRACE_SAMPLE_RATE = "0.2"');
     expect(wrangler).toContain('upload_source_maps = true');
   });
-  it('pins the MapLibre worker to the bundled same-origin file',()=>{
+
+  it('keeps MapLibre worker and PMTiles as same-origin vendor assets during the Vite migration',()=>{
     const app=read('src/app.js');
-    const sw=read('sw.js');
+    const config=read('vite.config.js');
+    const build=read('scripts/build.mjs');
     expect(app).toContain("setWorkerUrl('/vendor/maplibre-gl/maplibre-gl-worker.mjs')");
-    expect(sw).toContain('/vendor/maplibre-gl/maplibre-gl-worker.mjs');
-    expect(sw).toContain('/vendor/maplibre-gl/maplibre-gl-shared.mjs');
+    expect(config).toContain("id.startsWith('/vendor/')");
+    expect(build).toContain("node_modules/maplibre-gl/dist");
+    expect(build).toContain("node_modules/pmtiles/dist/pmtiles.js");
   });
+
   it('defines unit, UI and PWA test scripts',()=>{
     const pkg=JSON.parse(read('package.json'));
     expect(pkg.scripts['test:unit']).toBeTruthy();
