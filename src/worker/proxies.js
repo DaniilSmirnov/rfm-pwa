@@ -2,6 +2,7 @@ import { commonHeaders, json } from './http.js';
 
 export const API_ORIGIN = 'https://api.rallyfansmap.ru';
 export const BASEMAP_PM = 'https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles';
+export const TERRAIN_TILE_ORIGIN = 'https://tiles.mapterhorn.com';
 export const RFM_ICON_URL = 'https://rallyfansmap.ru/assets/icons/apple-touch-icon.png';
 
 function apiTarget(pathname) {
@@ -131,6 +132,23 @@ async function proxyBasemap(request) {
   return new Response(request.method==='HEAD'?null:upstream.body,{status:upstream.status,statusText:upstream.statusText,headers:out});
 }
 
+async function proxyTerrainTile(request,url){
+  if(!['GET','HEAD'].includes(request.method)) return new Response('Method not allowed',{status:405,headers:commonHeaders({allow:'GET, HEAD'})});
+  const match=url.pathname.match(/^\/api\/terrain\/(\d+)\/(\d+)\/(\d+)\.webp$/);
+  if(!match) return new Response('Not found',{status:404,headers:commonHeaders()});
+  const [z,x,y]=match.slice(1).map(Number);
+  if(!Number.isInteger(z)||!Number.isInteger(x)||!Number.isInteger(y)||z<0||z>17||x<0||y<0||x>=2**z||y>=2**z) return new Response('Invalid tile',{status:400,headers:commonHeaders()});
+  let upstream;
+  try { upstream=await fetch(`${TERRAIN_TILE_ORIGIN}/${z}/${x}/${y}.webp`,{method:request.method,headers:{accept:'image/webp,*/*'},redirect:'follow',cf:{cacheEverything:true,cacheTtl:604800}}); }
+  catch(e){ return json({ok:false,error:'Terrain upstream unavailable',detail:String(e?.message||e)},502); }
+  const headers=new Headers(commonHeaders({
+    'content-type':upstream.headers.get('content-type')||'image/webp',
+    'cache-control':'public, max-age=604800, s-maxage=604800'
+  }));
+  const length=upstream.headers.get('content-length'); if(length) headers.set('content-length',length);
+  return new Response(request.method==='HEAD'?null:upstream.body,{status:upstream.status,statusText:upstream.statusText,headers});
+}
+
 export const RFM_FONTS = new Set([
   'RFDewiExpanded-Black.cd06241e.woff2',
   'RFDewiExpanded-BoldItalic.67413952.ttf',
@@ -146,4 +164,4 @@ async function proxyRfmFont(request,url){
 }
 
 
-export { apiTarget, allowedYandexConstructorUrl, extractBalancedObject, importYandexConstructor, proxyBasemap, proxyRfmFont, proxyRallyFans };
+export { apiTarget, allowedYandexConstructorUrl, extractBalancedObject, importYandexConstructor, proxyBasemap, proxyTerrainTile, proxyRfmFont, proxyRallyFans };
