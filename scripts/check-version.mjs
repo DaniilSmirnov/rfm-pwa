@@ -3,12 +3,12 @@ import { resolve } from 'node:path';
 
 const root=resolve(import.meta.dirname,'..');
 const meta=JSON.parse(await readFile(resolve(root,'version.json'),'utf8'));
-if(!/^\d+\.\d+\.\d+$/.test(String(meta.version||''))) throw new Error('Invalid version.json version');
+if(!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(String(meta.version||''))) throw new Error('Invalid version.json version');
 if(!String(meta.codename||'').trim()) throw new Error('Invalid version.json codename');
 
 const expectations={
   'index.html':['__APP_VERSION__','__APP_CODENAME__'],
-  'sw.js':['__APP_VERSION_CACHE__','__APP_CODENAME_SLUG__'],
+  'sw.js':['__APP_VERSION_CACHE__','__APP_CODENAME_SLUG__','/*__BUILD_ASSETS__*/[]'],
   '_worker.js':['__APP_VERSION__']
 };
 for(const [file,tokens] of Object.entries(expectations)){
