@@ -149,7 +149,7 @@ async function seedSavedRace(page,{offlineMap=false,withAssets=false,terrain=fal
 async function registerHarnessWorker(page,script){
   return page.evaluate(async script=>{
     const previous=navigator.serviceWorker.controller?.scriptURL||null;
-    const registration=await navigator.serviceWorker.register(script,{scope:'/'});
+    const registration=await navigator.serviceWorker.register(script,{scope:'/migration-test/'});
     await navigator.serviceWorker.ready;
     if(registration.installing){
       await new Promise(resolve=>{
@@ -372,15 +372,15 @@ test.describe('PWA migration safety',()=>{
   });
 
   test('a newly installed service worker takes control of an already open client',async({page})=>{
-    await page.goto('/migration-harness.html');
-    const first=await registerHarnessWorker(page,'/sw-upgrade-v1.js');
-    expect(first).toContain('/sw-upgrade-v1.js');
+    await page.goto('/migration-test/migration-harness.html');
+    const first=await registerHarnessWorker(page,'/migration-test/sw-upgrade-v1.js');
+    expect(first).toContain('/migration-test/sw-upgrade-v1.js');
     await expect.poll(()=>page.evaluate(()=>fetch('/__sw-version').then(r=>r.text()))).toBe('v1');
 
     const controllerChanges=await page.evaluate(async()=>{
       let changes=0;
       navigator.serviceWorker.addEventListener('controllerchange',()=>changes++);
-      const registration=await navigator.serviceWorker.register('/sw-upgrade-v2.js',{scope:'/'});
+      const registration=await navigator.serviceWorker.register('/migration-test/sw-upgrade-v2.js',{scope:'/migration-test/'});
       if(registration.installing){
         await new Promise((resolve,reject)=>{
           const worker=registration.installing;
@@ -398,13 +398,13 @@ test.describe('PWA migration safety',()=>{
     });
 
     expect(controllerChanges).toBeGreaterThanOrEqual(1);
-    await expect.poll(()=>page.evaluate(()=>navigator.serviceWorker.controller?.scriptURL||'')).toContain('/sw-upgrade-v2.js');
+    await expect.poll(()=>page.evaluate(()=>navigator.serviceWorker.controller?.scriptURL||'')).toContain('/migration-test/sw-upgrade-v2.js');
     await expect.poll(()=>page.evaluate(()=>fetch('/__sw-version').then(r=>r.text()))).toBe('v2');
   });
 
   test('application data survives a service worker version upgrade',async({page})=>{
-    await page.goto('/migration-harness.html');
-    await registerHarnessWorker(page,'/sw-upgrade-v1.js');
+    await page.goto('/migration-test/migration-harness.html');
+    await registerHarnessWorker(page,'/migration-test/sw-upgrade-v1.js');
 
     await seedSavedRace(page);
     const before=await page.evaluate(async()=>{
@@ -424,7 +424,7 @@ test.describe('PWA migration safety',()=>{
       });
     });
 
-    await registerHarnessWorker(page,'/sw-upgrade-v2.js');
+    await registerHarnessWorker(page,'/migration-test/sw-upgrade-v2.js');
     await expect.poll(()=>page.evaluate(()=>fetch('/__sw-version').then(r=>r.text()))).toBe('v2');
 
     const after=await page.evaluate(async()=>{
