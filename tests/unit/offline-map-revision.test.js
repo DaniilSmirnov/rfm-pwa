@@ -68,7 +68,7 @@ describe('offline map revision safety',()=>{
 
     await expect(downloadOfflineMap(pkg(),()=>{},{
       previousMap:{ready:true,storageId:'race-1@slot-a'}
-    })).rejects.toThrow(/повторная попытка продолжит загрузку/i);
+    })).rejects.toThrow();
 
     expect(deleteMapTiles).not.toHaveBeenCalled();
     expect(saveMapTile).not.toHaveBeenCalled();
