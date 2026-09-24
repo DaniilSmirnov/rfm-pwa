@@ -20,8 +20,8 @@ async function waitForAppWorker(page){
   });
 }
 
-async function seedSavedRace(page,{offlineMap=false,withAssets=false}={}){
-  await page.evaluate(async({offlineMap,withAssets})=>{
+async function seedSavedRace(page,{offlineMap=false,withAssets=false,terrain=false}={}){
+  await page.evaluate(async({offlineMap,withAssets,terrain})=>{
     const db=await new Promise((resolve,reject)=>{
       const request=indexedDB.open('rallyfans-offline',2);
       request.onupgradeneeded=()=>{
@@ -86,6 +86,20 @@ async function seedSavedRace(page,{offlineMap=false,withAssets=false}={}){
           vectorLayers:[{id:'roads',fields:{}}],
           downloadedAt:'2026-09-24T10:00:00.000Z'
         }
+      }:{}),
+      ...(terrain?{
+        terrain:{
+          ready:true,
+          storageId:'race-901@terrain@e2e',
+          tileCount:1,
+          bytes:4,
+          minZoom:6,
+          maxZoom:12,
+          tileSize:512,
+          encoding:'terrarium',
+          bounds:{minLon:30.5,minLat:61.5,maxLon:30.9,maxLat:61.9},
+          downloadedAt:'2026-09-24T10:00:00.000Z'
+        }
       }:{})
     };
 
@@ -100,9 +114,9 @@ async function seedSavedRace(page,{offlineMap=false,withAssets=false}={}){
       await new Promise((resolve,reject)=>{
         const tx=db.transaction('maptiles','readwrite');
         tx.objectStore('maptiles').put({
-          key:`${storageId}:14:9588:5820`,
+          key:`${storageId}:14:9588:4599`,
           raceId:storageId,
-          z:14,x:9588,y:5820,
+          z:14,x:9588,y:4599,
           data:new ArrayBuffer(0),
           bytes:0
         });
@@ -129,7 +143,7 @@ async function seedSavedRace(page,{offlineMap=false,withAssets=false}={}){
         lon:30.69
       }]
     }));
-  },{offlineMap,withAssets});
+  },{offlineMap,withAssets,terrain});
 }
 
 async function registerHarnessWorker(page,script){
