@@ -1,4 +1,4 @@
-import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.mjs';
+import * as maplibregl from '/vendor/maplibre-gl/maplibre-gl.mjs';
 window.maplibregl = maplibregl;
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from './db.js';
 import { normalizePackage } from './normalize.js';
