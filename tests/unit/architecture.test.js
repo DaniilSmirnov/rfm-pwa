@@ -34,6 +34,13 @@ describe('architecture guardrails',()=>{
     expect(build).toContain("sw.replace(shellPlaceholder,JSON.stringify(uniqueShell))");
   });
 
+  it('prunes obsolete Vite chunks without clearing unrelated runtime cache entries',()=>{
+    const sw=read('sw.js');
+    expect(sw).toContain("url.pathname.startsWith('/assets/')");
+    expect(sw).toContain('!expected.has(url.pathname)');
+    expect(sw).toContain('cache.delete(request)');
+  });
+
   it('keeps Cloudflare Worker modules outside the client Vite bundle',()=>{
     const build=read('scripts/build.mjs');
     expect(build).toContain("resolve(root,'src/worker')");
