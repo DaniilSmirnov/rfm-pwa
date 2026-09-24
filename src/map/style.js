@@ -1,4 +1,5 @@
 import { registerOfflineMapProtocol, offlineVectorSource, resetOfflineMapDiagnostics } from '../offline-map.js';
+import { terrainStyleParts } from './terrain.js';
 
 function basemapField(...names){
   return ['to-string',['coalesce',...names.map(name=>['get',name]),'']];
@@ -619,18 +620,31 @@ function offlineBasemapLayers(source='offline-base', offlineMap={}){
   return [...geometry,...labels];
 }
 
-function baseStyle(offlineMap) {
+function baseStyle(offlineMap,terrain) {
   const sources = {};
   const layers = [{id:'background',type:'background',paint:{'background-color':'#11151b'}}];
+  let labelLayers=[];
+
   if (offlineMap?.ready) {
     registerOfflineMapProtocol();
     resetOfflineMapDiagnostics();
     sources['offline-base']=offlineVectorSource(offlineMap.raceId,offlineMap);
-    layers.push(...offlineBasemapLayers('offline-base',offlineMap));
+    const basemapLayers=offlineBasemapLayers('offline-base',offlineMap);
+    const firstLabel=basemapLayers.findIndex(layer=>layer.type==='symbol');
+    if(firstLabel>=0){
+      layers.push(...basemapLayers.slice(0,firstLabel));
+      labelLayers=basemapLayers.slice(firstLabel);
+    }else{
+      layers.push(...basemapLayers);
+    }
   } else if (navigator.onLine) {
     sources.osm = {type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:19,attribution:'© OpenStreetMap contributors'};
     layers.push({id:'osm',type:'raster',source:'osm',paint:{'raster-opacity':0.92}});
   }
+
+  const terrainParts=terrainStyleParts(terrain);
+  Object.assign(sources,terrainParts.sources);
+  layers.push(...terrainParts.layers,...labelLayers);
   return {version:8,sources,layers};
 }
 

@@ -90,7 +90,7 @@
       <div class="race-content">
         <div id="raceStats" class="race-stats"></div>
         <div class="race-actions-line"><button id="importYandexBtn" class="button">Импорт из Yandex</button></div>
-        <div class="offline-cta"><button id="downloadMapBtnTop" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtnTop" class="button danger" hidden>Удалить карту</button><span id="offlineMapStatusTop" class="muted small">Офлайн-подложка ещё не скачана.</span></div>
+        <div class="offline-cta"><button id="downloadMapBtnTop" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtnTop" class="button danger" hidden>Удалить карту</button><button id="downloadTerrainBtnTop" class="button" disabled>Рельеф карты</button><button id="deleteTerrainBtnTop" class="button danger" hidden>Удалить рельеф</button><span id="offlineMapStatusTop" class="muted small">Офлайн-подложка ещё не скачана.</span><span id="terrainStatusTop" class="muted small">Рельеф ещё не скачан.</span></div>
 
         <div class="full-width-line"></div>
         <div class="block-title">РАСПИСАНИЕ</div>
@@ -101,8 +101,8 @@
     </section>
 
     <section class="rfm-section map-card">
-      <div class="section-head"><div><div id="mapTitle" class="block-title">КАРТА РАЛЛИ</div><p id="mapSubtitle" class="muted">Выбери сохранённую гонку</p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button></div></div>
-      <p id="offlineMapStatus" class="muted small">Офлайн-подложка ещё не скачана.</p><p id="offlineMapDiag" class="muted small" hidden></p>
+      <div class="section-head"><div><div id="mapTitle" class="block-title">КАРТА РАЛЛИ</div><p id="mapSubtitle" class="muted">Выбери сохранённую гонку</p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button><button id="downloadTerrainBtn" class="button" disabled>Рельеф карты</button><button id="deleteTerrainBtn" class="button danger" hidden>Удалить рельеф</button></div></div>
+      <p id="offlineMapStatus" class="muted small">Офлайн-подложка ещё не скачана.</p><p id="terrainStatus" class="muted small">Рельеф ещё не скачан.</p><p id="offlineMapDiag" class="muted small" hidden></p>
       <div id="map" class="map" aria-label="offline rally map"></div>
 
       <section class="favorites-panel" aria-labelledby="favoritesTitle">

@@ -32,6 +32,7 @@ export async function downloadRallyPack(raceId,deps,onProgress=()=>{}){
 
     const previous=await deps.getPackage(pkg.id);
     previousMap=previous?.offlineMap?.ready ? previous.offlineMap : null;
+    if(previous?.terrain?.ready) pkg.terrain=previous.terrain;
 
     if(pkg.yandexMapEmbed){
       report(onProgress,RALLY_PACK_PHASES.YANDEX);

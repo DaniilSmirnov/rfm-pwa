@@ -66,6 +66,17 @@ describe('downloadRallyPack',()=>{
     expect(deps.savePackage).toHaveBeenCalledOnce();
   });
 
+  it('preserves separately downloaded terrain when refreshing a Rally Pack',async()=>{
+    const terrain={ready:true,storageId:'race-7@terrain@keep',tileCount:12};
+    const {deps}=fixture({
+      getPackage:vi.fn(async()=>({id:'race-7',offlineMap:{ready:true,storageId:'race-7@old'},terrain}))
+    });
+
+    const result=await downloadRallyPack(7,deps);
+    expect(result.pkg.terrain).toEqual(terrain);
+    expect(deps.savePackage.mock.calls[0][0].terrain).toEqual(terrain);
+  });
+
   it('does not fail a completed pack when reminder scheduling fails',async()=>{
     const optional=vi.fn();
     const {deps}=fixture({
