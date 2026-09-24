@@ -7,12 +7,20 @@ const expectedShell=`rfm-companion-v${String(release.version).replace(/\D/g,'')}
 async function waitForWorker(page){
   return page.evaluate(async()=>{
     const registration=await navigator.serviceWorker.ready;
-    if(!registration.active) throw new Error('Service worker is not active');
-    return {
-      scope:registration.scope,
-      scriptURL:registration.active.scriptURL,
-      state:registration.active.state
-    };
+    const worker=registration.active;
+    if(!worker) throw new Error('Service worker is not active');
+    if(worker.state!=='activated'){
+      await new Promise((resolve,reject)=>{
+        const timeout=setTimeout(()=>reject(new Error(`Service worker stayed ${worker.state}`)),5000);
+        worker.addEventListener('statechange',()=>{
+          if(worker.state==='activated'){
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
+      });
+    }
+    return {scope:registration.scope,scriptURL:worker.scriptURL,state:worker.state};
   });
 }
 
