@@ -37,7 +37,7 @@ async function vapidJwt(endpoint, env) {
   const signature=await crypto.subtle.sign(
     {name:'ECDSA',hash:'SHA-256'},
     key,
-    encoder.encode(input)
+    new TextEncoder().encode(input)
   );
   return `${input}.${bytesToBase64Url(signature)}`;
 }
