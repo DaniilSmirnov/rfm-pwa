@@ -6,6 +6,7 @@ import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
 import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
 import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan } from './offline-map.js';
+import { downloadTerrain, removeTerrain, discardTerrainRevision, buildTerrainDownloadPlan } from './terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from './app/export.js';
 import { startOfLocalDay, raceDateRange, distanceFromTodayDays, raceWithinWeek, pickDefaultRace } from './app/catalog-dates.js';
 import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from './app/geo.js';
@@ -162,7 +163,8 @@ async function selectPackage(id){
   currentPackageId=id; const p=await getPackage(id); if(!p)return;
   $('mapTitle').textContent=p.name;
   const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:(p.offlineMap.storageId||p.id)} : null;
-  $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}сохранено ${new Date(p.savedAt).toLocaleString()}`;
+  const terrain=p.terrain?.ready ? p.terrain : null;
+  $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}${terrain?'рельеф ✓ · ':''}сохранено ${new Date(p.savedAt).toLocaleString()}`;
   try {
     await ensureMapLibre();
     const diag=$('offlineMapDiag');
@@ -175,8 +177,9 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
+  updateTerrainUi(p);
   renderPointList(p);
   renderFavorites(p);
   renderCarPoint();
@@ -448,6 +451,102 @@ function updateOfflineMapUi(p){
     setMapUiText({button:'Скачать офлайн-карту',status:msg,deleteHidden:true,disabled:false});
   }
 }
+function terrainUiEls(){
+  return {
+    buttons:[$('downloadTerrainBtn'),$('downloadTerrainBtnTop')].filter(Boolean),
+    deletes:[$('deleteTerrainBtn'),$('deleteTerrainBtnTop')].filter(Boolean),
+    statuses:[$('terrainStatus'),$('terrainStatusTop')].filter(Boolean)
+  };
+}
+function setTerrainUiText({button,status,deleteHidden,disabled}){
+  const els=terrainUiEls();
+  for(const el of els.buttons){ if(button!=null) el.textContent=button; if(disabled!=null) el.disabled=disabled; }
+  for(const el of els.statuses){ if(status!=null) el.textContent=status; }
+  for(const el of els.deletes){ if(deleteHidden!=null) el.hidden=deleteHidden; }
+}
+function updateTerrainUi(p){
+  if(!p){ setTerrainUiText({button:'Рельеф карты',status:'Сначала выбери сохранённую гонку.',deleteHidden:true,disabled:true}); return; }
+  if(p?.terrain?.ready){
+    setTerrainUiText({
+      button:`Обновить рельеф (${fmtBytes(p.terrain.bytes||0)})`,
+      status:`Рельеф готов · ${p.terrain.tileCount||0} DEM-тайлов · ${fmtBytes(p.terrain.bytes||0)} · z${p.terrain.minZoom}–${p.terrain.maxZoom}`,
+      deleteHidden:false,
+      disabled:false
+    });
+  }else{
+    let msg='Рельеф ещё не скачан.';
+    try{
+      const plan=buildTerrainDownloadPlan(p.geojson);
+      msg=`Отдельная загрузка DEM: до ${plan.tiles.length} тайлов · z${plan.minZoom}–${plan.maxZoom}. Может занимать много места.`;
+    }catch{}
+    setTerrainUiText({button:'Рельеф карты',status:msg,deleteHidden:true,disabled:false});
+  }
+}
+
+async function handleDownloadTerrain(){
+  if(!currentPackageId) return;
+  let p=await getPackage(currentPackageId);
+  if(!p) return;
+
+  let plan;
+  try{ plan=buildTerrainDownloadPlan(p.geojson); }
+  catch(e){ alert(`Не удалось подготовить рельеф: ${e.message}`); return; }
+
+  const accepted=confirm(
+    `Рельеф карты скачивается отдельно и может занимать много места на устройстве.\n\n`+
+    `Для этой гонки будет загружено до ${plan.tiles.length} DEM-тайлов (z${plan.minZoom}–${plan.maxZoom}). Точный размер зависит от местности.\n\n`+
+    'Продолжить загрузку?'
+  );
+  if(!accepted) return;
+
+  setTerrainUiText({disabled:true});
+  let stagedTerrain=null;
+  const previousTerrain=p.terrain||null;
+  try{
+    if(navigator.storage?.persist){ try{ await navigator.storage.persist(); }catch{} }
+    stagedTerrain=await downloadTerrain(p,pr=>{
+      setTerrainUiText({
+        button:`Рельеф ${pr.done}/${pr.total}`,
+        status:`Скачано ${pr.saved} DEM-тайлов · ${fmtBytes(pr.bytes)}${pr.failed?` · ошибок ${pr.failed}`:''}`
+      });
+    });
+
+    p.terrain=stagedTerrain;
+    await savePackage(p);
+    stagedTerrain=null;
+
+    if(previousTerrain?.storageId && previousTerrain.storageId!==p.terrain.storageId){
+      try{ await discardTerrainRevision(previousTerrain); }
+      catch(e){ console.warn('Could not remove previous terrain revision',e); }
+    }
+
+    await selectPackage(p.id);
+    await refreshList();
+  }catch(e){
+    if(stagedTerrain){
+      try{ await discardTerrainRevision(stagedTerrain); }
+      catch(cleanupError){ console.warn('Could not remove staged terrain revision',cleanupError); }
+    }
+    const msg=`Не удалось скачать рельеф: ${e.message}`;
+    setTerrainUiText({status:msg});
+    alert(msg);
+  }finally{
+    p=await getPackage(currentPackageId);
+    updateTerrainUi(p);
+  }
+}
+
+async function handleDeleteTerrain(){
+  if(!currentPackageId||!confirm('Удалить скачанный рельеф этой гонки? Офлайн-карта и данные гонки останутся.')) return;
+  const p=await getPackage(currentPackageId);
+  if(!p) return;
+  await removeTerrain(p);
+  delete p.terrain;
+  await savePackage(p);
+  await selectPackage(p.id);
+  await refreshList();
+}
+
 async function handleDownloadMap(){
   if(!currentPackageId) return;
   setMapUiText({disabled:true});
@@ -497,6 +596,8 @@ async function handleDeleteMap(){
 }
 for(const id of ['downloadMapBtn','downloadMapBtnTop']) if($(id)) $(id).onclick=handleDownloadMap;
 for(const id of ['deleteMapBtn','deleteMapBtnTop']) if($(id)) $(id).onclick=handleDeleteMap;
+for(const id of ['downloadTerrainBtn','downloadTerrainBtnTop']) if($(id)) $(id).onclick=handleDownloadTerrain;
+for(const id of ['deleteTerrainBtn','deleteTerrainBtnTop']) if($(id)) $(id).onclick=handleDeleteTerrain;
 
 $('catalogSearch').addEventListener('input',renderCatalog);
 $('packageSearch')?.addEventListener('input',refreshList);
