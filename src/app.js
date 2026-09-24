@@ -16,6 +16,7 @@ import { setupPushUi, getPushSubscription, refreshPushUi, setPushStatus, schedul
 import { syncWalletStage, syncWalletPassesForPackage } from './app/wallet-client.js';
 import { FAVORITES_KEY, pointKey, favoritesForPackage, isFavoritePoint, setFavoritePoint, loadCarPoint, saveCarPoint, deleteCarPoint } from './app/local-points.js';
 import { ensurePersistentStorage, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from './app/runtime.js';
+import { renderPointList as renderPointListUi } from './app/point-list.js';
 import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
 
 const $ = id => document.getElementById(id);
@@ -147,66 +148,14 @@ async function refreshList() {
   renderCatalog();
 }
 
-function pointFeatures(fc) {
-  return (fc?.features || []).filter(f => f?.geometry?.type === 'Point' && Array.isArray(f.geometry.coordinates) && f.geometry.coordinates.length >= 2);
-}
-
-function pointFromFeature(f) {
-  return {
-    lat: Number(f.geometry.coordinates[1]),
-    lon: Number(f.geometry.coordinates[0]),
-    name: String(f.properties?.name || f.properties?.title || 'Точка')
-  };
-}
-
-function openPointAction(action, point) {
-  if (!point) return;
-  if (action === 'google') { window.location.href = googleMapsDirections(point); return; }
-  if (action === 'yandex') { openCustomSchemeWithFallback(yandexNavigatorLink(point), yandexWebFallback(point)); return; }
-  if (action === 'mapsme') { openCustomSchemeWithFallback(mapsMeLink(point), mapsMeWebFallback()); return; }
-  if (action === 'share') { sharePoint(point); return; }
-  if (action === 'copy') {
-    const text = coordinateText(point);
-    navigator.clipboard?.writeText(text).catch(()=>{});
-  }
-}
-
-function renderPointList(p) {
-  const root = $('pointList');
-  if (!root) return;
-  const pts = pointFeatures(p.geojson);
-  if (!pts.length) { root.innerHTML = '<p class="muted">Точек с координатами нет.</p>'; return; }
-  root.innerHTML = pts.map((f, i) => {
-    const pt = pointFromFeature(f);
-    return `<article class="point-row" data-point-index="${i}">
-      <div class="point-row-copy"><strong><img class="rfm-icon point-icon" src="/assets/location.svg" alt="" />${esc(pt.name)}</strong><span class="muted">${esc(coordinateText(pt))}</span></div>
-      <div class="point-nav-buttons">
-        <button class="button compact ${isFavoritePoint(pt,p.id)?'downloaded':''}" data-nav="favorite">${isFavoritePoint(pt,p.id)?'★ Избранное':'☆ В избранное'}</button>
-        <button class="button compact primary" data-nav="google">Google Maps</button>
-        <button class="button compact" data-nav="yandex">Yandex</button>
-        <button class="button compact" data-nav="mapsme">MAPS.ME</button>
-        <button class="button compact" data-nav="share">Поделиться</button>
-        <button class="button compact" data-nav="copy"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button>
-      </div>
-    </article>`;
-  }).join('');
-  root.querySelectorAll('.point-row').forEach((row, i) => {
-    const pt = pointFromFeature(pts[i]);
-    row.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', e => {
-      e.stopPropagation();
-      if(btn.dataset.nav==='favorite'){
-        const enabled=!isFavoritePoint(pt,p.id);
-        setFavoritePoint(pt,enabled,p.id);
-        renderFavorites(p);renderPointList(p);
-        if(selectedPoint&&pointKey(selectedPoint)===pointKey(pt)) syncFavoriteButton();
-        return;
-      }
-      openPointAction(btn.dataset.nav, pt);
-    }));
-    row.addEventListener('click', e => {
-      if (e.target.closest('[data-nav]')) return;
-      showPointActions(pt);
-    });
+function renderPointList(pkg){
+  return renderPointListUi(pkg,{
+    onSelectPoint:showPointActions,
+    onShare:sharePoint,
+    onFavoriteChange:()=>{
+      renderFavorites(pkg);
+      syncFavoriteButton();
+    }
   });
 }
 
