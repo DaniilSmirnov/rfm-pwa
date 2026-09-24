@@ -149,7 +149,29 @@ async function getOpfsMapStorageStats(){
   await walk(root);
   return {count,bytes};
 }
+export async function getDeepMapStorageStats(){
+  const [opfs,legacy]=await Promise.all([
+    getOpfsMapStorageStats().catch(()=>({count:0,bytes:0})),
+    getLegacyMapStorageStats()
+  ]);
+  return {
+    count:opfs.count+legacy.count,
+    bytes:opfs.bytes+legacy.bytes,
+    opfsCount:opfs.count,
+    opfsBytes:opfs.bytes,
+    legacyCount:legacy.count,
+    legacyBytes:legacy.bytes,
+    source:'scan'
+  };
+}
+
 export async function getMapStorageStats(){
-  const [opfs,legacy]=await Promise.all([getOpfsMapStorageStats().catch(()=>({count:0,bytes:0})),getLegacyMapStorageStats()]);
-  return {count:opfs.count+legacy.count,bytes:opfs.bytes+legacy.bytes,opfsCount:opfs.count,opfsBytes:opfs.bytes,legacyCount:legacy.count,legacyBytes:legacy.bytes};
+  const packages=await getAllPackages();
+  const maps=packages.map(pkg=>pkg?.offlineMap).filter(map=>map?.ready);
+  return {
+    count:maps.reduce((sum,map)=>sum+(Number(map.tileCount)||0),0),
+    bytes:maps.reduce((sum,map)=>sum+(Number(map.bytes)||0),0),
+    mapCount:maps.length,
+    source:'metadata'
+  };
 }
