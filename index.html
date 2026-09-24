@@ -141,6 +141,10 @@
         <button id="locateBtn" class="button"><img class="rfm-icon" src="/assets/location.svg" alt="" />Показать где я</button>
         <p id="geoStatus" class="muted small">Геопозиция ещё не запрашивалась.</p>
       </div>
+      <section id="elevationProfilePanel" class="elevation-profile-panel" hidden>
+        <div class="block-title" id="elevationProfileTitle">ПРОФИЛЬ ВЫСОТ</div>
+        <div id="elevationProfileBody"></div>
+      </section>
       <div id="mapLegend" class="legend"></div>
       <div class="full-width-line"></div>
       <details class="points-panel collapsible-section">
@@ -152,7 +156,8 @@
       </details>
       <aside id="pointActions" class="point-actions" hidden>
         <div class="point-actions-copy"><div class="eyebrow">выбранная точка</div><strong id="pointName"></strong><span id="pointCoords" class="muted"></span></div>
-        <div class="actions point-buttons"><button id="favoritePointBtn" class="button">☆ В избранное</button><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
+        <div class="actions point-buttons"><button id="favoritePointBtn" class="button">☆ В избранное</button><button id="mapsMeBtn" class="button primary">MAPS.ME</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="googleMapsBtn" class="button">Google Maps</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
+        <p id="pointElevation" class="muted small">Высота: выбери точку.</p>
         <p id="navStatus" class="muted small"></p>
         <details id="spectatorCompass" class="spectator-compass collapsible-section">
           <summary><span class="block-title">КОМПАС ЗРИТЕЛЯ</span><span class="summary-chevron">⌄</span></summary>

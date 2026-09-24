@@ -46,9 +46,9 @@ export function renderPointList(pkg,{onSelectPoint,onFavoriteChange,onShare}={})
       <div class="point-row-copy"><strong><img class="rfm-icon point-icon" src="/assets/location.svg" alt="" />${esc(point.name)}</strong><span class="muted">${esc(coordinateText(point))}</span></div>
       <div class="point-nav-buttons">
         <button class="button compact ${favorite?'downloaded':''}" data-nav="favorite">${favorite?'★ Избранное':'☆ В избранное'}</button>
-        <button class="button compact primary" data-nav="google">Google Maps</button>
+        <button class="button compact primary" data-nav="mapsme">MAPS.ME</button>
         <button class="button compact" data-nav="yandex">Yandex</button>
-        <button class="button compact" data-nav="mapsme">MAPS.ME</button>
+        <button class="button compact" data-nav="google">Google Maps</button>
         <button class="button compact" data-nav="share">Поделиться</button>
         <button class="button compact" data-nav="copy"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button>
       </div>

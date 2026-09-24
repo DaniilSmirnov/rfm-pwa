@@ -21,6 +21,7 @@ import { setupPwaInstall } from './app/pwa.js';
 import { downloadRallyPack } from './app/rally-pack.js';
 import { rallyPackProgressText } from './app/rally-pack-ui.js';
 import { createTerrainControls } from './app/terrain-controls.js';
+import { showPointElevation, showRouteElevationProfile } from './app/elevation-ui.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -178,7 +179,7 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onMapCoordinate:point=>showPointElevation(terrain,point),onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   terrainControls.update(p);
   renderPointList(p);
@@ -346,6 +347,7 @@ function showPointActions(point) {
   $('pointName').textContent=point.name || 'Точка';
   $('pointCoords').textContent=coordinateText(point);
   $('navStatus').textContent='';
+  getPackage(currentPackageId).then(pkg=>showPointElevation(pkg?.terrain,point)).catch(()=>{});
   const compass=$('spectatorCompass'); if(compass) compass.open=false;
   const compassBtn=$('compassEnableBtn'); if(compassBtn) compassBtn.textContent=compassListening?'Компас включён':'Включить компас';
   updateSpectatorCompass();
