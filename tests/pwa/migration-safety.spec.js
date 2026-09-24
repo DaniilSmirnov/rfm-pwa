@@ -20,6 +20,19 @@ async function waitForAppWorker(page){
   });
 }
 
+async function cacheOfflineDiagnosticModules(page){
+  await page.evaluate(async()=>{
+    const shell=(await caches.keys()).find(name=>name.startsWith('rfm-companion-v'));
+    if(!shell) throw new Error('App shell cache is unavailable');
+    const cache=await caches.open(shell);
+    for(const path of ['/src/offline-map.js','/src/db.js','/src/normalize.js']){
+      const response=await fetch(path,{cache:'no-store'});
+      if(!response.ok) throw new Error(`Could not stage PWA diagnostic module ${path}: ${response.status}`);
+      await cache.put(path,response);
+    }
+  });
+}
+
 async function seedSavedRace(page,{offlineMap=false,withAssets=false,terrain=false}={}){
   await page.evaluate(async({offlineMap,withAssets,terrain})=>{
     const db=await new Promise((resolve,reject)=>{
@@ -195,6 +208,7 @@ test.describe('PWA migration safety',()=>{
     await page.goto('/');
     await waitForAppWorker(page);
     await seedSavedRace(page,{offlineMap:true});
+    await cacheOfflineDiagnosticModules(page);
 
     await page.close();
     await context.setOffline(true);
@@ -222,6 +236,7 @@ test.describe('PWA migration safety',()=>{
     await page.goto('/');
     await waitForAppWorker(page);
     await seedSavedRace(page,{offlineMap:true,terrain:true});
+    await cacheOfflineDiagnosticModules(page);
 
     await page.close();
     await context.setOffline(true);
