@@ -5,7 +5,7 @@ const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/sr
   '/src/app/elevation.js',
   '/src/app/elevation-ui.js',
   '/src/app/rally-pack-update.js',
-  '/src/app/rally-pack-update-ui.js','/src/map/style.js','/src/map/terrain.js','/src/map/terrain-control.js','/src/map/viewport-policy.js','/manifest.webmanifest','/icon.svg','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg','/vendor/maplibre-gl/maplibre-gl.mjs','/vendor/maplibre-gl/maplibre-gl-worker.mjs','/vendor/maplibre-gl/maplibre-gl-shared.mjs','/vendor/maplibre-gl/maplibre-gl.css','/vendor/pmtiles/pmtiles.js'];
+  '/src/app/rally-pack-update-ui.js','/src/app/telemetry.js','/src/map/style.js','/src/map/terrain.js','/src/map/terrain-control.js','/src/map/viewport-policy.js','/manifest.webmanifest','/icon.svg','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg','/vendor/maplibre-gl/maplibre-gl.mjs','/vendor/maplibre-gl/maplibre-gl-worker.mjs','/vendor/maplibre-gl/maplibre-gl-shared.mjs','/vendor/maplibre-gl/maplibre-gl.css','/vendor/pmtiles/pmtiles.js'];
 async function precacheFresh(){
   const cache=await caches.open(CACHE);
   await Promise.all(SHELL.map(async url=>{

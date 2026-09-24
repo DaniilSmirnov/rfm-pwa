@@ -15,7 +15,7 @@ describe('architecture guardrails',()=>{
   it('keeps sanitizer out of app entrypoint',()=>expect(read('src/app.js')).not.toContain('SAFE_RICH_HTML_TAGS'));
   it('pre-caches every extracted app module',()=>{
     const sw=read('sw.js');
-    for(const path of ['catalog-dates','export','geo','local-points','preferences','push-client','pwa','runtime','sanitize','schedule','wallet-client','race-media','point-list','schedule-ui','rally-pack','rally-pack-ui','terrain-controls','elevation','elevation-ui','rally-pack-update','rally-pack-update-ui']){
+    for(const path of ['catalog-dates','export','geo','local-points','preferences','push-client','pwa','runtime','sanitize','schedule','wallet-client','race-media','point-list','schedule-ui','rally-pack','rally-pack-ui','terrain-controls','elevation','elevation-ui','rally-pack-update','rally-pack-update-ui','telemetry']){
       expect(sw).toContain('/src/app/'+path+'.js');
     }
   });
@@ -24,6 +24,13 @@ describe('architecture guardrails',()=>{
     for(const path of ['style','terrain','terrain-control','viewport-policy']) expect(sw).toContain('/src/map/'+path+'.js');
   });
   it('pre-caches terrain downloader',()=>expect(read('sw.js')).toContain('/src/terrain-offline.js'));
+  it('configures sampled Cloudflare error traces',()=>{
+    const wrangler=read('wrangler.toml');
+    expect(wrangler).toContain('binding = "ERROR_TRACES"');
+    expect(wrangler).toContain('dataset = "rfm_error_traces"');
+    expect(wrangler).toContain('ERROR_TRACE_SAMPLE_RATE = "0.2"');
+    expect(wrangler).toContain('upload_source_maps = true');
+  });
   it('defines unit, UI and PWA test scripts',()=>{
     const pkg=JSON.parse(read('package.json'));
     expect(pkg.scripts['test:unit']).toBeTruthy();

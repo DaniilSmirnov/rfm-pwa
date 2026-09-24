@@ -1,11 +1,17 @@
 name = "rfm-pwa"
 pages_build_output_dir = "./dist"
 compatibility_date = "2026-09-24"
+upload_source_maps = true
 
 [vars]
+ERROR_TRACE_SAMPLE_RATE = "0.2"
 VAPID_PUBLIC_KEY = "BFPeQaiN9LB04gbRMwDGLrSajtYp3D_c4LBhBXG_jmAKxN9Uw0aUysusbD8Z7iRNdhjYHjsrq4NIANu2BKCFmEs"
 VAPID_SUBJECT = "https://rallyfansmap.ru"
 
 [[kv_namespaces]]
 binding = "PUSH_SUBSCRIPTIONS"
 id = "41a95f700ee646638bfa7e35268bddd0"
+
+[[analytics_engine_datasets]]
+binding = "ERROR_TRACES"
+dataset = "rfm_error_traces"

@@ -1,6 +1,7 @@
 import { commonHeaders, json } from './src/worker/http.js';
 import { handlePushApi } from './src/worker/push.js';
 import { handleWalletApi } from './src/worker/wallet.js';
+import { handleTelemetryApi, recordWorkerException } from './src/worker/telemetry.js';
 import {
   API_ORIGIN,
   BASEMAP_PM,
@@ -16,6 +17,7 @@ import {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    try {
 
     if (url.pathname === '/api/health' || url.pathname === '/api/rallyfans/health') {
       return json({
@@ -29,6 +31,7 @@ export default {
       });
     }
 
+    if (url.pathname === '/api/telemetry/error') return handleTelemetryApi(request,env);
     if (url.pathname.startsWith('/api/push/')) return handlePushApi(request,env,url,ctx);
     if (url.pathname.startsWith('/api/wallet/')) return handleWalletApi(request,env,url);
 
@@ -64,5 +67,9 @@ export default {
       return new Response(asset.body,{status:asset.status,statusText:asset.statusText,headers});
     }
     return asset;
+    } catch (error) {
+      recordWorkerException(env,error,url.pathname);
+      throw error;
+    }
   },
 };
