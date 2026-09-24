@@ -16,37 +16,36 @@ permissions:
 
 jobs:
   unit:
-    name: Unit tests
+    name: Unit + build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Verify centralized release metadata
+        run: npm run version:check
       - name: Build production artifact
         run: npm run build
-
       - name: Verify deploy artifact allowlist
         run: |
           test -f dist/index.html
           test -f dist/_worker.js
           test -f dist/sw.js
+          test -f dist/version.json
           test -d dist/src
           test -d dist/assets
+          test -d dist/vendor/maplibre-gl
+          test -f dist/vendor/pmtiles/pmtiles.js
           test ! -e dist/tests
           test ! -e dist/.github
           test ! -e dist/package.json
           test ! -e dist/README.md
           test ! -e dist/samples
-
+          ! grep -R "unpkg.com" dist/index.html dist/src dist/sw.js
       - name: Run Vitest
         run: npm run test:unit
 
@@ -55,37 +54,57 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit
-
-      - name: Run Playwright suite
-        run: npm run test:ui
-
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:ui
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report/
           if-no-files-found: ignore
           retention-days: 7
-
       - name: Upload Playwright failure artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  pwa:
+    name: Service Worker E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:pwa
+      - name: Upload PWA report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-pwa-report
+          path: playwright-report-pwa/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload PWA failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-pwa-results
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
