@@ -221,7 +221,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   map.addControl(new maplibregl.NavigationControl({showCompass:true,visualizePitch:true}), 'top-right');
   const bounds = expandBounds(geometryBounds(fc),userPos);
   const {lines,polygons,points}=splitFeatures(fc);
-  map.on('load',()=>{
+  map.on('style.load',()=>{
     applyOfflineViewportConstraints(map,options.offlineMap);
     if(options.terrain?.ready) map.addControl(new TerrainModeControl({
       initialMode:terrainMode,
