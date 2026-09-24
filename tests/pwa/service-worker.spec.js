@@ -1,4 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+
+const release=JSON.parse(readFileSync(new URL('../../version.json',import.meta.url),'utf8'));
+const expectedShell=`rfm-companion-v${String(release.version).replace(/\D/g,'')}-${String(release.codename).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}`;
 
 async function waitForWorker(page){
   return page.evaluate(async()=>{
@@ -36,7 +40,7 @@ test.describe('production service worker lifecycle',()=>{
       return {shell,cached};
     });
 
-    expect(result.shell).toBe('rfm-companion-v061-sortovala');
+    expect(result.shell).toBe(expectedShell);
     expect(result.cached).toEqual([true,true,true,true,true]);
   });
 
