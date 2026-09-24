@@ -80,6 +80,17 @@ function validReminder(item) {
     && String(item?.title||'').length<=120
     && String(item?.body||'').length<=240;
 }
+async function countPushSubscriptions(store) {
+  let cursor;
+  let subscriptions=0;
+  do {
+    const page=await store.list({prefix:'sub:',cursor,limit:1000});
+    subscriptions += page.keys.length;
+    cursor=page.list_complete?undefined:page.cursor;
+  } while(cursor);
+  return subscriptions;
+}
+
 async function clearReminderPrefix(store,prefix) {
   let cursor;
   do {
@@ -264,6 +275,21 @@ async function handlePushApi(request, env, url, ctx) {
     return json({ok:true,pending:pending||null});
   }
 
+  if (url.pathname==='/api/push/stats') {
+    if (request.method!=='GET') return json({ok:false,error:'Method not allowed'},405);
+    const auth=request.headers.get('authorization')||'';
+    if (!env.PUSH_ADMIN_TOKEN || auth!==`Bearer ${env.PUSH_ADMIN_TOKEN}`) return json({ok:false,error:'Unauthorized'},401);
+    if (!env?.PUSH_SUBSCRIPTIONS) return json({ok:false,error:'Push storage is missing'},503);
+
+    const subscriptions=await countPushSubscriptions(env.PUSH_SUBSCRIPTIONS);
+    return json({
+      ok:true,
+      subscriptions,
+      pushConfigured:pushConfigured(env),
+      storage:true
+    });
+  }
+
   if (url.pathname==='/api/push/run-due') {
     if (!['POST','GET'].includes(request.method)) return json({ok:false,error:'Method not allowed'},405);
     const auth=request.headers.get('authorization')||'';
@@ -345,4 +371,4 @@ async function handlePushApi(request, env, url, ctx) {
 }
 
 
-export { pushEndpointAllowed, pushConfigured, validReminder, reminderPrefix, runDueReminders, handlePushApi };
+export { pushEndpointAllowed, pushConfigured, validReminder, reminderPrefix, countPushSubscriptions, runDueReminders, handlePushApi };
