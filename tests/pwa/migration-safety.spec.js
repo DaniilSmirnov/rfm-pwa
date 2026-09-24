@@ -20,8 +20,8 @@ async function waitForAppWorker(page){
   });
 }
 
-async function seedSavedRace(page,{offlineMap=false}={}){
-  await page.evaluate(async({offlineMap})=>{
+async function seedSavedRace(page,{offlineMap=false,withAssets=false}={}){
+  await page.evaluate(async({offlineMap,withAssets})=>{
     const db=await new Promise((resolve,reject)=>{
       const request=indexedDB.open('rallyfans-offline',2);
       request.onupgradeneeded=()=>{
@@ -51,7 +51,12 @@ async function seedSavedRace(page,{offlineMap=false}={}){
         coordinates:[{id:1,name:'Offline spectator point',coordinates:'61.700,30.690'}],
         results:[],
         lists:[],
-        how_it_was:''
+        how_it_was:'',
+        ...(withAssets?{
+          image:'hero.svg',
+          mapsimg:'organizer-map.svg',
+          safety_leaflet:'safety.svg'
+        }:{})
       },
       summary:{
         category:'test',
@@ -60,7 +65,7 @@ async function seedSavedRace(page,{offlineMap=false}={}){
         dates:'26.09.2026',
         city:'Sortavala'
       },
-      assetNames:[],
+      assetNames:withAssets?['hero.svg','organizer-map.svg','safety.svg']:[],
       geojson:{
         type:'FeatureCollection',
         features:[{
@@ -106,6 +111,17 @@ async function seedSavedRace(page,{offlineMap=false}={}){
       });
     }
 
+    if(withAssets){
+      const cache=await caches.open('rfm-race-assets-v1');
+      const svg=name=>`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="white"/><text x="1" y="12" font-size="4">${name}</text></svg>`;
+      for(const name of ['hero.svg','organizer-map.svg','safety.svg']){
+        await cache.put(
+          `/api/rallyfans/public/${encodeURIComponent(name)}`,
+          new Response(svg(name),{status:200,headers:{'content-type':'image/svg+xml'}})
+        );
+      }
+    }
+
     localStorage.setItem('rfm-favorites',JSON.stringify({
       'race-901':[{
         name:'Offline spectator point',
@@ -113,7 +129,7 @@ async function seedSavedRace(page,{offlineMap=false}={}){
         lon:30.69
       }]
     }));
-  },{offlineMap});
+  },{offlineMap,withAssets});
 }
 
 async function registerHarnessWorker(page,script){
