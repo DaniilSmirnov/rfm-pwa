@@ -14,6 +14,7 @@ import { renderRaceMedia } from '../app/race-media.js';
 import { syncWalletPassesForPackage } from '../app/wallet-client.js';
 import { showPointElevation, showRouteElevationProfile } from '../app/elevation-ui.js';
 import { reportClientError } from '../app/telemetry.js';
+import { formatDistance } from '../app/geo.js';
 
 function Portal({id,children}){
   const node=document.getElementById(id);
@@ -226,7 +227,10 @@ export default function App(){
     setProps('geoStatus',{text:app.geoStatus,className:`muted small ${app.geoClass}`});
     setProps('exportGpxBtn',{disabled:!pkg});setProps('exportGeoJsonBtn',{disabled:!pkg});
     setProps('importYandexBtn',{disabled:!pkg?.yandexMapEmbed,text:pkg?.yandexImport?.featureCount?`Yandex: ${pkg.yandexImport.featureCount} объектов ✓`:'Импорт из Yandex'});
-  },[app.online,pkg,app.selectedPoint,app.carPoint,app.geoStatus,app.geoClass]);
+    const hasUpdate=Boolean(pkg?.pendingUpdate?.changes?.length||pkg?.lastSmartUpdate?.changes?.length);
+    setProps('rallyPackUpdatePanel',{hidden:!hasUpdate});
+    setProps('favoritePointBtn',{className:`button ${pkg&&app.selectedPoint&&isFavoritePoint(app.selectedPoint,pkg.id)?'downloaded':''}`});
+  },[app.online,pkg,app.selectedPoint,app.carPoint,app.geoStatus,app.geoClass,app.favoritesRevision]);
 
   useEffect(()=>{
     for(const id of ['downloadMapBtn','downloadMapBtnTop']) setProps(id,{text:app.mapUi.button,disabled:app.mapUi.disabled});
