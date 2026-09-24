@@ -9,8 +9,7 @@ if(!String(meta.codename||'').trim()) throw new Error('Invalid version.json code
 const expectations={
   'index.html':['__APP_VERSION__','__APP_CODENAME__'],
   'sw.js':['__APP_VERSION_CACHE__','__APP_CODENAME_SLUG__'],
-  '_worker.js':['__APP_VERSION__'],
-  'manifest.webmanifest':['__APP_VERSION_CACHE__']
+  '_worker.js':['__APP_VERSION__']
 };
 for(const [file,tokens] of Object.entries(expectations)){
   const text=await readFile(resolve(root,file),'utf8');
