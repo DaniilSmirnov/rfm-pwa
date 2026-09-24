@@ -37,22 +37,31 @@ async function vapidJwt(endpoint, env) {
   const signature=await crypto.subtle.sign(
     {name:'ECDSA',hash:'SHA-256'},
     key,
-    encoder.encode(input)
+    new TextEncoder().encode(input)
   );
   return `${input}.${bytesToBase64Url(signature)}`;
 }
 async function sendEmptyPush(endpoint, env, ttlSeconds=21600) {
   if (!pushEndpointAllowed(endpoint)) return {ok:false,status:400,error:'Unsupported push endpoint'};
-  const token=await vapidJwt(endpoint,env);
-  const response=await fetch(endpoint,{
-    method:'POST',
-    headers:{
-      'TTL':String(Math.max(60,Math.min(172800,Number(ttlSeconds)||21600))),
-      'Urgency':'normal',
-      'Authorization':`vapid t=${token}, k=${env.VAPID_PUBLIC_KEY}`
-    }
-  });
-  return {ok:response.ok,status:response.status};
+  let token;
+  try {
+    token=await vapidJwt(endpoint,env);
+  } catch {
+    return {ok:false,status:0,error:'vapid'};
+  }
+  try {
+    const response=await fetch(endpoint,{
+      method:'POST',
+      headers:{
+        'TTL':String(Math.max(60,Math.min(172800,Number(ttlSeconds)||21600))),
+        'Urgency':'normal',
+        'Authorization':`vapid t=${token}, k=${env.VAPID_PUBLIC_KEY}`
+      }
+    });
+    return {ok:response.ok,status:response.status};
+  } catch {
+    return {ok:false,status:0,error:'fetch'};
+  }
 }
 async function subscriptionKey(endpoint) {
   return `sub:${await sha256Base64Url(endpoint)}`;
@@ -284,6 +293,7 @@ async function handlePushApi(request, env, url, ctx) {
 
     let cursor=undefined;
     let sent=0,failed=0,removed=0;
+    const failedStatuses={};
     do {
       const page=await env.PUSH_SUBSCRIPTIONS.list({prefix:'sub:',cursor});
       for (const key of page.keys) {
@@ -312,6 +322,8 @@ async function handlePushApi(request, env, url, ctx) {
           if (result.ok) sent++;
           else {
             failed++;
+            const statusKey=result.error ? `error:${result.error}` : String(result.status||'unknown');
+            failedStatuses[statusKey]=(failedStatuses[statusKey]||0)+1;
             await env.PUSH_SUBSCRIPTIONS.delete(`pending:${hash}`);
             if ([404,410].includes(result.status)) {
               await env.PUSH_SUBSCRIPTIONS.delete(key.name);
@@ -320,12 +332,13 @@ async function handlePushApi(request, env, url, ctx) {
           }
         } catch {
           failed++;
+          failedStatuses.exception=(failedStatuses.exception||0)+1;
         }
       }
       cursor=page.list_complete?undefined:page.cursor;
     } while(cursor);
 
-    return json({ok:true,sent,failed,removed,title,body:message,url:targetUrl,tag,ttlSeconds});
+    return json({ok:true,sent,failed,removed,failedStatuses,title,body:message,url:targetUrl,tag,ttlSeconds});
   }
 
   return json({ok:false,error:'Unsupported push API path'},404);
