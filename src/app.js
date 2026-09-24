@@ -415,8 +415,11 @@ async function downloadRace(id,button){
     button.textContent='Импорт Yandex…';
     try { ({pkg}=await enrichPackageWithYandex(pkg)); } catch(err) { console.warn('Yandex import skipped',err); }
     await savePackage(pkg);
+    let assetDownload={cached:0,total:0,background:false};
     if(pkg.assetNames.length){
-      await cacheRaceAssets(pkg,(done,total)=>{ button.textContent=`Файлы ${done}/${total}`; });
+      assetDownload=await cacheRaceAssets(pkg,(done,total,meta)=>{
+        button.textContent=meta?.background?'Материалы скачиваются в фоне…':`Файлы ${done}/${total}`;
+      });
     }
     currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id);
     try {
@@ -425,7 +428,7 @@ async function downloadRace(id,button){
     } catch(e) {
       console.warn('Push reminder scheduling skipped',e);
     }
-    button.textContent='Сохранено ✓';
+    button.textContent=assetDownload.background?'Данные сохранены · материалы в фоне':'Сохранено ✓';
   }catch(err){ alert(`Не удалось скачать гонку: ${err.message}`); button.textContent=old; }
   finally{ button.disabled=false; }
 }
@@ -772,4 +775,12 @@ try {
   console.warn('Could not refresh scheduled race reminders on startup',e);
 }
 await refreshList();
+window.addEventListener('rfm:background-fetch',event=>{
+  const detail=event.detail||{};
+  const status=$('catalogStatus');
+  if(!status) return;
+  if(detail.status==='success') status.textContent='Офлайн-материалы готовы ✓';
+  if(detail.status==='failure') status.textContent='Не удалось скачать часть офлайн-материалов.';
+});
+
 await loadCatalog();
