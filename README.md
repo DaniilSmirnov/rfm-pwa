@@ -145,10 +145,10 @@ The browser entrypoint is intentionally kept as orchestration rather than a home
 
 Cloudflare Pages Advanced Mode keeps `_worker.js` as a small router. Server-side code is split under `src/worker/` into HTTP helpers, Web Push/reminders, Wallet, and upstream proxy modules.
 
-Install the test dependencies locally:
+Install the locked test/runtime dependencies locally:
 
 ```bash
-npm install
+npm ci
 npx playwright install
 ```
 
@@ -175,5 +175,13 @@ For a faster Chromium-only pass:
 ```bash
 npm run test:ui:chromium
 ```
+
+Run the production Service Worker lifecycle suite:
+
+```bash
+npm run test:pwa
+```
+
+Release version and codename live only in `version.json`. `npm run build` injects them into the generated shell, manifest, Service Worker cache namespace and health endpoint.
 
 GitHub Actions runs the Vitest unit suite and the full Playwright suite on pull requests and pushes to `develop` and `main`. Playwright HTML reports are uploaded on every UI run, and failure artifacts are retained for debugging.
