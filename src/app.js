@@ -11,12 +11,12 @@ import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from
 import { safeFileName, geoJsonToGpx } from './app/export-utils.js';
 import { sanitizeRichHtml } from './app/sanitize.js';
 import { normalizeStageKey, stageIdentity, parseCoordinatePair, findStageLocations, classifyStageScheduleEvent, buildRaceReminders } from './app/stage-utils.js';
+import { isIOSDevice, createPwaInstaller } from './app/pwa-install.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
 let userPos = null;
 let geoWatchId = null;
-let deferredPrompt = null;
 let catalog = [];
 let selectedPoint = null;
 let compassHeading = null;
@@ -170,147 +170,9 @@ function updateNetwork() { const online=navigator.onLine; $('networkBadge').text
 window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); });
 window.addEventListener('offline',updateNetwork); updateNetwork();
 
-function pwaLaunchContext() {
-  const displayModes=['standalone','fullscreen','minimal-ui'];
-  const displayMode=displayModes.find(mode=>window.matchMedia?.(`(display-mode: ${mode})`).matches) || null;
-  const iosStandalone=window.navigator.standalone===true;
-  const androidAppReferrer=String(document.referrer||'').startsWith('android-app://');
-  const installedLaunch=Boolean(displayMode || iosStandalone || androidAppReferrer);
-  return {
-    installedLaunch,
-    displayMode,
-    iosStandalone,
-    androidAppReferrer,
-    browserMode:!installedLaunch
-  };
-}
-
-function isStandalonePwa() {
-  return pwaLaunchContext().installedLaunch;
-}
-
-function installInstructions() {
-  const ios=isIOSDevice();
-  if(ios){
-    return {
-      title:'Установи Rally Fans Map Offline на экран «Домой»',
-      text:'Сейчас приложение открыто как обычная вкладка браузера. На iPhone/iPad часть PWA-возможностей доступна только после установки и запуска с домашнего экрана.',
-      steps:[
-        'Нажми «Поделиться» в браузере.',
-        'Выбери «На экран Домой» / «Add to Home Screen».',
-        'Нажми «Добавить», затем открой Rally Fans Map Offline с новой иконки.'
-      ],
-      action:'Показать инструкцию'
-    };
-  }
-
-  if(deferredPrompt){
-    return {
-      title:'Установи Rally Fans Map Offline',
-      text:'Сейчас приложение открыто в браузере. Установи PWA, чтобы запускать его отдельно и надежнее использовать офлайн-режим и уведомления.',
-      steps:[],
-      action:'Установить приложение'
-    };
-  }
-
-  return {
-    title:'Открой Rally Fans Map Offline как приложение',
-    text:'Сейчас приложение открыто в браузере. Установи его через меню браузера: «Установить приложение» или «Добавить на главный экран».',
-    steps:[
-      'Открой меню браузера.',
-      'Выбери «Установить приложение» или «Добавить на главный экран».',
-      'После установки запускай Rally Fans Map Offline с иконки приложения.'
-    ],
-    action:'Как установить'
-  };
-}
-
-function syncInstallUi() {
-  const topButton=$('installBtn');
-  const prompt=$('pwaInstallPrompt');
-  const action=$('pwaInstallAction');
-  const title=$('pwaInstallTitle');
-  const text=$('pwaInstallText');
-  const steps=$('pwaInstallSteps');
-  const ctx=pwaLaunchContext();
-
-  document.documentElement.dataset.pwaInstalled=ctx.installedLaunch?'true':'false';
-  document.documentElement.dataset.pwaContext=ctx.installedLaunch?'app':'browser';
-
-  if(ctx.installedLaunch){
-    if(topButton) topButton.hidden=true;
-    if(prompt) prompt.hidden=true;
-    return;
-  }
-
-  const copy=installInstructions();
-  if(topButton){
-    topButton.hidden=false;
-    topButton.setAttribute('aria-hidden','false');
-    topButton.textContent=deferredPrompt?'Установить PWA':'Установить PWA';
-  }
-  if(prompt) prompt.hidden=false;
-  if(title) title.textContent=copy.title;
-  if(text) text.textContent=copy.text;
-  if(action) action.textContent=copy.action;
-  if(steps){
-    steps.innerHTML=copy.steps.map(step=>`<li>${esc(step)}</li>`).join('');
-    steps.hidden=!copy.steps.length;
-  }
-}
-
-async function requestPwaInstall() {
-  if(isStandalonePwa()){
-    syncInstallUi();
-    return;
-  }
-
-  if(deferredPrompt){
-    const promptEvent=deferredPrompt;
-    deferredPrompt=null;
-    promptEvent.prompt();
-    await promptEvent.userChoice.catch(()=>null);
-    syncInstallUi();
-    return;
-  }
-
-  const prompt=$('pwaInstallPrompt');
-  const steps=$('pwaInstallSteps');
-  if(prompt){
-    prompt.hidden=false;
-    prompt.scrollIntoView({behavior:'smooth',block:'start'});
-  }
-  if(steps) steps.hidden=false;
-}
-
-syncInstallUi();
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  if(isStandalonePwa()){
-    deferredPrompt=null;
-    syncInstallUi();
-    return;
-  }
-  deferredPrompt=e;
-  syncInstallUi();
-});
-
-window.addEventListener('appinstalled',()=>{
-  deferredPrompt=null;
-  syncInstallUi();
-});
-
-for(const mode of ['standalone','fullscreen','minimal-ui']){
-  window.matchMedia?.(`(display-mode: ${mode})`).addEventListener?.('change',syncInstallUi);
-}
-window.addEventListener('pageshow',syncInstallUi);
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible') syncInstallUi();
-});
-
-$('installBtn').onclick=requestPwaInstall;
-$('pwaInstallAction').onclick=requestPwaInstall;
+const pwaInstaller=createPwaInstaller({getElement:$,escapeHtml:esc});
+const {syncInstallUi,requestPwaInstall}=pwaInstaller;
+pwaInstaller.setup();
 
 function base64UrlToUint8Array(value) {
   const padding='='.repeat((4-value.length%4)%4);
@@ -344,7 +206,7 @@ async function refreshPushUi() {
     setPushStatus('Push-уведомления не поддерживаются этим браузером.');
     return;
   }
-  if(isIOSDevice() && !isStandalonePwa()){
+  if(isIOSDevice() && !pwaInstaller.isStandalonePwa()){
     enable.disabled=false;
     enable.textContent='Сначала установить PWA';
     enable.classList.remove('downloaded');
@@ -403,11 +265,6 @@ function setStageSubscribed(pkg,stageKey,enabled){
 
 const WALLET_STAGE_PREFS_KEY='rfm-wallet-stage-passes-v1';
 const WALLET_STAGE_FEATURE_ENABLED=false;
-
-function isIOSDevice(){
-  return /iPad|iPhone|iPod/i.test(navigator.userAgent)
-    || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-}
 
 function loadWalletStagePrefs(){
   try{
@@ -535,7 +392,7 @@ async function scheduleAllSavedReminders(){
 }
 
 async function enablePushNotifications() {
-  if(isIOSDevice() && !isStandalonePwa()){
+  if(isIOSDevice() && !pwaInstaller.isStandalonePwa()){
     syncInstallUi();
     await requestPwaInstall();
     return refreshPushUi();
