@@ -1,4 +1,4 @@
-# RallyFans Companion v0.6.1
+# RallyFans Companion
 
 Cloudflare Pages build based on v0.3.4.3.
 
@@ -27,7 +27,7 @@ For Cloudflare Pages Git integration use:
 
 `wrangler.toml` also pins `pages_build_output_dir = "./dist"` for CLI/config-driven deployments.
 
-Health check: `/api/health` should report `0.6.1`.
+Release metadata lives only in `version.json`; the build injects it into the footer, Service Worker cache namespace and `/api/health`.
 
 
 ## Web Share
@@ -36,7 +36,7 @@ Spectator points can be shared with the system share sheet (`navigator.share`). 
 
 ## Web Push on Cloudflare Pages
 
-The v0.6.1 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
+The current push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
 
 Generate a VAPID key pair locally:
 
@@ -145,10 +145,10 @@ The browser entrypoint is intentionally kept as orchestration rather than a home
 
 Cloudflare Pages Advanced Mode keeps `_worker.js` as a small router. Server-side code is split under `src/worker/` into HTTP helpers, Web Push/reminders, Wallet, and upstream proxy modules.
 
-Install the test dependencies locally:
+Install the locked test/runtime dependencies locally:
 
 ```bash
-npm install
+npm ci
 npx playwright install
 ```
 
@@ -175,5 +175,13 @@ For a faster Chromium-only pass:
 ```bash
 npm run test:ui:chromium
 ```
+
+Run the production Service Worker lifecycle suite:
+
+```bash
+npm run test:pwa
+```
+
+Release version and codename live only in `version.json`. `npm run build` injects them into the generated shell, manifest, Service Worker cache namespace and health endpoint.
 
 GitHub Actions runs the Vitest unit suite and the full Playwright suite on pull requests and pushes to `develop` and `main`. Playwright HTML reports are uploaded on every UI run, and failure artifacts are retained for debugging.

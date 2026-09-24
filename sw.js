@@ -1,27 +1,13 @@
-const CACHE='rfm-companion-v061-sortovala';
+const CACHE='rfm-companion-v__APP_VERSION_CACHE__-__APP_CODENAME_SLUG__';
 const ASSET_CACHE='rfm-race-assets-v1';
 const PERIODIC_CACHE='rfm-periodic-data-v1';
-const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/src/app/catalog-dates.js','/src/app/export.js','/src/app/geo.js','/src/app/local-points.js','/src/app/preferences.js','/src/app/push-client.js','/src/app/pwa.js','/src/app/runtime.js','/src/app/sanitize.js','/src/app/schedule.js','/src/app/wallet-client.js','/manifest.webmanifest','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg'];
-const EXTERNAL=[
-  'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.mjs',
-  'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl-worker.mjs',
-  'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl-shared.mjs',
-  'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.css',
-  'https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js'
-];
-
+const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/src/app/catalog-dates.js','/src/app/export.js','/src/app/geo.js','/src/app/local-points.js','/src/app/preferences.js','/src/app/push-client.js','/src/app/pwa.js','/src/app/runtime.js','/src/app/sanitize.js','/src/app/schedule.js','/src/app/wallet-client.js','/src/app/race-media.js','/src/app/point-list.js','/src/app/schedule-ui.js','/src/map/style.js','/manifest.webmanifest','/icon.svg','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg','/vendor/maplibre-gl/maplibre-gl.mjs','/vendor/maplibre-gl/maplibre-gl-worker.mjs','/vendor/maplibre-gl/maplibre-gl-shared.mjs','/vendor/maplibre-gl/maplibre-gl.css','/vendor/pmtiles/pmtiles.js'];
 async function precacheFresh(){
   const cache=await caches.open(CACHE);
   await Promise.all(SHELL.map(async url=>{
     const response=await fetch(new Request(url,{cache:'reload'}));
     if(!response.ok) throw new Error(`Precache ${url}: ${response.status}`);
     await cache.put(url,response);
-  }));
-  await Promise.all(EXTERNAL.map(async url=>{
-    try {
-      const response=await fetch(url,{cache:'reload'});
-      if(response.ok) await cache.put(url,response);
-    } catch {}
   }));
 }
 
@@ -56,15 +42,7 @@ self.addEventListener('fetch', event=>{
   if(event.request.method!=='GET') return;
   const url=new URL(event.request.url);
 
-  if(url.origin!==location.origin){
-    if(url.hostname==='unpkg.com'){
-      event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{
-        if(response.ok) caches.open(CACHE).then(c=>c.put(event.request,response.clone()));
-        return response;
-      })));
-    }
-    return;
-  }
+  if(url.origin!==location.origin) return;
 
   if(url.pathname.startsWith('/api/rallyfans/public/')){
     event.respondWith(caches.open(ASSET_CACHE).then(async cache=>(await cache.match(event.request))||fetch(event.request).then(response=>{
@@ -129,7 +107,7 @@ self.addEventListener('push', event => {
 
     await self.registration.showNotification(payload.title || 'Rally Fans Map', {
       body: payload.body || 'Есть обновление по RallyFans. Открой приложение, чтобы проверить данные.',
-      icon: '/rfm/icon.png?v=0502',
+      icon: '/icon.svg',
       tag: payload.tag || 'rfm-update',
       renotify: true,
       data: { url: payload.url || '/' }
@@ -196,11 +174,17 @@ self.addEventListener('backgroundfetchsuccess',event=>{
       if(response?.ok) await cache.put(record.request,response);
     }));
     try{ await event.updateUI({title:'Rally Fans Map · офлайн-материалы готовы'}); }catch{}
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const client of windows) client.postMessage({type:'RFM_BACKGROUND_FETCH',status:'success',id:event.registration.id});
   })());
 });
 
 self.addEventListener('backgroundfetchfail',event=>{
-  try{ event.updateUI({title:'Rally Fans Map · не удалось скачать материалы'}); }catch{}
+  event.waitUntil((async()=>{
+    try{ await event.updateUI({title:'Rally Fans Map · не удалось скачать материалы'}); }catch{}
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const client of windows) client.postMessage({type:'RFM_BACKGROUND_FETCH',status:'failure',id:event.registration.id});
+  })());
 });
 
 self.addEventListener('backgroundfetchclick',event=>{

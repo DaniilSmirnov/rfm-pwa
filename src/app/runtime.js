@@ -41,6 +41,13 @@ export async function setupServiceWorkerUpdates(){
     if(banner) banner.hidden=false;
   };
 
+  navigator.serviceWorker.addEventListener('message',event=>{
+    const data=event.data;
+    if(data?.type==='RFM_BACKGROUND_FETCH'){
+      window.dispatchEvent(new CustomEvent('rfm:background-fetch',{detail:data}));
+    }
+  });
+
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(reloading) return;
     reloading=true;

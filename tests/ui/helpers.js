@@ -162,13 +162,15 @@ export async function installAppMocks(page,options={}){
     try{Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:serviceWorker});}catch{}
   },{online});
 
-  await page.route('https://unpkg.com/**',async route=>{
+  await page.route('**/vendor/maplibre-gl/**',async route=>{
     const url=route.request().url();
     if(url.endsWith('maplibre-gl.mjs')) return route.fulfill({status:200,contentType:'application/javascript',body:maplibreStub});
-    if(url.endsWith('pmtiles.js')) return route.fulfill({status:200,contentType:'application/javascript',body:pmtilesStub});
     if(url.endsWith('.css')) return route.fulfill({status:200,contentType:'text/css',body:''});
     return route.fulfill({status:200,contentType:'application/javascript',body:'export default {};'});
   });
+  await page.route('**/vendor/pmtiles/pmtiles.js',route=>
+    route.fulfill({status:200,contentType:'application/javascript',body:pmtilesStub})
+  );
 
   await page.route('**/rfm/icon.png*',route=>route.fulfill({status:200,contentType:'image/png',body:onePixelPng}));
   await page.route('**/api/rallyfans/public/**',route=>route.fulfill({status:200,contentType:'image/png',body:onePixelPng}));
