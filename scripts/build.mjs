@@ -8,7 +8,7 @@ const publicDir=resolve(root,'.vite-public');
 const meta=JSON.parse(await readFile(resolve(root,'version.json'),'utf8'));
 const version=String(meta.version||'').trim();
 const codename=String(meta.codename||'').trim();
-if(!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('version.json must contain a semver version');
+if(!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('version.json must contain an x.y.z or x.y.z.n version');
 if(!codename) throw new Error('version.json must contain a codename');
 
 const versionCache=version.replace(/\D/g,'');
