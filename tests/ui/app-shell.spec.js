@@ -1,11 +1,14 @@
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { openApp, raceFixture, secondRace } from './helpers.js';
+
+const release=JSON.parse(readFileSync(new URL('../../version.json',import.meta.url),'utf8'));
 
 test.describe('app shell and catalog',()=>{
   test('renders product identity and version',async({page})=>{
     await openApp(page);
     await expect(page).toHaveTitle('Rally Fans Map Offline');
-    await expect(page.locator('.app-footer')).toContainText('0.6.0');
+    await expect(page.locator('.app-footer')).toContainText(release.version);
     await expect(page.locator('.header-brand')).toContainText('Rally Fans Map');
   });
 

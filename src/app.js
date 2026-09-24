@@ -1,4 +1,4 @@
-import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.mjs';
+import * as maplibregl from '/vendor/maplibre-gl/maplibre-gl.mjs';
 window.maplibregl = maplibregl;
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from './db.js';
 import { normalizePackage } from './normalize.js';
@@ -6,17 +6,19 @@ import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
 import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
 import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan } from './offline-map.js';
-import { xmlEsc, safeFileName, geoJsonToGpx } from './app/export.js';
+import { safeFileName, geoJsonToGpx } from './app/export.js';
 import { startOfLocalDay, raceDateRange, distanceFromTodayDays, raceWithinWeek, pickDefaultRace } from './app/catalog-dates.js';
 import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from './app/geo.js';
-import { stageIdentity } from './app/schedule.js';
-import { subscribedStageKeys, setStageSubscribed, walletStageKeys, setWalletStageAdded } from './app/preferences.js';
-import { sanitizeRichHtml } from './app/sanitize.js';
-import { setupPwaInstall, isIOSDevice } from './app/pwa.js';
-import { setupPushUi, getPushSubscription, refreshPushUi, setPushStatus, scheduleRaceReminders, scheduleAllSavedReminders, enablePushNotifications } from './app/push-client.js';
-import { syncWalletStage, syncWalletPassesForPackage } from './app/wallet-client.js';
+import { setupPushUi, getPushSubscription, refreshPushUi, setPushStatus, scheduleRaceReminders, scheduleAllSavedReminders } from './app/push-client.js';
 import { FAVORITES_KEY, pointKey, favoritesForPackage, isFavoritePoint, setFavoritePoint, loadCarPoint, saveCarPoint, deleteCarPoint } from './app/local-points.js';
 import { ensurePersistentStorage, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from './app/runtime.js';
+import { renderPointList as renderPointListUi } from './app/point-list.js';
+import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
+import { renderSchedule } from './app/schedule-ui.js';
+import { syncWalletPassesForPackage } from './app/wallet-client.js';
+import { setupPwaInstall } from './app/pwa.js';
+import { downloadRallyPack } from './app/rally-pack.js';
+import { rallyPackProgressText } from './app/rally-pack-ui.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -26,10 +28,10 @@ let catalog = [];
 let selectedPoint = null;
 let compassHeading = null;
 let compassListening = false;
-const WALLET_STAGE_FEATURE_ENABLED=false;
 
 setupPwaInstall();
 setupPushUi();
+initRaceMediaModal();
 
 function downloadBlob(filename,type,text){
   const url=URL.createObjectURL(new Blob([text],{type}));
@@ -77,13 +79,12 @@ function syncFavoriteButton(){
 }
 
 async function ensureMapLibre(){
-  if(!window.maplibregl) throw new Error('MapLibre 6.10.0 ESM не загрузился с CDN');
+  if(!window.maplibregl) throw new Error('Локальный MapLibre bundle не загрузился');
   if(typeof window.maplibregl.supported==='function' && !window.maplibregl.supported()) throw new Error('WebGL2 недоступен в этом браузере/PWA');
   return window.maplibregl;
 }
 
 const esc = s => String(s ?? '').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const asArray = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
 function fmtBytes(n=0) { if (n<1024) return `${n} Б`; if(n<1024**2) return `${(n/1024).toFixed(1)} КБ`; return `${(n/1024**2).toFixed(1)} МБ`; }
 
 async function sharePoint(point) {
@@ -140,197 +141,22 @@ async function refreshList() {
 
   const total=pkgs.reduce((s,p)=>s+(p.size||0),0); const mapStats=await getMapStorageStats();
   let persisted=false; try{ persisted=Boolean(await navigator.storage?.persisted?.()); }catch{}
-  const opfsLabel=mapStats.opfsCount?` · OPFS: ${fmtBytes(mapStats.opfsBytes)}`:'';
-  $('storageStats').innerHTML=`<strong>${pkgs.length} гонок</strong><span class="muted">JSON: ${fmtBytes(total)} · карты: ${fmtBytes(mapStats.bytes)} (${mapStats.count} тайлов)${opfsLabel} · persistent: ${persisted?'да':'нет'}</span>`;
+  $('storageStats').innerHTML=`<strong>${pkgs.length} гонок</strong><span class="muted">JSON: ${fmtBytes(total)} · карты: ${fmtBytes(mapStats.bytes)} (${mapStats.count} тайлов) · persistent: ${persisted?'да':'нет'}</span>`;
 
   if (!currentPackageId && visible[0]) selectPackage(visible[0].id);
   renderCatalog();
 }
 
-function pointFeatures(fc) {
-  return (fc?.features || []).filter(f => f?.geometry?.type === 'Point' && Array.isArray(f.geometry.coordinates) && f.geometry.coordinates.length >= 2);
-}
-
-function pointFromFeature(f) {
-  return {
-    lat: Number(f.geometry.coordinates[1]),
-    lon: Number(f.geometry.coordinates[0]),
-    name: String(f.properties?.name || f.properties?.title || 'Точка')
-  };
-}
-
-function openPointAction(action, point) {
-  if (!point) return;
-  if (action === 'google') { window.location.href = googleMapsDirections(point); return; }
-  if (action === 'yandex') { openCustomSchemeWithFallback(yandexNavigatorLink(point), yandexWebFallback(point)); return; }
-  if (action === 'mapsme') { openCustomSchemeWithFallback(mapsMeLink(point), mapsMeWebFallback()); return; }
-  if (action === 'share') { sharePoint(point); return; }
-  if (action === 'copy') {
-    const text = coordinateText(point);
-    navigator.clipboard?.writeText(text).catch(()=>{});
-  }
-}
-
-function renderPointList(p) {
-  const root = $('pointList');
-  if (!root) return;
-  const pts = pointFeatures(p.geojson);
-  if (!pts.length) { root.innerHTML = '<p class="muted">Точек с координатами нет.</p>'; return; }
-  root.innerHTML = pts.map((f, i) => {
-    const pt = pointFromFeature(f);
-    return `<article class="point-row" data-point-index="${i}">
-      <div class="point-row-copy"><strong><img class="rfm-icon point-icon" src="/assets/location.svg" alt="" />${esc(pt.name)}</strong><span class="muted">${esc(coordinateText(pt))}</span></div>
-      <div class="point-nav-buttons">
-        <button class="button compact ${isFavoritePoint(pt,p.id)?'downloaded':''}" data-nav="favorite">${isFavoritePoint(pt,p.id)?'★ Избранное':'☆ В избранное'}</button>
-        <button class="button compact primary" data-nav="google">Google Maps</button>
-        <button class="button compact" data-nav="yandex">Yandex</button>
-        <button class="button compact" data-nav="mapsme">MAPS.ME</button>
-        <button class="button compact" data-nav="share">Поделиться</button>
-        <button class="button compact" data-nav="copy"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button>
-      </div>
-    </article>`;
-  }).join('');
-  root.querySelectorAll('.point-row').forEach((row, i) => {
-    const pt = pointFromFeature(pts[i]);
-    row.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', e => {
-      e.stopPropagation();
-      if(btn.dataset.nav==='favorite'){
-        const enabled=!isFavoritePoint(pt,p.id);
-        setFavoritePoint(pt,enabled,p.id);
-        renderFavorites(p);renderPointList(p);
-        if(selectedPoint&&pointKey(selectedPoint)===pointKey(pt)) syncFavoriteButton();
-        return;
-      }
-      openPointAction(btn.dataset.nav, pt);
-    }));
-    row.addEventListener('click', e => {
-      if (e.target.closest('[data-nav]')) return;
-      showPointActions(pt);
-    });
+function renderPointList(pkg){
+  return renderPointListUi(pkg,{
+    onSelectPoint:showPointActions,
+    onShare:sharePoint,
+    onFavoriteChange:()=>{
+      renderFavorites(pkg);
+      syncFavoriteButton();
+    }
   });
 }
-
-function renderSchedule(p){
-  const schedule=asArray(p.original?.schedule);
-  const root=$('scheduleList'); root.innerHTML='';
-  if(!schedule.length){ root.innerHTML='<p class="muted">Расписание отсутствует.</p>'; return; }
-
-  const subscribed=subscribedStageKeys(p);
-  const walletAdded=walletStageKeys(p);
-  const showWallet=WALLET_STAGE_FEATURE_ENABLED && isIOSDevice();
-
-  for(const item of schedule){
-    const events=asArray(item.events);
-    const stage=stageIdentity(item);
-    const isSubscribed=Boolean(stage && subscribed.has(stage.key));
-    const isInWallet=Boolean(stage && walletAdded.has(stage.key));
-
-    const node=document.createElement('article');
-    node.className='schedule-item';
-    node.innerHTML=`${item.date?`<div class="date-header">${esc(item.date)}</div>`:''}
-      <div class="schedule-location-row">
-        <div class="location">${esc(item.location||'Событие')}</div>
-        ${stage?`<div class="stage-actions">
-          <button class="button compact stage-push-toggle ${isSubscribed?'subscribed':''}" data-stage-key="${esc(stage.key)}" type="button" aria-label="${isSubscribed?'Выключить уведомления':'Включить уведомления'}">
-            <span aria-hidden="true">🔔</span><span>${isSubscribed?'Включены':'Уведомлять'}</span>
-          </button>
-          ${showWallet?`<button class="button compact stage-wallet-toggle ${isInWallet?'subscribed':''}" data-wallet-stage-key="${esc(stage.key)}" type="button" aria-label="Добавить ${esc(stage.name)} в Apple Wallet">
-            <img class="rfm-icon" src="/assets/wallet.svg" alt="" /><span>${isInWallet?'Wallet ✓':'Wallet'}</span>
-          </button>`:''}
-        </div>`:''}
-      </div>
-      ${item.coordinates?`<div class="coordinates-line">${esc(item.coordinates)}</div>`:''}
-      <div class="event-list">${events.map(e=>`<div><time>${esc(e.time||'')}</time><span>${esc(e.text||'')}</span></div>`).join('')}</div>`;
-    root.appendChild(node);
-
-    const toggle=node.querySelector('[data-stage-key]');
-    if(toggle && stage){
-      toggle.addEventListener('click',async()=>{
-        toggle.disabled=true;
-        try{
-          const shouldEnable=!subscribedStageKeys(p).has(stage.key);
-
-          if(shouldEnable && !(await getPushSubscription())){
-            await enablePushNotifications();
-            if(!(await getPushSubscription())) return;
-          }
-
-          setStageSubscribed(p,stage.key,shouldEnable);
-          const result=await scheduleRaceReminders(p);
-          setPushStatus(
-            shouldEnable
-              ? `${stage.name}: уведомления включены · за 60, 30 и 15 минут.`
-              : `${stage.name}: уведомления выключены.`,
-            'geo-ok'
-          );
-          if(result.stored===0 && shouldEnable){
-            setPushStatus(`${stage.name}: подписка сохранена, но будущих событий открытия/закрытия пока нет.`);
-          }
-          renderSchedule(p);
-        }catch(e){
-          setPushStatus(`Не удалось изменить подписку ${stage.name}: ${e.message}`,'geo-error');
-          toggle.disabled=false;
-        }
-      });
-    }
-
-    const walletButton=node.querySelector('[data-wallet-stage-key]');
-    if(walletButton && stage){
-      walletButton.addEventListener('click',async()=>{
-        walletButton.disabled=true;
-        try{
-          const data=await syncWalletStage(p,item,stage,{openPass:true});
-          setWalletStageAdded(p,stage.key);
-          setPushStatus(
-            data.updated
-              ? `${stage.name}: карточка Wallet обновлена.`
-              : `${stage.name}: карточка Wallet подготовлена.`,
-            'geo-ok'
-          );
-          renderSchedule(p);
-        }catch(e){
-          setPushStatus(`Wallet · ${stage.name}: ${e.message}`,'geo-error');
-          walletButton.disabled=false;
-        }
-      });
-    }
-  }
-}
-
-function legacyImages(obj, keys){ return keys.map(k=>obj?.[k]).filter(v=>typeof v==='string'&&v.trim()); }
-function modernImages(items){ return asArray(items).map(x=>x?.image).filter(v=>typeof v==='string'&&v.trim()); }
-function unique(arr){ return [...new Set(arr)]; }
-function mediaSection(title, images, emptyText='Информация появится позже :)'){
-  const list=unique(images);
-  const count=list.length ? ` · ${list.length}` : '';
-  return `<details class="race-material collapsible-section">
-    <summary><span class="block-title">${esc(title)}</span><span class="summary-meta">${esc(count)}</span><span class="summary-chevron">⌄</span></summary>
-    <div class="collapsible-body">${list.length?`<div class="media-strip">${list.map((name,i)=>`<button class="media-card" data-media-name="${esc(name)}" aria-label="Открыть ${esc(title)} ${i+1}"><img loading="lazy" src="${assetUrl(name)}" alt="${esc(title)}" /></button>`).join('')}</div>`:`<p class="gray-label">${esc(emptyText)}</p>`}</div>
-  </details>`;
-}
-function renderRaceMedia(p){
-  const race=p.original||{};
-  const crews=[...modernImages(race.lists),...legacyImages(race,['list_crews','list_crews2','list_crews3','list_crews4','list_crews5'])];
-  const results=[...modernImages(race.results),...legacyImages(race,['results_race','results_race2','results_race3','results_race4','results_race5'])];
-  const known=new Set([race.image,race.mapsimg,race.safety_leaflet,race.overlap_schedule,...crews,...results].filter(Boolean));
-  const extra=(p.assetNames||[]).filter(x=>!known.has(x) && x!== 'name-pin.jpg');
-  const root=$('raceMedia');
-  root.innerHTML=[
-    race.mapsimg?mediaSection('КАРТА ОРГАНИЗАТОРА',[race.mapsimg]):'',
-    mediaSection('ПАМЯТКА ПО БЕЗОПАСНОСТИ',race.safety_leaflet?[race.safety_leaflet]:[]),
-    mediaSection('ГРАФИК ПЕРЕКРЫТИЙ',race.overlap_schedule?[race.overlap_schedule]:[]),
-    mediaSection('ЗАЯВЛЕННЫЕ ЭКИПАЖИ',crews),
-    mediaSection('РЕЗУЛЬТАТЫ',results),
-    extra.length?mediaSection('МАТЕРИАЛЫ ГОНКИ',extra):'',
-    `<details class="race-material collapsible-section"><summary><span class="block-title">КАК ЭТО БЫЛО</span><span class="summary-chevron">⌄</span></summary><div class="collapsible-body">${race.how_it_was?`<div class="how-it-was">${sanitizeRichHtml(race.how_it_was)}</div>`:'<p class="gray-label">Информация появится позже :)</p>'}</div></details>`
-  ].join('');
-  root.querySelectorAll('[data-media-name]').forEach(btn=>btn.addEventListener('click',()=>openImageModal(btn.dataset.mediaName)));
-}
-function openImageModal(name){ if(!name)return; $('imageModalImg').src=assetUrl(name); $('imageModal').hidden=false; document.body.classList.add('modal-open'); }
-function closeImageModal(){ $('imageModal').hidden=true; $('imageModalImg').removeAttribute('src'); document.body.classList.remove('modal-open'); }
-$('imageModalClose').onclick=closeImageModal;
-$('imageModal').addEventListener('click',e=>{ if(e.target===$('imageModal')) closeImageModal(); });
-window.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('imageModal').hidden) closeImageModal(); });
 
 async function selectPackage(id){
   currentPackageId=id; const p=await getPackage(id); if(!p)return;
@@ -402,66 +228,40 @@ async function renderCatalog(){
   }
   root.innerHTML=rows.slice().reverse().map(r=>`<article class="catalog-row" style="--race-bg:url('${assetUrl(r.image||'')}')">
     <div class="catalog-shade"></div><div class="catalog-copy"><div class="catalog-tags"><span>${esc(r.status_race||'')}</span><span>${esc(r.stage_race||'')}</span></div><span class="catalog-date">${esc(r.dates||r.date_race||'')}</span><strong>${esc(r.name||`Ралли #${r.id}`)}</strong><span>${esc([r.city_race_details,r.city_race].filter(Boolean).join(' · '))}</span></div>
-    <button class="button ${saved.has(Number(r.id))?'downloaded':'primary'}" data-race-id="${Number(r.id)}">${saved.has(Number(r.id))?'Обновить офлайн':'Скачать офлайн'}</button>
+    <button class="button ${saved.has(Number(r.id))?'downloaded':'primary'}" data-race-id="${Number(r.id)}">${saved.has(Number(r.id))?'Обновить Rally Pack':'Скачать Rally Pack'}</button>
   </article>`).join('');
   root.querySelectorAll('[data-race-id]').forEach(btn=>btn.onclick=()=>downloadRace(Number(btn.dataset.raceId),btn));
 }
 
 async function downloadRace(id,button){
-  const old=button.textContent; button.disabled=true; button.textContent='Загружаю…';
+  const old=button.textContent;
+  button.disabled=true;
   try{
-    const race=await fetchRace(id); let pkg=raceDetailToPackage(race);
-    const previous=await getPackage(pkg.id); if(previous?.offlineMap?.ready) pkg.offlineMap=previous.offlineMap;
-    button.textContent='Импорт Yandex…';
-    try { ({pkg}=await enrichPackageWithYandex(pkg)); } catch(err) { console.warn('Yandex import skipped',err); }
-    await savePackage(pkg);
-    if(pkg.assetNames.length){
-      await cacheRaceAssets(pkg,(done,total)=>{ button.textContent=`Файлы ${done}/${total}`; });
-    }
-    currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id);
-    try {
-      const scheduled=await scheduleRaceReminders(pkg);
-      if(scheduled.stored) setPushStatus(`Для этой гонки запланировано напоминаний: ${scheduled.stored}.`,'geo-ok');
-    } catch(e) {
-      console.warn('Push reminder scheduling skipped',e);
-    }
-    button.textContent='Сохранено ✓';
-  }catch(err){ alert(`Не удалось скачать гонку: ${err.message}`); button.textContent=old; }
-  finally{ button.disabled=false; }
-}
-
-async function refreshSavedYandexImports(){
-  if(!navigator.onLine) return {checked:0,updated:0,failed:0};
-  const packages=(await getAllPackages()).filter(pkg=>pkg?.raceId!=null);
-  let checked=0,updated=0,failed=0;
-
-  for(let pkg of packages){
-    try{
-      // Refresh the race record first in case the site changed the Constructor
-      // iframe itself, not only the points inside an existing map.
-      try{
-        const race=await fetchRace(pkg.raceId);
-        if(race?.iframe_maps) pkg.yandexMapEmbed=race.iframe_maps;
-      }catch(e){
-        console.warn('Could not refresh race before Yandex import',pkg?.raceId,e);
-      }
-
-      if(!pkg?.yandexMapEmbed) continue;
-      checked++;
-      const result=await enrichPackageWithYandex(pkg);
-      await savePackage(result.pkg);
-      updated++;
-    }catch(e){
-      failed++;
-      console.warn('Could not refresh Yandex Constructor points',pkg?.raceId,e);
-    }
+    await ensurePersistentStorage();
+    const result=await downloadRallyPack(id,{
+      fetchRace,
+      raceDetailToPackage,
+      getPackage,
+      enrichPackageWithYandex,
+      downloadOfflineMap,
+      cacheRaceAssets,
+      savePackage,
+      scheduleRaceReminders,
+      discardOfflineMapRevision,
+      onOptionalError:(phase,error)=>console.warn(`Rally Pack optional step failed: ${phase}`,error)
+    },event=>{
+      button.textContent=rallyPackProgressText(event,fmtBytes);
+    });
+    currentPackageId=result.pkg.id;
+    await refreshList();
+    await selectPackage(result.pkg.id);
+    button.textContent=rallyPackProgressText({phase:'done',assetDownload:result.assetDownload},fmtBytes);
+  }catch(err){
+    alert(`Не удалось скачать Rally Pack: ${err.message}`);
+    button.textContent=old;
+  }finally{
+    button.disabled=false;
   }
-
-  if(currentPackageId && updated){
-    const current=await getPackage(currentPackageId);
-    if(current) await selectPackage(currentPackageId);
-  }
-  return {checked,updated,failed};
 }
 
 async function loadCatalog(){
@@ -472,12 +272,7 @@ async function loadCatalog(){
     $('catalogStatus').textContent='Загружаю список из api.rallyfansmap.ru…';
     catalog=await fetchRaceCatalog();
     await renderCatalog();
-
-    $('catalogStatus').textContent='Обновляю точки Yandex сохранённых гонок…';
-    const yandex=await refreshSavedYandexImports();
-    $('catalogStatus').textContent=yandex.checked
-      ? `${catalog.length} гонок · Yandex обновлён: ${yandex.updated}${yandex.failed?` · ошибок: ${yandex.failed}`:''}`
-      : `${catalog.length} гонок · публичный endpoint /race`;
+    $('catalogStatus').textContent=`${catalog.length} гонок · обновление сохранённых данных через Rally Pack`;
   }
   catch(err){ $('catalogStatus').textContent=`API недоступен: ${err.message}`; }
 }
@@ -640,7 +435,10 @@ function setMapUiText({button,status,deleteHidden,disabled}){
   const els=mapUiEls();
   for(const el of els.buttons){ if(button!=null) el.textContent=button; if(disabled!=null) el.disabled=disabled; }
   for(const el of els.statuses){ if(status!=null) el.textContent=status; }
-  for(const el of els.deletes){ if(deleteHidden!=null) el.hidden=deleteHidden; }
+  for(const el of els.deletes){
+    if(deleteHidden!=null) el.hidden=deleteHidden;
+    if(disabled!=null) el.disabled=disabled;
+  }
 }
 function updateOfflineMapUi(p){
   if(!p){ setMapUiText({button:'Скачать офлайн-карту',status:'Сначала выбери сохранённую гонку.',deleteHidden:true,disabled:true}); return; }
@@ -772,4 +570,12 @@ try {
   console.warn('Could not refresh scheduled race reminders on startup',e);
 }
 await refreshList();
+window.addEventListener('rfm:background-fetch',event=>{
+  const detail=event.detail||{};
+  const status=$('catalogStatus');
+  if(!status) return;
+  if(detail.status==='success') status.textContent='Офлайн-материалы готовы ✓';
+  if(detail.status==='failure') status.textContent='Не удалось скачать часть офлайн-материалов.';
+});
+
 await loadCatalog();

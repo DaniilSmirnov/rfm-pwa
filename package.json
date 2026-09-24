@@ -1,25 +1,31 @@
 {
   "name": "rfm-pwa",
   "private": true,
-  "version": "0.6.1",
+  "version": "0.0.0-private",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "version:check": "node scripts/check-version.mjs",
     "test": "npm run test:unit && npm run test:ui",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:ui": "playwright test",
     "test:ui:chromium": "playwright test --project=chromium",
     "test:ui:headed": "playwright test --headed",
-    "test:ui:debug": "playwright test --debug"
+    "test:ui:debug": "playwright test --debug",
+    "test:pwa": "playwright test -c playwright.pwa.config.js"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0",
-    "happy-dom": "^18.0.1",
-    "http-server": "^14.1.1",
-    "vitest": "^3.2.4"
+    "@playwright/test": "1.55.0",
+    "happy-dom": "18.0.1",
+    "http-server": "14.1.1",
+    "vitest": "3.2.4"
+  },
+  "dependencies": {
+    "maplibre-gl": "6.10.0",
+    "pmtiles": "4.5.0"
   }
 }

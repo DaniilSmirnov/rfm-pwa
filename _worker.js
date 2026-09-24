@@ -19,7 +19,7 @@ export default {
       return json({
         ok: true,
         service: 'rallyfans-companion',
-        version: '0.6.1',
+        version: '__APP_VERSION__',
         upstream: API_ORIGIN,
         basemap: BASEMAP_PM,
         hint: 'If this endpoint works, the Cloudflare Pages Worker is active.'
