@@ -181,7 +181,7 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onMapCoordinate:point=>showPointActions(point),onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   terrainControls.update(p);
   renderPointList(p);

@@ -270,13 +270,6 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
       map.on('mouseenter','rfm-lines',()=>{ map.getCanvas().style.cursor='pointer'; });
       map.on('mouseleave','rfm-lines',()=>{ map.getCanvas().style.cursor=''; });
     }
-    if(options.onMapCoordinate){
-      map.on('click',e=>{
-        const pointHits=map.getLayer('rfm-points')?map.queryRenderedFeatures(e.point,{layers:['rfm-points']}):[];
-        if(pointHits.length) return;
-        options.onMapCoordinate({lat:Number(e.lngLat?.lat),lon:Number(e.lngLat?.lng),name:'Точка карты'});
-      });
-    }
 
     if (onPointClick) {
       map.on('click','rfm-points',e=>{ const f=e.features?.[0]; if(f) onPointClick(pointPayload(f)); });
