@@ -206,6 +206,6 @@ export async function openApp(page,options={}){
 
 export async function downloadFixtureRace(page){
   const row=page.locator('.catalog-row').filter({hasText:raceFixture.name});
-  await row.getByRole('button',{name:/Скачать офлайн|Обновить офлайн/}).click();
+  await row.getByRole('button',{name:/Скачать Rally Pack|Обновить Rally Pack/}).click();
   await page.locator('#raceDetails').waitFor({state:'visible'});
 }
