@@ -220,7 +220,7 @@ test('migrates installed PWA from current main to branch without losing persiste
   await waitForActiveWorker(page);
   await page.reload({waitUntil:'domcontentloaded'});
 
-  const serverBefore=await page.evaluate(()=>fetch('/__migration/state',{cache:'no-store'}).then(r=>r.json()));
+  const serverBefore=await page.evaluate(()=>fetch('/__migration/state',{method:'POST',cache:'no-store'}).then(r=>r.json()));
   expect(serverBefore.active).toBe('main');
 
   const seed=await seedPersistentData(page);
@@ -241,7 +241,7 @@ test('migrates installed PWA from current main to branch without losing persiste
 
   await expect.poll(async()=>{
     try{
-      return await page.evaluate(()=>fetch('/__migration/state',{cache:'no-store'}).then(r=>r.json()).then(x=>x.active));
+      return await page.evaluate(()=>fetch('/__migration/state',{method:'POST',cache:'no-store'}).then(r=>r.json()).then(x=>x.active));
     }catch{return null;}
   }).toBe('branch');
 
