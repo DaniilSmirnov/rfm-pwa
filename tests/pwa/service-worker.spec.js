@@ -72,6 +72,21 @@ test.describe('production service worker lifecycle',()=>{
     await expect(page.locator('#networkBadge')).toHaveText('офлайн');
   });
 
+  test('reopens the application from cache after the last page is closed and the browser goes offline',async({page,context})=>{
+    await page.goto('/');
+    await waitForWorker(page);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await expect(page.getByText('RALLY FANS MAP · OFFLINE')).toBeVisible();
+
+    await page.close();
+    await context.setOffline(true);
+
+    const reopened=await context.newPage();
+    await reopened.goto('/',{waitUntil:'domcontentloaded'});
+    await expect(reopened.getByText('RALLY FANS MAP · OFFLINE')).toBeVisible();
+    await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
+  });
+
   test('does not require unpkg resources in the production document',async({page})=>{
     const requests=[];
     page.on('request',request=>requests.push(request.url()));
