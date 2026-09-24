@@ -1,5 +1,6 @@
 import { geometryBounds } from './normalize.js';
 import { baseStyle } from './map/style.js';
+import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
 
 let activeMap = null;
 let activeRaceLabelMarkers = [];
@@ -195,7 +196,8 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     center:[37.6,55.75],
     zoom:5,
     attributionControl:true,
-    cooperativeGestures:false
+    cooperativeGestures:false,
+    ...offlineViewportOptions(options.offlineMap)
   });
   activeMap=map;
   map.on('error', e=>{
@@ -207,6 +209,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   const bounds = expandBounds(geometryBounds(fc),userPos);
   const {lines,polygons,points}=splitFeatures(fc);
   map.on('load',()=>{
+    applyOfflineViewportConstraints(map,options.offlineMap);
     map.addSource('rfm-lines',{type:'geojson',data:lines});
     map.addLayer({id:'rfm-lines',type:'line',source:'rfm-lines',paint:{'line-color':sourceColorExpression(),'line-width':['interpolate',['linear'],['zoom'],5,2,12,5,17,8],'line-opacity':0.96}});
 

@@ -19,7 +19,10 @@ describe('architecture guardrails',()=>{
       expect(sw).toContain('/src/app/'+path+'.js');
     }
   });
-  it('pre-caches extracted map style',()=>expect(read('sw.js')).toContain('/src/map/style.js'));
+  it('pre-caches extracted map modules',()=>{
+    const sw=read('sw.js');
+    for(const path of ['style','viewport-policy']) expect(sw).toContain('/src/map/'+path+'.js');
+  });
   it('defines unit, UI and PWA test scripts',()=>{
     const pkg=JSON.parse(read('package.json'));
     expect(pkg.scripts['test:unit']).toBeTruthy();
