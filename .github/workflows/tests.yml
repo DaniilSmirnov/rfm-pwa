@@ -36,16 +36,23 @@ jobs:
           test -f dist/_worker.js
           test -f dist/sw.js
           test -f dist/version.json
-          test -d dist/src
+          test -d dist/src/worker
+          test ! -e dist/src/app.js
           test -d dist/assets
           test -d dist/vendor/maplibre-gl
           test -f dist/vendor/pmtiles/pmtiles.js
+          find dist/assets -maxdepth 1 -type f -name '*.js' -print -quit | grep -q .
+          find dist/assets -maxdepth 1 -type f -name '*.css' -print -quit | grep -q .
+          grep -Eq 'src="/assets/[^"]+\\.js"' dist/index.html
+          ! grep -q '/src/app.js' dist/index.html dist/sw.js
+          ! grep -q '__BUILD_ASSETS__' dist/sw.js
+          ! grep -R '__APP_VERSION__\\|__APP_CODENAME__\\|__APP_VERSION_CACHE__\\|__APP_CODENAME_SLUG__' dist/index.html dist/manifest.webmanifest dist/sw.js dist/_worker.js
           test ! -e dist/tests
           test ! -e dist/.github
           test ! -e dist/package.json
           test ! -e dist/README.md
           test ! -e dist/samples
-          ! grep -R "unpkg.com" dist/index.html dist/src dist/sw.js
+          ! grep -R "unpkg.com" dist/index.html dist/assets dist/sw.js
       - name: Run Vitest
         run: npm run test:unit
 
