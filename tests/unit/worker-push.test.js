@@ -93,4 +93,36 @@ describe('push API without network delivery',()=>{
     const r=await handlePushApi(req,e,new URL(req.url),{});
     expect(r.status).toBe(401);
   });
+  it('signs VAPID JWT and sends a broadcast',async()=>{
+    const keys=await crypto.subtle.generateKey(
+      {name:'ECDSA',namedCurve:'P-256'},
+      true,
+      ['sign','verify']
+    );
+    const privateJwk=await crypto.subtle.exportKey('jwk',keys.privateKey);
+    const publicJwk=await crypto.subtle.exportKey('jwk',keys.publicKey);
+    const publicBytes=new Uint8Array(65);
+    publicBytes[0]=4;
+    const decode=value=>Uint8Array.from(atob(value.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-value.length%4)%4)),c=>c.charCodeAt(0));
+    publicBytes.set(decode(publicJwk.x),1);
+    publicBytes.set(decode(publicJwk.y),33);
+    const publicKey=btoa(String.fromCharCode(...publicBytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+    const e=makeEnv();
+    e.VAPID_PUBLIC_KEY=publicKey;
+    e.VAPID_PRIVATE_JWK=JSON.stringify(privateJwk);
+    const subscription={endpoint:'https://fcm.googleapis.com/fcm/send/test',keys:{p256dh:'x',auth:'y'}};
+    await e.PUSH_SUBSCRIPTIONS.put('sub:test',JSON.stringify({subscription}));
+
+    const fetchSpy=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(null,{status:201}));
+    const req=new Request('https://app.test/api/push/broadcast',{
+      method:'POST',
+      headers:{authorization:'Bearer secret'},
+      body:JSON.stringify({body:'hello'})
+    });
+    const r=await handlePushApi(req,e,new URL(req.url),{});
+    expect(await r.json()).toMatchObject({ok:true,sent:1,failed:0});
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    fetchSpy.mockRestore();
+  });
 });
