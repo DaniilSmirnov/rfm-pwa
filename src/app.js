@@ -17,6 +17,8 @@ import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
 import { renderSchedule } from './app/schedule-ui.js';
 import { syncWalletPassesForPackage } from './app/wallet-client.js';
 import { setupPwaInstall } from './app/pwa.js';
+import { downloadRallyPack } from './app/rally-pack.js';
+import { rallyPackProgressText } from './app/rally-pack-ui.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -226,69 +228,40 @@ async function renderCatalog(){
   }
   root.innerHTML=rows.slice().reverse().map(r=>`<article class="catalog-row" style="--race-bg:url('${assetUrl(r.image||'')}')">
     <div class="catalog-shade"></div><div class="catalog-copy"><div class="catalog-tags"><span>${esc(r.status_race||'')}</span><span>${esc(r.stage_race||'')}</span></div><span class="catalog-date">${esc(r.dates||r.date_race||'')}</span><strong>${esc(r.name||`Ралли #${r.id}`)}</strong><span>${esc([r.city_race_details,r.city_race].filter(Boolean).join(' · '))}</span></div>
-    <button class="button ${saved.has(Number(r.id))?'downloaded':'primary'}" data-race-id="${Number(r.id)}">${saved.has(Number(r.id))?'Обновить офлайн':'Скачать офлайн'}</button>
+    <button class="button ${saved.has(Number(r.id))?'downloaded':'primary'}" data-race-id="${Number(r.id)}">${saved.has(Number(r.id))?'Обновить Rally Pack':'Скачать Rally Pack'}</button>
   </article>`).join('');
   root.querySelectorAll('[data-race-id]').forEach(btn=>btn.onclick=()=>downloadRace(Number(btn.dataset.raceId),btn));
 }
 
 async function downloadRace(id,button){
-  const old=button.textContent; button.disabled=true; button.textContent='Загружаю…';
+  const old=button.textContent;
+  button.disabled=true;
   try{
-    const race=await fetchRace(id); let pkg=raceDetailToPackage(race);
-    const previous=await getPackage(pkg.id); if(previous?.offlineMap?.ready) pkg.offlineMap=previous.offlineMap;
-    button.textContent='Импорт Yandex…';
-    try { ({pkg}=await enrichPackageWithYandex(pkg)); } catch(err) { console.warn('Yandex import skipped',err); }
-    await savePackage(pkg);
-    let assetDownload={cached:0,total:0,background:false};
-    if(pkg.assetNames.length){
-      assetDownload=await cacheRaceAssets(pkg,(done,total,meta)=>{
-        button.textContent=meta?.background?'Материалы скачиваются в фоне…':`Файлы ${done}/${total}`;
-      });
-    }
-    currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id);
-    try {
-      const scheduled=await scheduleRaceReminders(pkg);
-      if(scheduled.stored) setPushStatus(`Для этой гонки запланировано напоминаний: ${scheduled.stored}.`,'geo-ok');
-    } catch(e) {
-      console.warn('Push reminder scheduling skipped',e);
-    }
-    button.textContent=assetDownload.background?'Данные сохранены · материалы в фоне':'Сохранено ✓';
-  }catch(err){ alert(`Не удалось скачать гонку: ${err.message}`); button.textContent=old; }
-  finally{ button.disabled=false; }
-}
-
-async function refreshSavedYandexImports(){
-  if(!navigator.onLine) return {checked:0,updated:0,failed:0};
-  const packages=(await getAllPackages()).filter(pkg=>pkg?.raceId!=null);
-  let checked=0,updated=0,failed=0;
-
-  for(let pkg of packages){
-    try{
-      // Refresh the race record first in case the site changed the Constructor
-      // iframe itself, not only the points inside an existing map.
-      try{
-        const race=await fetchRace(pkg.raceId);
-        if(race?.iframe_maps) pkg.yandexMapEmbed=race.iframe_maps;
-      }catch(e){
-        console.warn('Could not refresh race before Yandex import',pkg?.raceId,e);
-      }
-
-      if(!pkg?.yandexMapEmbed) continue;
-      checked++;
-      const result=await enrichPackageWithYandex(pkg);
-      await savePackage(result.pkg);
-      updated++;
-    }catch(e){
-      failed++;
-      console.warn('Could not refresh Yandex Constructor points',pkg?.raceId,e);
-    }
+    await ensurePersistentStorage();
+    const result=await downloadRallyPack(id,{
+      fetchRace,
+      raceDetailToPackage,
+      getPackage,
+      enrichPackageWithYandex,
+      downloadOfflineMap,
+      cacheRaceAssets,
+      savePackage,
+      scheduleRaceReminders,
+      discardOfflineMapRevision,
+      onOptionalError:(phase,error)=>console.warn(`Rally Pack optional step failed: ${phase}`,error)
+    },event=>{
+      button.textContent=rallyPackProgressText(event,fmtBytes);
+    });
+    currentPackageId=result.pkg.id;
+    await refreshList();
+    await selectPackage(result.pkg.id);
+    button.textContent=rallyPackProgressText({phase:'done',assetDownload:result.assetDownload},fmtBytes);
+  }catch(err){
+    alert(`Не удалось скачать Rally Pack: ${err.message}`);
+    button.textContent=old;
+  }finally{
+    button.disabled=false;
   }
-
-  if(currentPackageId && updated){
-    const current=await getPackage(currentPackageId);
-    if(current) await selectPackage(currentPackageId);
-  }
-  return {checked,updated,failed};
 }
 
 async function loadCatalog(){
@@ -299,12 +272,7 @@ async function loadCatalog(){
     $('catalogStatus').textContent='Загружаю список из api.rallyfansmap.ru…';
     catalog=await fetchRaceCatalog();
     await renderCatalog();
-
-    $('catalogStatus').textContent='Обновляю точки Yandex сохранённых гонок…';
-    const yandex=await refreshSavedYandexImports();
-    $('catalogStatus').textContent=yandex.checked
-      ? `${catalog.length} гонок · Yandex обновлён: ${yandex.updated}${yandex.failed?` · ошибок: ${yandex.failed}`:''}`
-      : `${catalog.length} гонок · публичный endpoint /race`;
+    $('catalogStatus').textContent=`${catalog.length} гонок · обновление сохранённых данных через Rally Pack`;
   }
   catch(err){ $('catalogStatus').textContent=`API недоступен: ${err.message}`; }
 }
