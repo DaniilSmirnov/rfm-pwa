@@ -281,9 +281,9 @@ function semanticBasemapLayers(source,layerName,index){
       {id:\`\${prefix}-road\`,type:'line',source,'source-layer':layerName,filter:roadFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':roadColor(),'line-width':roadWidth(),'line-opacity':minZoomOpacity(.98)}},
       {id:\`\${prefix}-tunnel\`,type:'line',source,'source-layer':layerName,filter:tunnelFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':'#8e8a83','line-width':roadWidth(.3),'line-dasharray':[2,2],'line-opacity':minZoomOpacity(.55)}},
       {id:\`\${prefix}-rail\`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],isRail],layout:{'line-sort-key':sortKey},paint:{
-        'line-color':'#66635f','line-width':['interpolate',['linear'],['zoom'],7,.8,14,2.4],
+        'line-color':['case',['!=',basemapField('service'),''],'#85817b','#66635f'],'line-width':['interpolate',['linear'],['zoom'],7,.8,14,2.4],
         'line-dasharray':[2,1.5],
-        'line-opacity':['case',['!=',basemapField('service'),''],.65,.92]
+        'line-opacity':minZoomOpacity(.92)
       }},
       {id:\`\${prefix}-aeroway\`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],isAeroway],layout:{'line-sort-key':sortKey},paint:{
         'line-color':['match',cls,'runway','#aaa7a3','taxiway','#c1beb9','#b5b2ad'],
