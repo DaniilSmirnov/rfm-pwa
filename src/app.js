@@ -180,7 +180,7 @@ async function selectPackage(id){
     : p.geojson;
   renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
-  updateTerrainUi(p);
+  terrainControls.update(p);
   renderPointList(p);
   renderFavorites(p);
   renderCarPoint();
