@@ -16,6 +16,124 @@ let catalog = [];
 let selectedPoint = null;
 let compassHeading = null;
 let compassListening = false;
+const FAVORITES_KEY='rfm-favorite-points-v1';
+const CAR_POINT_KEY='rfm-car-point-v1';
+
+function pointKey(point){
+  const p=normalizePoint(point);
+  return `${p.lat.toFixed(6)}:${p.lon.toFixed(6)}:${p.name}`;
+}
+function loadFavoritesStore(){
+  try{
+    const value=JSON.parse(localStorage.getItem(FAVORITES_KEY)||'{}');
+    return value&&typeof value==='object'?value:{};
+  }catch{return {};}
+}
+function favoritesForPackage(packageId=currentPackageId){
+  const store=loadFavoritesStore();
+  return Array.isArray(store[String(packageId||'')])?store[String(packageId||'')]:[];
+}
+function isFavoritePoint(point,packageId=currentPackageId){
+  if(!point||!packageId) return false;
+  const key=pointKey(point);
+  return favoritesForPackage(packageId).some(p=>p.key===key);
+}
+function setFavoritePoint(point,enabled,packageId=currentPackageId){
+  if(!point||!packageId) return;
+  const store=loadFavoritesStore();
+  const id=String(packageId);
+  const normalized=normalizePoint(point);
+  const key=pointKey(normalized);
+  const list=Array.isArray(store[id])?store[id].filter(p=>p?.key!==key):[];
+  if(enabled) list.push({key,...normalized,savedAt:new Date().toISOString()});
+  if(list.length) store[id]=list; else delete store[id];
+  localStorage.setItem(FAVORITES_KEY,JSON.stringify(store));
+}
+function loadCarPoint(){
+  try{
+    const value=JSON.parse(localStorage.getItem(CAR_POINT_KEY)||'null');
+    return value&&Number.isFinite(Number(value.lat))&&Number.isFinite(Number(value.lon))?value:null;
+  }catch{return null;}
+}
+function saveCarPoint(point){
+  const normalized=normalizePoint(point);
+  const value={...normalized,name:'Машина',savedAt:new Date().toISOString()};
+  localStorage.setItem(CAR_POINT_KEY,JSON.stringify(value));
+  return value;
+}
+function deleteCarPoint(){ localStorage.removeItem(CAR_POINT_KEY); }
+function xmlEsc(value=''){
+  return String(value).replace(/[<>&"']/g,ch=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[ch]));
+}
+function safeFileName(value='rally'){
+  return String(value).trim().toLowerCase().replace(/[^a-zа-яё0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,80)||'rally';
+}
+function downloadBlob(filename,type,text){
+  const url=URL.createObjectURL(new Blob([text],{type}));
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function geoJsonToGpx(fc,name='Rally Fans Map'){
+  const waypoints=[],tracks=[];
+  const addTrack=(coords,label)=>{
+    if(!Array.isArray(coords)||coords.length<2) return;
+    const pts=coords.filter(c=>Array.isArray(c)&&Number.isFinite(Number(c[0]))&&Number.isFinite(Number(c[1])))
+      .map(c=>`<trkpt lat="${Number(c[1])}" lon="${Number(c[0])}"></trkpt>`).join('');
+    if(pts) tracks.push(`<trk><name>${xmlEsc(label)}</name><trkseg>${pts}</trkseg></trk>`);
+  };
+  for(const feature of fc?.features||[]){
+    const g=feature?.geometry||{}, props=feature?.properties||{};
+    const label=String(props.name||props.title||props.location||'Rally Fans Map');
+    if(g.type==='Point'&&Array.isArray(g.coordinates)){
+      const [lon,lat]=g.coordinates.map(Number);
+      if(Number.isFinite(lat)&&Number.isFinite(lon)) waypoints.push(`<wpt lat="${lat}" lon="${lon}"><name>${xmlEsc(label)}</name></wpt>`);
+    }else if(g.type==='LineString') addTrack(g.coordinates,label);
+    else if(g.type==='MultiLineString') g.coordinates?.forEach((line,i)=>addTrack(line,`${label} ${i+1}`));
+    else if(g.type==='Polygon') g.coordinates?.forEach((ring,i)=>addTrack(ring,`${label} ${i+1}`));
+    else if(g.type==='MultiPolygon') g.coordinates?.forEach((poly,pi)=>poly?.forEach((ring,ri)=>addTrack(ring,`${label} ${pi+1}.${ri+1}`)));
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Rally Fans Map Offline" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${xmlEsc(name)}</name></metadata>${waypoints.join('')}${tracks.join('')}</gpx>`;
+}
+function renderFavorites(p){
+  const root=$('favoritesList'), status=$('favoritesStatus');
+  if(!root) return;
+  const list=favoritesForPackage(p?.id);
+  if(status) status.textContent=list.length?`${list.length} сохранено для этой гонки.`:'Добавляй точки в избранное, чтобы они были всегда под рукой.';
+  if(!list.length){root.innerHTML='<p class="muted small">Пока пусто.</p>';return;}
+  root.innerHTML=list.map((pt,i)=>`<article class="favorite-row" data-favorite-index="${i}">
+    <div class="point-row-copy"><strong>★ ${esc(pt.name)}</strong><span class="muted">${esc(coordinateText(pt))}</span></div>
+    <div class="point-nav-buttons"><button class="button compact primary" data-favorite-open>Открыть</button><button class="button compact danger" data-favorite-remove>Удалить</button></div>
+  </article>`).join('');
+  root.querySelectorAll('.favorite-row').forEach((row,i)=>{
+    const pt=list[i];
+    row.querySelector('[data-favorite-open]')?.addEventListener('click',()=>showPointActions(pt));
+    row.querySelector('[data-favorite-remove]')?.addEventListener('click',()=>{
+      setFavoritePoint(pt,false,p.id);renderFavorites(p);renderPointList(p);syncFavoriteButton();
+    });
+  });
+}
+function renderCarPoint(){
+  const pt=loadCarPoint(), card=$('carPointCard'), status=$('carStatus'), coords=$('carCoords');
+  if(!card) return;
+  card.hidden=!pt;
+  if(pt){
+    coords.textContent=coordinateText(pt);
+    if(status) status.textContent=`Сохранено ${pt.savedAt?new Date(pt.savedAt).toLocaleString():''}`;
+    if($('saveCarBtn')) $('saveCarBtn').textContent='Обновить координаты машины';
+  }else{
+    if(status) status.textContent='Сохрани текущие GPS-координаты машины.';
+    if($('saveCarBtn')) $('saveCarBtn').textContent='Запомнить машину';
+  }
+}
+function syncFavoriteButton(){
+  const btn=$('favoritePointBtn');
+  if(!btn) return;
+  const favorite=Boolean(selectedPoint&&currentPackageId&&isFavoritePoint(selectedPoint));
+  btn.textContent=favorite?'★ В избранном':'☆ В избранное';
+  btn.classList.toggle('downloaded',favorite);
+}
+
 async function ensureMapLibre(){
   if(!window.maplibregl) throw new Error('MapLibre 6.10.0 ESM не загрузился с CDN');
   if(typeof window.maplibregl.supported==='function' && !window.maplibregl.supported()) throw new Error('WebGL2 недоступен в этом браузере/PWA');
@@ -888,6 +1006,7 @@ function renderPointList(p) {
     return `<article class="point-row" data-point-index="${i}">
       <div class="point-row-copy"><strong><img class="rfm-icon point-icon" src="/assets/location.svg" alt="" />${esc(pt.name)}</strong><span class="muted">${esc(coordinateText(pt))}</span></div>
       <div class="point-nav-buttons">
+        <button class="button compact ${isFavoritePoint(pt,p.id)?'downloaded':''}" data-nav="favorite">${isFavoritePoint(pt,p.id)?'★ Избранное':'☆ В избранное'}</button>
         <button class="button compact primary" data-nav="google">Google Maps</button>
         <button class="button compact" data-nav="yandex">Yandex</button>
         <button class="button compact" data-nav="mapsme">MAPS.ME</button>
@@ -900,6 +1019,13 @@ function renderPointList(p) {
     const pt = pointFromFeature(pts[i]);
     row.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', e => {
       e.stopPropagation();
+      if(btn.dataset.nav==='favorite'){
+        const enabled=!isFavoritePoint(pt,p.id);
+        setFavoritePoint(pt,enabled,p.id);
+        renderFavorites(p);renderPointList(p);
+        if(selectedPoint&&pointKey(selectedPoint)===pointKey(pt)) syncFavoriteButton();
+        return;
+      }
       openPointAction(btn.dataset.nav, pt);
     }));
     row.addEventListener('click', e => {
@@ -1089,9 +1215,17 @@ async function selectPackage(id){
     const diag=$('offlineMapDiag');
     if(diag){ diag.hidden=false; diag.textContent=`Карта недоступна: ${e.message}`; }
   }
-  renderMap($('map'),p.geojson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  const carPoint=loadCarPoint();
+  const mapGeoJson=carPoint
+    ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
+    : p.geojson;
+  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   renderPointList(p);
+  renderFavorites(p);
+  renderCarPoint();
+  if($('exportGpxBtn')) $('exportGpxBtn').disabled=false;
+  if($('exportGeoJsonBtn')) $('exportGeoJsonBtn').disabled=false;
   $('mapLegend').innerHTML='<span><i style="background:#f3f5f7"></i>RallyFansMap</span><span><i style="background:#ffd21e"></i>Yandex Constructor</span><span><i style="background:#4da3ff"></i>вы</span>';
   if ($('importYandexBtn')) { const n=p.yandexImport?.featureCount||0; $('importYandexBtn').textContent=n?`Yandex: ${n} объектов ✓`:'Импорт из Yandex'; $('importYandexBtn').disabled=!p.yandexMapEmbed; }
   $('raceDetails').hidden=false;
@@ -1309,6 +1443,7 @@ function showPointActions(point) {
   const compass=$('spectatorCompass'); if(compass) compass.open=false;
   const compassBtn=$('compassEnableBtn'); if(compassBtn) compassBtn.textContent=compassListening?'Компас включён':'Включить компас';
   updateSpectatorCompass();
+  syncFavoriteButton();
   $('pointActions').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
@@ -1333,6 +1468,49 @@ $('sharePointBtn').onclick = async () => {
 };
 $('compassEnableBtn')?.addEventListener('click',enableSpectatorCompass);
 $('spectatorCompass')?.addEventListener('toggle',()=>{ if($('spectatorCompass').open) updateSpectatorCompass(); });
+
+
+$('favoritePointBtn')?.addEventListener('click',()=>{
+  if(!selectedPoint||!currentPackageId) return;
+  const enabled=!isFavoritePoint(selectedPoint);
+  setFavoritePoint(selectedPoint,enabled);
+  syncFavoriteButton();
+  getPackage(currentPackageId).then(p=>{if(p){renderFavorites(p);renderPointList(p);}});
+});
+
+$('saveCarBtn')?.addEventListener('click',()=>{
+  const btn=$('saveCarBtn'), status=$('carStatus');
+  if(!navigator.geolocation){ if(status) status.textContent='Геолокация не поддерживается.'; return; }
+  btn.disabled=true;if(status) status.textContent='Определяю координаты машины…';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    saveCarPoint({lat:pos.coords.latitude,lon:pos.coords.longitude,name:'Машина'});
+    renderCarPoint();btn.disabled=false;
+    if(currentPackageId) selectPackage(currentPackageId);
+  },err=>{
+    if(status) status.textContent=`Не удалось сохранить машину: ${err.message}`;
+    btn.disabled=false;
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+});
+$('carCompassBtn')?.addEventListener('click',async()=>{
+  const pt=loadCarPoint();if(!pt)return;
+  showPointActions(pt);
+  const details=$('spectatorCompass');if(details) details.open=true;
+  await enableSpectatorCompass();
+});
+$('carGoogleBtn')?.addEventListener('click',()=>{const pt=loadCarPoint();if(pt) window.location.href=googleMapsDirections(pt);});
+$('carYandexBtn')?.addEventListener('click',()=>{const pt=loadCarPoint();if(pt) openCustomSchemeWithFallback(yandexNavigatorLink(pt),yandexWebFallback(pt));});
+$('carShareBtn')?.addEventListener('click',()=>{const pt=loadCarPoint();if(pt) sharePoint(pt);});
+$('carDeleteBtn')?.addEventListener('click',()=>{deleteCarPoint();renderCarPoint();if(selectedPoint?.name==='Машина'||selectedPoint?.name==='🚗 Машина'){$('pointActions').hidden=true;selectedPoint=null;}if(currentPackageId) selectPackage(currentPackageId);});
+$('exportGeoJsonBtn')?.addEventListener('click',async()=>{
+  if(!currentPackageId)return;
+  const p=await getPackage(currentPackageId);if(!p)return;
+  downloadBlob(`${safeFileName(p.name)}.geojson`,'application/geo+json;charset=utf-8',JSON.stringify(p.geojson,null,2));
+});
+$('exportGpxBtn')?.addEventListener('click',async()=>{
+  if(!currentPackageId)return;
+  const p=await getPackage(currentPackageId);if(!p)return;
+  downloadBlob(`${safeFileName(p.name)}.gpx`,'application/gpx+xml;charset=utf-8',geoJsonToGpx(p.geojson,p.name));
+});
 
 $('copyCoordsBtn').onclick = async () => {
   if(!selectedPoint) return;
@@ -1418,7 +1596,7 @@ for(const id of ['deleteMapBtn','deleteMapBtnTop']) if($(id)) $(id).onclick=hand
 $('catalogSearch').addEventListener('input',renderCatalog);
 $('packageSearch')?.addEventListener('input',refreshList);
 $('refreshCatalogBtn').onclick=loadCatalog;
-$('clearBtn').onclick = async () => { if(!confirm('Удалить все сохранённые гонки, карты и изображения?'))return; await deleteAllPackages(); await clearMapTiles(); if('caches' in window) await caches.delete('rfm-race-assets-v1'); currentPackageId=null; $('raceDetails').hidden=true; $('map').innerHTML='<div class="empty">Офлайн-данные удалены</div>'; await refreshList(); };
+$('clearBtn').onclick = async () => { if(!confirm('Удалить все сохранённые гонки, карты, изображения и избранные точки?'))return; localStorage.removeItem(FAVORITES_KEY); await deleteAllPackages(); await clearMapTiles(); if('caches' in window) await caches.delete('rfm-race-assets-v1'); currentPackageId=null; $('raceDetails').hidden=true; $('map').innerHTML='<div class="empty">Офлайн-данные удалены</div>'; await refreshList(); };
 async function updateGeoStatus(text, cls='') { const el=$('geoStatus'); if(el){ el.textContent=text; el.className=`muted small ${cls}`; } }
 
 async function requestLocation() {
@@ -1459,6 +1637,9 @@ async function requestLocation() {
   });
 }
 $('locateBtn').onclick = requestLocation;
+renderCarPoint();
+if($('exportGpxBtn')) $('exportGpxBtn').disabled=!currentPackageId;
+if($('exportGeoJsonBtn')) $('exportGeoJsonBtn').disabled=!currentPackageId;
 
 $('importYandexBtn').onclick = async () => {
   if(!currentPackageId) return;
