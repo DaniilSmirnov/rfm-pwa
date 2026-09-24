@@ -1,7 +1,7 @@
-const CACHE='rfm-companion-v060-sortovala';
+const CACHE='rfm-companion-v061-sortovala';
 const ASSET_CACHE='rfm-race-assets-v1';
 const PERIODIC_CACHE='rfm-periodic-data-v1';
-const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/manifest.webmanifest','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg'];
+const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/src/app/catalog-dates.js','/src/app/export.js','/src/app/geo.js','/src/app/local-points.js','/src/app/preferences.js','/src/app/push-client.js','/src/app/pwa.js','/src/app/runtime.js','/src/app/sanitize.js','/src/app/schedule.js','/src/app/wallet-client.js','/manifest.webmanifest','/rfm/icon.png','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg'];
 const EXTERNAL=[
   'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl.mjs',
   'https://unpkg.com/maplibre-gl@6.10.0/dist/maplibre-gl-worker.mjs',
