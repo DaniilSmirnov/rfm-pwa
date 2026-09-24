@@ -1,6 +1,7 @@
 import { geometryBounds } from './normalize.js';
 import { baseStyle } from './map/style.js';
 import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
+import { TerrainModeControl } from './map/terrain-control.js';
 
 let activeMap = null;
 let activeRaceLabelMarkers = [];
@@ -206,6 +207,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     console.warn('MapLibre map error',e);
   });
   map.addControl(new maplibregl.NavigationControl({showCompass:true,visualizePitch:false}), 'top-right');
+  if(options.terrain?.ready) map.addControl(new TerrainModeControl(), 'top-right');
   const bounds = expandBounds(geometryBounds(fc),userPos);
   const {lines,polygons,points}=splitFeatures(fc);
   map.on('load',()=>{
