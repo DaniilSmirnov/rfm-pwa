@@ -34,22 +34,20 @@ test.describe('production service worker lifecycle',()=>{
     const result=await page.evaluate(async()=>{
       const names=await caches.keys();
       const shell=names.find(name=>name.startsWith('rfm-companion-v'));
-      if(!shell) return {shell:null,cached:[]};
+      if(!shell) return {shell:null,paths:[]};
       const cache=await caches.open(shell);
-      const paths=[
-        '/index.html',
-        '/src/app.js',
-        '/vendor/maplibre-gl/maplibre-gl.mjs',
-        '/vendor/maplibre-gl/maplibre-gl.css',
-        '/vendor/pmtiles/pmtiles.js'
-      ];
-      const cached=[];
-      for(const path of paths) cached.push(Boolean(await cache.match(path)));
-      return {shell,cached};
+      const paths=(await cache.keys()).map(request=>new URL(request.url).pathname);
+      return {shell,paths};
     });
 
     expect(result.shell).toBe(expectedShell);
-    expect(result.cached).toEqual([true,true,true,true,true]);
+    expect(result.paths).toContain('/index.html');
+    expect(result.paths).toContain('/vendor/maplibre-gl/maplibre-gl.mjs');
+    expect(result.paths).toContain('/vendor/maplibre-gl/maplibre-gl.css');
+    expect(result.paths).toContain('/vendor/pmtiles/pmtiles.js');
+    expect(result.paths.some(path=>/^\/assets\/.*\.js$/.test(path))).toBe(true);
+    expect(result.paths.some(path=>/^\/assets\/.*\.css$/.test(path))).toBe(true);
+    expect(result.paths).not.toContain('/src/app.js');
   });
 
   test('removes stale shell caches during activation',async({page})=>{
