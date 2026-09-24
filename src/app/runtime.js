@@ -12,6 +12,13 @@ export async function ensurePersistentStorage(){
   }
 }
 
+export function requestRallyPackBackgroundRefresh(reg){
+  const worker=reg?.active || navigator.serviceWorker?.controller;
+  if(!worker?.postMessage) return false;
+  worker.postMessage({type:'REFRESH_RALLY_PACKS'});
+  return true;
+}
+
 export async function setupPeriodicBackgroundSync(reg){
   if(!reg?.periodicSync?.register) return {supported:false};
   try{
@@ -45,6 +52,9 @@ export async function setupServiceWorkerUpdates(){
     const data=event.data;
     if(data?.type==='RFM_BACKGROUND_FETCH'){
       window.dispatchEvent(new CustomEvent('rfm:background-fetch',{detail:data}));
+    }
+    if(data?.type==='RFM_PERIODIC_UPDATE'){
+      window.dispatchEvent(new CustomEvent('rfm:periodic-update',{detail:data}));
     }
   });
 
