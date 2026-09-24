@@ -43,16 +43,25 @@ async function vapidJwt(endpoint, env) {
 }
 async function sendEmptyPush(endpoint, env, ttlSeconds=21600) {
   if (!pushEndpointAllowed(endpoint)) return {ok:false,status:400,error:'Unsupported push endpoint'};
-  const token=await vapidJwt(endpoint,env);
-  const response=await fetch(endpoint,{
-    method:'POST',
-    headers:{
-      'TTL':String(Math.max(60,Math.min(172800,Number(ttlSeconds)||21600))),
-      'Urgency':'normal',
-      'Authorization':`vapid t=${token}, k=${env.VAPID_PUBLIC_KEY}`
-    }
-  });
-  return {ok:response.ok,status:response.status};
+  let token;
+  try {
+    token=await vapidJwt(endpoint,env);
+  } catch {
+    return {ok:false,status:0,error:'vapid'};
+  }
+  try {
+    const response=await fetch(endpoint,{
+      method:'POST',
+      headers:{
+        'TTL':String(Math.max(60,Math.min(172800,Number(ttlSeconds)||21600))),
+        'Urgency':'normal',
+        'Authorization':`vapid t=${token}, k=${env.VAPID_PUBLIC_KEY}`
+      }
+    });
+    return {ok:response.ok,status:response.status};
+  } catch {
+    return {ok:false,status:0,error:'fetch'};
+  }
 }
 async function subscriptionKey(endpoint) {
   return `sub:${await sha256Base64Url(endpoint)}`;
@@ -313,7 +322,7 @@ async function handlePushApi(request, env, url, ctx) {
           if (result.ok) sent++;
           else {
             failed++;
-            const statusKey=String(result.status||'unknown');
+            const statusKey=result.error ? `error:${result.error}` : String(result.status||'unknown');
             failedStatuses[statusKey]=(failedStatuses[statusKey]||0)+1;
             await env.PUSH_SUBSCRIPTIONS.delete(`pending:${hash}`);
             if ([404,410].includes(result.status)) {
