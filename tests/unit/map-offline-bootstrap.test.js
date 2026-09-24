@@ -60,6 +60,11 @@ const fc={
       type:'Feature',
       properties:{kind:'race-route',name:'SS1'},
       geometry:{type:'LineString',coordinates:[[30.68,61.69],[30.70,61.71]]}
+    },
+    {
+      type:'Feature',
+      properties:{kind:'yandex-line',source:'yandex-constructor',name:'SS2'},
+      geometry:{type:'LineString',coordinates:[[30.67,61.68],[30.71,61.72]]}
     }
   ]
 };
@@ -149,6 +154,45 @@ describe('offline map overlay bootstrap',()=>{
     map.zoom=18;
     map.handlers.get('zoom')();
     expect(raceLabel.style.display).toBe('block');
+  });
+
+
+  it('renders Yandex special-stage lines as a dedicated yellow offline overlay',()=>{
+    installMapLibre();
+    const container=document.createElement('div');
+
+    renderMap(container,fc,null,vi.fn(),{
+      offlineMap:{
+        ready:true,
+        raceId:'race-1@map',
+        storageId:'race-1@map',
+        minZoom:6,
+        maxZoom:14,
+        bounds:{minLon:30.5,minLat:61.5,maxLon:30.9,maxLat:61.9},
+        vectorLayers:[{id:'roads'}]
+      }
+    });
+
+    const map=FakeMap.last;
+    map.handlers.get('style.load')();
+
+    const yandexSource=map.sources.get('rfm-yandex-lines');
+    const yandexLayer=map.layers.find(layer=>layer.id==='rfm-yandex-lines');
+    const yandexCasing=map.layers.find(layer=>layer.id==='rfm-yandex-lines-casing');
+
+    expect(yandexSource?.data.features).toHaveLength(1);
+    expect(yandexSource?.data.features[0].properties).toMatchObject({
+      kind:'yandex-line',
+      source:'yandex-constructor',
+      name:'SS2'
+    });
+    expect(yandexLayer).toMatchObject({
+      minzoom:0,
+      maxzoom:24,
+      paint:{'line-color':'#ffd21e','line-opacity':1}
+    });
+    expect(yandexCasing).toMatchObject({minzoom:0,maxzoom:24});
+    expect(map.sources.get('rfm-lines')?.data.features.map(feature=>feature.properties.name)).toEqual(['SS1']);
   });
 
   it('keeps race overlays above terrain when an offline terrain style is enabled',()=>{

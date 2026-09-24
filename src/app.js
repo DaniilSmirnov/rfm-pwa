@@ -1,4 +1,5 @@
 import * as maplibregl from '/vendor/maplibre-gl/maplibre-gl.mjs';
+maplibregl.setWorkerUrl('/vendor/maplibre-gl/maplibre-gl-worker.mjs');
 window.maplibregl = maplibregl;
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from './db.js';
 import { normalizePackage } from './normalize.js';
@@ -24,6 +25,7 @@ import { createTerrainControls } from './app/terrain-controls.js';
 import { showPointElevation, showRouteElevationProfile } from './app/elevation-ui.js';
 import { processCachedRallyPackUpdates } from './app/rally-pack-update.js';
 import { renderRallyPackUpdateStatus } from './app/rally-pack-update-ui.js';
+import { reportClientError, setupErrorTelemetry } from './app/telemetry.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -34,6 +36,7 @@ let selectedPoint = null;
 let compassHeading = null;
 let compassListening = false;
 
+setupErrorTelemetry();
 setupPwaInstall();
 setupPushUi();
 initRaceMediaModal();
@@ -181,7 +184,7 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ reportClientError(new Error(msg),'map'); const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   terrainControls.update(p);
   renderPointList(p);

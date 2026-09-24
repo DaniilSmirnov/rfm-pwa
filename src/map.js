@@ -33,8 +33,12 @@ function expandBounds(bounds, userPos) {
 
 function splitFeatures(fc={type:'FeatureCollection',features:[]}) {
   const features = Array.isArray(fc.features) ? fc.features : [];
+  const lineFeatures=features.filter(f=>['LineString','MultiLineString'].includes(f?.geometry?.type));
+  const isYandex=feature=>String(feature?.properties?.kind||'').startsWith('yandex-')
+    || feature?.properties?.source==='yandex-constructor';
   return {
-    lines: {type:'FeatureCollection',features:features.filter(f=>['LineString','MultiLineString'].includes(f?.geometry?.type))},
+    lines: {type:'FeatureCollection',features:lineFeatures.filter(f=>!isYandex(f))},
+    yandexLines: {type:'FeatureCollection',features:lineFeatures.filter(isYandex)},
     polygons: {type:'FeatureCollection',features:features.filter(f=>['Polygon','MultiPolygon'].includes(f?.geometry?.type))},
     points: {type:'FeatureCollection',features:features.filter(f=>f?.geometry?.type==='Point')}
   };
@@ -220,7 +224,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   });
   map.addControl(new maplibregl.NavigationControl({showCompass:true,visualizePitch:true}), 'top-right');
   const bounds = expandBounds(geometryBounds(fc),userPos);
-  const {lines,polygons,points}=splitFeatures(fc);
+  const {lines,yandexLines,polygons,points}=splitFeatures(fc);
   map.on('style.load',()=>{
     applyOfflineViewportConstraints(map,options.offlineMap);
     if(options.terrain?.ready) map.addControl(new TerrainModeControl({
@@ -238,7 +242,11 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     }), 'top-right');
     map.addSource('rfm-lines',{type:'geojson',data:lines});
     map.addLayer({id:'rfm-lines-casing',type:'line',source:'rfm-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#111318','line-width':['interpolate',['linear'],['zoom'],5,6,12,9,17,13],'line-opacity':0.78}});
-    map.addLayer({id:'rfm-lines',type:'line',source:'rfm-lines',minzoom:0,maxzoom:24,paint:{'line-color':sourceColorExpression(),'line-width':['interpolate',['linear'],['zoom'],5,3,12,6,17,9],'line-opacity':1}});
+    map.addLayer({id:'rfm-lines',type:'line',source:'rfm-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#e63b2e','line-width':['interpolate',['linear'],['zoom'],5,3,12,6,17,9],'line-opacity':1}});
+
+    map.addSource('rfm-yandex-lines',{type:'geojson',data:yandexLines});
+    map.addLayer({id:'rfm-yandex-lines-casing',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#111318','line-width':['interpolate',['linear'],['zoom'],5,7,12,10,17,14],'line-opacity':0.82}});
+    map.addLayer({id:'rfm-yandex-lines',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#ffd21e','line-width':['interpolate',['linear'],['zoom'],5,4,12,7,17,10],'line-opacity':1}});
 
     map.addSource('rfm-polygons',{type:'geojson',data:polygons});
     map.addLayer({id:'rfm-polygons-fill',type:'fill',source:'rfm-polygons',paint:{'fill-color':sourceColorExpression(),'fill-opacity':0.14}});
@@ -264,12 +272,14 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     installBasemapInspector(map,options.offlineMap);
 
     if(options.onRouteClick){
-      map.on('click','rfm-lines',e=>{
-        const feature=e.features?.[0];
-        if(feature) options.onRouteClick(routePayload(feature));
-      });
-      map.on('mouseenter','rfm-lines',()=>{ map.getCanvas().style.cursor='pointer'; });
-      map.on('mouseleave','rfm-lines',()=>{ map.getCanvas().style.cursor=''; });
+      for(const layerId of ['rfm-lines','rfm-yandex-lines']){
+        map.on('click',layerId,e=>{
+          const feature=e.features?.[0];
+          if(feature) options.onRouteClick(routePayload(feature));
+        });
+        map.on('mouseenter',layerId,()=>{ map.getCanvas().style.cursor='pointer'; });
+        map.on('mouseleave',layerId,()=>{ map.getCanvas().style.cursor=''; });
+      }
     }
 
     if (onPointClick) {
