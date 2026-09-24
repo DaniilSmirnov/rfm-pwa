@@ -94,3 +94,47 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  migration:
+    name: Main → branch migration E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install branch dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build branch artifact
+        run: npm run build
+      - name: Build current main artifact
+        run: |
+          rm -rf /tmp/rfm-main
+          git worktree add --detach /tmp/rfm-main origin/main
+          cd /tmp/rfm-main
+          npm ci --no-audit --no-fund
+          npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Run real main-to-branch migration E2E
+        run: npm run test:migration
+      - name: Upload migration report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-migration-report
+          path: playwright-report-migration/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload migration failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-migration-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
