@@ -9,6 +9,17 @@ async function precacheFresh(){
     if(!response.ok) throw new Error(`Precache ${url}: ${response.status}`);
     await cache.put(url,response);
   }));
+
+  // Vite filenames are content-hashed. If the same release version is rebuilt,
+  // remove only obsolete generated chunks while preserving runtime-cached files.
+  const expected=new Set(SHELL);
+  const cached=await cache.keys();
+  await Promise.all(cached.filter(request=>{
+    const url=new URL(request.url);
+    return url.origin===self.location.origin
+      && url.pathname.startsWith('/assets/')
+      && !expected.has(url.pathname);
+  }).map(request=>cache.delete(request)));
 }
 
 self.addEventListener('install', event=>{
