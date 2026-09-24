@@ -36,12 +36,12 @@ function tilesAtZoom(b,z){
 }
 export function buildDownloadPlan(fc){
   const bounds=bufferedBounds(fc); if(!bounds) throw new Error('У гонки нет геометрии для определения района карты');
-  let maxZoom=DESIRED_MAX_ZOOM, tiles=[];
-  while(maxZoom>=11){
-    tiles=[]; for(let z=MIN_ZOOM;z<=maxZoom;z++) tiles.push(...tilesAtZoom(bounds,z));
-    if(tiles.length<=MAX_TILES) break; maxZoom--;
+  for(let maxZoom=DESIRED_MAX_ZOOM;maxZoom>=MIN_ZOOM;maxZoom--){
+    const tiles=[];
+    for(let z=MIN_ZOOM;z<=maxZoom;z++) tiles.push(...tilesAtZoom(bounds,z));
+    if(tiles.length<=MAX_TILES) return {bounds,minZoom:MIN_ZOOM,maxZoom,tiles};
   }
-  return {bounds,minZoom:MIN_ZOOM,maxZoom,tiles};
+  throw new Error(`Район карты слишком большой для офлайн-загрузки (лимит ${MAX_TILES} тайлов)`);
 }
 function normalizeTileData(data){
   if(data instanceof ArrayBuffer) return data;
@@ -54,46 +54,75 @@ function normalizeVectorLayers(metadata){
     .filter(layer=>typeof layer.id==='string'&&layer.id.trim());
 }
 
+function mapRevisionId(pkgId){
+  const base=String(pkgId||'race').replace(/[^a-zA-Z0-9._-]/g,'-').slice(0,80);
+  const nonce=globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`;
+  return `${base}@${nonce}`;
+}
+
+export async function discardOfflineMapRevision(meta,fallbackId=null){
+  const storageId=meta?.storageId || fallbackId;
+  if(storageId) await deleteMapTiles(storageId);
+}
+
 export async function downloadOfflineMap(pkg,onProgress=()=>{}){
   if(!window.pmtiles?.PMTiles) throw new Error('Библиотека PMTiles не загрузилась. Открой приложение онлайн и обнови страницу.');
-  const plan=buildDownloadPlan(pkg.geojson); await deleteMapTiles(pkg.id);
-  const archive=new window.pmtiles.PMTiles(SOURCE_URL);
-  const [header,metadata]=await Promise.all([archive.getHeader(),archive.getMetadata().catch(()=>({}))]);
-  const vectorLayers=normalizeVectorLayers(metadata);
-  let done=0,saved=0,bytes=0,failed=0; const started=Date.now();
-  const queue=[...plan.tiles];
-  async function worker(){
-    while(queue.length){
-      const t=queue.shift();
-      try{
-        const result=await archive.getZxy(t.z,t.x,t.y);
-        const data=normalizeTileData(result?.data);
-        if(data?.byteLength){ await saveMapTile(pkg.id,t.z,t.x,t.y,data); saved++; bytes+=data.byteLength; }
-      }catch(e){ failed++; console.warn('offline tile failed',t,e); }
-      done++; onProgress({done,total:plan.tiles.length,saved,bytes,failed,maxZoom:plan.maxZoom});
+  const plan=buildDownloadPlan(pkg.geojson);
+  const storageId=mapRevisionId(pkg.id);
+  await deleteMapTiles(storageId);
+
+  try{
+    const archive=new window.pmtiles.PMTiles(SOURCE_URL);
+    const [header,metadata]=await Promise.all([archive.getHeader(),archive.getMetadata().catch(()=>({}))]);
+    const vectorLayers=normalizeVectorLayers(metadata);
+    let done=0,saved=0,bytes=0,failed=0; const started=Date.now();
+    const queue=[...plan.tiles];
+
+    async function worker(){
+      while(queue.length){
+        const t=queue.shift();
+        try{
+          const result=await archive.getZxy(t.z,t.x,t.y);
+          const data=normalizeTileData(result?.data);
+          if(data?.byteLength){ await saveMapTile(storageId,t.z,t.x,t.y,data); saved++; bytes+=data.byteLength; }
+        }catch(e){ failed++; console.warn('offline tile failed',t,e); }
+        done++; onProgress({done,total:plan.tiles.length,saved,bytes,failed,maxZoom:plan.maxZoom});
+      }
     }
+
+    await Promise.all(Array.from({length:Math.min(6,queue.length)},()=>worker()));
+    if(!saved) throw new Error('Не удалось скачать ни одного тайла подложки');
+    if(failed) throw new Error(`Не удалось скачать ${failed} из ${plan.tiles.length} тайлов. Старая карта сохранена.`);
+
+    return {
+      ready:true,
+      storageId,
+      tileCount:saved,
+      requested:plan.tiles.length,
+      bytes,
+      failed,
+      bounds:plan.bounds,
+      minZoom:plan.minZoom,
+      maxZoom:plan.maxZoom,
+      downloadedAt:new Date().toISOString(),
+      source:'Protomaps / OpenStreetMap',
+      sourceTileType:header?.tileType??null,
+      vectorLayers,
+      metadataName:metadata?.name||null,
+      metadataVersion:metadata?.version||null,
+      elapsedMs:Date.now()-started
+    };
+  }catch(error){
+    try{ await deleteMapTiles(storageId); }catch(cleanupError){ console.warn('Could not remove failed offline map revision',cleanupError); }
+    throw error;
   }
-  await Promise.all(Array.from({length:Math.min(6,queue.length)},()=>worker()));
-  if(!saved) throw new Error('Не удалось скачать ни одного тайла подложки');
-  return {
-    ready:true,
-    tileCount:saved,
-    requested:plan.tiles.length,
-    bytes,
-    failed,
-    bounds:plan.bounds,
-    minZoom:plan.minZoom,
-    maxZoom:plan.maxZoom,
-    downloadedAt:new Date().toISOString(),
-    source:'Protomaps / OpenStreetMap',
-    sourceTileType:header?.tileType??null,
-    vectorLayers,
-    metadataName:metadata?.name||null,
-    metadataVersion:metadata?.version||null,
-    elapsedMs:Date.now()-started
-  };
 }
-export async function removeOfflineMap(pkg){ await deleteMapTiles(pkg.id); }
+export async function removeOfflineMap(pkg){
+  const currentId=pkg?.offlineMap?.storageId || pkg?.id;
+  if(currentId) await deleteMapTiles(currentId);
+  // Older installs stored tiles directly under pkg.id. Clear that legacy namespace too.
+  if(pkg?.id && pkg.id!==currentId) await deleteMapTiles(pkg.id);
+}
 
 export function registerOfflineMapProtocol(){
   if(protocolRegistered || !window.maplibregl) return;
