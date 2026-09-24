@@ -220,12 +220,12 @@ function boundaryWidth(){
 function semanticBasemapLayers(source,layerName,index){
   const id=String(layerName).replace(/[^a-z0-9_-]/gi,'-');
   const n=String(layerName||'').toLowerCase();
-  const prefix=\`base-\${index}-\${id}\`;
+  const prefix=`base-${index}-${id}`;
   const sortKey=featureSortRank(0);
 
   if(n.includes('earth') || n==='land' || n.includes('mask')){
     return [
-      {id:\`\${prefix}-fill\`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],layout:{'fill-sort-key':sortKey},paint:{'fill-color':'#f2f0e9','fill-opacity':minZoomOpacity(1)}}
+      {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],layout:{'fill-sort-key':sortKey},paint:{'fill-color':'#f2f0e9','fill-opacity':minZoomOpacity(1)}}
     ];
   }
 
@@ -234,16 +234,16 @@ function semanticBasemapLayers(source,layerName,index){
     const tunneled=basemapTruthy('tunnel');
     const bridged=basemapTruthy('bridge');
     return [
-      {id:\`\${prefix}-fill\`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],layout:{'fill-sort-key':sortKey},paint:{
+      {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],layout:{'fill-sort-key':sortKey},paint:{
         'fill-color':['case',basemapTruthy('alkaline'),'#c9d8cf',reservoir,'#b3d5e4','#b9dce9'],
         'fill-opacity':minZoomOpacity(.96)
       }},
-      {id:\`\${prefix}-line\`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],['!',basemapTruthy('intermittent')]],layout:{'line-sort-key':sortKey},paint:{
+      {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],['!',basemapTruthy('intermittent')]],layout:{'line-sort-key':sortKey},paint:{
         'line-color':['case',tunneled,'#9ab7c2',bridged,'#5f9eb8','#79afc5'],
         'line-width':waterWidth(),
         'line-opacity':minZoomOpacity(.95)
       }},
-      {id:\`\${prefix}-intermittent\`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],basemapTruthy('intermittent')],layout:{'line-sort-key':sortKey},paint:{
+      {id:`${prefix}-intermittent`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],basemapTruthy('intermittent')],layout:{'line-sort-key':sortKey},paint:{
         'line-color':'#79afc5','line-width':waterWidth(),'line-dasharray':[2,2],'line-opacity':minZoomOpacity(.8)
       }}
     ];
@@ -251,16 +251,16 @@ function semanticBasemapLayers(source,layerName,index){
 
   if(n.includes('landuse') || n.includes('landcover') || n.includes('natural')){
     return [
-      {id:\`\${prefix}-fill\`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],layout:{'fill-sort-key':sortKey},paint:{'fill-color':landColor(),'fill-opacity':minZoomOpacity(.9)}},
-      {id:\`\${prefix}-line\`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],layout:{'line-sort-key':sortKey},paint:{'line-color':'#a9b69d','line-width':['interpolate',['linear'],['zoom'],6,.4,14,1.4],'line-opacity':minZoomOpacity(.85)}},
-      {id:\`\${prefix}-point\`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],layout:{'circle-sort-key':sortKey},paint:{'circle-color':'#78906f','circle-radius':['interpolate',['linear'],['zoom'],7,1.5,14,3.5],'circle-opacity':minZoomOpacity(.8)}}
+      {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],layout:{'fill-sort-key':sortKey},paint:{'fill-color':landColor(),'fill-opacity':minZoomOpacity(.9)}},
+      {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],layout:{'line-sort-key':sortKey},paint:{'line-color':'#a9b69d','line-width':['interpolate',['linear'],['zoom'],6,.4,14,1.4],'line-opacity':minZoomOpacity(.85)}},
+      {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],layout:{'circle-sort-key':sortKey},paint:{'circle-color':'#78906f','circle-radius':['interpolate',['linear'],['zoom'],7,1.5,14,3.5],'circle-opacity':minZoomOpacity(.8)}}
     ];
   }
 
   if(n.includes('building')){
     const buildingSort=['+',['*',basemapNumber(['layer'],0),10000],sortKey];
     return [
-      {id:\`\${prefix}-fill\`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],minzoom:12,layout:{'fill-sort-key':buildingSort},paint:{'fill-color':'#d6d0c9','fill-opacity':minZoomOpacity(.92),'fill-outline-color':'#bcb4ac'}}
+      {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],minzoom:12,layout:{'fill-sort-key':buildingSort},paint:{'fill-color':'#d6d0c9','fill-opacity':minZoomOpacity(.92),'fill-outline-color':'#bcb4ac'}}
     ];
   }
 
@@ -276,21 +276,21 @@ function semanticBasemapLayers(source,layerName,index){
     const tunnelFilter=['all',...roadFilter.slice(1),basemapTruthy('is_tunnel')];
 
     return [
-      {id:\`\${prefix}-casing\`,type:'line',source,'source-layer':layerName,filter:roadFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':'#aaa49b','line-width':roadWidth(1.6),'line-opacity':minZoomOpacity(.95)}},
-      {id:\`\${prefix}-bridge-casing\`,type:'line',source,'source-layer':layerName,filter:bridgeFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':'#817b73','line-width':roadWidth(2.6),'line-opacity':minZoomOpacity(.9)}},
-      {id:\`\${prefix}-road\`,type:'line',source,'source-layer':layerName,filter:roadFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':roadColor(),'line-width':roadWidth(),'line-opacity':minZoomOpacity(.98)}},
-      {id:\`\${prefix}-tunnel\`,type:'line',source,'source-layer':layerName,filter:tunnelFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':'#8e8a83','line-width':roadWidth(.3),'line-dasharray':[2,2],'line-opacity':minZoomOpacity(.55)}},
-      {id:\`\${prefix}-rail\`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],isRail],layout:{'line-sort-key':sortKey},paint:{
+      {id:`${prefix}-casing`,type:'line',source,'source-layer':layerName,filter:roadFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':'#aaa49b','line-width':roadWidth(1.6),'line-opacity':minZoomOpacity(.95)}},
+      {id:`${prefix}-bridge-casing`,type:'line',source,'source-layer':layerName,filter:bridgeFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':'#817b73','line-width':roadWidth(2.6),'line-opacity':minZoomOpacity(.9)}},
+      {id:`${prefix}-road`,type:'line',source,'source-layer':layerName,filter:roadFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':roadColor(),'line-width':roadWidth(),'line-opacity':minZoomOpacity(.98)}},
+      {id:`${prefix}-tunnel`,type:'line',source,'source-layer':layerName,filter:tunnelFilter,layout:{'line-sort-key':sortKey},paint:{'line-color':'#8e8a83','line-width':roadWidth(.3),'line-dasharray':[2,2],'line-opacity':minZoomOpacity(.55)}},
+      {id:`${prefix}-rail`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],isRail],layout:{'line-sort-key':sortKey},paint:{
         'line-color':['case',['!=',basemapField('service'),''],'#85817b','#66635f'],'line-width':['interpolate',['linear'],['zoom'],7,.8,14,2.4],
         'line-dasharray':[2,1.5],
         'line-opacity':minZoomOpacity(.92)
       }},
-      {id:\`\${prefix}-aeroway\`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],isAeroway],layout:{'line-sort-key':sortKey},paint:{
+      {id:`${prefix}-aeroway`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],isAeroway],layout:{'line-sort-key':sortKey},paint:{
         'line-color':['match',cls,'runway','#aaa7a3','taxiway','#c1beb9','#b5b2ad'],
         'line-width':['interpolate',['linear'],['zoom'],8,1.3,14,5],
         'line-opacity':minZoomOpacity(.9)
       }},
-      {id:\`\${prefix}-ferry\`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],isFerry],layout:{'line-sort-key':sortKey},paint:{
+      {id:`${prefix}-ferry`,type:'line',source,'source-layer':layerName,filter:['all',['==',['geometry-type'],'LineString'],isFerry],layout:{'line-sort-key':sortKey},paint:{
         'line-color':'#4f91ad','line-width':['interpolate',['linear'],['zoom'],6,.8,14,2.2],
         'line-dasharray':[3,2],'line-opacity':minZoomOpacity(.85)
       }}
@@ -299,18 +299,18 @@ function semanticBasemapLayers(source,layerName,index){
 
   if(n.includes('transit') || n.includes('rail')){
     return [
-      {id:\`\${prefix}-rail\`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],layout:{'line-sort-key':sortKey},paint:{'line-color':'#72706d','line-width':['interpolate',['linear'],['zoom'],7,.7,14,2.2],'line-dasharray':[2,1.5],'line-opacity':minZoomOpacity(.9)}}
+      {id:`${prefix}-rail`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],layout:{'line-sort-key':sortKey},paint:{'line-color':'#72706d','line-width':['interpolate',['linear'],['zoom'],7,.7,14,2.2],'line-dasharray':[2,1.5],'line-opacity':minZoomOpacity(.9)}}
     ];
   }
 
   if(n.includes('boundar')){
     const common={type:'line',source,'source-layer':layerName,layout:{'line-sort-key':sortKey}};
     return [
-      {id:\`\${prefix}-line\`,...common,filter:['all',['==',['geometry-type'],'LineString'],['!',basemapTruthy('disputed')]],paint:{
+      {id:`${prefix}-line`,...common,filter:['all',['==',['geometry-type'],'LineString'],['!',basemapTruthy('disputed')]],paint:{
         'line-color':['match',basemapField('kind'),'country','#777d85','region','#8e949b','county','#a8adb2','locality','#b7bbc0','#9ea2a8'],
         'line-width':boundaryWidth(),'line-opacity':minZoomOpacity(.82)
       }},
-      {id:\`\${prefix}-disputed\`,...common,filter:['all',['==',['geometry-type'],'LineString'],basemapTruthy('disputed')],paint:{
+      {id:`${prefix}-disputed`,...common,filter:['all',['==',['geometry-type'],'LineString'],basemapTruthy('disputed')],paint:{
         'line-color':'#9b7777','line-width':boundaryWidth(),'line-dasharray':[3,2],'line-opacity':minZoomOpacity(.9)
       }}
     ];
@@ -318,32 +318,32 @@ function semanticBasemapLayers(source,layerName,index){
 
   if(n.includes('physical_line')){
     return [
-      {id:\`\${prefix}-line\`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],layout:{'line-sort-key':sortKey},paint:{'line-color':['match',basemapClass(),'cliff','#857c72','ridge','#9b8b76','river','#79afc5','stream','#79afc5','#aaa49b'],'line-width':['interpolate',['linear'],['zoom'],7,.5,14,1.8],'line-opacity':minZoomOpacity(.82)}}
+      {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],layout:{'line-sort-key':sortKey},paint:{'line-color':['match',basemapClass(),'cliff','#857c72','ridge','#9b8b76','river','#79afc5','stream','#79afc5','#aaa49b'],'line-width':['interpolate',['linear'],['zoom'],7,.5,14,1.8],'line-opacity':minZoomOpacity(.82)}}
     ];
   }
 
   if(n.includes('poi')){
     return [
-      {id:\`\${prefix}-point\`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],minzoom:10,layout:{'circle-sort-key':sortKey},paint:{'circle-color':poiColor(),'circle-radius':['interpolate',['linear'],['zoom'],10,2.4,14,4.8],'circle-stroke-color':'#fff','circle-stroke-width':1.2,'circle-opacity':minZoomOpacity(.96)}}
+      {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],minzoom:10,layout:{'circle-sort-key':sortKey},paint:{'circle-color':poiColor(),'circle-radius':['interpolate',['linear'],['zoom'],10,2.4,14,4.8],'circle-stroke-color':'#fff','circle-stroke-width':1.2,'circle-opacity':minZoomOpacity(.96)}}
     ];
   }
 
   if(n.includes('place')){
     return [
-      {id:\`\${prefix}-point\`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],layout:{'circle-sort-key':sortKey},paint:{'circle-color':['case',['!=',basemapField('capital'),''],'#34383c','#555b61'],'circle-radius':['interpolate',['linear'],['zoom'],6,1.5,14,3.4],'circle-opacity':minZoomOpacity(.8)}}
+      {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],layout:{'circle-sort-key':sortKey},paint:{'circle-color':['case',['!=',basemapField('capital'),''],'#34383c','#555b61'],'circle-radius':['interpolate',['linear'],['zoom'],6,1.5,14,3.4],'circle-opacity':minZoomOpacity(.8)}}
     ];
   }
 
   if(n.includes('physical_point')){
     return [
-      {id:\`\${prefix}-point\`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],minzoom:9,layout:{'circle-sort-key':sortKey},paint:{'circle-color':'#706756','circle-radius':['interpolate',['linear'],['zoom'],9,2,14,4],'circle-stroke-color':'#f7f4ed','circle-stroke-width':1,'circle-opacity':minZoomOpacity(.95)}}
+      {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],minzoom:9,layout:{'circle-sort-key':sortKey},paint:{'circle-color':'#706756','circle-radius':['interpolate',['linear'],['zoom'],9,2,14,4],'circle-stroke-color':'#f7f4ed','circle-stroke-width':1,'circle-opacity':minZoomOpacity(.95)}}
     ];
   }
 
   return [
-    {id:\`\${prefix}-fill\`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],layout:{'fill-sort-key':sortKey},paint:{'fill-color':'#e5e5e5','fill-opacity':minZoomOpacity(.72)}},
-    {id:\`\${prefix}-line\`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],layout:{'line-sort-key':sortKey},paint:{'line-color':'#9ca3aa','line-width':['interpolate',['linear'],['zoom'],6,.4,14,1.4],'line-opacity':minZoomOpacity(.82)}},
-    {id:\`\${prefix}-point\`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],layout:{'circle-sort-key':sortKey},paint:{'circle-color':'#7f878e','circle-radius':['interpolate',['linear'],['zoom'],6,1.4,14,3.2],'circle-opacity':minZoomOpacity(.8)}}
+    {id:`${prefix}-fill`,type:'fill',source,'source-layer':layerName,filter:['==',['geometry-type'],'Polygon'],layout:{'fill-sort-key':sortKey},paint:{'fill-color':'#e5e5e5','fill-opacity':minZoomOpacity(.72)}},
+    {id:`${prefix}-line`,type:'line',source,'source-layer':layerName,filter:['==',['geometry-type'],'LineString'],layout:{'line-sort-key':sortKey},paint:{'line-color':'#9ca3aa','line-width':['interpolate',['linear'],['zoom'],6,.4,14,1.4],'line-opacity':minZoomOpacity(.82)}},
+    {id:`${prefix}-point`,type:'circle',source,'source-layer':layerName,filter:['==',['geometry-type'],'Point'],layout:{'circle-sort-key':sortKey},paint:{'circle-color':'#7f878e','circle-radius':['interpolate',['linear'],['zoom'],6,1.4,14,3.2],'circle-opacity':minZoomOpacity(.8)}}
   ];
 }
 
@@ -440,7 +440,7 @@ function poiDetailedLabel(){
 function nativeBasemapLabelLayers(source,layerName,index){
   const id=String(layerName).replace(/[^a-z0-9_-]/gi,'-');
   const n=String(layerName||'').toLowerCase();
-  const prefix=\`base-label-\${index}-\${id}\`;
+  const prefix=`base-label-${index}-${id}`;
   const name=labelNameExpression();
   const hasName=['!=',name,''];
   const klass=roadClass();
@@ -452,7 +452,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
     const major=['country','state','province','city','town'];
     return [
       {
-        id:\`\${prefix}-major\`,type:'symbol',source,'source-layer':layerName,minzoom:5,
+        id:`${prefix}-major`,type:'symbol',source,'source-layer':layerName,minzoom:5,
         filter:['all',hasName,['in',place,['literal',major]]],
         layout:{
           ...nativePointLabelLayout(label,placeTextSize(true),placeSortKey()),
@@ -461,7 +461,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
         paint:nativeTextPaint('#25282c',1)
       },
       {
-        id:\`\${prefix}-minor\`,type:'symbol',source,'source-layer':layerName,minzoom:8,
+        id:`${prefix}-minor`,type:'symbol',source,'source-layer':layerName,minzoom:8,
         filter:['all',hasName,['!', ['in',place,['literal',major]]]],
         layout:nativePointLabelLayout(label,placeTextSize(false),placeSortKey()),
         paint:nativeTextPaint('#4d5156',.8)
@@ -478,7 +478,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
     const notRail=['!', ['in',roadKind(),['literal',['rail','aeroway','ferry']]]];
     return [
       {
-        id:\`\${prefix}-major\`,type:'symbol',source,'source-layer':layerName,minzoom:8,
+        id:`${prefix}-major`,type:'symbol',source,'source-layer':layerName,minzoom:8,
         filter:['all',['==',['geometry-type'],'LineString'],notRail,hasRoadText,['in',klass,['literal',major]]],
         layout:{
           'symbol-placement':'line','symbol-spacing':320,'symbol-sort-key':sortKey,
@@ -489,7 +489,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
         paint:nativeTextPaint('#5f5b55',.9)
       },
       {
-        id:\`\${prefix}-local\`,type:'symbol',source,'source-layer':layerName,minzoom:11,
+        id:`${prefix}-local`,type:'symbol',source,'source-layer':layerName,minzoom:11,
         filter:['all',['==',['geometry-type'],'LineString'],notRail,hasRoadText,['!', ['in',klass,['literal',major]]]],
         layout:{
           'symbol-placement':'line','symbol-spacing':230,'symbol-sort-key':sortKey,
@@ -500,7 +500,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
         paint:nativeTextPaint('#64615c',.8)
       },
       {
-        id:\`\${prefix}-shield\`,type:'symbol',source,'source-layer':layerName,minzoom:8,
+        id:`${prefix}-shield`,type:'symbol',source,'source-layer':layerName,minzoom:8,
         filter:['all',['==',['geometry-type'],'LineString'],notRail,['!=',shield,'']],
         layout:{
           'symbol-placement':'line','symbol-spacing':520,'symbol-sort-key':sortKey,
@@ -511,7 +511,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
         paint:{...nativeTextPaint('#3d5064',2.2),'text-halo-color':'rgba(255,255,255,.98)'}
       },
       {
-        id:\`\${prefix}-oneway\`,type:'symbol',source,'source-layer':layerName,minzoom:12,
+        id:`${prefix}-oneway`,type:'symbol',source,'source-layer':layerName,minzoom:12,
         filter:['all',['==',['geometry-type'],'LineString'],notRail,['!', ['in',oneway,['literal',['','0','false','no']]]]],
         layout:{
           'symbol-placement':'line','symbol-spacing':130,'symbol-sort-key':sortKey,
@@ -529,7 +529,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
     const hasUseful=['any',hasName,['!=',iata,'']];
     return [
       {
-        id:\`\${prefix}-icon\`,type:'symbol',source,'source-layer':layerName,minzoom:10,
+        id:`${prefix}-icon`,type:'symbol',source,'source-layer':layerName,minzoom:10,
         filter:['==',['geometry-type'],'Point'],
         layout:{
           ...nativePointLabelLayout(poiIconExpression(),['interpolate',['linear'],['zoom'],10,8,14,10.5],sortKey),
@@ -538,7 +538,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
         paint:{...nativeTextPaint('#394047',.8),'text-opacity':minZoomOpacity(.92)}
       },
       {
-        id:\`\${prefix}-label\`,type:'symbol',source,'source-layer':layerName,minzoom:11,
+        id:`${prefix}-label`,type:'symbol',source,'source-layer':layerName,minzoom:11,
         filter:['all',['==',['geometry-type'],'Point'],hasUseful],
         layout:nativePointLabelLayout(
           ['step',['zoom'],['case',hasName,name,iata],14,poiDetailedLabel()],
@@ -557,7 +557,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
       name
     ];
     return [{
-      id:\`\${prefix}-physical\`,type:'symbol',source,'source-layer':layerName,minzoom:9,
+      id:`${prefix}-physical`,type:'symbol',source,'source-layer':layerName,minzoom:9,
       filter:['all',['==',['geometry-type'],'Point'],hasName],
       layout:nativePointLabelLayout(text,['interpolate',['linear'],['zoom'],9,9.2,14,11],sortKey),
       paint:nativeTextPaint('#625b50',.8)
@@ -567,7 +567,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
   if(n.includes('water')){
     return [
       {
-        id:\`\${prefix}-water-line\`,type:'symbol',source,'source-layer':layerName,minzoom:9,
+        id:`${prefix}-water-line`,type:'symbol',source,'source-layer':layerName,minzoom:9,
         filter:['all',['==',['geometry-type'],'LineString'],hasName],
         layout:{
           'symbol-placement':'line','symbol-spacing':320,'symbol-sort-key':sortKey,
@@ -578,7 +578,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
         paint:nativeTextPaint('#47798f',.7)
       },
       {
-        id:\`\${prefix}-water-area\`,type:'symbol',source,'source-layer':layerName,minzoom:8,
+        id:`${prefix}-water-area`,type:'symbol',source,'source-layer':layerName,minzoom:8,
         filter:['all',['!=',['geometry-type'],'LineString'],hasName],
         layout:nativePointLabelLayout(name,['interpolate',['linear'],['zoom'],8,9.2,14,11.5],sortKey),
         paint:nativeTextPaint('#47798f',.7)
@@ -589,7 +589,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
   if(n.includes('transit') || n.includes('rail')){
     const text=['case',hasName,name,labelRefExpression()];
     return [{
-      id:\`\${prefix}-transit\`,type:'symbol',source,'source-layer':layerName,minzoom:10,
+      id:`${prefix}-transit`,type:'symbol',source,'source-layer':layerName,minzoom:10,
       filter:['all',['==',['geometry-type'],'LineString'],['!=',text,'']],
       layout:{
         'symbol-placement':'line','symbol-spacing':360,'symbol-sort-key':sortKey,
@@ -603,7 +603,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
 
   if(n.includes('boundar')){
     return [{
-      id:\`\${prefix}-boundary\`,type:'symbol',source,'source-layer':layerName,minzoom:7,
+      id:`${prefix}-boundary`,type:'symbol',source,'source-layer':layerName,minzoom:7,
       filter:['all',['==',['geometry-type'],'LineString'],hasName],
       layout:{
         'symbol-placement':'line','symbol-spacing':600,'symbol-sort-key':sortKey,
@@ -625,7 +625,7 @@ function nativeBasemapLabelLayers(source,layerName,index){
       ]
     ];
     return [{
-      id:\`\${prefix}-land\`,type:'symbol',source,'source-layer':layerName,minzoom:10,
+      id:`${prefix}-land`,type:'symbol',source,'source-layer':layerName,minzoom:10,
       filter:['any',hasName,['!=',sport,'']],
       layout:nativePointLabelLayout(text,['interpolate',['linear'],['zoom'],10,8.8,14,10.5],sortKey),
       paint:nativeTextPaint('#5f7259',.7)
@@ -637,13 +637,13 @@ function nativeBasemapLabelLayers(source,layerName,index){
     const buildingKind=basemapField('kind');
     return [
       {
-        id:\`\${prefix}-building\`,type:'symbol',source,'source-layer':layerName,minzoom:14,
+        id:`${prefix}-building`,type:'symbol',source,'source-layer':layerName,minzoom:14,
         filter:['all',hasName,['!=',buildingKind,'address']],
         layout:nativePointLabelLayout(name,9.2,sortKey),
         paint:nativeTextPaint('#69645e',.7)
       },
       {
-        id:\`\${prefix}-address\`,type:'symbol',source,'source-layer':layerName,minzoom:14,
+        id:`${prefix}-address`,type:'symbol',source,'source-layer':layerName,minzoom:14,
         filter:['all',['==',buildingKind,'address'],['!=',number,'']],
         layout:nativePointLabelLayout(number,9,sortKey),
         paint:nativeTextPaint('#5e5a55',.7)
@@ -724,7 +724,7 @@ function basemapPopupHtml(feature){
     ['sort_rank',props.sort_rank]
   ].filter(([,value])=>value!==undefined && value!==null && String(value)!=='');
   const layer=feature?.layer?.['source-layer'] || feature?.sourceLayer || '';
-  return \`<div class="basemap-popup-card"><strong class="basemap-popup-title">\${esc(title)}</strong>\${layer?\`<div class="basemap-popup-layer">\${esc(layer)}</div>\`:''}\${fields.map(([label,value])=>\`<div class="basemap-popup-row"><span>\${esc(label)}</span><b>\${esc(readableBasemapValue(value))}</b></div>\`).join('')}</div>\`;
+  return `<div class="basemap-popup-card"><strong class="basemap-popup-title">${esc(title)}</strong>${layer?`<div class="basemap-popup-layer">${esc(layer)}</div>`:''}${fields.map(([label,value])=>`<div class="basemap-popup-row"><span>${esc(label)}</span><b>${esc(readableBasemapValue(value))}</b></div>`).join('')}</div>`;
 }
 
 function installBasemapInspector(map, offlineMap){
