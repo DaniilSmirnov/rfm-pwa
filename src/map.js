@@ -192,7 +192,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   container.innerHTML='';
   const map = new maplibregl.Map({
     container,
-    style:baseStyle(options.offlineMap),
+    style:baseStyle(options.offlineMap,options.terrain),
     center:[37.6,55.75],
     zoom:5,
     attributionControl:true,
