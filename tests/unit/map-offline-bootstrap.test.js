@@ -34,7 +34,8 @@ class FakeMap {
 }
 
 class FakeMarker {
-  constructor({element}){this.element=element;}
+  static instances=[];
+  constructor({element}){this.element=element;FakeMarker.instances.push(this);}
   setLngLat(value){this.lngLat=value;return this;}
   addTo(){return this;}
   remove(){}
@@ -66,6 +67,7 @@ const fc={
 afterEach(()=>{
   delete window.maplibregl;
   FakeMap.last=null;
+  FakeMarker.instances=[];
   vi.restoreAllMocks();
 });
 
@@ -140,7 +142,7 @@ describe('offline map overlay bootstrap',()=>{
     expect(map.sources.get('rfm-lines')?.data.features).toHaveLength(1);
     expect(map.sources.get('rfm-lines')?.data.features[0].properties.name).toBe('SS1');
 
-    const raceLabel=document.querySelector('.map-race-label');
+    const raceLabel=FakeMarker.instances.find(marker=>marker.getElement().classList.contains('map-race-label'))?.getElement();
     expect(raceLabel).toBeTruthy();
     expect(raceLabel.style.display).toBe('block');
 
