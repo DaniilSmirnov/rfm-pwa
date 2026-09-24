@@ -58,7 +58,7 @@
 
     <section class="rfm-section">
       <div class="section-head">
-        <div><div class="block-title">ГОНКИ</div><p id="catalogStatus" class="muted">Загружаю…</p></div>
+        <div><div class="block-title">ГОНКИ</div><p id="catalogStatus" class="muted"></p></div>
         <input id="catalogSearch" class="search" placeholder="Карелия, Псков…" />
       </div>
       <div id="catalogList" class="catalog-list"></div>
@@ -105,15 +105,15 @@
     </section>
 
     <section class="rfm-section map-card">
-      <div class="section-head"><div><div id="mapTitle" class="block-title">КАРТА РАЛЛИ</div><p id="mapSubtitle" class="muted">Выбери сохранённую гонку</p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button><button id="downloadTerrainBtn" class="button" disabled>Рельеф карты</button><button id="deleteTerrainBtn" class="button danger" hidden>Удалить рельеф</button></div></div>
+      <div class="section-head"><div><div id="mapTitle" class="block-title"></div><p id="mapSubtitle" class="muted"></p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button><button id="downloadTerrainBtn" class="button" disabled>Рельеф карты</button><button id="deleteTerrainBtn" class="button danger" hidden>Удалить рельеф</button></div></div>
       <p id="offlineMapStatus" class="muted small">Офлайн-подложка ещё не скачана.</p><p id="terrainStatus" class="muted small">Рельеф ещё не скачан.</p><p id="offlineMapDiag" class="muted small" hidden></p>
       <div id="map" class="map" aria-label="offline rally map"></div>
 
       <section class="favorites-panel" aria-labelledby="favoritesTitle">
         <div class="section-head compact-section-head">
-          <div><div id="favoritesTitle" class="block-title">ИЗБРАННЫЕ ТОЧКИ</div><p id="favoritesStatus" class="muted small">Добавляй точки в избранное, чтобы они были всегда под рукой.</p></div>
+          <div><div id="favoritesTitle" class="block-title">ИЗБРАННЫЕ ТОЧКИ</div><p id="favoritesStatus" class="muted small"></p></div>
         </div>
-        <div id="favoritesList" class="favorites-list"><p class="muted small">Пока пусто.</p></div>
+        <div id="favoritesList" class="favorites-list"></div>
       </section>
 
       <section class="car-panel" aria-labelledby="carTitle">
@@ -160,7 +160,7 @@
       </details>
       <aside id="pointActions" class="point-actions" hidden>
         <div class="point-actions-copy"><div class="eyebrow">выбранная точка</div><strong id="pointName"></strong><span id="pointCoords" class="muted"></span></div>
-        <div class="actions point-buttons"><button id="favoritePointBtn" class="button">☆ В избранное</button><button id="mapsMeBtn" class="button primary">MAPS.ME</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="googleMapsBtn" class="button">Google Maps</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
+        <div class="actions point-buttons"><button id="favoritePointBtn" class="button"></button><button id="mapsMeBtn" class="button primary">MAPS.ME</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="googleMapsBtn" class="button">Google Maps</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
         <p id="pointElevation" class="muted small">Высота: выбери точку.</p>
         <p id="navStatus" class="muted small"></p>
         <details id="spectatorCompass" class="spectator-compass collapsible-section">
@@ -170,9 +170,9 @@
             <button id="compassEnableBtn" class="button" type="button">Включить компас</button>
             <div id="compassDisplay" class="compass-display" hidden>
               <div class="compass-dial" aria-hidden="true"><span class="compass-north">N</span><span id="compassArrow" class="compass-arrow">↑</span></div>
-              <div class="compass-copy"><strong id="compassDistance">—</strong><span id="compassBearing" class="muted">—</span></div>
+              <div class="compass-copy"><strong id="compassDistance"></strong><span id="compassBearing" class="muted"></span></div>
             </div>
-            <p id="compassStatus" class="muted small">Компас выключен.</p>
+            <p id="compassStatus" class="muted small"></p>
           </div>
         </details>
       </aside>
