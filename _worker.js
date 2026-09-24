@@ -4,9 +4,11 @@ import { handleWalletApi } from './src/worker/wallet.js';
 import {
   API_ORIGIN,
   BASEMAP_PM,
+  TERRAIN_TILE_ORIGIN,
   RFM_ICON_URL,
   importYandexConstructor,
   proxyBasemap,
+  proxyTerrainTile,
   proxyRfmFont,
   proxyRallyFans
 } from './src/worker/proxies.js';
@@ -22,6 +24,7 @@ export default {
         version: '__APP_VERSION__',
         upstream: API_ORIGIN,
         basemap: BASEMAP_PM,
+        terrain: TERRAIN_TILE_ORIGIN,
         hint: 'If this endpoint works, the Cloudflare Pages Worker is active.'
       });
     }
@@ -42,6 +45,7 @@ export default {
     }
 
     if (url.pathname === '/api/basemap.pmtiles') return proxyBasemap(request);
+    if (url.pathname.startsWith('/api/terrain/')) return proxyTerrainTile(request,url);
     if (url.pathname.startsWith('/rfm/fonts/')) return proxyRfmFont(request,url);
 
     if (url.pathname.startsWith('/api/rallyfans/') || url.pathname === '/api/race' || url.pathname.startsWith('/api/race/') || url.pathname.startsWith('/api/public/')) {
