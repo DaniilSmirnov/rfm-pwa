@@ -439,7 +439,10 @@ function setMapUiText({button,status,deleteHidden,disabled}){
   const els=mapUiEls();
   for(const el of els.buttons){ if(button!=null) el.textContent=button; if(disabled!=null) el.disabled=disabled; }
   for(const el of els.statuses){ if(status!=null) el.textContent=status; }
-  for(const el of els.deletes){ if(deleteHidden!=null) el.hidden=deleteHidden; }
+  for(const el of els.deletes){
+    if(deleteHidden!=null) el.hidden=deleteHidden;
+    if(disabled!=null) el.disabled=disabled;
+  }
 }
 function updateOfflineMapUi(p){
   if(!p){ setMapUiText({button:'Скачать офлайн-карту',status:'Сначала выбери сохранённую гонку.',deleteHidden:true,disabled:true}); return; }
