@@ -12,7 +12,7 @@ import { startOfLocalDay, raceDateRange, distanceFromTodayDays, raceWithinWeek, 
 import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from './app/geo.js';
 import { setupPushUi, getPushSubscription, refreshPushUi, setPushStatus, scheduleRaceReminders, scheduleAllSavedReminders } from './app/push-client.js';
 import { FAVORITES_KEY, pointKey, favoritesForPackage, isFavoritePoint, setFavoritePoint, loadCarPoint, saveCarPoint, deleteCarPoint } from './app/local-points.js';
-import { ensurePersistentStorage, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from './app/runtime.js';
+import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from './app/runtime.js';
 import { renderPointList as renderPointListUi } from './app/point-list.js';
 import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
 import { renderSchedule } from './app/schedule-ui.js';
@@ -116,7 +116,7 @@ async function sharePoint(point) {
 }
 
 function updateNetwork() { const online=navigator.onLine; $('networkBadge').textContent=online?'онлайн':'офлайн'; $('networkBadge').className=`badge ${online?'online':'offline'}`; }
-window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); });
+window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); requestRallyPackBackgroundRefresh(swRegistration); });
 window.addEventListener('offline',updateNetwork); updateNetwork();
 
 async function refreshList() {
@@ -584,6 +584,7 @@ $('importYandexBtn').onclick = async () => {
 const swRegistration=await setupServiceWorkerUpdates();
 await ensurePersistentStorage();
 await setupPeriodicBackgroundSync(swRegistration);
+requestRallyPackBackgroundRefresh(swRegistration);
 await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(e=>console.warn('Smart Rally Pack update failed',e));
 await refreshPushUi();
 try {

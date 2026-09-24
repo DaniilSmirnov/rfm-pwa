@@ -29,6 +29,7 @@ self.addEventListener('activate', event=>{
 
 self.addEventListener('message', event=>{
   if(event.data?.type==='SKIP_WAITING') self.skipWaiting();
+  if(event.data?.type==='REFRESH_RALLY_PACKS') event.waitUntil(refreshPeriodicRaceData());
 });
 
 async function networkFirst(request,fallback='/index.html'){

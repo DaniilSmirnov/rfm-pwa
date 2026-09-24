@@ -12,6 +12,13 @@ export async function ensurePersistentStorage(){
   }
 }
 
+export function requestRallyPackBackgroundRefresh(reg){
+  const worker=reg?.active || navigator.serviceWorker?.controller;
+  if(!worker?.postMessage) return false;
+  worker.postMessage({type:'REFRESH_RALLY_PACKS'});
+  return true;
+}
+
 export async function setupPeriodicBackgroundSync(reg){
   if(!reg?.periodicSync?.register) return {supported:false};
   try{
