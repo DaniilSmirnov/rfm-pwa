@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { pushEndpointAllowed, pushConfigured, validReminder, reminderPrefix, handlePushApi } from '../../src/worker/push.js';
+import { pushEndpointAllowed, pushConfigured, validReminder, reminderPrefix, countPushSubscriptions, handlePushApi } from '../../src/worker/push.js';
 
 afterEach(()=>vi.useRealTimers());
 
@@ -50,6 +50,19 @@ describe('push validation',()=>{
   });
 });
 
+describe('push subscription stats',()=>{
+  it('counts subscriptions across KV pages',async()=>{
+    const pages=[
+      {keys:[{name:'sub:a'},{name:'sub:b'}],list_complete:false,cursor:'next'},
+      {keys:[{name:'sub:c'}],list_complete:true}
+    ];
+    const store={list:vi.fn().mockResolvedValueOnce(pages[0]).mockResolvedValueOnce(pages[1])};
+    await expect(countPushSubscriptions(store)).resolves.toBe(3);
+    expect(store.list).toHaveBeenNthCalledWith(1,{prefix:'sub:',cursor:undefined,limit:1000});
+    expect(store.list).toHaveBeenNthCalledWith(2,{prefix:'sub:',cursor:'next',limit:1000});
+  });
+});
+
 describe('push API without network delivery',()=>{
   it('returns config state',async()=>{
     const e=makeEnv();
@@ -80,6 +93,22 @@ describe('push API without network delivery',()=>{
     const r=await handlePushApi(req,e,new URL(req.url),{});
     expect((await r.json()).stored).toBe(1);
     expect([...e.PUSH_SUBSCRIPTIONS.map.keys()].filter(k=>k.startsWith('reminder:'))).toHaveLength(1);
+  });
+  it('returns authenticated push subscription stats',async()=>{
+    const e=makeEnv();
+    await e.PUSH_SUBSCRIPTIONS.put('sub:a',JSON.stringify({subscription:{endpoint:'https://fcm.googleapis.com/fcm/send/a'}}));
+    await e.PUSH_SUBSCRIPTIONS.put('sub:b',JSON.stringify({subscription:{endpoint:'https://fcm.googleapis.com/fcm/send/b'}}));
+    await e.PUSH_SUBSCRIPTIONS.put('pending:x','{}');
+    const req=new Request('https://app.test/api/push/stats',{headers:{authorization:'Bearer secret'}});
+    const r=await handlePushApi(req,e,new URL(req.url),{});
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ok:true,subscriptions:2,pushConfigured:true,storage:true});
+  });
+  it('rejects push stats without admin token',async()=>{
+    const e=makeEnv();
+    const req=new Request('https://app.test/api/push/stats');
+    const r=await handlePushApi(req,e,new URL(req.url),{});
+    expect(r.status).toBe(401);
   });
   it('rejects run-due without admin token',async()=>{
     const e=makeEnv();
