@@ -21,8 +21,9 @@ describe('architecture guardrails',()=>{
   });
   it('pre-caches extracted map modules',()=>{
     const sw=read('sw.js');
-    for(const path of ['style','viewport-policy']) expect(sw).toContain('/src/map/'+path+'.js');
+    for(const path of ['style','terrain','viewport-policy']) expect(sw).toContain('/src/map/'+path+'.js');
   });
+  it('pre-caches terrain downloader',()=>expect(read('sw.js')).toContain('/src/terrain-offline.js'));
   it('defines unit, UI and PWA test scripts',()=>{
     const pkg=JSON.parse(read('package.json'));
     expect(pkg.scripts['test:unit']).toBeTruthy();
