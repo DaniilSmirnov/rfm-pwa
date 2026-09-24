@@ -115,5 +115,5 @@ export function createTerrainControls({
   for(const id of ['downloadTerrainBtn','downloadTerrainBtnTop']) $(id)?.addEventListener('click',download);
   for(const id of ['deleteTerrainBtn','deleteTerrainBtnTop']) $(id)?.addEventListener('click',remove);
 
-  return {update};
+  return {update,download,remove};
 }
