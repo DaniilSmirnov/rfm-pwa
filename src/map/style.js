@@ -620,7 +620,7 @@ function offlineBasemapLayers(source='offline-base', offlineMap={}){
   return [...geometry,...labels];
 }
 
-function baseStyle(offlineMap,terrain) {
+function baseStyle(offlineMap,terrain,{terrainMode='hillshade'}={}) {
   const sources = {};
   const layers = [{id:'background',type:'background',paint:{'background-color':'#11151b'}}];
   let labelLayers=[];
@@ -642,7 +642,7 @@ function baseStyle(offlineMap,terrain) {
     layers.push({id:'osm',type:'raster',source:'osm',paint:{'raster-opacity':0.92}});
   }
 
-  const terrainParts=terrainStyleParts(terrain);
+  const terrainParts=terrainStyleParts(terrain,terrainMode);
   Object.assign(sources,terrainParts.sources);
   layers.push(...terrainParts.layers,...labelLayers);
   const style={version:8,sources,layers};
