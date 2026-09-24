@@ -114,6 +114,7 @@ jobs:
       - name: Build current main artifact
         run: |
           rm -rf /tmp/rfm-main
+          git fetch origin main:refs/remotes/origin/main
           git worktree add --detach /tmp/rfm-main origin/main
           cd /tmp/rfm-main
           npm ci --no-audit --no-fund
