@@ -3,7 +3,6 @@ import { registerOfflineMapProtocol, offlineVectorSource, resetOfflineMapDiagnos
 
 let activeMap = null;
 let activeRaceLabelMarkers = [];
-let activePlaceLabelMarkers = [];
 
 function clearMarkers(list) {
   for (const marker of list) {
@@ -14,7 +13,6 @@ function clearMarkers(list) {
 
 function clearAllLabels() {
   clearMarkers(activeRaceLabelMarkers);
-  clearMarkers(activePlaceLabelMarkers);
 }
 
 function esc(s='') { return String(s).replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -193,13 +191,230 @@ function semanticBasemapLayers(source,layerName,index){
   ];
 }
 
+const BASEMAP_FONT_STACK=['Roboto','Arial','Helvetica','Noto Sans'];
+
+function labelNameExpression(){
+  return ['to-string',['coalesce',
+    ['get','name:ru'],
+    ['get','name_ru'],
+    ['get','name'],
+    ['get','name:en'],
+    ['get','name_en'],
+    ''
+  ]];
+}
+
+function labelRefExpression(){
+  return ['to-string',['coalesce',['get','ref'],'']];
+}
+
+function roadLabelExpression(){
+  const name=labelNameExpression();
+  const ref=labelRefExpression();
+  return ['case',
+    ['all',['!=',name,''],['!=',ref,'']],
+    ['concat',ref,' · ',name],
+    ['!=',name,''],name,
+    ref
+  ];
+}
+
+function placeClassExpression(){
+  return basemapField('place','kind','class','type','category','subclass');
+}
+
+function nativeTextPaint(color='#45484c',haloWidth=1){
+  return {
+    'text-color':color,
+    'text-halo-color':'rgba(255,255,255,0.96)',
+    'text-halo-width':haloWidth,
+    'text-halo-blur':0.35
+  };
+}
+
+function nativePointLabelLayout(textField,textSize){
+  return {
+    'text-field':textField,
+    'text-font':BASEMAP_FONT_STACK,
+    'text-size':textSize,
+    'text-variable-anchor':['top','bottom','left','right'],
+    'text-radial-offset':0.65,
+    'text-padding':2,
+    'text-max-width':12,
+    'text-allow-overlap':false,
+    'text-ignore-placement':false
+  };
+}
+
+function nativeBasemapLabelLayers(source,layerName,index){
+  const id=String(layerName).replace(/[^a-z0-9_-]/gi,'-');
+  const n=String(layerName||'').toLowerCase();
+  const prefix=`base-label-${index}-${id}`;
+  const name=labelNameExpression();
+  const hasName=['!=',name,''];
+  const klass=basemapClass();
+
+  if(n.includes('place')){
+    const place=placeClassExpression();
+    return [
+      {
+        id:`${prefix}-major`,type:'symbol',source,'source-layer':layerName,minzoom:5,
+        filter:['all',hasName,['in',place,['literal',['city','town','municipality']]]],
+        layout:{
+          ...nativePointLabelLayout(name,['interpolate',['linear'],['zoom'],5,11,9,13,14,15]),
+          'text-padding':4
+        },
+        paint:nativeTextPaint('#25282c',1.15)
+      },
+      {
+        id:`${prefix}-minor`,type:'symbol',source,'source-layer':layerName,minzoom:9,
+        filter:['all',hasName,['!', ['in',place,['literal',['city','town','municipality']]]]],
+        layout:nativePointLabelLayout(name,['interpolate',['linear'],['zoom'],9,9.5,14,11.5]),
+        paint:nativeTextPaint('#4d5156',0.9)
+      }
+    ];
+  }
+
+  if(n.includes('road') || n.includes('transport')){
+    const roadText=roadLabelExpression();
+    const hasRoadText=['!=',roadText,''];
+    const major=['motorway','trunk','primary','secondary','tertiary'];
+    return [
+      {
+        id:`${prefix}-major`,type:'symbol',source,'source-layer':layerName,minzoom:8,
+        filter:['all',['==',['geometry-type'],'LineString'],hasRoadText,['in',klass,['literal',major]]],
+        layout:{
+          'symbol-placement':'line',
+          'symbol-spacing':320,
+          'text-field':roadText,
+          'text-font':BASEMAP_FONT_STACK,
+          'text-size':['interpolate',['linear'],['zoom'],8,9.5,12,10.5,16,12.5],
+          'text-letter-spacing':0.01,
+          'text-max-angle':35,
+          'text-keep-upright':true,
+          'text-padding':2
+        },
+        paint:nativeTextPaint('#5f5b55',1)
+      },
+      {
+        id:`${prefix}-local`,type:'symbol',source,'source-layer':layerName,minzoom:11.5,
+        filter:['all',['==',['geometry-type'],'LineString'],hasRoadText,['!', ['in',klass,['literal',major]]]],
+        layout:{
+          'symbol-placement':'line',
+          'symbol-spacing':230,
+          'text-field':roadText,
+          'text-font':BASEMAP_FONT_STACK,
+          'text-size':['interpolate',['linear'],['zoom'],11.5,9,15,11.5,18,12.5],
+          'text-letter-spacing':0.01,
+          'text-max-angle':40,
+          'text-keep-upright':true,
+          'text-padding':1
+        },
+        paint:nativeTextPaint('#64615c',0.9)
+      }
+    ];
+  }
+
+  if(n.includes('poi')){
+    return [{
+      id:`${prefix}-poi`,type:'symbol',source,'source-layer':layerName,minzoom:12,
+      filter:['all',['==',['geometry-type'],'Point'],hasName],
+      layout:nativePointLabelLayout(name,['interpolate',['linear'],['zoom'],12,9,16,11]),
+      paint:nativeTextPaint('#4d5156',0.85)
+    }];
+  }
+
+  if(n.includes('physical_point')){
+    const ele=['to-string',['coalesce',['get','ele'],['get','elevation'],'']];
+    const text=['case',
+      ['all',hasName,['!=',ele,'']],['concat',name,' · ',ele,' м'],
+      name
+    ];
+    return [{
+      id:`${prefix}-physical`,type:'symbol',source,'source-layer':layerName,minzoom:10,
+      filter:['all',['==',['geometry-type'],'Point'],hasName],
+      layout:nativePointLabelLayout(text,['interpolate',['linear'],['zoom'],10,9.5,14,11]),
+      paint:nativeTextPaint('#625b50',0.9)
+    }];
+  }
+
+  if(n.includes('water')){
+    return [
+      {
+        id:`${prefix}-water-line`,type:'symbol',source,'source-layer':layerName,minzoom:10,
+        filter:['all',['==',['geometry-type'],'LineString'],hasName],
+        layout:{
+          'symbol-placement':'line',
+          'symbol-spacing':320,
+          'text-field':name,
+          'text-font':BASEMAP_FONT_STACK,
+          'text-size':['interpolate',['linear'],['zoom'],10,9.5,14,11.5],
+          'text-max-angle':35,
+          'text-keep-upright':true,
+          'text-padding':2
+        },
+        paint:nativeTextPaint('#47798f',0.8)
+      },
+      {
+        id:`${prefix}-water-area`,type:'symbol',source,'source-layer':layerName,minzoom:9,
+        filter:['all',['!=',['geometry-type'],'LineString'],hasName],
+        layout:nativePointLabelLayout(name,['interpolate',['linear'],['zoom'],9,9.5,14,11.5]),
+        paint:nativeTextPaint('#47798f',0.8)
+      }
+    ];
+  }
+
+  if(n.includes('transit') || n.includes('rail')){
+    return [{
+      id:`${prefix}-transit`,type:'symbol',source,'source-layer':layerName,minzoom:11,
+      filter:['all',['==',['geometry-type'],'LineString'],hasName],
+      layout:{
+        'symbol-placement':'line',
+        'symbol-spacing':360,
+        'text-field':name,
+        'text-font':BASEMAP_FONT_STACK,
+        'text-size':['interpolate',['linear'],['zoom'],11,9,15,10.5],
+        'text-max-angle':35,
+        'text-keep-upright':true,
+        'text-padding':2
+      },
+      paint:nativeTextPaint('#5a5855',0.8)
+    }];
+  }
+
+  if(n.includes('natural') || n.includes('landuse') || n.includes('landcover')){
+    return [{
+      id:`${prefix}-land`,type:'symbol',source,'source-layer':layerName,minzoom:11,
+      filter:hasName,
+      layout:nativePointLabelLayout(name,['interpolate',['linear'],['zoom'],11,9,15,10.5]),
+      paint:nativeTextPaint('#5f7259',0.8)
+    }];
+  }
+
+  if(n.includes('building')){
+    return [{
+      id:`${prefix}-building`,type:'symbol',source,'source-layer':layerName,minzoom:15,
+      filter:hasName,
+      layout:nativePointLabelLayout(name,9.5),
+      paint:nativeTextPaint('#69645e',0.75)
+    }];
+  }
+
+  return [];
+}
+
 function offlineBasemapLayers(source='offline-base', offlineMap={}){
   const metadataLayers=Array.isArray(offlineMap?.vectorLayers)
     ? offlineMap.vectorLayers.map(v=>typeof v==='string'?v:v?.id).filter(Boolean)
     : [];
   const fallback=['earth','land','landuse','landcover','natural','water','physical_line','buildings','roads','transit','boundaries','places','physical_point','pois'];
   const names=[...new Set(metadataLayers.length?metadataLayers:fallback)];
-  return names.flatMap((name,i)=>semanticBasemapLayers(source,name,i));
+
+  // Keep every label layer above every geometry layer so fills/lines never
+  // cover text. MapLibre handles collision, repetition and line-following.
+  const geometry=names.flatMap((name,i)=>semanticBasemapLayers(source,name,i));
+  const labels=names.flatMap((name,i)=>nativeBasemapLabelLayers(source,name,i));
+  return [...geometry,...labels];
 }
 
 function baseStyle(offlineMap) {
@@ -289,172 +504,6 @@ function installRacePointLabels(map, points, onPointClick) {
   map.on('zoom',update);
 }
 
-function offlineLabelAnchor(geometry){
-  if(!geometry) return null;
-  const coords=geometry.coordinates;
-  if(geometry.type==='Point' && Array.isArray(coords)) return coords;
-  if(geometry.type==='LineString' && Array.isArray(coords) && coords.length) return coords[Math.floor(coords.length/2)];
-  if(geometry.type==='MultiLineString' && Array.isArray(coords) && coords[0]?.length) return coords[0][Math.floor(coords[0].length/2)];
-  const ring=geometry.type==='Polygon' ? coords?.[0] : geometry.type==='MultiPolygon' ? coords?.[0]?.[0] : null;
-  if(Array.isArray(ring) && ring.length){
-    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-    for(const p of ring){
-      if(!Array.isArray(p)) continue;
-      const x=Number(p[0]),y=Number(p[1]);
-      if(!Number.isFinite(x)||!Number.isFinite(y)) continue;
-      minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
-    }
-    if(Number.isFinite(minX)) return [(minX+maxX)/2,(minY+maxY)/2];
-  }
-  return null;
-}
-
-function offlineFeatureClass(props={}){
-  return String(props.highway || props['pmap:kind'] || props.kind || props.class || props.type || props.natural || props.landuse || props.amenity || props.tourism || props.shop || '').toLowerCase();
-}
-
-function poiPrefix(kind){
-  if(['fuel'].includes(kind)) return '⛽';
-  if(['charging_station'].includes(kind)) return '⚡';
-  if(['parking'].includes(kind)) return 'P';
-  if(['toilets'].includes(kind)) return 'WC';
-  if(['hospital','clinic','pharmacy'].includes(kind)) return '✚';
-  if(['viewpoint'].includes(kind)) return '◉';
-  if(['camp_site','caravan_site'].includes(kind)) return '△';
-  if(['supermarket','convenience'].includes(kind)) return '▣';
-  if(['cafe','restaurant'].includes(kind)) return '●';
-  if(['hotel','motel','guest_house'].includes(kind)) return '◆';
-  return '•';
-}
-
-function offlineLabelInfo(feature,zoom){
-  const props=feature?.properties||{};
-  const layerName=String(feature?.layer?.['source-layer'] || feature?.sourceLayer || '').toLowerCase();
-  const kind=offlineFeatureClass(props);
-  const name=featureName(props);
-  const ref=String(props.ref||'').trim();
-  const ele=Number(props.ele ?? props.elevation);
-  const geometry=feature?.geometry;
-  const coords=offlineLabelAnchor(geometry);
-  if(!coords || !Number.isFinite(Number(coords[0])) || !Number.isFinite(Number(coords[1]))) return null;
-
-  if(layerName.includes('place')){
-    const place=placeKind(props,layerName)||'place';
-    if(zoom<placeMinZoom(place) || !name) return null;
-    const population=Number(props.population)||0;
-    return {text:name,coords,kind:`place-${place}`,priority:placePriority(place)+Math.min(20,Math.log10(Math.max(1,population))*2)};
-  }
-
-  if(layerName.includes('road') || layerName.includes('transport')){
-    const important=['motorway','trunk','primary','secondary','tertiary'].includes(kind);
-    if(zoom<(important?9:12)) return null;
-    const text=[ref,name].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(' · ');
-    if(!text) return null;
-    const priority=important ? ({motorway:92,trunk:90,primary:86,secondary:80,tertiary:72}[kind]||70) : 48;
-    return {text,coords,kind:'road',priority};
-  }
-
-  if(layerName.includes('poi')){
-    if(zoom<12 || !name) return null;
-    return {text:`${poiPrefix(kind)} ${name}`,coords,kind:'poi',priority:['fuel','parking','toilets','hospital','clinic','viewpoint','camp_site'].includes(kind)?78:58};
-  }
-
-  if(layerName.includes('physical_point')){
-    if(zoom<10 || !name) return null;
-    const peak=['peak','volcano','hill','saddle'].includes(kind);
-    return {text:`${peak?'▲ ':''}${name}${Number.isFinite(ele)?` · ${Math.round(ele)} м`:''}`,coords,kind:'physical',priority:peak?76:56};
-  }
-
-  if(layerName.includes('water')){
-    if(zoom<10 || !name) return null;
-    return {text:name,coords,kind:'water',priority:60};
-  }
-
-  if(layerName.includes('natural') || layerName.includes('landuse') || layerName.includes('landcover')){
-    if(zoom<11 || !name) return null;
-    return {text:name,coords,kind:'land',priority:50};
-  }
-
-  if(layerName.includes('transit') || layerName.includes('rail')){
-    if(zoom<11 || (!name && !ref)) return null;
-    return {text:[ref,name].filter(Boolean).join(' · '),coords,kind:'transit',priority:54};
-  }
-
-  if(layerName.includes('building')){
-    if(zoom<14 || !name) return null;
-    return {text:name,coords,kind:'building',priority:36};
-  }
-
-  if(zoom>=13 && name) return {text:name,coords,kind:'other',priority:30};
-  return null;
-}
-
-function installOfflinePlaceLabels(map, offlineMap) {
-  clearMarkers(activePlaceLabelMarkers);
-  if(!offlineMap?.ready || !window.maplibregl?.Marker) return;
-
-  const redraw=()=>{
-    clearMarkers(activePlaceLabelMarkers);
-    const zoom=map.getZoom();
-    const styleLayers=(map.getStyle()?.layers||[])
-      .filter(l=>l.source==='offline-base')
-      .map(l=>l.id);
-    if(!styleLayers.length) return;
-
-    let features=[];
-    try {
-      features=map.queryRenderedFeatures(undefined,{layers:styleLayers}) || [];
-    } catch(e) {
-      console.warn('offline label query failed',e);
-      return;
-    }
-
-    const unique=new Map();
-    for(const f of features) {
-      const info=offlineLabelInfo(f,zoom);
-      if(!info) continue;
-      const key=`${info.text.toLowerCase()}:${Number(info.coords[0]).toFixed(3)}:${Number(info.coords[1]).toFixed(3)}`;
-      const prev=unique.get(key);
-      if(!prev || info.priority>prev.priority) unique.set(key,info);
-    }
-
-    const maxCount=zoom<8?14:zoom<10?30:zoom<12?58:zoom<14?96:150;
-    const selected=[];
-    const occupied=[];
-    const sorted=[...unique.values()].sort((a,b)=>b.priority-a.priority || a.text.localeCompare(b.text,'ru'));
-
-    for(const item of sorted) {
-      if(selected.length>=maxCount) break;
-      const p=map.project(item.coords);
-      const width=Math.min(220,Math.max(34,item.text.length*6.8));
-      const height=item.priority>=85?24:20;
-      const box={left:p.x-width/2,right:p.x+width/2,top:p.y-height/2,bottom:p.y+height/2};
-      if(occupied.some(other=>boxesOverlap(box,other,2))) continue;
-      occupied.push(box);
-      selected.push(item);
-    }
-
-    for(const item of selected) {
-      const el=document.createElement('div');
-      el.className=`map-label map-place-label map-info-${item.kind.replace(/[^a-z0-9_-]/gi,'-')}`;
-      el.textContent=item.text;
-      el.title=item.text;
-      const marker=new window.maplibregl.Marker({element:el,anchor:'center'})
-        .setLngLat(item.coords)
-        .addTo(map);
-      activePlaceLabelMarkers.push(marker);
-    }
-  };
-
-  let scheduled=0;
-  const schedule=()=>{
-    window.clearTimeout(scheduled);
-    scheduled=window.setTimeout(redraw,80);
-  };
-  map.on('idle',schedule);
-  map.on('moveend',schedule);
-  map.on('zoomend',schedule);
-}
 
 function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   const maplibregl = window.maplibregl;
@@ -504,7 +553,6 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     if (bounds) map.fitBounds([[bounds.minLon,bounds.minLat],[bounds.maxLon,bounds.maxLat]],{padding:48,maxZoom:15,duration:0});
 
     installRacePointLabels(map,points,onPointClick);
-    installOfflinePlaceLabels(map,options.offlineMap);
 
     if (onPointClick) {
       map.on('click','rfm-points',e=>{ const f=e.features?.[0]; if(f) onPointClick(pointPayload(f)); });

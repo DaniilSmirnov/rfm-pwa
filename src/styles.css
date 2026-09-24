@@ -26,8 +26,8 @@ main{width:var(--page);margin:0 auto;padding-bottom:calc(56px + var(--safe-botto
 .collapsible-section{border-top:1px solid #ebebeb;margin:0;padding:0}.collapsible-section>summary{list-style:none;display:flex;align-items:center;gap:10px;cursor:pointer;padding:18px 0}.collapsible-section>summary::-webkit-details-marker{display:none}.collapsible-section>summary .block-title{margin:0;flex:1}.summary-meta{color:#a3a3a3;font-size:12px;font-weight:700}.summary-chevron{font-size:22px;line-height:1;color:#a3a3a3;transition:transform .18s ease}.collapsible-section[open] .summary-chevron{transform:rotate(180deg)}.collapsible-body{padding:0 0 20px}.race-material{margin-top:0}.race-material+.race-material{margin-top:0}.points-panel{margin-top:16px}.points-panel .collapsible-body{padding-bottom:4px}
 .map-diagnostic-error{color:#a11!important}
 
-/* Map labels: race points and offline settlements */
-.map-label{font-family:Arial,Helvetica,sans-serif;pointer-events:auto;user-select:none;-webkit-user-select:none;white-space:nowrap}.map-race-label{appearance:none;border:1px solid rgba(0,0,0,.18);background:rgba(255,255,255,.96);color:#111;padding:4px 7px;border-radius:7px;font-size:11px;font-weight:700;line-height:1.15;box-shadow:0 1px 4px rgba(0,0,0,.22);max-width:170px;overflow:hidden;text-overflow:ellipsis}.map-race-label:hover{background:#fff}.map-place-label{pointer-events:none;color:#2c2f33;font-size:11px;font-weight:600;line-height:1;text-shadow:0 1px 0 #fff,1px 0 0 #fff,-1px 0 0 #fff,0 -1px 0 #fff,0 0 3px rgba(255,255,255,.95)}.map-place-city{font-size:13px;font-weight:800}.map-place-town,.map-place-municipality{font-size:12px;font-weight:700}.map-place-village,.map-place-settlement{font-size:11px;font-weight:700}.map-place-hamlet,.map-place-locality,.map-place-isolated_dwelling,.map-place-neighbourhood,.map-place-neighborhood,.map-place-suburb,.map-place-borough{font-size:10px;font-weight:600;color:#555}
+/* Map labels: interactive rally points. Basemap labels are native MapLibre symbols. */
+.map-label{font-family:Arial,Helvetica,sans-serif;pointer-events:auto;user-select:none;-webkit-user-select:none;white-space:nowrap}.map-race-label{appearance:none;border:1px solid rgba(0,0,0,.18);background:rgba(255,255,255,.96);color:#111;padding:4px 7px;border-radius:7px;font-size:11px;font-weight:700;line-height:1.15;box-shadow:0 1px 4px rgba(0,0,0,.22);max-width:170px;overflow:hidden;text-overflow:ellipsis}.map-race-label:hover{background:#fff}
 
 .map-location-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}.map-location-controls .small{margin:0;flex:1 1 220px}
 
@@ -145,18 +145,3 @@ html[data-ios="true"][data-standalone="true"]{
 html[data-pwa-installed="true"] .pwa-install-prompt{display:none!important}
 @media(max-width:640px){.pwa-install-prompt{align-items:stretch;flex-direction:column}.pwa-install-prompt>.button{width:100%}}
 @media(prefers-color-scheme:dark){.pwa-install-prompt{background:#171a1f;border-color:#f5f7fa;color:#f5f7fa}.pwa-install-copy p,.pwa-install-steps{color:#b7bdc6}}
-
-
-/* Rich offline basemap labels */
-.map-info-road{font-size:10px;font-weight:700;color:#4d4943;background:rgba(255,255,255,.72);padding:1px 3px;border-radius:3px}
-.map-info-poi{font-size:10px;font-weight:700;color:#34383d;background:rgba(255,255,255,.84);padding:2px 4px;border-radius:4px}
-.map-info-physical{font-size:10px;font-weight:700;color:#665d4e}
-.map-info-water{font-size:10px;font-style:italic;color:#47798f}
-.map-info-land{font-size:10px;color:#5f7259}
-.map-info-transit{font-size:10px;color:#5c5a58}
-.map-info-building{font-size:9px;color:#6d6761}
-.map-info-other{font-size:9px;color:#666}
-.map-info-place-city{font-size:13px;font-weight:800}
-.map-info-place-town,.map-info-place-municipality{font-size:12px;font-weight:700}
-.map-info-place-village,.map-info-place-settlement{font-size:11px;font-weight:700}
-.map-info-place-hamlet,.map-info-place-locality,.map-info-place-isolated_dwelling,.map-info-place-neighbourhood,.map-info-place-neighborhood,.map-info-place-suburb,.map-info-place-borough{font-size:10px;font-weight:600;color:#555}
