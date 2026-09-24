@@ -4,7 +4,7 @@
   "version": "0.0.0-private",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -22,7 +22,8 @@
     "@playwright/test": "1.55.0",
     "happy-dom": "18.0.1",
     "http-server": "14.1.1",
-    "vitest": "3.2.4"
+    "vitest": "3.2.4",
+    "vite": "7.3.6"
   },
   "dependencies": {
     "maplibre-gl": "6.11.1",
