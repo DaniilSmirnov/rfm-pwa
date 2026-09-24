@@ -109,6 +109,46 @@ describe('offline map overlay bootstrap',()=>{
     expect(map.didFit).toBe(true);
   });
 
+
+  it('keeps offline race points and route layers visible across the full zoom range',()=>{
+    installMapLibre();
+    const container=document.createElement('div');
+
+    renderMap(container,fc,null,vi.fn(),{
+      offlineMap:{
+        ready:true,
+        raceId:'race-1@map',
+        storageId:'race-1@map',
+        minZoom:6,
+        maxZoom:14,
+        bounds:{minLon:30.5,minLat:61.5,maxLon:30.9,maxLat:61.9},
+        vectorLayers:[{id:'roads'}]
+      }
+    });
+
+    const map=FakeMap.last;
+    map.zoom=6;
+    map.handlers.get('style.load')();
+
+    const pointLayer=map.layers.find(layer=>layer.id==='rfm-points');
+    const routeLayer=map.layers.find(layer=>layer.id==='rfm-lines');
+    const routeCasing=map.layers.find(layer=>layer.id==='rfm-lines-casing');
+
+    expect(pointLayer).toMatchObject({minzoom:0,maxzoom:24});
+    expect(routeLayer).toMatchObject({minzoom:0,maxzoom:24});
+    expect(routeCasing).toMatchObject({minzoom:0,maxzoom:24});
+    expect(map.sources.get('rfm-lines')?.data.features).toHaveLength(1);
+    expect(map.sources.get('rfm-lines')?.data.features[0].properties.name).toBe('SS1');
+
+    const raceLabel=document.querySelector('.map-race-label');
+    expect(raceLabel).toBeTruthy();
+    expect(raceLabel.style.display).toBe('block');
+
+    map.zoom=18;
+    map.handlers.get('zoom')();
+    expect(raceLabel.style.display).toBe('block');
+  });
+
   it('keeps race overlays above terrain when an offline terrain style is enabled',()=>{
     installMapLibre();
     const container=document.createElement('div');
