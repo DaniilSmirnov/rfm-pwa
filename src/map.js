@@ -191,11 +191,15 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   if (activeMap) { try { activeMap.remove(); } catch {} activeMap=null; }
   clearAllLabels();
   container.innerHTML='';
+  const terrainMode=options.terrainMode==='3d'?'3d':'hillshade';
+  const camera=options.cameraState || null;
   const map = new maplibregl.Map({
     container,
-    style:baseStyle(options.offlineMap,options.terrain),
-    center:[37.6,55.75],
-    zoom:5,
+    style:baseStyle(options.offlineMap,options.terrain,{terrainMode}),
+    center:camera?.center || [37.6,55.75],
+    zoom:Number.isFinite(camera?.zoom)?camera.zoom:5,
+    bearing:Number.isFinite(camera?.bearing)?camera.bearing:(terrainMode==='3d'?-18:0),
+    pitch:Number.isFinite(camera?.pitch)?camera.pitch:(terrainMode==='3d'?70:0),
     attributionControl:true,
     cooperativeGestures:false,
     maxPitch:85,
@@ -212,7 +216,19 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   const {lines,polygons,points}=splitFeatures(fc);
   map.on('load',()=>{
     applyOfflineViewportConstraints(map,options.offlineMap);
-    if(options.terrain?.ready) map.addControl(new TerrainModeControl(), 'top-right');
+    if(options.terrain?.ready) map.addControl(new TerrainModeControl({
+      initialMode:terrainMode,
+      onModeChange:nextMode=>{
+        const center=map.getCenter?.();
+        const cameraState={
+          center:center?[center.lng,center.lat]:undefined,
+          zoom:map.getZoom?.(),
+          bearing:nextMode==='3d'?(map.getBearing?.()||-18):0,
+          pitch:nextMode==='3d'?70:0
+        };
+        renderMapLibre(container,fc,userPos,onPointClick,{...options,terrainMode:nextMode,cameraState});
+      }
+    }), 'top-right');
     map.addSource('rfm-lines',{type:'geojson',data:lines});
     map.addLayer({id:'rfm-lines',type:'line',source:'rfm-lines',paint:{'line-color':sourceColorExpression(),'line-width':['interpolate',['linear'],['zoom'],5,2,12,5,17,8],'line-opacity':0.96}});
 
@@ -234,7 +250,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
       map.addLayer({id:'user-dot',type:'circle',source:'user-position',paint:{'circle-radius':7,'circle-color':'#4da3ff','circle-stroke-color':'#fff','circle-stroke-width':3}});
     }
 
-    if (bounds) map.fitBounds([[bounds.minLon,bounds.minLat],[bounds.maxLon,bounds.maxLat]],{padding:48,maxZoom:15,duration:0});
+    if (bounds && !camera) map.fitBounds([[bounds.minLon,bounds.minLat],[bounds.maxLon,bounds.maxLat]],{padding:48,maxZoom:15,duration:0});
 
     installRacePointLabels(map,points,onPointClick);
     installBasemapInspector(map,options.offlineMap);
