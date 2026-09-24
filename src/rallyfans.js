@@ -124,7 +124,7 @@ async function tryBackgroundFetchAssets(pkg,onProgress){
   try{
     const task=await reg.backgroundFetch.fetch(id,urls,{
       title:`Rally Fans Map · ${pkg.name||'гонка'}`,
-      icons:[{src:'/rfm/icon.png?v=__APP_VERSION_CACHE__',sizes:'180x180',type:'image/png'}]
+      icons:[{src:'/rfm/icon.png',sizes:'180x180',type:'image/png'}]
     });
     task.addEventListener?.('progress',()=>{
       const total=Number(task.downloadTotal)||0;
