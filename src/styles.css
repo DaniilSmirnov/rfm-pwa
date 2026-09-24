@@ -145,3 +145,20 @@ html[data-ios="true"][data-standalone="true"]{
 html[data-pwa-installed="true"] .pwa-install-prompt{display:none!important}
 @media(max-width:640px){.pwa-install-prompt{align-items:stretch;flex-direction:column}.pwa-install-prompt>.button{width:100%}}
 @media(prefers-color-scheme:dark){.pwa-install-prompt{background:#171a1f;border-color:#f5f7fa;color:#f5f7fa}.pwa-install-copy p,.pwa-install-steps{color:#b7bdc6}}
+
+
+/* Offline basemap feature inspector */
+.basemap-popup .maplibregl-popup-content{padding:10px 12px;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.22);font-family:Arial,Helvetica,sans-serif}
+.basemap-popup-card{min-width:180px;max-width:300px}
+.basemap-popup-title{display:block;font-size:13px;line-height:1.2;color:#202328;margin-right:18px}
+.basemap-popup-layer{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#858b93;margin:3px 0 7px}
+.basemap-popup-row{display:flex;justify-content:space-between;gap:12px;border-top:1px solid rgba(0,0,0,.08);padding:4px 0;font-size:10px;line-height:1.25}
+.basemap-popup-row span{color:#757b83}.basemap-popup-row b{font-weight:600;text-align:right;overflow-wrap:anywhere}
+@media (prefers-color-scheme:dark){
+  .basemap-popup .maplibregl-popup-content{background:#1b1f25;color:#f5f7fa}
+  .basemap-popup .maplibregl-popup-tip{border-top-color:#1b1f25;border-bottom-color:#1b1f25}
+  .basemap-popup-title{color:#f5f7fa}
+  .basemap-popup-layer,.basemap-popup-row span{color:#a3a9b1}
+  .basemap-popup-row{border-top-color:rgba(255,255,255,.1)}
+  .basemap-popup .maplibregl-popup-close-button{color:#f5f7fa}
+}
