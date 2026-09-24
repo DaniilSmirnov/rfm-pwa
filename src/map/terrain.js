@@ -2,7 +2,7 @@ import { offlineTerrainSource, registerTerrainProtocol } from '../terrain-offlin
 
 export function terrainStyleParts(meta){
   const source=offlineTerrainSource(meta);
-  if(!source) return {sources:{},layers:[]};
+  if(!source) return {sources:{},layers:[],terrain:null};
 
   registerTerrainProtocol();
   return {
@@ -10,6 +10,7 @@ export function terrainStyleParts(meta){
       'offline-terrain-hillshade':source,
       'offline-terrain-3d':{...source}
     },
+    terrain:{source:'offline-terrain-3d',exaggeration:0},
     layers:[{
       id:'terrain-hillshade',
       type:'hillshade',

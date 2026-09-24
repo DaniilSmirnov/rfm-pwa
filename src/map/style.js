@@ -645,7 +645,9 @@ function baseStyle(offlineMap,terrain) {
   const terrainParts=terrainStyleParts(terrain);
   Object.assign(sources,terrainParts.sources);
   layers.push(...terrainParts.layers,...labelLayers);
-  return {version:8,sources,layers};
+  const style={version:8,sources,layers};
+  if(terrainParts.terrain) style.terrain=terrainParts.terrain;
+  return style;
 }
 
 

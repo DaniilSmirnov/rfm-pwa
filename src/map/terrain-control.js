@@ -14,7 +14,7 @@ export function applyTerrainMode(map,mode){
     map.setTerrain?.({source:TERRAIN_SOURCE,exaggeration:1.15});
     map.easeTo?.({pitch:68,bearing:-18,duration:650});
   }else{
-    map.setTerrain?.(null);
+    map.setTerrain?.({source:TERRAIN_SOURCE,exaggeration:0});
     if(map.getLayer?.(HILLSHADE_LAYER)) map.setLayoutProperty?.(HILLSHADE_LAYER,'visibility','visible');
     map.easeTo?.({pitch:0,duration:450});
   }
