@@ -191,7 +191,7 @@ test.describe('PWA migration safety',()=>{
     await expect(reopened.locator('#favoritesList')).toContainText('Offline spectator point');
   });
 
-  test('reopens a saved offline map after restart without falling back to the online basemap',async({page,context})=>{
+  test('reopens a saved offline map after restart, reads local tiles and restores race points',async({page,context})=>{
     await page.goto('/');
     await waitForAppWorker(page);
     await seedSavedRace(page,{offlineMap:true});
@@ -204,10 +204,41 @@ test.describe('PWA migration safety',()=>{
     reopened.on('request',request=>requests.push(request.url()));
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
 
+    await reopened.evaluate(async()=>{
+      const module=await import('/src/offline-map.js');
+      module.setOfflineMapDiagnosticsListener(stats=>{ window.__offlineMapStats=stats; });
+    });
+    await reopened.locator('#packageList .package-row').first().click();
+
     await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
     await expect(reopened.locator('#offlineMapDiag')).toContainText('локальная подложка 1 тайлов');
     await expect(reopened.locator('.maplibregl-canvas')).toBeVisible();
+    await expect(reopened.locator('.map-race-label').filter({hasText:'Offline spectator point'})).toBeVisible();
+    await expect.poll(()=>reopened.evaluate(()=>window.__offlineMapStats?.hits||0)).toBeGreaterThan(0);
     expect(requests.some(url=>url.includes('/api/basemap.pmtiles'))).toBe(false);
+  });
+
+  test('restores race points and offline basemap when terrain metadata is enabled after restart',async({page,context})=>{
+    await page.goto('/');
+    await waitForAppWorker(page);
+    await seedSavedRace(page,{offlineMap:true,terrain:true});
+
+    await page.close();
+    await context.setOffline(true);
+
+    const reopened=await context.newPage();
+    await reopened.goto('/',{waitUntil:'domcontentloaded'});
+    await reopened.evaluate(async()=>{
+      const module=await import('/src/offline-map.js');
+      module.setOfflineMapDiagnosticsListener(stats=>{ window.__offlineMapStats=stats; });
+    });
+    await reopened.locator('#packageList .package-row').first().click();
+
+    await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
+    await expect(reopened.locator('#mapSubtitle')).toContainText('рельеф ✓');
+    await expect(reopened.locator('.terrain-mode-button')).toBeVisible();
+    await expect(reopened.locator('.map-race-label').filter({hasText:'Offline spectator point'})).toBeVisible();
+    await expect.poll(()=>reopened.evaluate(()=>window.__offlineMapStats?.hits||0)).toBeGreaterThan(0);
   });
 
   test('cached Rally Pack materials remain available after an offline restart',async({page,context})=>{
