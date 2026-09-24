@@ -16,8 +16,8 @@ describe('terrain mode control',()=>{
     const map=mapStub();
     expect(applyTerrainMode(map,'3d')).toBe('3d');
     expect(map.setLayoutProperty).toHaveBeenCalledWith('terrain-hillshade','visibility','none');
-    expect(map.setTerrain).toHaveBeenCalledWith({source:'offline-terrain',exaggeration:1});
-    expect(map.easeTo).toHaveBeenCalledWith(expect.objectContaining({pitch:58}));
+    expect(map.setTerrain).toHaveBeenCalledWith({source:'offline-terrain-3d',exaggeration:1.15});
+    expect(map.easeTo).toHaveBeenCalledWith(expect.objectContaining({pitch:68,bearing:-18}));
   });
 
   it('switches back to hillshade and flattens camera',()=>{
@@ -40,7 +40,7 @@ describe('terrain mode control',()=>{
     button.click();
     expect(button.dataset.mode).toBe('3d');
     expect(button.getAttribute('aria-pressed')).toBe('true');
-    expect(map.setTerrain).toHaveBeenLastCalledWith({source:'offline-terrain',exaggeration:1});
+    expect(map.setTerrain).toHaveBeenLastCalledWith({source:'offline-terrain-3d',exaggeration:1.15});
 
     button.click();
     expect(button.dataset.mode).toBe('hillshade');
