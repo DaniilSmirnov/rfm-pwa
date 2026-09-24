@@ -57,6 +57,7 @@ const onePixelPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC
 const maplibreStub=String.raw`
 export function supported(){return true;}
 export function addProtocol(){}
+export function setWorkerUrl(url){window.__maplibreWorkerUrl=url;}
 export class NavigationControl{constructor(options={}){this.options=options;}}
 export class Map{
   constructor(options={}){
