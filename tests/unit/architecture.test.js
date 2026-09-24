@@ -31,6 +31,13 @@ describe('architecture guardrails',()=>{
     expect(wrangler).toContain('ERROR_TRACE_SAMPLE_RATE = "0.2"');
     expect(wrangler).toContain('upload_source_maps = true');
   });
+  it('pins the MapLibre worker to the bundled same-origin file',()=>{
+    const app=read('src/app.js');
+    const sw=read('sw.js');
+    expect(app).toContain("setWorkerUrl('/vendor/maplibre-gl/maplibre-gl-worker.mjs')");
+    expect(sw).toContain('/vendor/maplibre-gl/maplibre-gl-worker.mjs');
+    expect(sw).toContain('/vendor/maplibre-gl/maplibre-gl-shared.mjs');
+  });
   it('defines unit, UI and PWA test scripts',()=>{
     const pkg=JSON.parse(read('package.json'));
     expect(pkg.scripts['test:unit']).toBeTruthy();
