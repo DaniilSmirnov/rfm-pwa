@@ -207,11 +207,11 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     console.warn('MapLibre map error',e);
   });
   map.addControl(new maplibregl.NavigationControl({showCompass:true,visualizePitch:false}), 'top-right');
-  if(options.terrain?.ready) map.addControl(new TerrainModeControl(), 'top-right');
   const bounds = expandBounds(geometryBounds(fc),userPos);
   const {lines,polygons,points}=splitFeatures(fc);
   map.on('load',()=>{
     applyOfflineViewportConstraints(map,options.offlineMap);
+    if(options.terrain?.ready) map.addControl(new TerrainModeControl(), 'top-right');
     map.addSource('rfm-lines',{type:'geojson',data:lines});
     map.addLayer({id:'rfm-lines',type:'line',source:'rfm-lines',paint:{'line-color':sourceColorExpression(),'line-width':['interpolate',['linear'],['zoom'],5,2,12,5,17,8],'line-opacity':0.96}});
 
