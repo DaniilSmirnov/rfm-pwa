@@ -104,6 +104,39 @@
       <div class="section-head"><div><div id="mapTitle" class="block-title">КАРТА РАЛЛИ</div><p id="mapSubtitle" class="muted">Выбери сохранённую гонку</p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button></div></div>
       <p id="offlineMapStatus" class="muted small">Офлайн-подложка ещё не скачана.</p><p id="offlineMapDiag" class="muted small" hidden></p>
       <div id="map" class="map" aria-label="offline rally map"></div>
+
+      <section class="favorites-panel" aria-labelledby="favoritesTitle">
+        <div class="section-head compact-section-head">
+          <div><div id="favoritesTitle" class="block-title">ИЗБРАННЫЕ ТОЧКИ</div><p id="favoritesStatus" class="muted small">Добавляй точки в избранное, чтобы они были всегда под рукой.</p></div>
+        </div>
+        <div id="favoritesList" class="favorites-list"><p class="muted small">Пока пусто.</p></div>
+      </section>
+
+      <section class="car-panel" aria-labelledby="carTitle">
+        <div class="section-head compact-section-head">
+          <div><div id="carTitle" class="block-title">ГДЕ МАШИНА?</div><p id="carStatus" class="muted small">Сохрани текущие GPS-координаты машины.</p></div>
+          <button id="saveCarBtn" class="button" type="button">Запомнить машину</button>
+        </div>
+        <div id="carPointCard" class="car-point-card" hidden>
+          <div class="point-row-copy"><strong>🚗 Машина</strong><span id="carCoords" class="muted"></span></div>
+          <div class="point-nav-buttons">
+            <button id="carCompassBtn" class="button compact">Компас</button>
+            <button id="carGoogleBtn" class="button compact primary">Google Maps</button>
+            <button id="carYandexBtn" class="button compact">Yandex</button>
+            <button id="carShareBtn" class="button compact">Поделиться</button>
+            <button id="carDeleteBtn" class="button compact danger">Удалить</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="map-export-actions">
+        <div><div class="block-title">ЭКСПОРТ ОФЛАЙН</div><p class="muted small">Экспортирует текущую гонку без обращения к серверу.</p></div>
+        <div class="actions">
+          <button id="exportGpxBtn" class="button" type="button">GPX</button>
+          <button id="exportGeoJsonBtn" class="button" type="button">GeoJSON</button>
+        </div>
+      </div>
+
       <div class="map-location-controls">
         <button id="locateBtn" class="button"><img class="rfm-icon" src="/assets/location.svg" alt="" />Показать где я</button>
         <p id="geoStatus" class="muted small">Геопозиция ещё не запрашивалась.</p>
@@ -119,7 +152,7 @@
       </details>
       <aside id="pointActions" class="point-actions" hidden>
         <div class="point-actions-copy"><div class="eyebrow">выбранная точка</div><strong id="pointName"></strong><span id="pointCoords" class="muted"></span></div>
-        <div class="actions point-buttons"><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
+        <div class="actions point-buttons"><button id="favoritePointBtn" class="button">☆ В избранное</button><button id="googleMapsBtn" class="button primary">Google Maps</button><button id="yandexMapsBtn" class="button">Yandex Navigator</button><button id="mapsMeBtn" class="button">MAPS.ME</button><button id="sharePointBtn" class="button">Поделиться</button><button id="copyCoordsBtn" class="button"><img class="rfm-icon" src="/assets/document-copy.svg" alt="" />Копировать</button></div>
         <p id="navStatus" class="muted small"></p>
         <details id="spectatorCompass" class="spectator-compass collapsible-section">
           <summary><span class="block-title">КОМПАС ЗРИТЕЛЯ</span><span class="summary-chevron">⌄</span></summary>
