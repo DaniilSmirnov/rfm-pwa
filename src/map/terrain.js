@@ -6,11 +6,14 @@ export function terrainStyleParts(meta){
 
   registerTerrainProtocol();
   return {
-    sources:{'offline-terrain':source},
+    sources:{
+      'offline-terrain-hillshade':source,
+      'offline-terrain-3d':{...source}
+    },
     layers:[{
       id:'terrain-hillshade',
       type:'hillshade',
-      source:'offline-terrain',
+      source:'offline-terrain-hillshade',
       paint:{
         'hillshade-exaggeration':0.42,
         'hillshade-shadow-color':'#473b24',

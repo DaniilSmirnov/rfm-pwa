@@ -15,8 +15,10 @@ describe('terrain map style',()=>{
 
   it('adds a raster-dem source and hillshade layer',()=>{
     const parts=terrainStyleParts({ready:true});
-    expect(parts.sources['offline-terrain'].type).toBe('raster-dem');
-    expect(parts.layers[0]).toMatchObject({id:'terrain-hillshade',type:'hillshade',source:'offline-terrain'});
+    expect(parts.sources['offline-terrain-hillshade'].type).toBe('raster-dem');
+    expect(parts.sources['offline-terrain-3d'].type).toBe('raster-dem');
+    expect(parts.sources['offline-terrain-3d']).not.toBe(parts.sources['offline-terrain-hillshade']);
+    expect(parts.layers[0]).toMatchObject({id:'terrain-hillshade',type:'hillshade',source:'offline-terrain-hillshade'});
     expect(registerTerrainProtocol).toHaveBeenCalled();
   });
 });

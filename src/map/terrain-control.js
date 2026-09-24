@@ -1,4 +1,4 @@
-const TERRAIN_SOURCE='offline-terrain';
+const TERRAIN_SOURCE='offline-terrain-3d';
 const HILLSHADE_LAYER='terrain-hillshade';
 
 function mountainIcon(){
@@ -11,8 +11,8 @@ export function applyTerrainMode(map,mode){
 
   if(next==='3d'){
     if(map.getLayer?.(HILLSHADE_LAYER)) map.setLayoutProperty?.(HILLSHADE_LAYER,'visibility','none');
-    map.setTerrain?.({source:TERRAIN_SOURCE,exaggeration:1});
-    map.easeTo?.({pitch:58,duration:550});
+    map.setTerrain?.({source:TERRAIN_SOURCE,exaggeration:1.15});
+    map.easeTo?.({pitch:68,bearing:-18,duration:650});
   }else{
     map.setTerrain?.(null);
     if(map.getLayer?.(HILLSHADE_LAYER)) map.setLayoutProperty?.(HILLSHADE_LAYER,'visibility','visible');

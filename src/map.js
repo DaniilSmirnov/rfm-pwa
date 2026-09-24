@@ -198,6 +198,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     zoom:5,
     attributionControl:true,
     cooperativeGestures:false,
+    maxPitch:85,
     ...offlineViewportOptions(options.offlineMap)
   });
   activeMap=map;
@@ -206,7 +207,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     options.onMapError?.(msg);
     console.warn('MapLibre map error',e);
   });
-  map.addControl(new maplibregl.NavigationControl({showCompass:true,visualizePitch:false}), 'top-right');
+  map.addControl(new maplibregl.NavigationControl({showCompass:true,visualizePitch:true}), 'top-right');
   const bounds = expandBounds(geometryBounds(fc),userPos);
   const {lines,polygons,points}=splitFeatures(fc);
   map.on('load',()=>{
