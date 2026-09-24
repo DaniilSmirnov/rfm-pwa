@@ -185,3 +185,8 @@ html[data-pwa-installed="true"] .pwa-install-prompt{display:none!important}
 @media(prefers-color-scheme:dark){
   .favorite-row,.car-point-card{background:#1a1e23;border-color:#30353d;color:#f5f7fa}
 }
+
+.terrain-mode-control .terrain-mode-button{display:grid;place-items:center;color:#35383d}
+.terrain-mode-control .terrain-mode-button svg{width:20px;height:20px;display:block}
+.terrain-mode-control .terrain-mode-button[aria-pressed="true"]{background:#e4e7eb;color:#111318}
+@media(prefers-color-scheme:dark){.terrain-mode-control .terrain-mode-button{color:#e8ebef}.terrain-mode-control .terrain-mode-button[aria-pressed="true"]{background:#3a4048;color:#fff}}

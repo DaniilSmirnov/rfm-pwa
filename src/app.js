@@ -6,6 +6,7 @@ import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
 import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
 import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan } from './offline-map.js';
+import { downloadTerrain, removeTerrain, discardTerrainRevision, buildTerrainDownloadPlan } from './terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from './app/export.js';
 import { startOfLocalDay, raceDateRange, distanceFromTodayDays, raceWithinWeek, pickDefaultRace } from './app/catalog-dates.js';
 import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from './app/geo.js';
@@ -19,6 +20,7 @@ import { syncWalletPassesForPackage } from './app/wallet-client.js';
 import { setupPwaInstall } from './app/pwa.js';
 import { downloadRallyPack } from './app/rally-pack.js';
 import { rallyPackProgressText } from './app/rally-pack-ui.js';
+import { createTerrainControls } from './app/terrain-controls.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -162,7 +164,8 @@ async function selectPackage(id){
   currentPackageId=id; const p=await getPackage(id); if(!p)return;
   $('mapTitle').textContent=p.name;
   const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:(p.offlineMap.storageId||p.id)} : null;
-  $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}сохранено ${new Date(p.savedAt).toLocaleString()}`;
+  const terrain=p.terrain?.ready ? p.terrain : null;
+  $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}${terrain?'рельеф ✓ · ':''}сохранено ${new Date(p.savedAt).toLocaleString()}`;
   try {
     await ensureMapLibre();
     const diag=$('offlineMapDiag');
@@ -175,8 +178,9 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
+  terrainControls.update(p);
   renderPointList(p);
   renderFavorites(p);
   renderCarPoint();
@@ -451,6 +455,18 @@ function updateOfflineMapUi(p){
     setMapUiText({button:'Скачать офлайн-карту',status:msg,deleteHidden:true,disabled:false});
   }
 }
+const terrainControls=createTerrainControls({
+  getCurrentPackageId:()=>currentPackageId,
+  getPackage,
+  savePackage,
+  downloadTerrain,
+  removeTerrain,
+  discardTerrainRevision,
+  buildTerrainDownloadPlan,
+  formatBytes:fmtBytes,
+  onPackageChanged:async id=>{ await selectPackage(id); await refreshList(); }
+});
+
 async function handleDownloadMap(){
   if(!currentPackageId) return;
   setMapUiText({disabled:true});
