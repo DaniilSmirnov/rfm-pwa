@@ -43,7 +43,7 @@ export async function downloadRallyPack(raceId,deps,onProgress=()=>{}){
     report(onProgress,RALLY_PACK_PHASES.MAP,{status:'start'});
     stagedMap=await deps.downloadOfflineMap(pkg,progress=>{
       report(onProgress,RALLY_PACK_PHASES.MAP,{status:'progress',...progress});
-    });
+    },{previousMap});
     pkg.offlineMap=stagedMap;
 
     let assetDownload={cached:0,total:0,background:false};

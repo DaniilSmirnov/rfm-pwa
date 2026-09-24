@@ -7,7 +7,7 @@ vi.mock('../../src/db.js',()=>({
   deleteMapTiles:vi.fn(async()=>{})
 }));
 
-import { deleteMapTiles, saveMapTile } from '../../src/db.js';
+import { deleteMapTiles, getMapTile, saveMapTile } from '../../src/db.js';
 import { downloadOfflineMap } from '../../src/offline-map.js';
 
 const fc={
@@ -27,7 +27,7 @@ function pkg(){
   };
 }
 
-function installPmtiles({failFirst=false}={}){
+function installPmtiles({failAlways=false}={}){
   let calls=0;
   window.pmtiles={
     PMTiles:class{
@@ -37,7 +37,7 @@ function installPmtiles({failFirst=false}={}){
       }
       async getZxy(){
         calls++;
-        if(failFirst && calls===1) throw new Error('network interrupted');
+        if(failAlways) throw new Error('network interrupted');
         return {data:new Uint8Array([1,2,3,4]).buffer};
       }
     }
@@ -63,15 +63,28 @@ describe('offline map revision safety',()=>{
     expect(deleteMapTiles).not.toHaveBeenCalledWith('map-old');
   });
 
-  it('cleans up only the incomplete new revision when a tile download fails',async()=>{
-    installPmtiles({failFirst:true});
+  it('keeps an incomplete staging revision so the next attempt can resume',async()=>{
+    installPmtiles({failAlways:true});
 
-    await expect(downloadOfflineMap(pkg())).rejects.toThrow();
+    await expect(downloadOfflineMap(pkg(),()=>{},{
+      previousMap:{ready:true,storageId:'race-1@slot-a'}
+    })).rejects.toThrow();
 
-    expect(deleteMapTiles).toHaveBeenCalledTimes(2);
-    const createdRevision=deleteMapTiles.mock.calls[0][0];
-    expect(createdRevision).toMatch(/^race-1@/);
-    expect(deleteMapTiles.mock.calls[1][0]).toBe(createdRevision);
-    expect(deleteMapTiles).not.toHaveBeenCalledWith('map-old');
+    expect(deleteMapTiles).not.toHaveBeenCalled();
+    expect(saveMapTile).not.toHaveBeenCalled();
+    expect(getMapTile).toHaveBeenCalled();
+  });
+
+  it('reuses tiles already present in the staging slot',async()=>{
+    installPmtiles();
+    getMapTile.mockResolvedValue({data:new Uint8Array([9,9]).buffer});
+
+    const result=await downloadOfflineMap(pkg(),()=>{},{
+      previousMap:{ready:true,storageId:'race-1@slot-a'}
+    });
+
+    expect(result.storageId).toBe('race-1@slot-b');
+    expect(result.reused).toBe(result.requested);
+    expect(saveMapTile).not.toHaveBeenCalled();
   });
 });

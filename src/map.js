@@ -153,7 +153,7 @@ function boxesOverlap(a,b,pad=4) {
   return !(a.right+pad<b.left || a.left-pad>b.right || a.bottom+pad<b.top || a.top-pad>b.bottom);
 }
 
-function installRacePointLabels(map, points, onPointClick) {
+function installRacePointLabels(map, points, onPointClick, {alwaysVisible=false}={}) {
   clearMarkers(activeRaceLabelMarkers);
   const maplibregl=window.maplibregl;
   if(!maplibregl?.Marker) return;
@@ -181,7 +181,7 @@ function installRacePointLabels(map, points, onPointClick) {
   }
 
   const update=()=>{
-    const visible=map.getZoom()>=9;
+    const visible=alwaysVisible || map.getZoom()>=9;
     for(const marker of activeRaceLabelMarkers) {
       const el=marker.getElement();
       el.style.display=visible?'block':'none';
@@ -237,17 +237,18 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
       }
     }), 'top-right');
     map.addSource('rfm-lines',{type:'geojson',data:lines});
-    map.addLayer({id:'rfm-lines',type:'line',source:'rfm-lines',paint:{'line-color':sourceColorExpression(),'line-width':['interpolate',['linear'],['zoom'],5,2,12,5,17,8],'line-opacity':0.96}});
+    map.addLayer({id:'rfm-lines-casing',type:'line',source:'rfm-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#111318','line-width':['interpolate',['linear'],['zoom'],5,6,12,9,17,13],'line-opacity':0.78}});
+    map.addLayer({id:'rfm-lines',type:'line',source:'rfm-lines',minzoom:0,maxzoom:24,paint:{'line-color':sourceColorExpression(),'line-width':['interpolate',['linear'],['zoom'],5,3,12,6,17,9],'line-opacity':1}});
 
     map.addSource('rfm-polygons',{type:'geojson',data:polygons});
     map.addLayer({id:'rfm-polygons-fill',type:'fill',source:'rfm-polygons',paint:{'fill-color':sourceColorExpression(),'fill-opacity':0.14}});
     map.addLayer({id:'rfm-polygons-outline',type:'line',source:'rfm-polygons',paint:{'line-color':sourceColorExpression(),'line-width':3}});
 
     map.addSource('rfm-points',{type:'geojson',data:points});
-    map.addLayer({id:'rfm-points',type:'circle',source:'rfm-points',paint:{
-      'circle-radius':['interpolate',['linear'],['zoom'],5,5,12,7,17,10],
+    map.addLayer({id:'rfm-points',type:'circle',source:'rfm-points',minzoom:0,maxzoom:24,paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],5,7,12,8,17,11],
       'circle-color':['case',['==',['slice',['to-string',['coalesce',['get','kind'],'']],0,7],'yandex-'],'#ffd21e','#f3f5f7'],
-      'circle-stroke-color':'#111318','circle-stroke-width':3
+      'circle-stroke-color':'#111318','circle-stroke-width':3,'circle-opacity':1
     }});
 
     if (userPos && Number.isFinite(userPos.longitude) && Number.isFinite(userPos.latitude)) {
@@ -259,7 +260,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
 
     if (bounds && !camera) map.fitBounds([[bounds.minLon,bounds.minLat],[bounds.maxLon,bounds.maxLat]],{padding:48,maxZoom:15,duration:0});
 
-    installRacePointLabels(map,points,onPointClick);
+    installRacePointLabels(map,points,onPointClick,{alwaysVisible:Boolean(options.offlineMap?.ready)});
     installBasemapInspector(map,options.offlineMap);
 
     if(options.onRouteClick){
