@@ -271,7 +271,11 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
       map.on('mouseleave','rfm-lines',()=>{ map.getCanvas().style.cursor=''; });
     }
     if(options.onMapCoordinate){
-      map.on('click',e=>options.onMapCoordinate({lat:Number(e.lngLat?.lat),lon:Number(e.lngLat?.lng),name:'Точка карты'}));
+      map.on('click',e=>{
+        const pointHits=map.getLayer('rfm-points')?map.queryRenderedFeatures(e.point,{layers:['rfm-points']}):[];
+        if(pointHits.length) return;
+        options.onMapCoordinate({lat:Number(e.lngLat?.lat),lon:Number(e.lngLat?.lng),name:'Точка карты'});
+      });
     }
 
     if (onPointClick) {
