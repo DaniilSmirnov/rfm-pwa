@@ -5,6 +5,8 @@ const SOURCE_URL='/api/basemap.pmtiles';
 const MIN_ZOOM=6;
 const DESIRED_MAX_ZOOM=14;
 const MAX_TILES=2200;
+const DOWNLOAD_CONCURRENCY=10;
+const TILE_DOWNLOAD_ATTEMPTS=3;
 let protocolRegistered=false;
 let diagnosticsListener=null;
 const stats={hits:0,misses:0,errors:0,last:null};
@@ -65,10 +67,28 @@ function normalizeVectorLayers(metadata){
     .filter(layer=>typeof layer.id==='string'&&layer.id.trim());
 }
 
-function mapRevisionId(pkgId){
+function mapRevisionId(pkgId,previousMap=null){
   const base=String(pkgId||'race').replace(/[^a-zA-Z0-9._-]/g,'-').slice(0,80);
-  const nonce=globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`;
-  return `${base}@${nonce}`;
+  const previous=String(previousMap?.storageId||'');
+  const slot=previous===`${base}@slot-a`?'slot-b':'slot-a';
+  return `${base}@${slot}`;
+}
+
+function wait(ms){
+  return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+async function fetchTileWithRetry(archive,tile){
+  let lastError=null;
+  for(let attempt=1;attempt<=TILE_DOWNLOAD_ATTEMPTS;attempt++){
+    try{
+      return await archive.getZxy(tile.z,tile.x,tile.y);
+    }catch(error){
+      lastError=error;
+      if(attempt<TILE_DOWNLOAD_ATTEMPTS) await wait(150*attempt);
+    }
+  }
+  throw lastError || new Error('tile download failed');
 }
 
 export async function discardOfflineMapRevision(meta,fallbackId=null){
@@ -76,57 +96,68 @@ export async function discardOfflineMapRevision(meta,fallbackId=null){
   if(storageId) await deleteMapTiles(storageId);
 }
 
-export async function downloadOfflineMap(pkg,onProgress=()=>{}){
+export async function downloadOfflineMap(pkg,onProgress=()=>{},{previousMap=null}={}){
   if(!window.pmtiles?.PMTiles) throw new Error('Библиотека PMTiles не загрузилась. Открой приложение онлайн и обнови страницу.');
   const plan=buildDownloadPlan(pkg.geojson);
-  const storageId=mapRevisionId(pkg.id);
-  await deleteMapTiles(storageId);
+  const storageId=mapRevisionId(pkg.id,previousMap);
 
-  try{
-    const archive=new window.pmtiles.PMTiles(SOURCE_URL);
-    const [header,metadata]=await Promise.all([archive.getHeader(),archive.getMetadata().catch(()=>({}))]);
-    const vectorLayers=normalizeVectorLayers(metadata);
-    let done=0,saved=0,bytes=0,failed=0; const started=Date.now();
-    const queue=[...plan.tiles];
+  const archive=new window.pmtiles.PMTiles(SOURCE_URL);
+  const [header,metadata]=await Promise.all([archive.getHeader(),archive.getMetadata().catch(()=>({}))]);
+  const vectorLayers=normalizeVectorLayers(metadata);
+  let done=0,saved=0,bytes=0,failed=0,reused=0; const started=Date.now();
+  const queue=[...plan.tiles];
 
-    async function worker(){
-      while(queue.length){
-        const t=queue.shift();
-        try{
-          const result=await archive.getZxy(t.z,t.x,t.y);
+  async function worker(){
+    while(queue.length){
+      const t=queue.shift();
+      try{
+        const existing=await getMapTile(storageId,t.z,t.x,t.y);
+        const existingData=normalizeTileData(existing?.data);
+        if(existingData?.byteLength){
+          reused++;
+          saved++;
+          bytes+=existingData.byteLength;
+        }else{
+          const result=await fetchTileWithRetry(archive,t);
           const data=normalizeTileData(result?.data);
-          if(data?.byteLength){ await saveMapTile(storageId,t.z,t.x,t.y,data); saved++; bytes+=data.byteLength; }
-        }catch(e){ failed++; console.warn('offline tile failed',t,e); }
-        done++; onProgress({done,total:plan.tiles.length,saved,bytes,failed,maxZoom:plan.maxZoom});
+          if(!data?.byteLength) throw new Error('Пустой тайл');
+          await saveMapTile(storageId,t.z,t.x,t.y,data);
+          saved++;
+          bytes+=data.byteLength;
+        }
+      }catch(e){
+        failed++;
+        console.warn('offline tile failed',t,e);
       }
+      done++;
+      onProgress({done,total:plan.tiles.length,saved,bytes,failed,reused,maxZoom:plan.maxZoom});
     }
-
-    await Promise.all(Array.from({length:Math.min(6,queue.length)},()=>worker()));
-    if(!saved) throw new Error('Не удалось скачать ни одного тайла подложки');
-    if(failed) throw new Error(`Не удалось скачать ${failed} из ${plan.tiles.length} тайлов. Старая карта сохранена.`);
-
-    return {
-      ready:true,
-      storageId,
-      tileCount:saved,
-      requested:plan.tiles.length,
-      bytes,
-      failed,
-      bounds:plan.bounds,
-      minZoom:plan.minZoom,
-      maxZoom:plan.maxZoom,
-      downloadedAt:new Date().toISOString(),
-      source:'Protomaps / OpenStreetMap',
-      sourceTileType:header?.tileType??null,
-      vectorLayers,
-      metadataName:metadata?.name||null,
-      metadataVersion:metadata?.version||null,
-      elapsedMs:Date.now()-started
-    };
-  }catch(error){
-    try{ await deleteMapTiles(storageId); }catch(cleanupError){ console.warn('Could not remove failed offline map revision',cleanupError); }
-    throw error;
   }
+
+  await Promise.all(Array.from({length:Math.min(DOWNLOAD_CONCURRENCY,queue.length)},()=>worker()));
+  if(!saved) throw new Error('Не удалось скачать ни одного тайла подложки');
+  if(failed) throw new Error(`Не удалось скачать ${failed} из ${plan.tiles.length} тайлов. Уже загруженные тайлы сохранены — повторная попытка продолжит загрузку.`);
+
+  return {
+    ready:true,
+    storageId,
+    tileCount:saved,
+    requested:plan.tiles.length,
+    bytes,
+    failed,
+    reused,
+    resumable:true,
+    bounds:plan.bounds,
+    minZoom:plan.minZoom,
+    maxZoom:plan.maxZoom,
+    downloadedAt:new Date().toISOString(),
+    source:'Protomaps / OpenStreetMap',
+    sourceTileType:header?.tileType??null,
+    vectorLayers,
+    metadataName:metadata?.name||null,
+    metadataVersion:metadata?.version||null,
+    elapsedMs:Date.now()-started
+  };
 }
 export async function removeOfflineMap(pkg){
   const currentId=pkg?.offlineMap?.storageId || pkg?.id;
