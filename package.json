@@ -15,7 +15,8 @@
     "test:ui": "playwright test",
     "test:ui:chromium": "playwright test --project=chromium",
     "test:ui:headed": "playwright test --headed",
-    "test:ui:debug": "playwright test --debug"
+    "test:ui:debug": "playwright test --debug",
+    "test:pwa": "playwright test -c playwright.pwa.config.js"
   },
   "devDependencies": {
     "@playwright/test": "1.55.0",
