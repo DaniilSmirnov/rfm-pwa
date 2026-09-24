@@ -22,6 +22,8 @@ import { downloadRallyPack } from './app/rally-pack.js';
 import { rallyPackProgressText } from './app/rally-pack-ui.js';
 import { createTerrainControls } from './app/terrain-controls.js';
 import { showPointElevation, showRouteElevationProfile } from './app/elevation-ui.js';
+import { processCachedRallyPackUpdates } from './app/rally-pack-update.js';
+import { renderRallyPackUpdateStatus } from './app/rally-pack-update-ui.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -202,6 +204,7 @@ async function selectPackage(id){
   renderSchedule(p);
   syncWalletPassesForPackage(p).catch(e=>console.warn('Wallet pass refresh failed',e));
   renderRaceMedia(p);
+  renderRallyPackUpdateStatus(p);
 }
 
 async function importObject(data, source){ const pkg=normalizePackage(data,source); await savePackage(pkg); currentPackageId=pkg.id; await refreshList(); await selectPackage(pkg.id); return pkg; }
@@ -581,6 +584,7 @@ $('importYandexBtn').onclick = async () => {
 const swRegistration=await setupServiceWorkerUpdates();
 await ensurePersistentStorage();
 await setupPeriodicBackgroundSync(swRegistration);
+await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(e=>console.warn('Smart Rally Pack update failed',e));
 await refreshPushUi();
 try {
   if(await getPushSubscription()) await scheduleAllSavedReminders();
@@ -588,6 +592,13 @@ try {
   console.warn('Could not refresh scheduled race reminders on startup',e);
 }
 await refreshList();
+window.addEventListener('rfm:periodic-update',async()=>{
+  const result=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(()=>null);
+  if(result?.applied||result?.pending){
+    await refreshList();
+    if(currentPackageId) await selectPackage(currentPackageId);
+  }
+});
 window.addEventListener('rfm:background-fetch',event=>{
   const detail=event.detail||{};
   const status=$('catalogStatus');

@@ -15,7 +15,7 @@ describe('architecture guardrails',()=>{
   it('keeps sanitizer out of app entrypoint',()=>expect(read('src/app.js')).not.toContain('SAFE_RICH_HTML_TAGS'));
   it('pre-caches every extracted app module',()=>{
     const sw=read('sw.js');
-    for(const path of ['catalog-dates','export','geo','local-points','preferences','push-client','pwa','runtime','sanitize','schedule','wallet-client','race-media','point-list','schedule-ui','rally-pack','rally-pack-ui','terrain-controls','elevation','elevation-ui']){
+    for(const path of ['catalog-dates','export','geo','local-points','preferences','push-client','pwa','runtime','sanitize','schedule','wallet-client','race-media','point-list','schedule-ui','rally-pack','rally-pack-ui','terrain-controls','elevation','elevation-ui','rally-pack-update','rally-pack-update-ui']){
       expect(sw).toContain('/src/app/'+path+'.js');
     }
   });

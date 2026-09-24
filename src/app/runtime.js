@@ -46,6 +46,9 @@ export async function setupServiceWorkerUpdates(){
     if(data?.type==='RFM_BACKGROUND_FETCH'){
       window.dispatchEvent(new CustomEvent('rfm:background-fetch',{detail:data}));
     }
+    if(data?.type==='RFM_PERIODIC_UPDATE'){
+      window.dispatchEvent(new CustomEvent('rfm:periodic-update',{detail:data}));
+    }
   });
 
   navigator.serviceWorker.addEventListener('controllerchange',()=>{

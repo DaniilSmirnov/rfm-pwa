@@ -3,7 +3,9 @@ const ASSET_CACHE='rfm-race-assets-v1';
 const PERIODIC_CACHE='rfm-periodic-data-v1';
 const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/src/terrain-offline.js','/src/app/catalog-dates.js','/src/app/export.js','/src/app/geo.js','/src/app/local-points.js','/src/app/preferences.js','/src/app/push-client.js','/src/app/pwa.js','/src/app/runtime.js','/src/app/sanitize.js','/src/app/schedule.js','/src/app/wallet-client.js','/src/app/race-media.js','/src/app/point-list.js','/src/app/schedule-ui.js','/src/app/rally-pack.js','/src/app/rally-pack-ui.js','/src/app/terrain-controls.js',
   '/src/app/elevation.js',
-  '/src/app/elevation-ui.js','/src/map/style.js','/src/map/terrain.js','/src/map/terrain-control.js','/src/map/viewport-policy.js','/manifest.webmanifest','/icon.svg','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg','/vendor/maplibre-gl/maplibre-gl.mjs','/vendor/maplibre-gl/maplibre-gl-worker.mjs','/vendor/maplibre-gl/maplibre-gl-shared.mjs','/vendor/maplibre-gl/maplibre-gl.css','/vendor/pmtiles/pmtiles.js'];
+  '/src/app/elevation-ui.js',
+  '/src/app/rally-pack-update.js',
+  '/src/app/rally-pack-update-ui.js','/src/map/style.js','/src/map/terrain.js','/src/map/terrain-control.js','/src/map/viewport-policy.js','/manifest.webmanifest','/icon.svg','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg','/vendor/maplibre-gl/maplibre-gl.mjs','/vendor/maplibre-gl/maplibre-gl-worker.mjs','/vendor/maplibre-gl/maplibre-gl-shared.mjs','/vendor/maplibre-gl/maplibre-gl.css','/vendor/pmtiles/pmtiles.js'];
 async function precacheFresh(){
   const cache=await caches.open(CACHE);
   await Promise.all(SHELL.map(async url=>{
@@ -150,17 +152,48 @@ async function savedRaceIds(){
   });
 }
 
-async function refreshPeriodicRaceData(){
-  const cache=await caches.open(PERIODIC_CACHE);
-  const urls=['/api/rallyfans/race'];
-  const ids=await savedRaceIds();
-  for(const id of [...new Set(ids)]) urls.push(`/api/rallyfans/race/${encodeURIComponent(id)}`);
-  await Promise.all(urls.map(async url=>{
+function raceAssetNames(race){
+  const names=new Set();
+  const add=value=>{if(typeof value==='string'&&value.trim())names.add(value.trim());};
+  ['image','overlap_schedule','safety_leaflet','mapsimg','list_crews','list_crews2','list_crews3','list_crews4','list_crews5','results_race','results_race2','results_race3','results_race4','results_race5'].forEach(k=>add(race?.[k]));
+  const list=value=>Array.isArray(value)?value:(value&&typeof value==='object'?Object.values(value):[]);
+  list(race?.lists).forEach(x=>add(x?.image));
+  list(race?.results).forEach(x=>add(x?.image));
+  list(race?.coordinates).forEach(x=>add(x?.image));
+  return [...names];
+}
+
+async function prefetchRaceAssets(race){
+  const cache=await caches.open(ASSET_CACHE);
+  await Promise.all(raceAssetNames(race).map(async name=>{
+    const url=`/api/rallyfans/public/${encodeURIComponent(name)}`;
+    if(await cache.match(url)) return;
     try{
       const response=await fetch(url,{cache:'no-store'});
       if(response.ok) await cache.put(url,response);
     }catch{}
   }));
+}
+
+async function refreshPeriodicRaceData(){
+  const cache=await caches.open(PERIODIC_CACHE);
+  try{
+    const catalog=await fetch('/api/rallyfans/race',{cache:'no-store'});
+    if(catalog.ok) await cache.put('/api/rallyfans/race',catalog);
+  }catch{}
+  const ids=await savedRaceIds();
+  await Promise.all([...new Set(ids)].map(async id=>{
+    const url=`/api/rallyfans/race/${encodeURIComponent(id)}`;
+    try{
+      const response=await fetch(url,{cache:'no-store'});
+      if(!response.ok) return;
+      await cache.put(url,response.clone());
+      const race=await response.json();
+      await prefetchRaceAssets(race);
+    }catch{}
+  }));
+  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+  for(const client of windows) client.postMessage({type:'RFM_PERIODIC_UPDATE'});
 }
 
 self.addEventListener('periodicsync',event=>{
