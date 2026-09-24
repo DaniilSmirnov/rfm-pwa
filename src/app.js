@@ -9,15 +9,14 @@ import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildD
 import { xmlEsc, safeFileName, geoJsonToGpx } from './app/export.js';
 import { startOfLocalDay, raceDateRange, distanceFromTodayDays, raceWithinWeek, pickDefaultRace } from './app/catalog-dates.js';
 import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from './app/geo.js';
-import { stageIdentity } from './app/schedule.js';
-import { subscribedStageKeys, setStageSubscribed, walletStageKeys, setWalletStageAdded } from './app/preferences.js';
-import { setupPwaInstall, isIOSDevice } from './app/pwa.js';
-import { setupPushUi, getPushSubscription, refreshPushUi, setPushStatus, scheduleRaceReminders, scheduleAllSavedReminders, enablePushNotifications } from './app/push-client.js';
-import { syncWalletStage, syncWalletPassesForPackage } from './app/wallet-client.js';
+import { setupPushUi, getPushSubscription, refreshPushUi, setPushStatus, scheduleRaceReminders, scheduleAllSavedReminders } from './app/push-client.js';
 import { FAVORITES_KEY, pointKey, favoritesForPackage, isFavoritePoint, setFavoritePoint, loadCarPoint, saveCarPoint, deleteCarPoint } from './app/local-points.js';
 import { ensurePersistentStorage, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from './app/runtime.js';
 import { renderPointList as renderPointListUi } from './app/point-list.js';
 import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
+import { renderSchedule } from './app/schedule-ui.js';
+import { syncWalletPassesForPackage } from './app/wallet-client.js';
+import { setupPwaInstall } from './app/pwa.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -27,7 +26,6 @@ let catalog = [];
 let selectedPoint = null;
 let compassHeading = null;
 let compassListening = false;
-const WALLET_STAGE_FEATURE_ENABLED=false;
 
 setupPwaInstall();
 setupPushUi();
@@ -157,93 +155,6 @@ function renderPointList(pkg){
       syncFavoriteButton();
     }
   });
-}
-
-function renderSchedule(p){
-  const schedule=asArray(p.original?.schedule);
-  const root=$('scheduleList'); root.innerHTML='';
-  if(!schedule.length){ root.innerHTML='<p class="muted">Расписание отсутствует.</p>'; return; }
-
-  const subscribed=subscribedStageKeys(p);
-  const walletAdded=walletStageKeys(p);
-  const showWallet=WALLET_STAGE_FEATURE_ENABLED && isIOSDevice();
-
-  for(const item of schedule){
-    const events=asArray(item.events);
-    const stage=stageIdentity(item);
-    const isSubscribed=Boolean(stage && subscribed.has(stage.key));
-    const isInWallet=Boolean(stage && walletAdded.has(stage.key));
-
-    const node=document.createElement('article');
-    node.className='schedule-item';
-    node.innerHTML=`${item.date?`<div class="date-header">${esc(item.date)}</div>`:''}
-      <div class="schedule-location-row">
-        <div class="location">${esc(item.location||'Событие')}</div>
-        ${stage?`<div class="stage-actions">
-          <button class="button compact stage-push-toggle ${isSubscribed?'subscribed':''}" data-stage-key="${esc(stage.key)}" type="button" aria-label="${isSubscribed?'Выключить уведомления':'Включить уведомления'}">
-            <span aria-hidden="true">🔔</span><span>${isSubscribed?'Включены':'Уведомлять'}</span>
-          </button>
-          ${showWallet?`<button class="button compact stage-wallet-toggle ${isInWallet?'subscribed':''}" data-wallet-stage-key="${esc(stage.key)}" type="button" aria-label="Добавить ${esc(stage.name)} в Apple Wallet">
-            <img class="rfm-icon" src="/assets/wallet.svg" alt="" /><span>${isInWallet?'Wallet ✓':'Wallet'}</span>
-          </button>`:''}
-        </div>`:''}
-      </div>
-      ${item.coordinates?`<div class="coordinates-line">${esc(item.coordinates)}</div>`:''}
-      <div class="event-list">${events.map(e=>`<div><time>${esc(e.time||'')}</time><span>${esc(e.text||'')}</span></div>`).join('')}</div>`;
-    root.appendChild(node);
-
-    const toggle=node.querySelector('[data-stage-key]');
-    if(toggle && stage){
-      toggle.addEventListener('click',async()=>{
-        toggle.disabled=true;
-        try{
-          const shouldEnable=!subscribedStageKeys(p).has(stage.key);
-
-          if(shouldEnable && !(await getPushSubscription())){
-            await enablePushNotifications();
-            if(!(await getPushSubscription())) return;
-          }
-
-          setStageSubscribed(p,stage.key,shouldEnable);
-          const result=await scheduleRaceReminders(p);
-          setPushStatus(
-            shouldEnable
-              ? `${stage.name}: уведомления включены · за 60, 30 и 15 минут.`
-              : `${stage.name}: уведомления выключены.`,
-            'geo-ok'
-          );
-          if(result.stored===0 && shouldEnable){
-            setPushStatus(`${stage.name}: подписка сохранена, но будущих событий открытия/закрытия пока нет.`);
-          }
-          renderSchedule(p);
-        }catch(e){
-          setPushStatus(`Не удалось изменить подписку ${stage.name}: ${e.message}`,'geo-error');
-          toggle.disabled=false;
-        }
-      });
-    }
-
-    const walletButton=node.querySelector('[data-wallet-stage-key]');
-    if(walletButton && stage){
-      walletButton.addEventListener('click',async()=>{
-        walletButton.disabled=true;
-        try{
-          const data=await syncWalletStage(p,item,stage,{openPass:true});
-          setWalletStageAdded(p,stage.key);
-          setPushStatus(
-            data.updated
-              ? `${stage.name}: карточка Wallet обновлена.`
-              : `${stage.name}: карточка Wallet подготовлена.`,
-            'geo-ok'
-          );
-          renderSchedule(p);
-        }catch(e){
-          setPushStatus(`Wallet · ${stage.name}: ${e.message}`,'geo-error');
-          walletButton.disabled=false;
-        }
-      });
-    }
-  }
 }
 
 async function selectPackage(id){
