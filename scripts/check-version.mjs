@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 const root=resolve(import.meta.dirname,'..');
 const meta=JSON.parse(await readFile(resolve(root,'version.json'),'utf8'));
-if(!/^\d+\.\d+\.\d+$/.test(String(meta.version||''))) throw new Error('Invalid version.json version');
+if(!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(String(meta.version||''))) throw new Error('Invalid version.json version');
 if(!String(meta.codename||'').trim()) throw new Error('Invalid version.json codename');
 
 const expectations={
