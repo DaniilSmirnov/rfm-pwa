@@ -5,7 +5,7 @@ import { normalizePackage } from './normalize.js';
 import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
 import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
-import { downloadOfflineMap, removeOfflineMap, buildDownloadPlan } from './offline-map.js';
+import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan } from './offline-map.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -290,22 +290,136 @@ function raceYearHint(pkg){
   const m=raw.match(/\b(20\d{2})\b/);
   return m?Number(m[1]):new Date().getFullYear();
 }
+
+const RACE_REGION_TIMEZONES=[
+  [/хабаровск/i,'Asia/Vladivostok'],
+  [/пермск/i,'Asia/Yekaterinburg'],
+  [/свердловск/i,'Asia/Yekaterinburg'],
+  [/тюменск/i,'Asia/Yekaterinburg'],
+  [/челябинск/i,'Asia/Yekaterinburg'],
+  [/кировск/i,'Europe/Kirov'],
+  [/карачаево-?черкес/i,'Europe/Moscow'],
+  [/краснодар/i,'Europe/Moscow'],
+  [/карели/i,'Europe/Moscow'],
+  [/ленинград/i,'Europe/Moscow'],
+  [/московск/i,'Europe/Moscow'],
+  [/новгород/i,'Europe/Moscow'],
+  [/псков/i,'Europe/Moscow'],
+  [/татарстан/i,'Europe/Moscow'],
+  [/ростов/i,'Europe/Moscow'],
+  [/ярослав/i,'Europe/Moscow']
+];
+
+function validTimeZone(value){
+  if(!value) return false;
+  try{ new Intl.DateTimeFormat('en',{timeZone:String(value)}).format(new Date()); return true; }
+  catch{ return false; }
+}
+
+function raceTimezone(pkg){
+  const explicit=[
+    pkg?.timezone,
+    pkg?.original?.timezone,
+    pkg?.original?.time_zone,
+    pkg?.original?.timezone_name,
+    pkg?.original?.tz
+  ].find(validTimeZone);
+  if(explicit) return String(explicit);
+
+  const region=String(pkg?.original?.city_race || '');
+  const match=RACE_REGION_TIMEZONES.find(([re])=>re.test(region));
+  if(match) return match[1];
+
+  // Current RallyFans data is Russia-focused and the upstream API does not
+  // expose a timezone field. Moscow time is the safest fallback for unknown regions.
+  return 'Europe/Moscow';
+}
+
+function zonedLocalDate(year,month,day,hour,minute,timeZone){
+  const wall=Date.UTC(year,month-1,day,hour,minute,0,0);
+  let formatter;
+  try{
+    formatter=new Intl.DateTimeFormat('en-CA',{
+      timeZone,
+      year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',second:'2-digit',
+      hourCycle:'h23'
+    });
+  }catch{
+    return null;
+  }
+
+  const partsAt=timestamp=>Object.fromEntries(
+    formatter.formatToParts(new Date(timestamp))
+      .filter(part=>part.type!=='literal')
+      .map(part=>[part.type,part.value])
+  );
+
+  let guess=wall;
+  for(let i=0;i<3;i++){
+    const p=partsAt(guess);
+    const represented=Date.UTC(
+      Number(p.year),Number(p.month)-1,Number(p.day),
+      Number(p.hour),Number(p.minute),Number(p.second),0
+    );
+    const offset=represented-guess;
+    const next=wall-offset;
+    if(next===guess) break;
+    guess=next;
+  }
+
+  const p=partsAt(guess);
+  if(Number(p.year)!==year || Number(p.month)!==month || Number(p.day)!==day ||
+     Number(p.hour)!==hour || Number(p.minute)!==minute) return null;
+  return new Date(guess);
+}
+
+const RUSSIAN_MONTHS={
+  'янв':1,'январ':1,
+  'фев':2,'феврал':2,
+  'мар':3,'март':3,
+  'апр':4,'апрел':4,
+  'май':5,'мая':5,
+  'июн':6,'июнь':6,'июня':6,
+  'июл':7,'июль':7,'июля':7,
+  'авг':8,'август':8,
+  'сен':9,'сент':9,'сентябр':9,
+  'окт':10,'октябр':10,
+  'ноя':11,'ноябр':11,
+  'дек':12,'декабр':12
+};
+
+function textualMonth(value){
+  const normalized=String(value||'').toLowerCase().replace(/ё/g,'е').replace(/[^а-я]/g,'');
+  for(const [prefix,month] of Object.entries(RUSSIAN_MONTHS)){
+    if(normalized.startsWith(prefix)) return month;
+  }
+  return null;
+}
+
 function parseScheduleDateTime(dateText,timeText,pkg){
   const time=String(timeText||'').match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
   if(!time) return null;
+
   const raw=String(dateText||'').trim();
-  let d=raw.match(/\b(\d{1,2})[.\/-](\d{1,2})[.\/-](20\d{2})\b/);
   let day,month,year;
+  let d=raw.match(/\b(\d{1,2})[.\/-](\d{1,2})[.\/-](20\d{2})\b/);
   if(d){
     day=Number(d[1]); month=Number(d[2]); year=Number(d[3]);
-  } else {
+  }else{
     d=raw.match(/\b(\d{1,2})[.\/-](\d{1,2})\b/);
-    if(!d) return null;
-    day=Number(d[1]); month=Number(d[2]); year=raceYearHint(pkg);
+    if(d){
+      day=Number(d[1]); month=Number(d[2]); year=raceYearHint(pkg);
+    }else{
+      d=raw.match(/\b(\d{1,2})\s+([А-Яа-яЁё.]+)/);
+      if(!d) return null;
+      day=Number(d[1]); month=textualMonth(d[2]); year=raceYearHint(pkg);
+      if(!month) return null;
+    }
   }
-  const result=new Date(year,month-1,day,Number(time[1]),Number(time[2]),0,0);
-  if(result.getFullYear()!==year || result.getMonth()!==month-1 || result.getDate()!==day) return null;
-  return result;
+
+  if(day<1 || day>31 || month<1 || month>12) return null;
+  return zonedLocalDate(year,month,day,Number(time[1]),Number(time[2]),raceTimezone(pkg));
 }
 
 const STAGE_PUSH_PREFS_KEY='rfm-stage-push-subscriptions-v1';
@@ -893,6 +1007,51 @@ function mediaSection(title, images, emptyText='Информация появи�
     <div class="collapsible-body">${list.length?`<div class="media-strip">${list.map((name,i)=>`<button class="media-card" data-media-name="${esc(name)}" aria-label="Открыть ${esc(title)} ${i+1}"><img loading="lazy" src="${assetUrl(name)}" alt="${esc(title)}" /></button>`).join('')}</div>`:`<p class="gray-label">${esc(emptyText)}</p>`}</div>
   </details>`;
 }
+const SAFE_RICH_HTML_TAGS=new Set(['p','br','strong','b','em','i','u','s','ul','ol','li','a','h3','h4','blockquote']);
+
+function sanitizeRichHtml(value){
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(`<div>${String(value??'')}</div>`,'text/html');
+  const source=doc.body.firstElementChild;
+  const output=document.createElement('div');
+
+  const copy=(node,parent)=>{
+    if(node.nodeType===Node.TEXT_NODE){
+      parent.appendChild(document.createTextNode(node.nodeValue||''));
+      return;
+    }
+    if(node.nodeType!==Node.ELEMENT_NODE) return;
+
+    const tag=node.tagName.toLowerCase();
+    if(!SAFE_RICH_HTML_TAGS.has(tag)){
+      for(const child of [...node.childNodes]) copy(child,parent);
+      return;
+    }
+
+    const el=document.createElement(tag);
+    if(tag==='a'){
+      const rawHref=String(node.getAttribute('href')||'').trim();
+      if(rawHref){
+        try{
+          const parsed=new URL(rawHref,location.origin);
+          if(['http:','https:','mailto:','tel:'].includes(parsed.protocol)){
+            el.setAttribute('href',parsed.href);
+            if(parsed.protocol==='http:' || parsed.protocol==='https:'){
+              el.setAttribute('target','_blank');
+              el.setAttribute('rel','noopener noreferrer');
+            }
+          }
+        }catch{}
+      }
+    }
+    for(const child of [...node.childNodes]) copy(child,el);
+    parent.appendChild(el);
+  };
+
+  if(source) for(const child of [...source.childNodes]) copy(child,output);
+  return output.innerHTML;
+}
+
 function renderRaceMedia(p){
   const race=p.original||{};
   const crews=[...modernImages(race.lists),...legacyImages(race,['list_crews','list_crews2','list_crews3','list_crews4','list_crews5'])];
@@ -907,7 +1066,7 @@ function renderRaceMedia(p){
     mediaSection('ЗАЯВЛЕННЫЕ ЭКИПАЖИ',crews),
     mediaSection('РЕЗУЛЬТАТЫ',results),
     extra.length?mediaSection('МАТЕРИАЛЫ ГОНКИ',extra):'',
-    `<details class="race-material collapsible-section"><summary><span class="block-title">КАК ЭТО БЫЛО</span><span class="summary-chevron">⌄</span></summary><div class="collapsible-body">${race.how_it_was?`<div class="how-it-was">${race.how_it_was}</div>`:'<p class="gray-label">Информация появится позже :)</p>'}</div></details>`
+    `<details class="race-material collapsible-section"><summary><span class="block-title">КАК ЭТО БЫЛО</span><span class="summary-chevron">⌄</span></summary><div class="collapsible-body">${race.how_it_was?`<div class="how-it-was">${sanitizeRichHtml(race.how_it_was)}</div>`:'<p class="gray-label">Информация появится позже :)</p>'}</div></details>`
   ].join('');
   root.querySelectorAll('[data-media-name]').forEach(btn=>btn.addEventListener('click',()=>openImageModal(btn.dataset.mediaName)));
 }
@@ -920,7 +1079,7 @@ window.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!$('imageModal').hid
 async function selectPackage(id){
   currentPackageId=id; const p=await getPackage(id); if(!p)return;
   $('mapTitle').textContent=p.name;
-  const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:p.id} : null;
+  const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:(p.offlineMap.storageId||p.id)} : null;
   $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}сохранено ${new Date(p.savedAt).toLocaleString()}`;
   try {
     await ensureMapLibre();
@@ -1209,13 +1368,45 @@ function updateOfflineMapUi(p){
 async function handleDownloadMap(){
   if(!currentPackageId) return;
   setMapUiText({disabled:true});
+  let stagedMap=null;
+  let previousMap=null;
+  let packageId=currentPackageId;
   try{
     let p=await getPackage(currentPackageId);
+    packageId=p.id;
+    previousMap=p.offlineMap||null;
     if(navigator.storage?.persist) { try { await navigator.storage.persist(); } catch {} }
-    p.offlineMap=await downloadOfflineMap(p,pr=>{ setMapUiText({button:`Карта ${pr.done}/${pr.total}`,status:`Скачано ${pr.saved} тайлов · ${fmtBytes(pr.bytes)}${pr.failed?` · ошибок ${pr.failed}`:''}`}); });
-    await savePackage(p); await selectPackage(p.id); await refreshList();
-  }catch(e){ const msg=`Не удалось скачать карту: ${e.message}`; setMapUiText({status:msg}); alert(msg); }
-  finally{ const p=await getPackage(currentPackageId); updateOfflineMapUi(p); }
+
+    stagedMap=await downloadOfflineMap(p,pr=>{
+      setMapUiText({
+        button:`Карта ${pr.done}/${pr.total}`,
+        status:`Скачано ${pr.saved} тайлов · ${fmtBytes(pr.bytes)}${pr.failed?` · ошибок ${pr.failed}`:''}`
+      });
+    });
+
+    p.offlineMap=stagedMap;
+    await savePackage(p);
+    stagedMap=null; // The new revision is now the committed active map.
+
+    if(previousMap){
+      try{ await discardOfflineMapRevision(previousMap,p.id); }
+      catch(e){ console.warn('Could not remove previous offline map revision',e); }
+    }
+
+    await selectPackage(p.id);
+    await refreshList();
+  }catch(e){
+    if(stagedMap){
+      try{ await discardOfflineMapRevision(stagedMap); }
+      catch(cleanupError){ console.warn('Could not remove staged offline map revision',cleanupError); }
+    }
+    const msg=`Не удалось скачать карту: ${e.message}`;
+    setMapUiText({status:msg});
+    alert(msg);
+  }finally{
+    const p=await getPackage(packageId);
+    updateOfflineMapUi(p);
+  }
 }
 async function handleDeleteMap(){
   if(!currentPackageId||!confirm('Удалить офлайн-подложку этой гонки?')) return;
