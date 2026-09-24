@@ -140,8 +140,7 @@ async function refreshList() {
 
   const total=pkgs.reduce((s,p)=>s+(p.size||0),0); const mapStats=await getMapStorageStats();
   let persisted=false; try{ persisted=Boolean(await navigator.storage?.persisted?.()); }catch{}
-  const opfsLabel=mapStats.opfsCount?` · OPFS: ${fmtBytes(mapStats.opfsBytes)}`:'';
-  $('storageStats').innerHTML=`<strong>${pkgs.length} гонок</strong><span class="muted">JSON: ${fmtBytes(total)} · карты: ${fmtBytes(mapStats.bytes)} (${mapStats.count} тайлов)${opfsLabel} · persistent: ${persisted?'да':'нет'}</span>`;
+  $('storageStats').innerHTML=`<strong>${pkgs.length} гонок</strong><span class="muted">JSON: ${fmtBytes(total)} · карты: ${fmtBytes(mapStats.bytes)} (${mapStats.count} тайлов) · persistent: ${persisted?'да':'нет'}</span>`;
 
   if (!currentPackageId && visible[0]) selectPackage(visible[0].id);
   renderCatalog();
