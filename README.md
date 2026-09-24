@@ -16,7 +16,9 @@ Build the production artifact with:
 npm run build
 ```
 
-Deploy only the generated `dist/` directory to Cloudflare Pages. The build uses an explicit allowlist and intentionally excludes tests, GitHub metadata, README files, samples and development tooling.
+The build requires Node.js 20.19 or newer. Vite is deliberately introduced before React so build/deploy, Service Worker upgrades and offline compatibility can be validated independently of the UI migration.
+
+Deploy only the generated `dist/` directory to Cloudflare Pages. The client is bundled by Vite into hashed JS/CSS assets. MapLibre/PMTiles remain same-origin vendor assets for now, while the Pages Worker entrypoint and `src/worker/*` stay outside the client bundle. The post-build step generates the Service Worker app-shell precache from the actual `dist/` output and validates that tests, source client modules, GitHub metadata, README files, samples and other development tooling do not leak into production.
 
 For Cloudflare Pages Git integration use:
 
