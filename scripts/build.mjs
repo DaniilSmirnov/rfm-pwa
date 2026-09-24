@@ -55,10 +55,19 @@ async function listFiles(dir,prefix=''){
   return files;
 }
 
+const coreVendorAssets=new Set([
+  'vendor/maplibre-gl/maplibre-gl.mjs',
+  'vendor/maplibre-gl/maplibre-gl-worker.mjs',
+  'vendor/maplibre-gl/maplibre-gl-shared.mjs',
+  'vendor/maplibre-gl/maplibre-gl.css',
+  'vendor/pmtiles/pmtiles.js'
+]);
+
 function shouldPrecache(path){
   if(path==='sw.js' || path==='_worker.js' || path==='version.json') return false;
   if(path.startsWith('.vite/') || path.startsWith('src/worker/')) return false;
   if(path.endsWith('.map')) return false;
+  if(path.startsWith('vendor/')) return coreVendorAssets.has(path);
   return true;
 }
 
