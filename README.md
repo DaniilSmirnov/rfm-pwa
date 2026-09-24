@@ -1,4 +1,4 @@
-# RallyFans Companion v0.5.5
+# RallyFans Companion v0.6.1
 
 Cloudflare Pages build based on v0.3.4.3.
 
@@ -10,9 +10,24 @@ Cloudflare Pages build based on v0.3.4.3.
 - Images open in a fullscreen viewer.
 - Existing offline map, Yandex import, GPS, external navigator buttons and automatic PWA updates are retained.
 
-Deploy the whole directory/ZIP to the same Cloudflare Pages project.
+Build the production artifact with:
 
-Health check: `/api/health` should report `0.5.5`.
+```bash
+npm run build
+```
+
+Deploy only the generated `dist/` directory to Cloudflare Pages. The build uses an explicit allowlist and intentionally excludes tests, GitHub metadata, README files, samples and development tooling.
+
+For Cloudflare Pages Git integration use:
+
+- Build command: `npm run build`
+- Build output directory: `dist`
+- Production branch: `main`
+- Preview branch: `develop`
+
+`wrangler.toml` also pins `pages_build_output_dir = "./dist"` for CLI/config-driven deployments.
+
+Health check: `/api/health` should report `0.6.1`.
 
 
 ## Web Share
@@ -21,7 +36,7 @@ Spectator points can be shared with the system share sheet (`navigator.share`). 
 
 ## Web Push on Cloudflare Pages
 
-The v0.5.5 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
+The v0.6.1 push implementation uses the existing Pages Worker. The first version sends an empty Web Push request; the Service Worker creates the visible RallyFans notification locally. This avoids payload encryption while still validating the full iOS/Android Web Push flow.
 
 Generate a VAPID key pair locally:
 
@@ -93,7 +108,7 @@ For automatic Wallet update delivery, configure `WALLET_PUSH_PROVIDER_URL` (and 
 Send a full broadcast notification to every stored Web Push subscription with the admin token:
 
 ```bash
-curl -X POST https://rallyfansmap.ru/api/push/broadcast \\
+curl -X POST https://pwa-demo-f14.pages.dev/api/push/broadcast \\
   -H "Authorization: Bearer $PUSH_ADMIN_TOKEN" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -111,3 +126,54 @@ curl -X POST https://rallyfansmap.ru/api/push/broadcast \\
 ### Rich offline basemap (0.5.5 Sortovala)
 
 Offline vector tiles are rendered semantically by default instead of as generic geometry. The map now distinguishes road hierarchy, land use/natural areas, water, buildings, rail/transit, boundaries, physical features and POIs. Labels are extracted directly from downloaded vector-tile properties for settlements, roads and refs, POIs, peaks/elevation, water, land features, transit and named buildings, with zoom-aware decluttering. This uses data already present in the downloaded PMTiles and does not require a separate online API.
+
+
+## Architecture and tests
+
+The browser entrypoint is intentionally kept as orchestration rather than a home for every feature. Domain logic lives under `src/app/`:
+
+- `catalog-dates.js` — race date selection/window rules.
+- `schedule.js` — stage parsing, race timezones and reminder generation.
+- `preferences.js` — per-race stage/Wallet preferences.
+- `geo.js` — compass/distance math.
+- `local-points.js` — favourites and saved-car persistence.
+- `export.js` — offline GPX/export helpers.
+- `sanitize.js` — allow-list sanitization for upstream rich HTML.
+- `pwa.js` — installed-vs-browser launch and install UI.
+- `runtime.js` — Service Worker updates, persistent storage and periodic sync.
+- `push-client.js` and `wallet-client.js` — browser-side integrations.
+
+Cloudflare Pages Advanced Mode keeps `_worker.js` as a small router. Server-side code is split under `src/worker/` into HTTP helpers, Web Push/reminders, Wallet, and upstream proxy modules.
+
+Install the test dependencies locally:
+
+```bash
+npm install
+npx playwright install
+```
+
+Run unit tests:
+
+```bash
+npm run test:unit
+```
+
+Run the Playwright UI suite against the local static server managed by Playwright:
+
+```bash
+npm run test:ui
+```
+
+The UI suite runs desktop Chromium, mobile Chromium and iPhone WebKit projects. To test an already deployed Pages preview instead of starting the local server:
+
+```bash
+PLAYWRIGHT_BASE_URL=https://your-preview.pages.dev npm run test:ui
+```
+
+For a faster Chromium-only pass:
+
+```bash
+npm run test:ui:chromium
+```
+
+GitHub Actions runs the Vitest unit suite and the full Playwright suite on pull requests and pushes to `develop` and `main`. Playwright HTML reports are uploaded on every UI run, and failure artifacts are retained for debugging.

@@ -28,18 +28,29 @@ function bufferedBounds(fc){
   const padLon=Math.max(.05,dx*.22), padLat=Math.max(.04,dy*.22);
   return {minLon:b.minLon-padLon,maxLon:b.maxLon+padLon,minLat:b.minLat-padLat,maxLat:b.maxLat+padLat};
 }
-function tilesAtZoom(b,z){
+function tileRange(b,z){
   const n=2**z;
   const x0=Math.max(0,lon2x(b.minLon,z)), x1=Math.min(n-1,lon2x(b.maxLon,z));
   const y0=Math.max(0,lat2y(b.maxLat,z)), y1=Math.min(n-1,lat2y(b.minLat,z));
+  return {x0,x1,y0,y1,count:Math.max(0,x1-x0+1)*Math.max(0,y1-y0+1)};
+}
+function tilesAtZoom(b,z){
+  const {x0,x1,y0,y1}=tileRange(b,z);
   const out=[]; for(let x=x0;x<=x1;x++) for(let y=y0;y<=y1;y++) out.push({z,x,y}); return out;
 }
 export function buildDownloadPlan(fc){
   const bounds=bufferedBounds(fc); if(!bounds) throw new Error('У гонки нет геометрии для определения района карты');
   for(let maxZoom=DESIRED_MAX_ZOOM;maxZoom>=MIN_ZOOM;maxZoom--){
+    let total=0;
+    for(let z=MIN_ZOOM;z<=maxZoom;z++){
+      total+=tileRange(bounds,z).count;
+      if(total>MAX_TILES) break;
+    }
+    if(total>MAX_TILES) continue;
+
     const tiles=[];
     for(let z=MIN_ZOOM;z<=maxZoom;z++) tiles.push(...tilesAtZoom(bounds,z));
-    if(tiles.length<=MAX_TILES) return {bounds,minZoom:MIN_ZOOM,maxZoom,tiles};
+    return {bounds,minZoom:MIN_ZOOM,maxZoom,tiles};
   }
   throw new Error(`Район карты слишком большой для офлайн-загрузки (лимит ${MAX_TILES} тайлов)`);
 }

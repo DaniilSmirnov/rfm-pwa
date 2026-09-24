@@ -1,0 +1,25 @@
+{
+  "name": "rfm-pwa",
+  "private": true,
+  "version": "0.6.1",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "npm run test:unit && npm run test:ui",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:ui": "playwright test",
+    "test:ui:chromium": "playwright test --project=chromium",
+    "test:ui:headed": "playwright test --headed",
+    "test:ui:debug": "playwright test --debug"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "happy-dom": "^18.0.1",
+    "http-server": "^14.1.1",
+    "vitest": "^3.2.4"
+  }
+}
