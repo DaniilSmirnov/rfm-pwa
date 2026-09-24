@@ -1,11 +1,7 @@
 const CACHE='rfm-companion-v__APP_VERSION_CACHE__-__APP_CODENAME_SLUG__';
 const ASSET_CACHE='rfm-race-assets-v1';
 const PERIODIC_CACHE='rfm-periodic-data-v1';
-const SHELL=['/','/index.html','/src/styles.css','/src/app.js','/src/db.js','/src/normalize.js','/src/map.js','/src/rallyfans.js','/src/yandex.js','/src/navigation.js','/src/offline-map.js','/src/terrain-offline.js','/src/app/catalog-dates.js','/src/app/export.js','/src/app/geo.js','/src/app/local-points.js','/src/app/preferences.js','/src/app/push-client.js','/src/app/pwa.js','/src/app/runtime.js','/src/app/sanitize.js','/src/app/schedule.js','/src/app/wallet-client.js','/src/app/race-media.js','/src/app/point-list.js','/src/app/schedule-ui.js','/src/app/rally-pack.js','/src/app/rally-pack-ui.js','/src/app/terrain-controls.js',
-  '/src/app/elevation.js',
-  '/src/app/elevation-ui.js',
-  '/src/app/rally-pack-update.js',
-  '/src/app/rally-pack-update-ui.js','/src/app/telemetry.js','/src/map/style.js','/src/map/terrain.js','/src/map/terrain-control.js','/src/map/viewport-policy.js','/manifest.webmanifest','/icon.svg','/assets/location.svg','/assets/document-copy.svg','/assets/arrow-right.svg','/assets/telegram.svg','/assets/wallet.svg','/vendor/maplibre-gl/maplibre-gl.mjs','/vendor/maplibre-gl/maplibre-gl-worker.mjs','/vendor/maplibre-gl/maplibre-gl-shared.mjs','/vendor/maplibre-gl/maplibre-gl.css','/vendor/pmtiles/pmtiles.js'];
+const SHELL=/*__BUILD_ASSETS__*/[];
 async function precacheFresh(){
   const cache=await caches.open(CACHE);
   await Promise.all(SHELL.map(async url=>{
