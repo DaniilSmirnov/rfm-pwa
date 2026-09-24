@@ -174,11 +174,17 @@ self.addEventListener('backgroundfetchsuccess',event=>{
       if(response?.ok) await cache.put(record.request,response);
     }));
     try{ await event.updateUI({title:'Rally Fans Map · офлайн-материалы готовы'}); }catch{}
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const client of windows) client.postMessage({type:'RFM_BACKGROUND_FETCH',status:'success',id:event.registration.id});
   })());
 });
 
 self.addEventListener('backgroundfetchfail',event=>{
-  try{ event.updateUI({title:'Rally Fans Map · не удалось скачать материалы'}); }catch{}
+  event.waitUntil((async()=>{
+    try{ await event.updateUI({title:'Rally Fans Map · не удалось скачать материалы'}); }catch{}
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const client of windows) client.postMessage({type:'RFM_BACKGROUND_FETCH',status:'failure',id:event.registration.id});
+  })());
 });
 
 self.addEventListener('backgroundfetchclick',event=>{
