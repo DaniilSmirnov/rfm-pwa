@@ -168,10 +168,13 @@ export async function getDeepMapStorageStats(){
 export async function getMapStorageStats(){
   const packages=await getAllPackages();
   const maps=packages.map(pkg=>pkg?.offlineMap).filter(map=>map?.ready);
+  const terrains=packages.map(pkg=>pkg?.terrain).filter(terrain=>terrain?.ready);
   return {
-    count:maps.reduce((sum,map)=>sum+(Number(map.tileCount)||0),0),
-    bytes:maps.reduce((sum,map)=>sum+(Number(map.bytes)||0),0),
+    count:[...maps,...terrains].reduce((sum,item)=>sum+(Number(item.tileCount)||0),0),
+    bytes:[...maps,...terrains].reduce((sum,item)=>sum+(Number(item.bytes)||0),0),
     mapCount:maps.length,
+    terrainCount:terrains.length,
+    terrainBytes:terrains.reduce((sum,item)=>sum+(Number(item.bytes)||0),0),
     source:'metadata'
   };
 }
