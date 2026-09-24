@@ -1215,7 +1215,11 @@ async function selectPackage(id){
     const diag=$('offlineMapDiag');
     if(diag){ diag.hidden=false; diag.textContent=`Карта недоступна: ${e.message}`; }
   }
-  renderMap($('map'),p.geojson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  const carPoint=loadCarPoint();
+  const mapGeoJson=carPoint
+    ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
+    : p.geojson;
+  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,onMapError:(msg)=>{ const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   updateOfflineMapUi(p);
   renderPointList(p);
   renderFavorites(p);
@@ -1481,6 +1485,7 @@ $('saveCarBtn')?.addEventListener('click',()=>{
   navigator.geolocation.getCurrentPosition(pos=>{
     saveCarPoint({lat:pos.coords.latitude,lon:pos.coords.longitude,name:'Машина'});
     renderCarPoint();btn.disabled=false;
+    if(currentPackageId) selectPackage(currentPackageId);
   },err=>{
     if(status) status.textContent=`Не удалось сохранить машину: ${err.message}`;
     btn.disabled=false;
@@ -1495,7 +1500,7 @@ $('carCompassBtn')?.addEventListener('click',async()=>{
 $('carGoogleBtn')?.addEventListener('click',()=>{const pt=loadCarPoint();if(pt) window.location.href=googleMapsDirections(pt);});
 $('carYandexBtn')?.addEventListener('click',()=>{const pt=loadCarPoint();if(pt) openCustomSchemeWithFallback(yandexNavigatorLink(pt),yandexWebFallback(pt));});
 $('carShareBtn')?.addEventListener('click',()=>{const pt=loadCarPoint();if(pt) sharePoint(pt);});
-$('carDeleteBtn')?.addEventListener('click',()=>{deleteCarPoint();renderCarPoint();if(selectedPoint?.name==='Машина'){$('pointActions').hidden=true;selectedPoint=null;}});
+$('carDeleteBtn')?.addEventListener('click',()=>{deleteCarPoint();renderCarPoint();if(selectedPoint?.name==='Машина'||selectedPoint?.name==='🚗 Машина'){$('pointActions').hidden=true;selectedPoint=null;}if(currentPackageId) selectPackage(currentPackageId);});
 $('exportGeoJsonBtn')?.addEventListener('click',async()=>{
   if(!currentPackageId)return;
   const p=await getPackage(currentPackageId);if(!p)return;
@@ -1591,7 +1596,7 @@ for(const id of ['deleteMapBtn','deleteMapBtnTop']) if($(id)) $(id).onclick=hand
 $('catalogSearch').addEventListener('input',renderCatalog);
 $('packageSearch')?.addEventListener('input',refreshList);
 $('refreshCatalogBtn').onclick=loadCatalog;
-$('clearBtn').onclick = async () => { if(!confirm('Удалить все сохранённые гонки, карты и изображения?'))return; await deleteAllPackages(); await clearMapTiles(); if('caches' in window) await caches.delete('rfm-race-assets-v1'); currentPackageId=null; $('raceDetails').hidden=true; $('map').innerHTML='<div class="empty">Офлайн-данные удалены</div>'; await refreshList(); };
+$('clearBtn').onclick = async () => { if(!confirm('Удалить все сохранённые гонки, карты, изображения и избранные точки?'))return; localStorage.removeItem(FAVORITES_KEY); await deleteAllPackages(); await clearMapTiles(); if('caches' in window) await caches.delete('rfm-race-assets-v1'); currentPackageId=null; $('raceDetails').hidden=true; $('map').innerHTML='<div class="empty">Офлайн-данные удалены</div>'; await refreshList(); };
 async function updateGeoStatus(text, cls='') { const el=$('geoStatus'); if(el){ el.textContent=text; el.className=`muted small ${cls}`; } }
 
 async function requestLocation() {
