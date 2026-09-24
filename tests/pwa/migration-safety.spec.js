@@ -196,6 +196,136 @@ test.describe('PWA migration safety',()=>{
     expect(requests.some(url=>url.includes('/api/basemap.pmtiles'))).toBe(false);
   });
 
+  test('cached Rally Pack materials remain available after an offline restart',async({page,context})=>{
+    await page.goto('/');
+    await waitForAppWorker(page);
+    await seedSavedRace(page,{withAssets:true});
+
+    await page.close();
+    await context.setOffline(true);
+
+    const reopened=await context.newPage();
+    await reopened.goto('/',{waitUntil:'domcontentloaded'});
+    await expect(reopened.locator('#raceDetails')).toBeVisible();
+
+    const hero=await reopened.locator('#raceImage').evaluate(img=>({
+      hidden:img.hidden,
+      complete:img.complete,
+      naturalWidth:img.naturalWidth
+    }));
+    expect(hero.hidden).toBe(false);
+    expect(hero.complete).toBe(true);
+    expect(hero.naturalWidth).toBeGreaterThan(0);
+
+    const organizer=reopened.locator('#raceMedia details').filter({hasText:'КАРТА ОРГАНИЗАТОРА'});
+    await organizer.locator('summary').click();
+    const mediaImage=organizer.locator('img').first();
+    await expect(mediaImage).toBeVisible();
+    await expect.poll(()=>mediaImage.evaluate(img=>img.complete && img.naturalWidth>0)).toBe(true);
+
+    const cached=await reopened.evaluate(async()=>{
+      const cache=await caches.open('rfm-race-assets-v1');
+      return Boolean(await cache.match('/api/rallyfans/public/organizer-map.svg'));
+    });
+    expect(cached).toBe(true);
+  });
+
+  test('offline export still produces Rally Pack GeoJSON and GPX files',async({page,context})=>{
+    await page.goto('/');
+    await waitForAppWorker(page);
+    await seedSavedRace(page);
+
+    await page.close();
+    await context.setOffline(true);
+
+    const reopened=await context.newPage();
+    await reopened.goto('/',{waitUntil:'domcontentloaded'});
+
+    const geoDownloadPromise=reopened.waitForEvent('download');
+    await reopened.locator('#exportGeoJsonBtn').click();
+    const geoDownload=await geoDownloadPromise;
+    expect(geoDownload.suggestedFilename()).toMatch(/\.geojson$/);
+    const geoStream=await geoDownload.createReadStream();
+    const geoChunks=[];
+    for await(const chunk of geoStream) geoChunks.push(chunk);
+    const geojson=JSON.parse(Buffer.concat(geoChunks).toString('utf8'));
+    expect(geojson.features.some(feature=>feature?.properties?.name==='Offline spectator point')).toBe(true);
+
+    const gpxDownloadPromise=reopened.waitForEvent('download');
+    await reopened.locator('#exportGpxBtn').click();
+    const gpxDownload=await gpxDownloadPromise;
+    expect(gpxDownload.suggestedFilename()).toMatch(/\.gpx$/);
+    const gpxStream=await gpxDownload.createReadStream();
+    const gpxChunks=[];
+    for await(const chunk of gpxStream) gpxChunks.push(chunk);
+    const gpx=Buffer.concat(gpxChunks).toString('utf8');
+    expect(gpx).toContain('Offline spectator point');
+    expect(gpx).toContain('<gpx');
+  });
+
+  test('switching from online to offline keeps the opened saved race usable without reload',async({page,context})=>{
+    await page.goto('/');
+    await waitForAppWorker(page);
+    await seedSavedRace(page);
+    await page.reload({waitUntil:'domcontentloaded'});
+
+    await expect(page.locator('#raceTitle')).toHaveText('Offline Migration Rally');
+    await expect(page.locator('#networkBadge')).toHaveText('онлайн');
+
+    await context.setOffline(true);
+
+    await expect(page.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(page.locator('#raceDetails')).toBeVisible();
+    await expect(page.locator('#pointList')).toContainText('Offline spectator point');
+    await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
+
+    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
+    await page.locator('.point-row').filter({hasText:'Offline spectator point'}).locator('.point-row-copy').click();
+    await expect(page.locator('#pointActions')).toBeVisible();
+    await expect(page.locator('#pointCoords')).toContainText('61.700000');
+  });
+
+  test('saved offline data can be deleted while the device has no network',async({page,context})=>{
+    await page.goto('/');
+    await waitForAppWorker(page);
+    await seedSavedRace(page,{offlineMap:true});
+
+    await page.close();
+    await context.setOffline(true);
+    const reopened=await context.newPage();
+    await reopened.goto('/',{waitUntil:'domcontentloaded'});
+
+    await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
+    reopened.once('dialog',dialog=>dialog.accept());
+    await reopened.locator('#clearBtn').click();
+
+    await expect(reopened.locator('#packageList')).toContainText('Пока ничего не скачано');
+    await expect(reopened.locator('#raceDetails')).toBeHidden();
+
+    const state=await reopened.evaluate(async()=>{
+      const db=await new Promise((resolve,reject)=>{
+        const request=indexedDB.open('rallyfans-offline',2);
+        request.onsuccess=()=>resolve(request.result);
+        request.onerror=()=>reject(request.error);
+      });
+      return new Promise((resolve,reject)=>{
+        const tx=db.transaction(['packages','maptiles'],'readonly');
+        const packages=tx.objectStore('packages').getAll();
+        const tiles=tx.objectStore('maptiles').getAll();
+        tx.oncomplete=()=>resolve({
+          packages:packages.result?.length||0,
+          tiles:tiles.result?.length||0,
+          favorites:localStorage.getItem('rfm-favorites')
+        });
+        tx.onerror=()=>reject(tx.error);
+      });
+    });
+
+    expect(state.packages).toBe(0);
+    expect(state.tiles).toBe(0);
+    expect(state.favorites).toBeNull();
+  });
+
   test('a newly installed service worker takes control of an already open client',async({page})=>{
     await page.goto('/migration-harness.html');
     const first=await registerHarnessWorker(page,'/sw-upgrade-v1.js');
