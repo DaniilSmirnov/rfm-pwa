@@ -134,7 +134,8 @@ export async function installAppMocks(page,options={}){
       static now(){return fixedNow;}
     }
     window.Date=FixedDate;
-    try{Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>online});}catch{}
+    window.__rfmTestOnline=online;
+    try{Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>window.__rfmTestOnline});}catch{}
     const clipboard={writeText:async text=>{window.__copied=text;}};
     try{Object.defineProperty(navigator,'clipboard',{configurable:true,value:clipboard});}
     catch{try{navigator.clipboard.writeText=clipboard.writeText;}catch{}}
