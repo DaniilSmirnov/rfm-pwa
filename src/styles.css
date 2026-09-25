@@ -313,3 +313,4 @@ html[data-pwa-installed="true"] .pwa-install-prompt{display:none!important}
   .crew-results-table th{background:#1d2127}
   .crew-results-table td small,.crew-results-empty,.crew-results-more{color:#9aa0a9}
 }
+.map-route-direction{color:#fff;font-size:17px;line-height:1;text-shadow:0 1px 3px #111,0 0 4px #111;pointer-events:none;will-change:transform}

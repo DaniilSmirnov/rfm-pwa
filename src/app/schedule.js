@@ -1,3 +1,5 @@
+import { distanceMeters } from './geo.js';
+
 const asArray = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
 
 export function raceYearHint(pkg){
@@ -369,6 +371,32 @@ export function findStageDescriptorByFeature(descriptors,feature){
     if(score>=0 && (!best || score>best.score)) best={stage,score};
   }
   return best?.stage||null;
+}
+
+export function distanceAlongStage(stage,point){
+  const geometry=stage?.geometry;
+  if(!geometry||!Number.isFinite(point?.lat)||!Number.isFinite(point?.lon)) return null;
+  const lines=geometry.type==='LineString'?[geometry.coordinates]
+    :geometry.type==='MultiLineString'?geometry.coordinates:[];
+  let total=0,best=null;
+  for(const line of lines){
+    for(let i=1;i<(line||[]).length;i++){
+      const a=line[i-1],b=line[i];
+      if(!Array.isArray(a)||!Array.isArray(b)||![...a,...b].every(Number.isFinite)) continue;
+      const segment=distanceMeters({lat:a[1],lon:a[0]},{lat:b[1],lon:b[0]});
+      const meanLat=(a[1]+b[1]+point.lat)/3*Math.PI/180;
+      const sx=(b[0]-a[0])*Math.cos(meanLat),sy=b[1]-a[1];
+      const px=(point.lon-a[0])*Math.cos(meanLat),py=point.lat-a[1];
+      const denom=sx*sx+sy*sy;
+      const t=denom?Math.max(0,Math.min(1,(px*sx+py*sy)/denom)):0;
+      const projected={lat:a[1]+(b[1]-a[1])*t,lon:a[0]+(b[0]-a[0])*t};
+      const offset=distanceMeters(point,projected);
+      if(!best||offset<best.offset) best={offset,progress:total+segment*t};
+      total+=segment;
+    }
+  }
+  if(!best||best.offset>250||total<=0) return null;
+  return {fromStart:best.progress,toFinish:Math.max(0,total-best.progress),total,offset:best.offset};
 }
 
 export function reminderLeadLabel(minutes){

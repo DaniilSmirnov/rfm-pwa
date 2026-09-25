@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, installAppMocks, raceFixture, secondRace, downloadFixtureRace } from './helpers.js';
+import { openApp, installAppMocks, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
 
 test.describe('offline, import and failure states',()=>{
   test('shows API health failure',async({page})=>{
@@ -66,7 +66,7 @@ test.describe('offline, import and failure states',()=>{
 
   test('saved race survives page reload through IndexedDB',async({page})=>{
     await openApp(page);
-    await downloadFixtureRace(page);
+    await seedFixtureRace(page);
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('#packageList')).toContainText(raceFixture.name);
@@ -75,7 +75,8 @@ test.describe('offline, import and failure states',()=>{
   test('offline map can be downloaded with PMTiles stub',async({page,browserName})=>{
     test.skip(browserName!=='chromium','OPFS/IndexedDB map download is covered in Chromium UI run');
     await openApp(page);
-    await downloadFixtureRace(page);
+    await seedFixtureRace(page);
+    await page.getByRole('button',{name:'Карта'}).click();
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова',{timeout:20_000});
     await expect(page.locator('#deleteMapBtn')).toBeVisible();
@@ -84,7 +85,8 @@ test.describe('offline, import and failure states',()=>{
   test('downloaded offline map can be deleted',async({page,browserName})=>{
     test.skip(browserName!=='chromium','OPFS/IndexedDB map download is covered in Chromium UI run');
     await openApp(page);
-    await downloadFixtureRace(page);
+    await seedFixtureRace(page);
+    await page.getByRole('button',{name:'Карта'}).click();
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова',{timeout:20_000});
     page.once('dialog',dialog=>dialog.accept());
@@ -95,9 +97,12 @@ test.describe('offline, import and failure states',()=>{
   test('failed offline map update keeps the previous revision active',async({page,browserName})=>{
     test.skip(browserName!=='chromium','OPFS/IndexedDB map revision behavior is covered in Chromium UI run');
     await openApp(page);
-    await downloadFixtureRace(page);
+    await seedFixtureRace(page);
+    await page.getByRole('button',{name:'Карта'}).click();
+    await page.locator('#downloadMapBtn').click();
+    await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова',{timeout:20_000});
     const before=await page.evaluate(()=>new Promise((resolve,reject)=>{
-      const request=indexedDB.open('rallyfans-offline',2);
+      const request=indexedDB.open('rallyfans-offline',3);
       request.onerror=()=>reject(request.error);
       request.onsuccess=()=>{
         const db=request.result;
@@ -114,7 +119,7 @@ test.describe('offline, import and failure states',()=>{
     await (await dialog).dismiss();
     await expect(page.locator('#offlineMapStatus')).toContainText('Не удалось скачать карту');
     const after=await page.evaluate(()=>new Promise((resolve,reject)=>{
-      const request=indexedDB.open('rallyfans-offline',2);
+      const request=indexedDB.open('rallyfans-offline',3);
       request.onerror=()=>reject(request.error);
       request.onsuccess=()=>{
         const db=request.result;

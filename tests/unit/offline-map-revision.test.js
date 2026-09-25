@@ -28,7 +28,6 @@ function pkg(){
 }
 
 function installPmtiles({failAlways=false}={}){
-  let calls=0;
   window.pmtiles={
     PMTiles:class{
       async getHeader(){return {tileType:1};}
@@ -36,7 +35,6 @@ function installPmtiles({failAlways=false}={}){
         return {name:'test-map',version:'1',vector_layers:[{id:'roads',fields:{kind:'String'}}]};
       }
       async getZxy(){
-        calls++;
         if(failAlways) throw new Error('network interrupted');
         return {data:new Uint8Array([1,2,3,4]).buffer};
       }

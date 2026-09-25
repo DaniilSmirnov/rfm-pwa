@@ -1,6 +1,6 @@
 import { geometryBounds } from './normalize.js';
 import { saveMapTile, getMapTile, deleteMapTiles } from './db.js';
-import { downloadTileRevision } from './tile-revision-downloader.js';
+import { downloadTileRevision, normalizeTileData } from './tile-revision-downloader.js';
 import { fetchWithTimeout } from './app/net.js';
 
 const TERRAIN_URL='/api/terrain';
@@ -85,7 +85,7 @@ export async function downloadTerrain(pkg,onProgress=()=>{}){
       onProgress,
       maxZoom:plan.maxZoom
     });
-    const {saved,bytes,failed}=stats;
+    const {saved,bytes}=stats;
 
     return {
       ready:true,

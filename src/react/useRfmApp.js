@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from '../db.js';
 import { normalizePackage } from '../normalize.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, enrichPackageWithYandex } from '../rallyfans.js';
-import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from '../navigation.js';
+import { normalizePoint, yandexWebFallback, coordinateText } from '../navigation.js';
 import { buildDownloadPlan, downloadOfflineMap, discardOfflineMapRevision } from '../offline-map.js';
 import { buildTerrainDownloadPlan } from '../terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from '../app/export.js';
-import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from '../app/geo.js';
+import { distanceMeters, bearingDegrees, compassDirection } from '../app/geo.js';
 import { getPushSubscription, refreshPushUi, scheduleRaceReminders, scheduleAllSavedReminders, setupPushUi } from '../app/push-client.js';
 import { FAVORITES_KEY, favoritesForPackage, isFavoritePoint, setFavoritePoint, loadCarPoint, saveCarPoint, deleteCarPoint } from '../app/local-points.js';
 import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from '../app/runtime.js';
@@ -30,6 +30,8 @@ export { formatBytes };
 export async function ensureMapLibre(){
   if(window.maplibregl) return window.maplibregl;
   if(!mapLibrePromise){
+    // This absolute URL is served by the app shell and isn't a source module.
+    // eslint-disable-next-line import/no-unresolved
     mapLibrePromise=import('/vendor/maplibre-gl/maplibre-gl.mjs').then(module=>{
       module.setWorkerUrl('/vendor/maplibre-gl/maplibre-gl-worker.mjs');
       window.maplibregl=module;

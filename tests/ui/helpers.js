@@ -224,7 +224,7 @@ export async function openApp(page,options={}){
 
 export async function seedFixtureRace(page){
   await page.getByRole('button',{name:'Ещё'}).click();
-  await page.evaluate(async race=>{
+  await page.evaluate(async ({race,results})=>{
     const request=indexedDB.open('rallyfans-offline',3);
     request.onupgradeneeded=()=>{
       const db=request.result;
@@ -237,10 +237,12 @@ export async function seedFixtureRace(page){
       const [lat,lon]=String(point.coordinates||'').split(',').map(Number);
       return {type:'Feature',properties:{kind:'race-point',name:point.name},geometry:{type:'Point',coordinates:[lon,lat]}};
     }).filter(feature=>feature.geometry.coordinates.every(Number.isFinite));
-    const pkg={id:`race-${race.id}`,raceId:race.id,name:race.name,source:`api.rallyfansmap.ru/race/${race.id}`,savedAt:new Date().toISOString(),size:JSON.stringify(race).length,original:race,geojson:{type:'FeatureCollection',features},assetNames:[],summary:{category:race.category_race||'',stage:race.stage_race||'',status:race.status_race||'',dates:race.date_race||race.dates||'',city:race.city_race_details||race.city_race||'',totalDistance:race.total_distance||'',combatKm:race.combat_km||'',days:race.days_race||''},yandexMapEmbed:null};
+    features.push({type:'Feature',properties:{kind:'race-route',name:'SS 1'},geometry:{type:'LineString',coordinates:[[30.690,61.700],[30.700,61.705]]}});
+    const pkg={id:`race-${race.id}`,raceId:race.id,asmgRaceId:55,name:race.name,source:`api.rallyfansmap.ru/race/${race.id}`,savedAt:new Date().toISOString(),size:JSON.stringify(race).length,original:race,geojson:{type:'FeatureCollection',features},crewResults:{eventId:String(race.id),tournamentTitle:results.tournamentTitle,updatedAt:new Date().toISOString(),eventResults:results.eventResults},assetNames:[],summary:{category:race.category_race||'',stage:race.stage_race||'',status:race.status_race||'',dates:race.date_race||race.dates||'',city:race.city_race_details||race.city_race||'',totalDistance:race.total_distance||'',combatKm:race.combat_km||'',days:race.days_race||''},yandexMapEmbed:null};
     await new Promise((resolve,reject)=>{const tx=db.transaction('packages','readwrite');tx.objectStore('packages').put(pkg);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
     db.close();
     window.dispatchEvent(new Event('rfm:refresh-local-data'));
-  },raceFixture);
+  },{race:raceFixture,results:asmgResultsFixture});
   await page.locator('#raceDetails').waitFor({state:'visible'});
+  await page.waitForFunction(()=>Boolean(document.querySelector('#crewResultsOpen')&&!document.querySelector('#crewResultsOpen').hidden));
 }

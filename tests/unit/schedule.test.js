@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   raceYearHint, validTimeZone, raceTimezone, textualMonth, parseScheduleDateTime,
   normalizeStageKey, stageIdentity, parseCoordinatePair, pointCoordinate,
-  stageFeatureMatches, stageFeatureScore, matchStageFeature, buildStageDescriptors, findStageDescriptorByFeature,
+  stageFeatureMatches, stageFeatureScore, matchStageFeature, buildStageDescriptors, findStageDescriptorByFeature, distanceAlongStage,
   findStageLocations, classifyStageScheduleEvent, buildRaceReminders
 } from '../../src/app/schedule.js';
 
@@ -102,6 +102,19 @@ describe('stage helpers',()=>{
   it('derives stage ends from route geometry',()=>{
     const p=makePkg({geojson:{features:[{properties:{name:'СУ 5'},geometry:{type:'LineString',coordinates:[[30,60],[31,61]]}}]}});
     expect(findStageLocations(p,{location:'СУ 5'}, {name:'СУ 5',key:'су-5'})).toEqual({start:{lat:60,lon:30},finish:{lat:61,lon:31}});
+  });
+
+  it('calculates a point distance from the start and to the finish of an SS',()=>{
+    const stage={geometry:{type:'LineString',coordinates:[[30,60],[30.02,60]]}};
+    const result=distanceAlongStage(stage,{lat:60.0001,lon:30.005});
+    expect(result.fromStart).toBeGreaterThan(270);
+    expect(result.fromStart).toBeLessThan(290);
+    expect(result.toFinish).toBeGreaterThan(820);
+    expect(result.toFinish).toBeLessThan(850);
+  });
+
+  it('does not assign a point far from a stage route',()=>{
+    expect(distanceAlongStage({geometry:{type:'LineString',coordinates:[[30,60],[30.02,60]]}},{lat:61,lon:30.01})).toBeNull();
   });
 
   it('classifies road closure',()=>expect(classifyStageScheduleEvent({location:'СУ 3'},{text:'Закрытие дороги'})?.kind).toBe('close'));
