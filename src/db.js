@@ -3,6 +3,21 @@ const PACKAGE_STORE = 'packages';
 const TILE_STORE = 'maptiles';
 const VERSION = 2;
 const OPFS_TILE_ROOT = 'rfm-maptiles';
+let opfsRootPromise=null;
+const opfsRaceDirs=new Map();
+const opfsTileDirs=new Map();
+
+function clearOpfsHandleCache(raceId=null){
+  if(raceId==null){
+    opfsRootPromise=null;
+    opfsRaceDirs.clear();
+    opfsTileDirs.clear();
+    return;
+  }
+  const prefix=`${safeRaceId(raceId)}:`;
+  opfsRaceDirs.delete(String(raceId));
+  for(const key of [...opfsTileDirs.keys()]) if(key.startsWith(prefix)) opfsTileDirs.delete(key);
+}
 
 export function openDb() {
   return new Promise((resolve, reject) => {
@@ -46,20 +61,42 @@ function opfsSupported(){ return Boolean(navigator.storage?.getDirectory); }
 function safeRaceId(value){ return encodeURIComponent(String(value)).replace(/%/g,'_'); }
 async function opfsTileRoot(create=true){
   if(!opfsSupported()) return null;
-  const root=await navigator.storage.getDirectory();
-  return root.getDirectoryHandle(OPFS_TILE_ROOT,{create});
+  if(create && opfsRootPromise) return opfsRootPromise;
+  const load=async()=>{
+    const root=await navigator.storage.getDirectory();
+    return root.getDirectoryHandle(OPFS_TILE_ROOT,{create});
+  };
+  if(!create) return load();
+  opfsRootPromise=load().catch(error=>{opfsRootPromise=null;throw error;});
+  return opfsRootPromise;
 }
 async function opfsRaceDir(raceId,create=true){
-  const root=await opfsTileRoot(create);
-  if(!root) return null;
-  return root.getDirectoryHandle(safeRaceId(raceId),{create});
+  const key=String(raceId);
+  if(create && opfsRaceDirs.has(key)) return opfsRaceDirs.get(key);
+  const load=async()=>{
+    const root=await opfsTileRoot(create);
+    if(!root) return null;
+    return root.getDirectoryHandle(safeRaceId(raceId),{create});
+  };
+  if(!create) return load();
+  const promise=load().catch(error=>{opfsRaceDirs.delete(key);throw error;});
+  opfsRaceDirs.set(key,promise);
+  return promise;
 }
 async function opfsTileDir(raceId,z,x,create=true){
-  let dir=await opfsRaceDir(raceId,create);
-  if(!dir) return null;
-  dir=await dir.getDirectoryHandle(String(z),{create});
-  dir=await dir.getDirectoryHandle(String(x),{create});
-  return dir;
+  const key=`${safeRaceId(raceId)}:${z}:${x}`;
+  if(create && opfsTileDirs.has(key)) return opfsTileDirs.get(key);
+  const load=async()=>{
+    let dir=await opfsRaceDir(raceId,create);
+    if(!dir) return null;
+    dir=await dir.getDirectoryHandle(String(z),{create});
+    dir=await dir.getDirectoryHandle(String(x),{create});
+    return dir;
+  };
+  if(!create) return load();
+  const promise=load().catch(error=>{opfsTileDirs.delete(key);throw error;});
+  opfsTileDirs.set(key,promise);
+  return promise;
 }
 async function writeOpfsTile(raceId,z,x,y,data){
   const dir=await opfsTileDir(raceId,z,x,true);
@@ -111,6 +148,7 @@ export async function deleteMapTiles(raceId){
     try{
       const root=await opfsTileRoot(false);
       await root.removeEntry(safeRaceId(raceId),{recursive:true});
+      clearOpfsHandleCache(raceId);
     }catch(e){ if(e?.name!=='NotFoundError') console.warn('Could not clear OPFS race tiles',e); }
   }
   await deleteLegacyMapTiles(raceId);
@@ -120,6 +158,7 @@ export async function clearMapTiles(){
     try{
       const root=await navigator.storage.getDirectory();
       await root.removeEntry(OPFS_TILE_ROOT,{recursive:true});
+      clearOpfsHandleCache();
     }catch(e){ if(e?.name!=='NotFoundError') console.warn('Could not clear OPFS tiles',e); }
   }
   return withStore(TILE_STORE,'readwrite',s=>s.clear());
