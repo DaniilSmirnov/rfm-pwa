@@ -5,6 +5,16 @@ import { isIOSDevice, isStandalonePwa, syncInstallUi, requestPwaInstall } from '
 
 const $=id=>document.getElementById(id);
 
+async function fetchWithTimeout(url,options={},timeoutMs=5000){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    return await fetch(url,{...options,signal:controller.signal});
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
 export function base64UrlToUint8Array(value) {
   const padding='='.repeat((4-value.length%4)%4);
   const base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/');
@@ -73,11 +83,11 @@ export async function scheduleRaceReminders(pkg){
   const raceId=String(pkg.raceId ?? pkg.id ?? '').trim();
   if(!raceId) return {stored:0,skipped:true};
   const reminders=buildRaceReminders(pkg,subscribedStageKeys(pkg));
-  const res=await fetch('/api/push/schedule',{
+  const res=await fetchWithTimeout('/api/push/schedule',{
     method:'POST',
     headers:{'content-type':'application/json'},
     body:JSON.stringify({subscription:subscription.toJSON(),raceId,reminders})
-  });
+  },5000);
   const data=await res.json().catch(()=>({}));
   if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось запланировать напоминания');
   return {stored:Number(data.stored)||0,skipped:false};
