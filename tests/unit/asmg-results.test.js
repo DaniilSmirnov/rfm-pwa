@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseAsmgResultsHtml } from '../../src/worker/asmg.js';
-import { crewResultViews, overallCrewResults, sortCrewResults, visibleCrewResults } from '../../src/app/crew-results.js';
+import { crewResultClasses, crewResultViews, filterCrewResultsByClass, overallCrewResults, sortCrewResults, visibleCrewResults } from '../../src/app/crew-results.js';
 
 function flightPage(data){
   const chunk=`1:${JSON.stringify(data)}`;
@@ -33,10 +33,14 @@ describe('ASMG results adapter',()=>{
   });
 
   it('shows three leading crews by default and filters the rest by crew details',()=>{
-    const results=[1,2,3,4].map((number,index)=>({crew:{number,car:`Car ${number}`,pilot:{firstName:'Driver',lastName:`Name${number}`}}}));
+    const results=[1,2,3,4].map((number,index)=>({crew:{number,car:`Car ${number}`,pilot:{firstName:'Driver',lastName:`Name${number}`}},discipline:{name:number===4?'R5':'Абсолют'}}));
     expect(visibleCrewResults(results)).toEqual(results.slice(0,3));
     expect(visibleCrewResults(results,'4')).toEqual([results[3]]);
     expect(visibleCrewResults(results,'car 2')).toEqual([results[1]]);
+    expect(crewResultClasses(results)).toEqual(['Абсолют','R5']);
+    expect(filterCrewResultsByClass(results,'R5')).toEqual([results[3]]);
+    expect(visibleCrewResults(results,'',{className:'Абсолют',limitToTopThree:false})).toEqual(results.slice(0,3));
+    expect(visibleCrewResults(results,'',{limitToTopThree:false})).toEqual(results);
   });
 
   it('keeps retired crews after finishers when assigning places',()=>{
