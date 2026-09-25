@@ -14,7 +14,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const asArray=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[]);
 const WALLET_STAGE_FEATURE_ENABLED=false;
 
-export function renderSchedule(pkg){
+export function renderSchedule(pkg,{selectedStageKey=null,onStageSelect}={}){
   const schedule=asArray(pkg.original?.schedule);
   const root=$('scheduleList');
   root.innerHTML='';
@@ -34,7 +34,13 @@ export function renderSchedule(pkg){
     const isInWallet=Boolean(stage&&walletAdded.has(stage.key));
 
     const node=document.createElement('article');
-    node.className='schedule-item';
+    node.className=`schedule-item${stage&&selectedStageKey===stage.key?' selected-stage':''}`;
+    if(stage){
+      node.dataset.stageRow=stage.key;
+      node.tabIndex=0;
+      node.setAttribute('role','button');
+      node.setAttribute('aria-label',`Открыть ${stage.name} на карте`);
+    }
     node.innerHTML=`${item.date?`<div class="date-header">${esc(item.date)}</div>`:''}
       <div class="schedule-location-row">
         <div class="location">${esc(item.location||'Событие')}</div>
@@ -51,9 +57,18 @@ export function renderSchedule(pkg){
       <div class="event-list">${events.map(e=>`<div><time>${esc(e.time||'')}</time><span>${esc(e.text||'')}</span></div>`).join('')}</div>`;
     root.appendChild(node);
 
+    if(stage&&onStageSelect){
+      const select=()=>onStageSelect(stage.key,{source:'schedule'});
+      node.addEventListener('click',select);
+      node.addEventListener('keydown',event=>{
+        if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}
+      });
+    }
+
     const toggle=node.querySelector('[data-stage-key]');
     if(toggle&&stage){
-      toggle.addEventListener('click',async()=>{
+      toggle.addEventListener('click',async event=>{
+        event.stopPropagation();
         toggle.disabled=true;
         try{
           const shouldEnable=!subscribedStageKeys(pkg).has(stage.key);
@@ -72,7 +87,7 @@ export function renderSchedule(pkg){
           if(result.stored===0&&shouldEnable){
             setPushStatus(`${stage.name}: подписка сохранена, но будущих событий открытия/закрытия пока нет.`);
           }
-          renderSchedule(pkg);
+          renderSchedule(pkg,{selectedStageKey,onStageSelect});
         }catch(error){
           setPushStatus(`Не удалось изменить подписку ${stage.name}: ${error.message}`,'geo-error');
           toggle.disabled=false;
@@ -82,7 +97,8 @@ export function renderSchedule(pkg){
 
     const walletButton=node.querySelector('[data-wallet-stage-key]');
     if(walletButton&&stage){
-      walletButton.addEventListener('click',async()=>{
+      walletButton.addEventListener('click',async event=>{
+        event.stopPropagation();
         walletButton.disabled=true;
         try{
           const data=await syncWalletStage(pkg,item,stage,{openPass:true});
@@ -93,7 +109,7 @@ export function renderSchedule(pkg){
               : `${stage.name}: карточка Wallet подготовлена.`,
             'geo-ok'
           );
-          renderSchedule(pkg);
+          renderSchedule(pkg,{selectedStageKey,onStageSelect});
         }catch(error){
           setPushStatus(`Wallet · ${stage.name}: ${error.message}`,'geo-error');
           walletButton.disabled=false;
