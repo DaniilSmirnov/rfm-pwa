@@ -11,6 +11,7 @@ import { pointFeatures, pointFromFeature } from '../app/point-list.js';
 import { isFavoritePoint } from '../app/local-points.js';
 import { renderSchedule } from '../app/schedule-ui.js';
 import { renderRaceMedia } from '../app/race-media.js';
+import { renderCrewResults } from '../app/crew-results.js';
 import { syncWalletPassesForPackage } from '../app/wallet-client.js';
 import { showPointElevation, showRouteElevationProfile } from '../app/elevation-ui.js';
 import { reportClientError } from '../app/telemetry.js';
@@ -255,10 +256,12 @@ export default function App(){
     }
     if(pkg){
       renderSchedule(pkg);
+      renderCrewResults(pkg).catch(error=>console.warn('Crew results UI failed',error));
       renderRaceMedia(pkg);
       syncWalletPassesForPackage(pkg).catch(e=>console.warn('Wallet pass refresh failed',e));
     }else{
       const schedule=document.getElementById('scheduleList');if(schedule)schedule.innerHTML='';
+      const crewResults=document.getElementById('crewResults');if(crewResults)crewResults.innerHTML='';
       const media=document.getElementById('raceMedia');if(media)media.innerHTML='';
     }
   },[pkg?.id,pkg?.savedAt]);

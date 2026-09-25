@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync } from '../../src/app/runtime.js';
+import { ensurePersistentStorage, requestCrewResultsBackgroundRefresh, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync } from '../../src/app/runtime.js';
 
 const originalStorageDescriptor=Object.getOwnPropertyDescriptor(navigator,'storage');
 const originalPermissionsDescriptor=Object.getOwnPropertyDescriptor(navigator,'permissions');
@@ -51,13 +51,14 @@ describe('periodic sync runtime',()=>{
   it('registers refresh tag when permission is granted',async()=>{
     setNavigator('permissions',{query:async()=>({state:'granted'})});
     const register=vi.fn(async()=>{});
-    expect(await setupPeriodicBackgroundSync({periodicSync:{register}})).toEqual({supported:true,registered:true});
+    expect(await setupPeriodicBackgroundSync({periodicSync:{register}})).toEqual({supported:true,registered:true,crewResultsRegistered:true});
     expect(register).toHaveBeenCalledWith('rfm-refresh-races',{minInterval:12*60*60*1000});
+    expect(register).toHaveBeenCalledWith('rfm-refresh-crew-results',{minInterval:15*60*1000});
   });
   it('still attempts registration if permissions query is unavailable',async()=>{
     setNavigator('permissions',undefined);
     const register=vi.fn(async()=>{});
-    expect(await setupPeriodicBackgroundSync({periodicSync:{register}})).toEqual({supported:true,registered:true});
+    expect(await setupPeriodicBackgroundSync({periodicSync:{register}})).toEqual({supported:true,registered:true,crewResultsRegistered:true});
   });
 });
 
@@ -69,5 +70,10 @@ describe('background Rally Pack refresh runtime',()=>{
   });
   it('degrades when there is no active worker',()=>{
     expect(requestRallyPackBackgroundRefresh({})).toBe(false);
+  });
+  it('asks the active worker to refresh subscribed crew results',()=>{
+    const postMessage=vi.fn();
+    expect(requestCrewResultsBackgroundRefresh({active:{postMessage}})).toBe(true);
+    expect(postMessage).toHaveBeenCalledWith({type:'REFRESH_CREW_RESULTS'});
   });
 });

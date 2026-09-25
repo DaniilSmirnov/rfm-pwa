@@ -85,6 +85,51 @@ test.describe('production service worker lifecycle',()=>{
     await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
   });
 
+  test('refreshes followed ASMG results in the background and serves the cached standings offline',async({page,context})=>{
+    await page.goto('/');
+    await waitForWorker(page);
+    const first=await page.evaluate(async()=>{
+      const response=await fetch('/api/asmg/race/55/results');
+      return {ok:response.ok,data:await response.json()};
+    });
+    expect(first.ok).toBe(true);
+    expect(first.data.eventResults[0].results[0].crew.pilot.lastName).toBe('Гаврилов');
+
+    await page.evaluate(async()=>{
+      const db=await new Promise((resolve,reject)=>{
+        const request=indexedDB.open('rallyfans-offline',3);
+        request.onupgradeneeded=()=>{
+          const value=request.result;
+          if(!value.objectStoreNames.contains('packages'))value.createObjectStore('packages',{keyPath:'id'});
+          if(!value.objectStoreNames.contains('maptiles'))value.createObjectStore('maptiles',{keyPath:'key'}).createIndex('raceId','raceId',{unique:false});
+          if(!value.objectStoreNames.contains('crewSubscriptions'))value.createObjectStore('crewSubscriptions',{keyPath:'key'});
+        };
+        request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+      });
+      await new Promise((resolve,reject)=>{
+        const request=db.transaction('crewSubscriptions','readwrite').objectStore('crewSubscriptions').put({key:'55:crew-1',asmgRaceId:'55',crewId:'crew-1'});
+        request.onsuccess=resolve;request.onerror=()=>reject(request.error);
+      });
+      db.close();
+    });
+    const refreshed=page.evaluate(()=>new Promise(resolve=>{
+      navigator.serviceWorker.addEventListener('message',event=>{
+        if(event.data?.type==='RFM_PERIODIC_UPDATE'&&event.data.scope==='crew-results')resolve(true);
+      },{once:true});
+      navigator.serviceWorker.ready.then(registration=>registration.active.postMessage({type:'REFRESH_CREW_RESULTS'}));
+      setTimeout(()=>resolve(false),5000);
+    }));
+    expect(await refreshed).toBe(true);
+
+    await context.setOffline(true);
+    const offline=await page.evaluate(async()=>{
+      const response=await fetch('/api/asmg/race/55/results');
+      return {ok:response.ok,data:await response.json()};
+    });
+    expect(offline.ok).toBe(true);
+    expect(offline.data.eventResults[0].results[0].formattedTime).toBe('00:04:15:1');
+  });
+
   test('does not require unpkg resources in the production document',async({page})=>{
     const requests=[];
     page.on('request',request=>requests.push(request.url()));

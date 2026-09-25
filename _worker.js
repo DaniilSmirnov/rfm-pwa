@@ -2,6 +2,7 @@ import { commonHeaders, json } from './src/worker/http.js';
 import { handlePushApi } from './src/worker/push.js';
 import { handleWalletApi } from './src/worker/wallet.js';
 import { handleTelemetryApi, recordWorkerException } from './src/worker/telemetry.js';
+import { proxyAsmgResults } from './src/worker/asmg.js';
 import {
   API_ORIGIN,
   BASEMAP_PM,
@@ -34,6 +35,7 @@ export default {
     if (url.pathname === '/api/telemetry/error') return handleTelemetryApi(request,env);
     if (url.pathname.startsWith('/api/push/')) return handlePushApi(request,env,url,ctx);
     if (url.pathname.startsWith('/api/wallet/')) return handleWalletApi(request,env,url);
+    if (url.pathname.startsWith('/api/asmg/')) return proxyAsmgResults(request,url);
 
     if (url.pathname === '/api/yandex/constructor') return importYandexConstructor(request, url);
     if (url.pathname === '/rfm/icon.png') {

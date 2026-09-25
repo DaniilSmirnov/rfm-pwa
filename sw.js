@@ -37,6 +37,7 @@ self.addEventListener('activate', event=>{
 self.addEventListener('message', event=>{
   if(event.data?.type==='SKIP_WAITING') self.skipWaiting();
   if(event.data?.type==='REFRESH_RALLY_PACKS') event.waitUntil(refreshPeriodicRaceData());
+  if(event.data?.type==='REFRESH_CREW_RESULTS') event.waitUntil(refreshSubscribedCrewResults());
 });
 
 async function fetchWithTimeout(input,timeoutMs=1200){
@@ -88,6 +89,17 @@ self.addEventListener('fetch', event=>{
       }catch{
         return (await cache.match(event.request)) || Response.error();
       }
+    })());
+    return;
+  }
+  if(/^\/api\/asmg\/race\/\d+\/results$/.test(url.pathname)){
+    event.respondWith((async()=>{
+      const cache=await caches.open(PERIODIC_CACHE);
+      try{
+        const response=await fetchWithTimeout(event.request,10000);
+        if(response.ok) await cache.put(event.request,response.clone());
+        return response;
+      }catch{return (await cache.match(event.request))||Response.error();}
     })());
     return;
   }
@@ -168,17 +180,48 @@ self.addEventListener('notificationclick', event => {
 async function savedRaceIds(){
   return new Promise(resolve=>{
     try{
-      const req=indexedDB.open('rallyfans-offline',2);
+      const req=indexedDB.open('rallyfans-offline',3);
+      req.onerror=()=>resolve([]);
+      req.onupgradeneeded=()=>{
+        const db=req.result;
+        if(!db.objectStoreNames.contains('packages'))db.createObjectStore('packages',{keyPath:'id'});
+        if(!db.objectStoreNames.contains('maptiles')){
+          const tiles=db.createObjectStore('maptiles',{keyPath:'key'});
+          tiles.createIndex('raceId','raceId',{unique:false});
+        }
+        if(!db.objectStoreNames.contains('crewSubscriptions')){
+          const subscriptions=db.createObjectStore('crewSubscriptions',{keyPath:'key'});
+          subscriptions.createIndex('asmgRaceId','asmgRaceId',{unique:false});
+        }
+      };
+      req.onsuccess=()=>{
+        const db=req.result;
+        db.onversionchange=()=>db.close();
+        if(!db.objectStoreNames.contains('packages')){ db.close();resolve([]); return; }
+        const tx=db.transaction('packages','readonly');
+        const all=tx.objectStore('packages').getAll();
+        all.onerror=()=>{db.close();resolve([]);};
+        all.onsuccess=()=>{const ids=(all.result||[]).map(p=>p?.raceId).filter(v=>v!=null);db.close();resolve(ids);};
+      };
+    }catch{ resolve([]); }
+  });
+}
+
+async function subscribedAsmgRaceIds(){
+  return new Promise(resolve=>{
+    try{
+      const req=indexedDB.open('rallyfans-offline',3);
       req.onerror=()=>resolve([]);
       req.onsuccess=()=>{
         const db=req.result;
-        if(!db.objectStoreNames.contains('packages')){ resolve([]); return; }
-        const tx=db.transaction('packages','readonly');
-        const all=tx.objectStore('packages').getAll();
-        all.onerror=()=>resolve([]);
-        all.onsuccess=()=>resolve((all.result||[]).map(p=>p?.raceId).filter(v=>v!=null));
+        db.onversionchange=()=>db.close();
+        if(!db.objectStoreNames.contains('crewSubscriptions')){db.close();resolve([]);return;}
+        const tx=db.transaction('crewSubscriptions','readonly');
+        const all=tx.objectStore('crewSubscriptions').getAll();
+        all.onerror=()=>{db.close();resolve([]);};
+        all.onsuccess=()=>{const ids=(all.result||[]).map(s=>s?.asmgRaceId).filter(v=>/^\d+$/.test(String(v??'')));db.close();resolve(ids);};
       };
-    }catch{ resolve([]); }
+    }catch{resolve([]);}
   });
 }
 
@@ -205,6 +248,22 @@ async function prefetchRaceAssets(race){
   }));
 }
 
+async function refreshSubscribedCrewResults(notify=true){
+  const cache=await caches.open(PERIODIC_CACHE);
+  const ids=await subscribedAsmgRaceIds();
+  await Promise.all([...new Set(ids)].map(async id=>{
+    const url=`/api/asmg/race/${encodeURIComponent(id)}/results`;
+    try{
+      const response=await fetchWithTimeout(url,10000);
+      if(response.ok) await cache.put(url,response.clone());
+    }catch{}
+  }));
+  if(notify){
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const client of windows)client.postMessage({type:'RFM_PERIODIC_UPDATE',scope:'crew-results'});
+  }
+}
+
 async function refreshPeriodicRaceData(){
   const cache=await caches.open(PERIODIC_CACHE);
   try{
@@ -222,12 +281,14 @@ async function refreshPeriodicRaceData(){
       await prefetchRaceAssets(race);
     }catch{}
   }));
+  await refreshSubscribedCrewResults(false);
   const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
   for(const client of windows) client.postMessage({type:'RFM_PERIODIC_UPDATE'});
 }
 
 self.addEventListener('periodicsync',event=>{
   if(event.tag==='rfm-refresh-races') event.waitUntil(refreshPeriodicRaceData());
+  if(event.tag==='rfm-refresh-crew-results') event.waitUntil(refreshSubscribedCrewResults());
 });
 
 self.addEventListener('backgroundfetchsuccess',event=>{
