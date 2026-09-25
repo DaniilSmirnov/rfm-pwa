@@ -3,7 +3,7 @@ import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTil
 import { normalizePackage } from '../normalize.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, enrichPackageWithYandex } from '../rallyfans.js';
 import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from '../navigation.js';
-import { buildDownloadPlan } from '../offline-map.js';
+import { buildDownloadPlan, downloadOfflineMap, discardOfflineMapRevision } from '../offline-map.js';
 import { buildTerrainDownloadPlan } from '../terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from '../app/export.js';
 import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from '../app/geo.js';

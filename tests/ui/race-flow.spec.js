@@ -65,6 +65,13 @@ test.describe('saved race user flows',()=>{
     await expect(page.locator('.today-race-card')).toHaveAttribute('style',/hero\.jpg/);
   });
 
+  test('starts Rally Pack refresh from Today without missing downloader dependencies',async({page})=>{
+    const raceRequest=page.waitForRequest(request=>request.url().includes(`/api/rallyfans/race/${raceFixture.id}`));
+    await page.getByRole('button',{name:'Сегодня'}).click();
+    await page.locator('.today-race-card').getByRole('button',{name:'Обновить Rally Pack'}).click();
+    await raceRequest;
+  });
+
   test('filters saved package list',async({page})=>{
     await page.locator('#packageSearch').fill('Sortavala');
     await expect(page.locator('#packageList')).toContainText(raceFixture.name);
