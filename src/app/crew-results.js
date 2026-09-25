@@ -100,41 +100,49 @@ export function crewResultViews(eventResults){
   ];
 }
 
-function resultCard(result,index,stage,subscribed){
+function resultRow(result,index,stage,subscribed){
   const crew=result?.crew||{};
   const name=resultName(result);
   const id=String(crew.id||crew.number||name);
   const status=result.goingOff?'Сход':result.goingOffAfterSu?'Сход после финиша':'';
   const time=status?(result.reasonGoingOff||status):(result.formattedTime||'Время пока недоступно');
   const place=result.goingOff||result.goingOffAfterSu?'—':index+1;
-  return `<details class="crew-result-card" data-crew-card data-search="${esc(resultSearchText(result))}">
-    <summary><span class="crew-result-place">${place}</span><span class="crew-result-summary"><strong>${esc(name)}</strong><small>Стартовый № ${esc(crew.number||'—')}</small></span><span class="crew-result-expand">Подробнее <span aria-hidden="true">⌄</span></span></summary>
-    <div class="crew-result-details"><div class="crew-result-stats"><span><small>Место</small><strong>${place}</strong></span><span><small>Зачёт</small><strong>${esc(result?.discipline?.name||'—')}</strong></span><span><small>${esc(stage?.name||'Время')}</small><strong>${esc(time)}</strong></span>
-      <span><small>От лидера</small><strong>${esc(result.formattedFromLeader||'—')}</strong></span><span><small>От предыдущего</small><strong>${esc(result.formattedTimeFromPrevious||'—')}</strong></span><span><small>Скорость</small><strong>${Number(result.speed)>0?`${esc(result.speed)} км/ч`:'—'}</strong></span></div>
-      <p class="muted small">${esc(crew.car||'Автомобиль не указан')}${result.formattedTimePenalty?` · штраф ${esc(result.formattedTimePenalty)}`:''}${status?` · ${esc(status)}`:''}</p>
-      <button class="button compact crew-subscribe-button ${subscribed?'downloaded':''}" type="button" data-subscribe="${esc(id)}" data-name="${esc(name)}">${subscribed?'Отписаться от экипажа':'Следить за экипажем'}</button>
-    </div>
-  </details>`;
+  return `<tr data-crew-row data-search="${esc(resultSearchText(result))}">
+    <td class="crew-results-place">${place}</td>
+    <td class="crew-results-name"><strong>${esc(name)}</strong><small>№ ${esc(crew.number||'—')}</small></td>
+    <td>${esc(crew.car||'Автомобиль не указан')}<small>${esc(result?.discipline?.name||'Зачёт не указан')}</small></td>
+    <td class="crew-results-time">${esc(time)}${result.formattedTimePenalty?`<small>Штраф ${esc(result.formattedTimePenalty)}</small>`:''}</td>
+    <td><button class="button compact crew-subscribe-button ${subscribed?'downloaded':''}" type="button" data-subscribe="${esc(id)}" data-name="${esc(name)}" aria-label="${subscribed?'Отписаться от экипажа':'Следить за экипажем'}: ${esc(name)}">${subscribed?'Отписаться':'Подписаться'}</button></td>
+  </tr>`;
 }
 
 export async function renderCrewResults(pkg,root=document.getElementById('crewResults')){
   if(!root)return;
   const asmgRaceId=String(pkg?.asmgRaceId??pkg?.original?.asmg_id??pkg?.original?.asmgId??pkg?.raceId??pkg?.original?.id??'');
   root.innerHTML=`<section class="crew-results-section" aria-labelledby="crewResultsTitle">
-    <div class="section-head"><div><div id="crewResultsTitle" class="block-title">РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ</div><p class="muted small">Три лидера показаны сразу. Остальных найди поиском.</p></div></div>
+    <div class="section-head"><div><div id="crewResultsTitle" class="block-title">РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ</div><p class="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p></div><button class="button primary" id="crewResultsOpen" type="button" hidden>Открыть результаты</button></div>
     <form class="crew-results-controls"><label for="asmgRaceId">Номер гонки на АСМГ</label><div class="crew-results-load"><input id="asmgRaceId" inputmode="numeric" pattern="[0-9]*" value="${esc(asmgRaceId)}" aria-label="Номер гонки на АСМГ"/><button class="button compact primary" type="submit">${pkg?.crewResults?'Обновить':'Загрузить результаты'}</button></div></form>
     <p class="muted small crew-results-status" aria-live="polite">${asmgRaceId?'Загружаю результаты…':'Введи номер гонки на asmg.ru, если он отличается от номера Rally Fans Map.'}</p>
-    <div class="crew-results-content" hidden><div class="crew-results-toolbar"><label class="sr-only" for="crewResultsStage">Спецучасток</label><select id="crewResultsStage" class="crew-results-stage"></select><input id="crewResultsSearch" class="search" placeholder="Поиск остальных экипажей…" aria-label="Поиск экипажа" /></div><div class="crew-results-list"></div></div>
+    <dialog class="crew-results-dialog" aria-labelledby="crewResultsDialogTitle"><header class="crew-results-dialog-head"><div><h2 id="crewResultsDialogTitle">Результаты экипажей</h2><p class="muted small">Показаны три лидера. Остальных найди поиском.</p></div><button class="button crew-results-close" type="button" aria-label="Закрыть результаты">×</button></header><div class="crew-results-toolbar"><label class="sr-only" for="crewResultsStage">Спецучасток</label><select id="crewResultsStage" class="crew-results-stage"></select><input id="crewResultsSearch" class="search" placeholder="Поиск по экипажу, номеру или машине…" aria-label="Поиск экипажа" /></div><div class="crew-results-table-wrap"><table class="crew-results-table"><thead><tr><th scope="col">Место</th><th scope="col">Экипаж</th><th scope="col">Автомобиль / зачёт</th><th scope="col" id="crewResultsTimeHeading">Время</th><th scope="col"><span class="sr-only">Подписка</span></th></tr></thead><tbody class="crew-results-body"></tbody></table></div></dialog>
   </section>`;
   const form=root.querySelector('form');
   const input=root.querySelector('#asmgRaceId');
   const status=root.querySelector('.crew-results-status');
-  const content=root.querySelector('.crew-results-content');
+  const openButton=root.querySelector('#crewResultsOpen');
+  const dialog=root.querySelector('.crew-results-dialog');
   const stageSelect=root.querySelector('#crewResultsStage');
   const search=root.querySelector('#crewResultsSearch');
-  const list=root.querySelector('.crew-results-list');
+  const tableBody=root.querySelector('.crew-results-body');
+  const timeHeading=root.querySelector('#crewResultsTimeHeading');
   let data=null,resultViews=[],subscriptions=[];
   try{subscriptions=await getCrewSubscriptions();}catch{}
+
+  const openResults=()=>{
+    if(!dialog.open)dialog.showModal();
+    search.focus();
+  };
+  openButton.addEventListener('click',openResults);
+  root.querySelector('.crew-results-close').addEventListener('click',()=>dialog.close());
 
   const draw=()=>{
     if(!data)return;
@@ -142,18 +150,13 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
     const results=stage?.results||[];
     const query=search.value.trim();
     const visible=visibleCrewResults(results,query);
-    const expandedCrewIds=new Set([...list.querySelectorAll('[data-crew-card][open]')]
-      .map(card=>card.querySelector('[data-subscribe]')?.dataset.subscribe)
-      .filter(Boolean));
-    list.innerHTML=visible.length?visible.map(result=>{
+    timeHeading.textContent=stage?.name||'Время';
+    tableBody.innerHTML=visible.length?visible.map(result=>{
       const id=String(result?.crew?.id||result?.crew?.number||resultName(result));
-      return resultCard(result,results.indexOf(result),stage,subscriptions.some(s=>s.key===subscriptionKey(data.eventId,id)));
-    }).join(''):'<p class="muted">Экипажи по этому запросу не найдены.</p>';
-    list.querySelectorAll('[data-crew-card]').forEach(card=>{
-      card.open=expandedCrewIds.has(card.querySelector('[data-subscribe]')?.dataset.subscribe);
-    });
-    if(!query&&results.length>3)list.insertAdjacentHTML('beforeend',`<p class="muted small">Ещё ${results.length-3} экипажа. Введи номер или фамилию в поиск.</p>`);
-    list.querySelectorAll('[data-subscribe]').forEach(button=>button.addEventListener('click',async event=>{
+      return resultRow(result,results.indexOf(result),stage,subscriptions.some(s=>s.key===subscriptionKey(data.eventId,id)));
+    }).join():'<tr><td colspan="5" class="crew-results-empty">Экипажи по этому запросу не найдены.</td></tr>';
+    if(!query&&results.length>3)tableBody.insertAdjacentHTML('beforeend',`<tr class="crew-results-more"><td colspan="5">Ещё ${results.length-3} экипажа. Введи фамилию, номер или машину в поиск.</td></tr>`);
+    tableBody.querySelectorAll('[data-subscribe]').forEach(button=>button.addEventListener('click',async event=>{
       event.preventDefault();event.stopPropagation();
       const crewId=button.dataset.subscribe,key=subscriptionKey(data.eventId,crewId);
       try{
@@ -174,7 +177,7 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
   search.addEventListener('input',draw);
   form.addEventListener('submit',async event=>{
     event.preventDefault();
-    const id=input.value.trim();status.textContent='Загружаю результаты АСМГ…';content.hidden=true;
+    const id=input.value.trim();status.textContent='Загружаю результаты АСМГ…';
     try{
       data=await fetchAsmgResults(id);
       resultViews=crewResultViews(data.eventResults);
@@ -182,7 +185,7 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
       await savePackage(pkg);
       stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
       stageSelect.value='overall';
-      content.hidden=false;
+      openButton.hidden=false;
       status.textContent=`${data.tournamentTitle?`${data.tournamentTitle} · `:''}${data.eventResults.length} спецучастка · сохранено для офлайн-доступа.`;
       draw();
     }catch(error){
@@ -204,7 +207,7 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
       if(!root.isConnected)return;
       stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
       stageSelect.value='overall';
-      content.hidden=false;
+      openButton.hidden=false;
       const updatedAt=data.updatedAt||new Date().toISOString();
       pkg.crewResults={eventId:data.eventId,updatedAt};
       await savePackage(pkg);
