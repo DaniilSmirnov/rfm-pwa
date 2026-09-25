@@ -1,17 +1,18 @@
 import { stageIdentity, stageWalletPayload } from './schedule.js';
 import { walletStageKeys } from './preferences.js';
 import { isIOSDevice } from './pwa.js';
+import { fetchWithTimeout } from './net.js';
 
 const asArray = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
 const WALLET_STAGE_FEATURE_ENABLED=false;
 
 export async function syncWalletStage(pkg,item,stage,{openPass=false}={}){
   const payload=stageWalletPayload(pkg,item,stage);
-  const res=await fetch('/api/wallet/stage',{
+  const res=await fetchWithTimeout('/api/wallet/stage',{
     method:'POST',
     headers:{'content-type':'application/json'},
     body:JSON.stringify(payload)
-  });
+  },8000);
   const data=await res.json().catch(()=>({}));
   if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось подготовить Wallet pass');
   if(openPass && !data.configured) throw new Error('Apple Wallet ещё не настроен на сервере');

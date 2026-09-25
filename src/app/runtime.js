@@ -38,7 +38,7 @@ export async function setupPeriodicBackgroundSync(reg){
   }
 }
 
-export async function setupServiceWorkerUpdates(){
+export async function setupServiceWorkerUpdates({onDiagnostic}={}){
   if(!('serviceWorker' in navigator)) return null;
   const banner=$('updateBanner');
   const updateText=$('updateText');
@@ -66,7 +66,9 @@ export async function setupServiceWorkerUpdates(){
   });
 
   try{
+    onDiagnostic?.('sw-register-start');
     const reg=await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});
+    onDiagnostic?.('sw-register-ready');
     const activateWaiting=()=>{
       if(reg.waiting){
         showUpdate();
@@ -85,8 +87,18 @@ export async function setupServiceWorkerUpdates(){
       });
     });
 
-    const check=()=>reg.update().catch(()=>{});
-    await check();
+    const check=async()=>{
+      const started=performance.now();
+      onDiagnostic?.('sw-update-check-start');
+      try{
+        await reg.update();
+        onDiagnostic?.('sw-update-check-done',{durationMs:Math.round(performance.now()-started)});
+      }catch(error){
+        onDiagnostic?.('sw-update-check-failed',{durationMs:Math.round(performance.now()-started),message:String(error?.message||error)});
+      }
+    };
+    // Update checks are maintenance work and must never block local-first startup.
+    void check();
     setInterval(check,5*60*1000);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') check();});
     window.addEventListener('online',check);
