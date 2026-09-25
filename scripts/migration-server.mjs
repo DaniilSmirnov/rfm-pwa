@@ -43,6 +43,12 @@ async function fileResponse(root,pathname){
 
 const server=createServer(async(req,res)=>{
   const url=new URL(req.url,'http://127.0.0.1');
+  if(url.pathname==='/__migration/reset' && req.method==='POST'){
+    active='main';
+    res.writeHead(204,{'cache-control':'no-store'});
+    res.end();
+    return;
+  }
   if(url.pathname==='/__migration/state' && req.method==='POST'){
     res.writeHead(200,{'content-type':'application/json','cache-control':'no-store'});
     res.end(JSON.stringify({active}));

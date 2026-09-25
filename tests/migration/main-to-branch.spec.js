@@ -216,6 +216,9 @@ async function readPersistentState(page,seed){
 }
 
 test('migrates installed PWA from current main to branch without losing persistent data',async({page,context})=>{
+  const reset=await page.request.post('/__migration/reset');
+  expect(reset.ok()).toBe(true);
+
   await page.goto('/');
   await waitForActiveWorker(page);
   await page.reload({waitUntil:'domcontentloaded'});
@@ -263,7 +266,9 @@ test('migrates installed PWA from current main to branch without losing persiste
   expect(after.periodicCached).toBe(true);
   expect(after.shellCaches.length).toBe(1);
 
-  await page.reload({waitUntil:'domcontentloaded'});
+  // controllerchange triggers an automatic reload in the app runtime. Once the
+  // branch version and active worker are confirmed, wait for the restored UI
+  // instead of racing that automatic navigation with a second reload.
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');
   await expect(page.locator('#carPointCard')).toBeVisible();
