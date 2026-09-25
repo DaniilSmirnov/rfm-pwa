@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 6037)
-Total output lines: 445
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from '../db.js';
 import { normalizePackage } from '../normalize.js';
@@ -240,7 +237,11 @@ export function useRfmApp(){
   const visiblePackages=useMemo(()=>chooseVisiblePackages(packages,packageQuery),[packages,packageQuery]);
   const visibleCatalog=useMemo(()=>chooseCatalog(catalog,catalogQuery),[catalog,catalogQuery]);
   const downloadedIds=useMemo(()=>new Set(packages.filter(x=>x.raceId!=null).map(x=>Number(x.raceId))),[packages]);
-  const favorites=useMemo(()=>currentPackage?favoritesForPackage(currentPackage.id):[],[currentPackage?.id…37 tokens truncated…blePackages]);
+  const favorites=useMemo(()=>currentPackage?favoritesForPackage(currentPackage.id):[],[currentPackage?.id,favoritesRevision]);
+
+  useEffect(()=>{
+    if(!currentPackage&&visiblePackages[0]) setCurrentPackage(visiblePackages[0]);
+  },[currentPackage,visiblePackages]);
 
   const importFiles=useCallback(async files=>{
     for(const file of files){
