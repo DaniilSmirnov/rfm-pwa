@@ -1,5 +1,6 @@
 import { geometryBounds } from './normalize.js';
 import { saveMapTile, getMapTile, deleteMapTiles } from './db.js';
+import { downloadTileRevision, normalizeTileData } from './tile-revision-downloader.js';
 
 const SOURCE_URL='/api/basemap.pmtiles';
 const MIN_ZOOM=6;
@@ -56,11 +57,6 @@ export function buildDownloadPlan(fc){
   }
   throw new Error(`Район карты слишком большой для офлайн-загрузки (лимит ${MAX_TILES} тайлов)`);
 }
-function normalizeTileData(data){
-  if(data instanceof ArrayBuffer) return data;
-  if(ArrayBuffer.isView(data)) return data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength);
-  return data;
-}
 function normalizeVectorLayers(metadata){
   const raw=Array.isArray(metadata?.vector_layers)?metadata.vector_layers:[];
   return raw.map(layer=>typeof layer==='string'?{id:layer}:{id:layer?.id,fields:layer?.fields||{},minzoom:layer?.minzoom,maxzoom:layer?.maxzoom})
@@ -72,23 +68,6 @@ function mapRevisionId(pkgId,previousMap=null){
   const previous=String(previousMap?.storageId||'');
   const slot=previous===`${base}@slot-a`?'slot-b':'slot-a';
   return `${base}@${slot}`;
-}
-
-function wait(ms){
-  return new Promise(resolve=>setTimeout(resolve,ms));
-}
-
-async function fetchTileWithRetry(archive,tile){
-  let lastError=null;
-  for(let attempt=1;attempt<=TILE_DOWNLOAD_ATTEMPTS;attempt++){
-    try{
-      return await archive.getZxy(tile.z,tile.x,tile.y);
-    }catch(error){
-      lastError=error;
-      if(attempt<TILE_DOWNLOAD_ATTEMPTS) await wait(150*attempt);
-    }
-  }
-  throw lastError || new Error('tile download failed');
 }
 
 export async function discardOfflineMapRevision(meta,fallbackId=null){
@@ -104,39 +83,25 @@ export async function downloadOfflineMap(pkg,onProgress=()=>{},{previousMap=null
   const archive=new window.pmtiles.PMTiles(SOURCE_URL);
   const [header,metadata]=await Promise.all([archive.getHeader(),archive.getMetadata().catch(()=>({}))]);
   const vectorLayers=normalizeVectorLayers(metadata);
-  let done=0,saved=0,bytes=0,failed=0,reused=0; const started=Date.now();
-  const queue=[...plan.tiles];
-
-  async function worker(){
-    while(queue.length){
-      const t=queue.shift();
-      try{
-        const existing=await getMapTile(storageId,t.z,t.x,t.y);
-        const existingData=normalizeTileData(existing?.data);
-        if(existingData?.byteLength){
-          reused++;
-          saved++;
-          bytes+=existingData.byteLength;
-        }else{
-          const result=await fetchTileWithRetry(archive,t);
-          const data=normalizeTileData(result?.data);
-          if(!data?.byteLength) throw new Error('Пустой тайл');
-          await saveMapTile(storageId,t.z,t.x,t.y,data);
-          saved++;
-          bytes+=data.byteLength;
-        }
-      }catch(e){
-        failed++;
-        console.warn('offline tile failed',t,e);
-      }
-      done++;
-      onProgress({done,total:plan.tiles.length,saved,bytes,failed,reused,maxZoom:plan.maxZoom});
-    }
-  }
-
-  await Promise.all(Array.from({length:Math.min(DOWNLOAD_CONCURRENCY,queue.length)},()=>worker()));
-  if(!saved) throw new Error('Не удалось скачать ни одного тайла подложки');
-  if(failed) throw new Error(`Не удалось скачать ${failed} из ${plan.tiles.length} тайлов. Уже загруженные тайлы сохранены — повторная попытка продолжит загрузку.`);
+  const started=Date.now();
+  const stats=await downloadTileRevision({
+    tiles:plan.tiles,
+    storageId,
+    getTile:getMapTile,
+    fetchTile:tile=>archive.getZxy(tile.z,tile.x,tile.y),
+    saveTile:saveMapTile,
+    concurrency:DOWNLOAD_CONCURRENCY,
+    retries:TILE_DOWNLOAD_ATTEMPTS,
+    retryDelayMs:150,
+    resume:true,
+    onProgress,
+    maxZoom:plan.maxZoom
+  }).catch(error=>{
+    if(!error.stats) throw error;
+    console.warn('offline map revision download incomplete',error.stats||{},error);
+    throw new Error(`Не удалось скачать ${error.stats.failed} из ${plan.tiles.length} тайлов. Уже загруженные тайлы сохранены — повторная попытка продолжит загрузку.`,{cause:error});
+  });
+  const {saved,bytes,reused,failed}=stats;
 
   return {
     ready:true,

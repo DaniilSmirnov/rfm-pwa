@@ -125,7 +125,7 @@ window.pmtiles={
     constructor(url){this.url=url;}
     async getHeader(){return {tileType:1};}
     async getMetadata(){return {name:'test',version:'1',vector_layers:[{id:'roads',fields:{kind:'String'}},{id:'places',fields:{kind:'String'}}]};}
-    async getZxy(){return {data:new Uint8Array([1,2,3,4]).buffer};}
+    async getZxy(){if(window.__pmtilesFail)throw new Error('simulated tile failure');return {data:new Uint8Array([1,2,3,4]).buffer};}
   }
 };
 `;
@@ -138,6 +138,8 @@ export async function installAppMocks(page,options={}){
     race=raceFixture,
     online=true
   }=options;
+
+  await page.addInitScript(({pmtilesFailure})=>{window.__pmtilesFail=Boolean(pmtilesFailure);},{pmtilesFailure:options.pmtilesFailure});
 
   await page.addInitScript(({online})=>{
     const RealDate=Date;

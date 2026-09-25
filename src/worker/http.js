@@ -33,3 +33,28 @@ export function json(value, status = 200) {
     headers: commonHeaders({ 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }),
   });
 }
+
+export async function fetchWithTimeout(input,options={},timeoutMs=10_000){
+  const controller=new AbortController();
+  const external=options.signal;
+  let timedOut=false;
+  const abortFromExternal=()=>controller.abort(external?.reason);
+  if(external){
+    if(external.aborted) abortFromExternal();
+    else external.addEventListener('abort',abortFromExternal,{once:true});
+  }
+  const timer=setTimeout(()=>{timedOut=true;controller.abort();},timeoutMs);
+  try{return await fetch(input,{...options,signal:controller.signal});}
+  catch(error){
+    if(timedOut){
+      const timeoutError=new Error(`Upstream request timed out after ${timeoutMs} ms`);
+      timeoutError.name='UpstreamTimeoutError';
+      timeoutError.timeoutMs=timeoutMs;
+      throw timeoutError;
+    }
+    throw error;
+  }finally{
+    clearTimeout(timer);
+    external?.removeEventListener?.('abort',abortFromExternal);
+  }
+}

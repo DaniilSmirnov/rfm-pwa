@@ -155,6 +155,8 @@ The browser entrypoint is intentionally kept as orchestration rather than a home
 
 Cloudflare Pages Advanced Mode keeps `_worker.js` as a small router. Server-side code is split under `src/worker/` into HTTP helpers, Web Push/reminders, Wallet, and upstream proxy modules.
 
+Offline cache ownership, tile revision commit rules and clear-all boundaries are documented in [`docs/architecture/offline-storage.md`](docs/architecture/offline-storage.md). Map and terrain downloads share the retry/concurrency/progress engine in `src/tile-revision-downloader.js`; each provider keeps its own geographic tile plan and staging policy.
+
 Install the locked test/runtime dependencies locally:
 
 ```bash

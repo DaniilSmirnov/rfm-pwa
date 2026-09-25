@@ -4,6 +4,7 @@ const TILE_STORE = 'maptiles';
 const VERSION = 3;
 const CREW_SUBSCRIPTION_STORE = 'crewSubscriptions';
 const OPFS_TILE_ROOT = 'rfm-maptiles';
+let databasePromise=null;
 let opfsRootPromise=null;
 const opfsRaceDirs=new Map();
 const opfsTileDirs=new Map();
@@ -21,7 +22,9 @@ function clearOpfsHandleCache(raceId=null){
 }
 
 export function openDb() {
-  return new Promise((resolve, reject) => {
+  if(databasePromise) return databasePromise;
+  const opening=new Promise((resolve, reject) => {
+    let settled=false;
     const req = indexedDB.open(DB_NAME, VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
@@ -35,18 +38,34 @@ export function openDb() {
         s.createIndex('asmgRaceId','asmgRaceId',{unique:false});
       }
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const db=req.result;
+      if(settled){ db.close(); return; }
+      db.onversionchange=()=>{ db.close(); if(databasePromise===opening) databasePromise=null; };
+      settled=true;
+      resolve(db);
+    };
+    req.onblocked = () => {
+      if(settled) return;
+      settled=true;
+      if(databasePromise===opening) databasePromise=null;
+      reject(new Error('Обновление локальной базы заблокировано другой открытой вкладкой. Закрой остальные окна приложения и повтори попытку.'));
+    };
+    req.onerror = () => { if(!settled){ settled=true; if(databasePromise===opening) databasePromise=null; reject(req.error); } };
   });
+  databasePromise=opening;
+  return opening;
 }
 
 async function withStore(name, mode, fn) {
   const db = await openDb();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(name, mode);
+    let tx;
+    try{tx=db.transaction(name, mode);}
+    catch(error){reject(error);return;}
     const store = tx.objectStore(name);
     let result;
-    try { result=fn(store); } catch(e) { reject(e); return; }
+    try { result=fn(store); } catch(e) { try{tx.abort();}catch{} reject(e); return; }
     tx.oncomplete = () => resolve(result?.result ?? result);
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
@@ -222,4 +241,8 @@ export async function getMapStorageStats(){
     terrainBytes:terrains.reduce((sum,item)=>sum+(Number(item.bytes)||0),0),
     source:'metadata'
   };
+}
+
+export async function getLegacyMapTileCount(){
+  return withStore(TILE_STORE,'readonly',store=>store.count());
 }

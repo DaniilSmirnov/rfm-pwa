@@ -91,6 +91,42 @@ test.describe('offline, import and failure states',()=>{
     await page.locator('#deleteMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Будет скачано');
   });
+
+  test('failed offline map update keeps the previous revision active',async({page,browserName})=>{
+    test.skip(browserName!=='chromium','OPFS/IndexedDB map revision behavior is covered in Chromium UI run');
+    await openApp(page);
+    await downloadFixtureRace(page);
+    const before=await page.evaluate(()=>new Promise((resolve,reject)=>{
+      const request=indexedDB.open('rallyfans-offline',2);
+      request.onerror=()=>reject(request.error);
+      request.onsuccess=()=>{
+        const db=request.result;
+        const tx=db.transaction('packages','readonly');
+        const get=tx.objectStore('packages').get('race-101');
+        get.onsuccess=()=>resolve(get.result?.offlineMap||null);
+        get.onerror=()=>reject(get.error);
+      };
+    }));
+    expect(before?.ready).toBe(true);
+    await page.evaluate(()=>{window.__pmtilesFail=true;});
+    const dialog=page.waitForEvent('dialog');
+    await page.locator('#downloadMapBtn').click();
+    await (await dialog).dismiss();
+    await expect(page.locator('#offlineMapStatus')).toContainText('Не удалось скачать карту');
+    const after=await page.evaluate(()=>new Promise((resolve,reject)=>{
+      const request=indexedDB.open('rallyfans-offline',2);
+      request.onerror=()=>reject(request.error);
+      request.onsuccess=()=>{
+        const db=request.result;
+        const tx=db.transaction('packages','readonly');
+        const get=tx.objectStore('packages').get('race-101');
+        get.onsuccess=()=>resolve(get.result?.offlineMap||null);
+        get.onerror=()=>reject(get.error);
+      };
+    }));
+    expect(after?.storageId).toBe(before.storageId);
+    await expect(page.locator('#deleteMapBtn')).toBeVisible();
+  });
 });
 
 test.describe('standalone launch detection',()=>{

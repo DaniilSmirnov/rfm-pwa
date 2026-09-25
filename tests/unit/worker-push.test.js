@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { pushEndpointAllowed, pushConfigured, validReminder, reminderPrefix, handlePushApi } from '../../src/worker/push.js';
+import { pushEndpointAllowed, pushConfigured, validReminder, reminderPrefix, countPushSubscriptions, adminTokenMatches, handlePushApi } from '../../src/worker/push.js';
 
 afterEach(()=>vi.useRealTimers());
 
@@ -35,6 +35,11 @@ describe('push validation',()=>{
   it('detects complete VAPID config',()=>expect(pushConfigured(makeEnv())).toBe(true));
   it('detects missing VAPID config',()=>expect(pushConfigured({VAPID_PUBLIC_KEY:'x'})).toBe(false));
   it('builds reminder prefix',()=>expect(reminderPrefix('abc','42')).toBe('reminder:abc:42:'));
+  it('compares admin tokens without accepting empty or prefix-only credentials',()=>{
+    expect(adminTokenMatches('secret','secret')).toBe(true);
+    expect(adminTokenMatches('secretx','secret')).toBe(false);
+    expect(adminTokenMatches('','')).toBe(false);
+  });
 
   it('validates a future reminder',()=>{
     vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-10T00:00:00Z'));
@@ -47,6 +52,28 @@ describe('push validation',()=>{
   it('rejects oversized title and body',()=>{
     expect(validReminder({dueAt:Date.now()+60000,title:'A'.repeat(121),body:'B'})).toBe(false);
     expect(validReminder({dueAt:Date.now()+60000,title:'A',body:'B'.repeat(241)})).toBe(false);
+  });
+});
+
+describe('push subscription stats',()=>{
+  it('counts subscriptions across KV pages',async()=>{
+    const pages=[
+      {keys:[{name:'sub:a'},{name:'sub:b'}],list_complete:false,cursor:'next'},
+      {keys:[{name:'sub:c'}],list_complete:true}
+    ];
+    const store={list:vi.fn().mockResolvedValueOnce(pages[0]).mockResolvedValueOnce(pages[1])};
+    await expect(countPushSubscriptions(store)).resolves.toBe(3);
+    expect(store.list).toHaveBeenNthCalledWith(1,{prefix:'sub:',cursor:undefined,limit:1000});
+    expect(store.list).toHaveBeenNthCalledWith(2,{prefix:'sub:',cursor:'next',limit:1000});
+  });
+  it('fails safely when KV pagination repeats a cursor',async()=>{
+    const store={list:vi.fn().mockResolvedValue({keys:[{name:'sub:a'}],list_complete:false,cursor:'same'})};
+    await expect(countPushSubscriptions(store)).rejects.toThrow(/repeated cursor/);
+  });
+  it('bounds long KV scans',async()=>{
+    const store={list:vi.fn(({cursor})=>Promise.resolve({keys:[{name:`sub:${cursor||'first'}`}],list_complete:false,cursor:`next-${store.list.mock.calls.length}`}))};
+    await expect(countPushSubscriptions(store,{maxPages:2})).rejects.toThrow(/exceeded 2 pages/);
+    expect(store.list).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -80,6 +107,22 @@ describe('push API without network delivery',()=>{
     const r=await handlePushApi(req,e,new URL(req.url),{});
     expect((await r.json()).stored).toBe(1);
     expect([...e.PUSH_SUBSCRIPTIONS.map.keys()].filter(k=>k.startsWith('reminder:'))).toHaveLength(1);
+  });
+  it('returns authenticated push subscription stats',async()=>{
+    const e=makeEnv();
+    await e.PUSH_SUBSCRIPTIONS.put('sub:a',JSON.stringify({subscription:{endpoint:'https://fcm.googleapis.com/fcm/send/a'}}));
+    await e.PUSH_SUBSCRIPTIONS.put('sub:b',JSON.stringify({subscription:{endpoint:'https://fcm.googleapis.com/fcm/send/b'}}));
+    await e.PUSH_SUBSCRIPTIONS.put('pending:x','{}');
+    const req=new Request('https://app.test/api/push/stats',{headers:{authorization:'Bearer secret'}});
+    const r=await handlePushApi(req,e,new URL(req.url),{});
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ok:true,subscriptions:2,pushConfigured:true,storage:true});
+  });
+  it('rejects push stats without admin token',async()=>{
+    const e=makeEnv();
+    const req=new Request('https://app.test/api/push/stats');
+    const r=await handlePushApi(req,e,new URL(req.url),{});
+    expect(r.status).toBe(401);
   });
   it('rejects run-due without admin token',async()=>{
     const e=makeEnv();

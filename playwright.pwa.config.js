@@ -19,7 +19,7 @@ export default defineConfig({
     video:'retain-on-failure'
   },
   webServer:{
-    command:'npm run build && mkdir -p dist/migration-test dist/api/asmg/race/55 && cp tests/pwa/fixtures/migration-harness.html dist/migration-test/migration-harness.html && cp tests/pwa/fixtures/sw-upgrade-v1.js dist/migration-test/sw-upgrade-v1.js && cp tests/pwa/fixtures/sw-upgrade-v2.js dist/migration-test/sw-upgrade-v2.js && cp tests/pwa/fixtures/asmg-results.json dist/api/asmg/race/55/results && npx http-server dist -p 4174 -c-1 --silent',
+    command:'npm run build && mkdir -p dist/migration-test dist/api/asmg/race/55 && cp tests/pwa/fixtures/migration-harness.html dist/migration-test/migration-harness.html && cp tests/pwa/fixtures/sw-upgrade-v1.js dist/migration-test/sw-upgrade-v1.js && cp tests/pwa/fixtures/sw-upgrade-v2.js dist/migration-test/sw-upgrade-v2.js && cp tests/pwa/fixtures/asmg-results.json dist/api/asmg/race/55/results && node scripts/serve-static.mjs --root dist --port 4174',
     url:baseURL,
     reuseExistingServer:true,
     timeout:30_000

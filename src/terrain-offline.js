@@ -1,5 +1,7 @@
 import { geometryBounds } from './normalize.js';
 import { saveMapTile, getMapTile, deleteMapTiles } from './db.js';
+import { downloadTileRevision } from './tile-revision-downloader.js';
+import { fetchWithTimeout } from './app/net.js';
 
 const TERRAIN_URL='/api/terrain';
 const MIN_ZOOM=6;
@@ -57,45 +59,33 @@ function terrainRevisionId(pkgId){
   return `${base}@terrain@${nonce}`;
 }
 
-function normalizeTileData(data){
-  if(data instanceof ArrayBuffer) return data;
-  if(ArrayBuffer.isView(data)) return data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength);
-  return data;
-}
-
 export async function downloadTerrain(pkg,onProgress=()=>{}){
   const plan=buildTerrainDownloadPlan(pkg.geojson);
   const storageId=terrainRevisionId(pkg.id);
   await deleteMapTiles(storageId);
 
-  let done=0,saved=0,bytes=0,failed=0;
-  const queue=[...plan.tiles];
   const started=Date.now();
 
   try{
-    async function worker(){
-      while(queue.length){
-        const t=queue.shift();
-        try{
-          const response=await fetch(`${TERRAIN_URL}/${t.z}/${t.x}/${t.y}.webp`,{cache:'no-store'});
-          if(!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data=normalizeTileData(await response.arrayBuffer());
-          if(!data?.byteLength) throw new Error('Пустой DEM-тайл');
-          await saveMapTile(storageId,t.z,t.x,t.y,data);
-          saved++;
-          bytes+=data.byteLength;
-        }catch(error){
-          failed++;
-          console.warn('terrain tile failed',t,error);
-        }
-        done++;
-        onProgress({done,total:plan.tiles.length,saved,bytes,failed,maxZoom:plan.maxZoom});
-      }
-    }
-
-    await Promise.all(Array.from({length:Math.min(6,queue.length)},()=>worker()));
-    if(!saved) throw new Error('Не удалось скачать ни одного DEM-тайла');
-    if(failed) throw new Error(`Не удалось скачать ${failed} из ${plan.tiles.length} DEM-тайлов`);
+    const stats=await downloadTileRevision({
+      tiles:plan.tiles,
+      storageId,
+      getTile:getMapTile,
+      fetchTile:async tile=>{
+        const response=await fetchWithTimeout(`${TERRAIN_URL}/${tile.z}/${tile.x}/${tile.y}.webp`,{cache:'no-store'},12_000);
+        if(!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.arrayBuffer();
+      },
+      saveTile:saveMapTile,
+      deleteRevision:deleteMapTiles,
+      concurrency:6,
+      retries:1,
+      resume:false,
+      cleanupOnFailure:true,
+      onProgress,
+      maxZoom:plan.maxZoom
+    });
+    const {saved,bytes,failed}=stats;
 
     return {
       ready:true,
@@ -114,7 +104,6 @@ export async function downloadTerrain(pkg,onProgress=()=>{}){
       elapsedMs:Date.now()-started
     };
   }catch(error){
-    try{ await deleteMapTiles(storageId); }catch(cleanupError){ console.warn('Could not remove failed terrain revision',cleanupError); }
     throw error;
   }
 }

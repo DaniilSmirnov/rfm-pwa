@@ -69,4 +69,15 @@ test.describe('app shell and catalog',()=>{
     await expect(page.locator('#catalogStatus')).toContainText('2 гонок');
     await expect(page.locator('#catalogList')).toContainText(raceFixture.name);
   });
+
+  test('opens boot diagnostics after five logo taps and reads local storage on demand',async({page})=>{
+    await openApp(page);
+    for(let i=0;i<5;i++) await page.locator('#headerLogo').click();
+    await expect(page.locator('#bootDiagnosticsModal')).toBeVisible();
+    await page.locator('#bootDiagnosticsRefreshPackages').click();
+    await page.locator('#bootDiagnosticsRefresh').click();
+    await expect(page.locator('#bootDiagnosticsMeta')).toContainText('Локальные данные:');
+    await expect(page.locator('#bootDiagnosticsMeta')).toContainText('rallyfans-offline');
+    await expect(page.locator('#bootDiagnosticsExport')).toBeVisible();
+  });
 });

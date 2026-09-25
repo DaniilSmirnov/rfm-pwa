@@ -1,4 +1,4 @@
-import { bytesToBase64Url, readJson, commonHeaders, json } from './http.js';
+import { bytesToBase64Url, readJson, commonHeaders, fetchWithTimeout, json } from './http.js';
 
 function walletStore(env){
   return env?.WALLET_STORE || env?.PUSH_SUBSCRIPTIONS || null;
@@ -80,7 +80,7 @@ async function notifyWalletUpdate(env,record){
   const headers={'content-type':'application/json'};
   if(env.WALLET_PUSH_PROVIDER_TOKEN) headers.authorization=`Bearer ${env.WALLET_PUSH_PROVIDER_TOKEN}`;
 
-  const res=await fetch(env.WALLET_PUSH_PROVIDER_URL,{
+  const res=await fetchWithTimeout(env.WALLET_PUSH_PROVIDER_URL,{
     method:'POST',
     headers,
     body:JSON.stringify({
@@ -88,7 +88,7 @@ async function notifyWalletUpdate(env,record){
       serialNumber:record.serialNumber,
       pushTokens
     })
-  });
+  },12_000);
   return {ok:res.ok,status:res.status,devices:pushTokens.length};
 }
 
@@ -170,7 +170,8 @@ async function signedWalletPassResponse(env,requestUrl,record){
   if(env.WALLET_SIGNER_TOKEN) headers.authorization=`Bearer ${env.WALLET_SIGNER_TOKEN}`;
 
   const pass=buildWalletPassJson(env,requestUrl,record);
-  const signer=await fetch(env.WALLET_SIGNER_URL,{
+  let signer;
+  try{signer=await fetchWithTimeout(env.WALLET_SIGNER_URL,{
     method:'POST',
     headers,
     body:JSON.stringify({
@@ -181,7 +182,9 @@ async function signedWalletPassResponse(env,requestUrl,record){
         logoUrl:`${requestUrl.origin}/rfm/icon.png`
       }
     })
-  });
+  },15_000);}catch(error){
+    return json({ok:false,error:'Wallet signer unavailable',detail:String(error?.message||error)},502);
+  }
 
   if(!signer.ok){
     const detail=await signer.text().catch(()=>'');
