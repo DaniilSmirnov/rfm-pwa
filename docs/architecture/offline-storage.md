@@ -29,6 +29,9 @@ once per tile.
 Client API and terrain tile requests have explicit deadlines. Cloudflare Worker
 proxy calls and push/Wallet provider calls also use abortable deadlines, so
 unavailable upstreams fail promptly instead of holding an operation open.
+Connectivity follows a bounded health probe in addition to browser online/offline
+events. It is retried on focus, when the app becomes visible, and every ten
+seconds while visible, covering devices that keep `navigator.onLine` stale.
 
 ## Cache boundaries
 

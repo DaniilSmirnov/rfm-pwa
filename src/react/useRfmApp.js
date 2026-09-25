@@ -20,6 +20,7 @@ import { raceWithinWeek, pickDefaultRace } from '../app/catalog-dates.js';
 import { markBoot } from '../app/boot-diagnostics.js';
 import { formatBytes } from '../app/format.js';
 import { useOfflineStorageControls } from './useOfflineStorageControls.js';
+import { createConnectivityMonitor } from '../app/network-status.js';
 
 let bootstrapPromise=null;
 let mapLibrePromise=null;
@@ -127,6 +128,7 @@ export function useRfmApp(){
   const [compassEnabled,setCompassEnabled]=useState(false);
   const swRef=useRef(null);
   const geoWatchRef=useRef(null);
+  const connectivityRef=useRef(Boolean(navigator.onLine));
 
   const refreshPackages=useCallback(async(preferredId=null)=>{
     const started=performance.now();
@@ -169,7 +171,7 @@ export function useRfmApp(){
   },[offlineStorage.clearMapError]);
 
   const loadCatalog=useCallback(async()=>{
-    if(!navigator.onLine){
+    if(!connectivityRef.current){
       setCatalogStatus('Офлайн: доступны уже скачанные гонки.');
       setCatalog([]);
       markBoot('catalog-refresh-skipped',{reason:'offline'});
@@ -194,8 +196,18 @@ export function useRfmApp(){
     bootstrapRuntime().then(sw=>{if(alive) swRef.current=sw;});
     refreshPackages().catch(error=>markBoot('saved-data-load-failed',{message:String(error?.message||error)}));
     loadCatalog();
-    const onOnline=()=>{setOnline(true);loadCatalog();requestRallyPackBackgroundRefresh(swRef.current);};
-    const onOffline=()=>setOnline(false);
+    const connectivity=createConnectivityMonitor({onChange:reachable=>{
+      connectivityRef.current=reachable;
+      setOnline(reachable);
+      if(reachable){
+        loadCatalog();
+        requestRallyPackBackgroundRefresh(swRef.current);
+      }else{
+        setCatalogStatus('Офлайн: доступны уже скачанные гонки.');
+        setCatalog([]);
+      }
+    }});
+    connectivityRef.current=connectivity.online;
     const onPeriodic=async()=>{
       const result=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(()=>null);
       if(result?.applied||result?.pending) await refreshPackages(currentPackage?.id);
@@ -205,14 +217,11 @@ export function useRfmApp(){
       if(detail.status==='success') setCatalogStatus('Офлайн-материалы готовы ✓');
       if(detail.status==='failure') setCatalogStatus('Не удалось скачать часть офлайн-материалов.');
     };
-    window.addEventListener('online',onOnline);
-    window.addEventListener('offline',onOffline);
     window.addEventListener('rfm:periodic-update',onPeriodic);
     window.addEventListener('rfm:background-fetch',onBackground);
     return()=>{
       alive=false;
-      window.removeEventListener('online',onOnline);
-      window.removeEventListener('offline',onOffline);
+      connectivity.stop();
       window.removeEventListener('rfm:periodic-update',onPeriodic);
       window.removeEventListener('rfm:background-fetch',onBackground);
       if(geoWatchRef.current!=null) navigator.geolocation?.clearWatch?.(geoWatchRef.current);
