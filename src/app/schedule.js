@@ -295,9 +295,13 @@ export function stageFeatureScore(feature,stage){
   const normalizedText=normalizeStageKey(text);
   const normalizedName=normalizeStageKey(stage?.name);
   const normalizedKey=normalizeStageKey(stage?.key);
-  if(normalizedName && normalizedText===normalizedName) return 100;
-  if(normalizedName && normalizedText.includes(normalizedName)) return 90;
-  if(normalizedKey && normalizedText.includes(normalizedKey)) return 85;
+  const names=['name','title','caption','subtitle']
+    .map(key=>normalizeStageKey(feature?.properties?.[key]))
+    .filter(Boolean);
+  if(normalizedName && names.includes(normalizedName)) return 100;
+  if(normalizedName && names.some(name=>name.includes(normalizedName))) return 90;
+  if(normalizedKey && names.some(name=>name.includes(normalizedKey))) return 85;
+  if(normalizedName && normalizedText.includes(normalizedName)) return 80;
   const expectedNumber=stageNumber(stage?.name||stage?.key);
   const actualNumber=stageNumber(text);
   if(expectedNumber && actualNumber===expectedNumber) return 70;
