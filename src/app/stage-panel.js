@@ -47,6 +47,7 @@ function eventRows(stage){
 export async function renderStagePanel(stage,terrain){
   const panel=$('stagePanel'),title=$('stagePanelTitle'),meta=$('stagePanelMeta'),events=$('stagePanelEvents'),body=$('stagePanelElevation');
   if(!panel||!title||!meta||!events||!body) return;
+  document.querySelector('.map-card')?.classList.toggle('stage-open',Boolean(stage));
   if(!stage){
     panel.hidden=true;
     return;
