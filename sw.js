@@ -69,7 +69,7 @@ self.addEventListener('fetch', event=>{
   if(url.origin!==location.origin) return;
 
   if(url.pathname.startsWith('/api/rallyfans/public/')){
-    event.respondWith(caches.open(ASSET_CACHE).then(async cache=>(await cache.match(event.request))||fetch(event.request).then(response=>{
+    event.respondWith(caches.open(ASSET_CACHE).then(async cache=>(await cache.match(event.request))||fetchWithTimeout(event.request,12000).then(response=>{
       if(response.ok) cache.put(event.request,response.clone());
       return response;
     })));
@@ -79,7 +79,7 @@ self.addEventListener('fetch', event=>{
     event.respondWith((async()=>{
       const cache=await caches.open(PERIODIC_CACHE);
       try{
-        const response=await fetch(new Request(event.request,{cache:'no-store'}));
+        const response=await fetchWithTimeout(event.request,8000);
         if(response.ok) await cache.put(event.request,response.clone());
         return response;
       }catch{
@@ -125,11 +125,11 @@ self.addEventListener('push', event => {
       try{
         const subscription=await self.registration.pushManager.getSubscription();
         if(subscription?.endpoint){
-          const response=await fetch('/api/push/pending',{
+          const response=await fetchWithTimeout(new Request('/api/push/pending',{
             method:'POST',
             headers:{'content-type':'application/json'},
             body:JSON.stringify({endpoint:subscription.endpoint})
-          });
+          }),5000);
           const data=await response.json();
           if(response.ok && data?.pending) payload=data.pending;
         }
@@ -196,7 +196,7 @@ async function prefetchRaceAssets(race){
     const url=`/api/rallyfans/public/${encodeURIComponent(name)}`;
     if(await cache.match(url)) return;
     try{
-      const response=await fetch(url,{cache:'no-store'});
+      const response=await fetchWithTimeout(new Request(url,{cache:'no-store'}),12000);
       if(response.ok) await cache.put(url,response);
     }catch{}
   }));
@@ -205,14 +205,14 @@ async function prefetchRaceAssets(race){
 async function refreshPeriodicRaceData(){
   const cache=await caches.open(PERIODIC_CACHE);
   try{
-    const catalog=await fetch('/api/rallyfans/race',{cache:'no-store'});
+    const catalog=await fetchWithTimeout(new Request('/api/rallyfans/race',{cache:'no-store'}),8000);
     if(catalog.ok) await cache.put('/api/rallyfans/race',catalog);
   }catch{}
   const ids=await savedRaceIds();
   await Promise.all([...new Set(ids)].map(async id=>{
     const url=`/api/rallyfans/race/${encodeURIComponent(id)}`;
     try{
-      const response=await fetch(url,{cache:'no-store'});
+      const response=await fetchWithTimeout(new Request(url,{cache:'no-store'}),8000);
       if(!response.ok) return;
       await cache.put(url,response.clone());
       const race=await response.json();
