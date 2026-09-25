@@ -39,15 +39,27 @@ self.addEventListener('message', event=>{
   if(event.data?.type==='REFRESH_RALLY_PACKS') event.waitUntil(refreshPeriodicRaceData());
 });
 
-async function networkFirst(request,fallback='/index.html'){
-  const cache=await caches.open(CACHE);
-  try {
-    const response=await fetch(new Request(request,{cache:'no-store'}));
-    if(response.ok) await cache.put(request,response.clone());
-    return response;
-  } catch {
-    return (await cache.match(request)) || (fallback ? await cache.match(fallback) : Response.error());
+async function fetchWithTimeout(request,timeoutMs=1200){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    return await fetch(new Request(request,{cache:'no-store',signal:controller.signal}));
+  }finally{
+    clearTimeout(timer);
   }
+}
+
+async function refreshNavigation(request){
+  const cache=await caches.open(CACHE);
+  const response=await fetchWithTimeout(request);
+  if(response.ok) await cache.put(request,response.clone());
+  return response;
+}
+
+async function cachedNavigation(request,fallback='/index.html'){
+  const cache=await caches.open(CACHE);
+  return (await cache.match(request))
+    || (fallback ? await cache.match(fallback) : null);
 }
 
 self.addEventListener('fetch', event=>{
@@ -78,9 +90,16 @@ self.addEventListener('fetch', event=>{
   }
   if(url.pathname.startsWith('/api/')) return;
 
-  // HTML navigations must prefer the network so an old cached app shell cannot pin an old release.
+  // Navigation is local-first: an installed PWA must open immediately even when
+  // Android reports a network that is connected but cannot actually reach the server.
   if(event.request.mode==='navigate' || url.pathname==='/' || url.pathname==='/index.html'){
-    event.respondWith(networkFirst(event.request));
+    const refresh=refreshNavigation(event.request).catch(()=>null);
+    event.waitUntil(refresh.then(()=>undefined));
+    event.respondWith((async()=>{
+      const cached=await cachedNavigation(event.request);
+      if(cached) return cached;
+      return (await refresh) || Response.error();
+    })());
     return;
   }
 
