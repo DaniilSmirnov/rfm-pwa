@@ -47,7 +47,9 @@ function splitFeatures(fc={type:'FeatureCollection',features:[]}) {
 function routePayload(feature) {
   return {
     name:String(feature?.properties?.name || feature?.properties?.title || feature?.properties?.caption || 'Участок'),
-    geometry:feature?.geometry || null
+    geometry:feature?.geometry || null,
+    properties:{...(feature?.properties||{})},
+    feature
   };
 }
 
@@ -248,6 +250,18 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     map.addLayer({id:'rfm-yandex-lines-casing',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#111318','line-width':['interpolate',['linear'],['zoom'],5,7,12,10,17,14],'line-opacity':0.82}});
     map.addLayer({id:'rfm-yandex-lines',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#ffd21e','line-width':['interpolate',['linear'],['zoom'],5,4,12,7,17,10],'line-opacity':1}});
 
+    map.addSource('rfm-selected-stage',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'rfm-selected-stage-casing',type:'line',source:'rfm-selected-stage',minzoom:0,maxzoom:24,paint:{
+      'line-color':'#f8fafc',
+      'line-width':['interpolate',['linear'],['zoom'],5,10,12,14,17,18],
+      'line-opacity':0.92
+    }});
+    map.addLayer({id:'rfm-selected-stage',type:'line',source:'rfm-selected-stage',minzoom:0,maxzoom:24,paint:{
+      'line-color':sourceColorExpression(),
+      'line-width':['interpolate',['linear'],['zoom'],5,5,12,8,17,12],
+      'line-opacity':1
+    }});
+
     map.addSource('rfm-polygons',{type:'geojson',data:polygons});
     map.addLayer({id:'rfm-polygons-fill',type:'fill',source:'rfm-polygons',paint:{'fill-color':sourceColorExpression(),'fill-opacity':0.14}});
     map.addLayer({id:'rfm-polygons-outline',type:'line',source:'rfm-polygons',paint:{'line-color':sourceColorExpression(),'line-width':3}});
@@ -395,4 +409,38 @@ export function renderMap(container, fc, userPos = null, onPointClick = null, op
     return null;
   }
   return renderFallback(container,fc,userPos,onPointClick);
+}
+
+
+export function selectStageOnMap(stage,{fit=false}={}){
+  if(!activeMap || !stage?.geometry) return false;
+  try{
+    const feature={
+      type:'Feature',
+      properties:{...(stage.geometryFeature?.properties||{}),name:stage.name||'СУ'},
+      geometry:stage.geometry
+    };
+    activeMap.getSource?.('rfm-selected-stage')?.setData?.({type:'FeatureCollection',features:[feature]});
+    if(fit){
+      const bounds=geometryBounds({type:'FeatureCollection',features:[feature]});
+      if(bounds) activeMap.fitBounds(
+        [[bounds.minLon,bounds.minLat],[bounds.maxLon,bounds.maxLat]],
+        {padding:64,maxZoom:15,duration:550}
+      );
+    }
+    return true;
+  }catch(error){
+    console.warn('stage map selection failed',error);
+    return false;
+  }
+}
+
+export function clearStageOnMap(){
+  if(!activeMap) return false;
+  try{
+    activeMap.getSource?.('rfm-selected-stage')?.setData?.({type:'FeatureCollection',features:[]});
+    return true;
+  }catch{
+    return false;
+  }
 }

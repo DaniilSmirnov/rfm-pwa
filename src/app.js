@@ -17,6 +17,7 @@ import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriod
 import { renderPointList as renderPointListUi } from './app/point-list.js';
 import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
 import { renderSchedule } from './app/schedule-ui.js';
+import { createStageSelection } from './app/stage-selection.js';
 import { syncWalletPassesForPackage } from './app/wallet-client.js';
 import { setupPwaInstall } from './app/pwa.js';
 import { downloadRallyPack } from './app/rally-pack.js';
@@ -26,6 +27,7 @@ import { showPointElevation, showRouteElevationProfile } from './app/elevation-u
 import { processCachedRallyPackUpdates } from './app/rally-pack-update.js';
 import { renderRallyPackUpdateStatus } from './app/rally-pack-update-ui.js';
 import { reportClientError, setupErrorTelemetry } from './app/telemetry.js';
+import { scheduleStartupMaintenance } from './app/startup-maintenance.js';
 import { markBoot, setupBootDiagnosticsUi } from './app/boot-diagnostics.js';
 
 const $ = id => document.getElementById(id);
@@ -37,6 +39,7 @@ let selectedPoint = null;
 let compassHeading = null;
 let compassListening = false;
 let swRegistration = null;
+const stageSelection = createStageSelection();
 
 setupErrorTelemetry();
 let firstOfflineTileMarked=false;
@@ -50,6 +53,7 @@ setupBootDiagnosticsUi();
 setupPwaInstall();
 setupPushUi();
 initRaceMediaModal();
+$('stagePanelClose')?.addEventListener('click',()=>stageSelection.clear());
 
 function downloadBlob(filename,type,text){
   const url=URL.createObjectURL(new Blob([text],{type}));
@@ -183,6 +187,7 @@ async function selectPackage(id){
   $('mapTitle').textContent=p.name;
   const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:(p.offlineMap.storageId||p.id)} : null;
   const terrain=p.terrain?.ready ? p.terrain : null;
+  await stageSelection.setPackage(p,terrain);
   $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}${terrain?'рельеф ✓ · ':''}сохранено ${new Date(p.savedAt).toLocaleString()}`;
   try {
     await ensureMapLibre();
@@ -196,7 +201,7 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  const mapInstance=renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ reportClientError(new Error(msg),'map'); const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  const mapInstance=renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:stageSelection.selectRoute,onMapError:(msg)=>{ reportClientError(new Error(msg),'map'); const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   markBoot('map-created',{packageId:p.id,offline:Boolean(om)});
   mapInstance?.once?.('load',()=>markBoot('map-loaded',{packageId:p.id,offline:Boolean(om)}));
   updateOfflineMapUi(p);
@@ -218,7 +223,7 @@ async function selectPackage(id){
   ].filter(x=>x[1]).map(([k,v])=>`<div><strong>${esc(v)}</strong><span>${esc(k)}</span></div>`).join('');
   const img=$('raceImage');
   if(p.original?.image){ img.src=assetUrl(p.original.image); img.hidden=false; img.onerror=()=>img.hidden=true; } else img.hidden=true;
-  renderSchedule(p);
+  renderSchedule(p,stageSelection.scheduleOptions());
   syncWalletPassesForPackage(p).catch(e=>console.warn('Wallet pass refresh failed',e));
   renderRaceMedia(p);
   renderRallyPackUpdateStatus(p);
@@ -601,51 +606,12 @@ $('importYandexBtn').onclick = async () => {
 markBoot('local-start');
 await refreshList();
 
-async function runStartupMaintenance(){
-  markBoot('maintenance-start',{online:navigator.onLine});
-  swRegistration=await setupServiceWorkerUpdates({
-    onDiagnostic:(name,detail)=>markBoot(name,detail)
-  });
-  markBoot('sw-setup-finished',{registered:Boolean(swRegistration)});
-
-  const storage=await ensurePersistentStorage();
-  markBoot('persistent-storage-checked',storage);
-
-  await setupPeriodicBackgroundSync(swRegistration);
-  markBoot('periodic-sync-checked');
-
-  if(navigator.onLine) requestRallyPackBackgroundRefresh(swRegistration);
-
-  const smartUpdate=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders})
-    .catch(e=>{console.warn('Smart Rally Pack update failed',e);return null;});
-  markBoot('cached-updates-processed',smartUpdate);
-
-  await refreshPushUi();
-  markBoot('push-ui-ready');
-
-  if(navigator.onLine){
-    try {
-      if(await getPushSubscription()) await scheduleAllSavedReminders();
-      markBoot('push-reminders-refreshed');
-    } catch(e) {
-      console.warn('Could not refresh scheduled race reminders on startup',e);
-      markBoot('push-reminders-failed',{message:String(e?.message||e)});
-    }
-  }else{
-    markBoot('push-reminders-skipped',{reason:'offline'});
-  }
-
-  void loadCatalog().then(()=>markBoot('catalog-refresh-finished')).catch(()=>{});
-}
-
-const scheduleMaintenance=()=>{
-  if('requestIdleCallback' in window){
-    requestIdleCallback(()=>void runStartupMaintenance(),{timeout:1500});
-  }else{
-    setTimeout(()=>void runStartupMaintenance(),300);
-  }
-};
-scheduleMaintenance();
+scheduleStartupMaintenance({
+  markBoot,setupServiceWorkerUpdates,ensurePersistentStorage,setupPeriodicBackgroundSync,
+  requestRallyPackBackgroundRefresh,processCachedRallyPackUpdates,getAllPackages,savePackage,
+  scheduleRaceReminders,refreshPushUi,getPushSubscription,scheduleAllSavedReminders,loadCatalog,
+  onRegistration:registration=>{swRegistration=registration;}
+});
 window.addEventListener('rfm:periodic-update',async()=>{
   const result=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(()=>null);
   if(result?.applied||result?.pending){

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { renderMap } from '../../src/map.js';
+import { renderMap, selectStageOnMap, clearStageOnMap } from '../../src/map.js';
 
 class FakeMap {
   static last=null;
@@ -20,15 +20,16 @@ class FakeMap {
     return this;
   }
   addControl(control){this.controls.push(control);}
-  addSource(id,source){this.sources.set(id,source);}
+  addSource(id,source){this.sources.set(id,{...source,setData(data){this.data=data;}});}
   addLayer(layer){this.layers.push(layer);}
-  fitBounds(){this.didFit=true;}
+  fitBounds(bounds,options){this.didFit=true;this.lastFit={bounds,options};}
   getZoom(){return this.zoom;}
   getCenter(){return {lng:30.69,lat:61.7};}
   getBearing(){return 0;}
   getCanvas(){return {style:{}};}
   getStyle(){return {layers:this.options.style.layers||[]};}
   getLayer(id){return this.layers.find(layer=>layer.id===id)||null;}
+  getSource(id){return this.sources.get(id)||null;}
   queryRenderedFeatures(){return [];}
   remove(){}
 }
@@ -193,6 +194,27 @@ describe('offline map overlay bootstrap',()=>{
     });
     expect(yandexCasing).toMatchObject({minzoom:0,maxzoom:24});
     expect(map.sources.get('rfm-lines')?.data.features.map(feature=>feature.properties.name)).toEqual(['SS1']);
+  });
+
+  it('highlights and focuses a selected stage without replacing route sources',()=>{
+    installMapLibre();
+    const container=document.createElement('div');
+    renderMap(container,fc,null,vi.fn(),{});
+    const map=FakeMap.last;
+    map.handlers.get('style.load')();
+
+    const stage={
+      name:'SS2',
+      geometryFeature:fc.features[2],
+      geometry:fc.features[2].geometry
+    };
+    expect(selectStageOnMap(stage,{fit:true})).toBe(true);
+    expect(map.sources.get('rfm-selected-stage').data.features).toHaveLength(1);
+    expect(map.sources.get('rfm-selected-stage').data.features[0].properties.name).toBe('SS2');
+    expect(map.lastFit.options).toMatchObject({maxZoom:15,duration:550});
+
+    expect(clearStageOnMap()).toBe(true);
+    expect(map.sources.get('rfm-selected-stage').data.features).toHaveLength(0);
   });
 
   it('keeps race overlays above terrain when an offline terrain style is enabled',()=>{
