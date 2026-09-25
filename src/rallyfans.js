@@ -1,7 +1,6 @@
 import { hashId } from './normalize.js';
 import { fetchYandexConstructorFeatures, yandexFeaturesToGeoJson, mergeGeoJson } from './yandex.js';
 import { fetchWithTimeout } from './app/net.js';
-import { fetchWithTimeout } from './app/net.js';
 
 export const API_BASE = '/api/rallyfans';
 export const HEALTH_URL = '/api/health';
