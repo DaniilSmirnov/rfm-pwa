@@ -2,10 +2,11 @@ import { geometryBounds } from './normalize.js';
 import { baseStyle } from './map/style.js';
 import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
 import { TerrainModeControl } from './map/terrain-control.js';
-import { bearingDegrees, distanceMeters } from './app/geo.js';
+import { installRouteDirections } from './map/route-direction.js';
 
 let activeMap = null;
 let activeRaceLabelMarkers = [];
+let activeRouteDirectionMarkers = [];
 
 function clearMarkers(list) {
   for (const marker of list) {
@@ -16,6 +17,7 @@ function clearMarkers(list) {
 
 function clearAllLabels() {
   clearMarkers(activeRaceLabelMarkers);
+  clearMarkers(activeRouteDirectionMarkers);
 }
 
 function esc(s='') { return String(s).replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -168,58 +170,6 @@ function installRacePointLabels(map, points, onPointClick, {alwaysVisible=false}
   map.on('zoom',update);
 }
 
-function installRouteDirectionAnimation(map,maplibregl,collections){
-  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches||!maplibregl?.Marker) return;
-  const tracks=[];
-  for(const collection of collections){
-    for(const feature of collection?.features||[]){
-      const geometry=feature?.geometry;
-      const segments=geometry?.type==='LineString'?[geometry.coordinates]
-        :geometry?.type==='MultiLineString'?geometry.coordinates:[];
-      for(const coords of segments){
-        if(!Array.isArray(coords)||coords.length<2) continue;
-        const valid=coords.filter(c=>Array.isArray(c)&&Number.isFinite(c[0])&&Number.isFinite(c[1]));
-        if(valid.length<2) continue;
-        const el=document.createElement('div');
-        el.className='map-route-direction';
-        el.textContent='➤';
-        el.setAttribute('aria-label',`Направление движения: ${featureName(feature.properties)||'СУ'}`);
-        const marker=new maplibregl.Marker({element:el,anchor:'center',rotationAlignment:'map'})
-          .setLngLat(valid[0]).addTo(map);
-        const lengths=[];
-        let total=0;
-        for(let i=1;i<valid.length;i++){
-          total+=distanceMeters({lat:valid[i-1][1],lon:valid[i-1][0]},{lat:valid[i][1],lon:valid[i][0]});
-          lengths.push(total);
-        }
-        tracks.push({marker,valid,lengths,total,start:performance.now()+Math.random()*5000});
-      }
-    }
-  }
-  if(!tracks.length||typeof map.once!=='function'||tracks.some(track=>typeof track.marker.setRotation!=='function')) return;
-  let frame=0;
-  let lastUpdate=0;
-  const animate=now=>{
-    if(now-lastUpdate<40){frame=requestAnimationFrame(animate);return;}
-    lastUpdate=now;
-    for(const track of tracks){
-      const distance=((now-track.start)%12000+12000)%12000/12000*track.total;
-      let i=track.lengths.findIndex(length=>length>=distance);
-      if(i<0)i=track.lengths.length-1;
-      const before=i?track.lengths[i-1]:0;
-      const span=track.lengths[i]-before;
-      const t=span?(distance-before)/span:0;
-      const a=track.valid[i],b=track.valid[i+1];
-      const position=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
-      track.marker.setLngLat(position).setRotation(bearingDegrees({lat:a[1],lon:a[0]},{lat:b[1],lon:b[0]}));
-    }
-    frame=requestAnimationFrame(animate);
-  };
-  frame=requestAnimationFrame(animate);
-  map.once('remove',()=>{cancelAnimationFrame(frame);for(const track of tracks)track.marker.remove();});
-}
-
-
 function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   const maplibregl = window.maplibregl;
   if (!maplibregl) throw new Error('MapLibre is unavailable');
@@ -271,7 +221,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     map.addSource('rfm-yandex-lines',{type:'geojson',data:yandexLines});
     map.addLayer({id:'rfm-yandex-lines-casing',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#111318','line-width':['interpolate',['linear'],['zoom'],5,7,12,10,17,14],'line-opacity':0.82}});
     map.addLayer({id:'rfm-yandex-lines',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#ffd21e','line-width':['interpolate',['linear'],['zoom'],5,4,12,7,17,10],'line-opacity':1}});
-    installRouteDirectionAnimation(map,maplibregl,[lines,yandexLines]);
+    activeRouteDirectionMarkers=installRouteDirections(map,maplibregl,[lines,yandexLines]);
 
     map.addSource('rfm-selected-stage',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'rfm-selected-stage-casing',type:'line',source:'rfm-selected-stage',minzoom:0,maxzoom:24,paint:{
