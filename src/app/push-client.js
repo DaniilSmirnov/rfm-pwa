@@ -3,7 +3,6 @@ import { buildRaceReminders } from './schedule.js';
 import { subscribedStageKeys } from './preferences.js';
 import { isIOSDevice, isStandalonePwa, syncInstallUi, requestPwaInstall } from './pwa.js';
 import { fetchWithTimeout } from './net.js';
-import { fetchWithTimeout } from './net.js';
 
 const $=id=>document.getElementById(id);
 
