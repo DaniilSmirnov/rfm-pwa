@@ -1,5 +1,6 @@
 import { hashId } from './normalize.js';
 import { fetchYandexConstructorFeatures, yandexFeaturesToGeoJson, mergeGeoJson } from './yandex.js';
+import { fetchWithTimeout } from './app/net.js';
 
 export const API_BASE = '/api/rallyfans';
 export const HEALTH_URL = '/api/health';
@@ -92,19 +93,19 @@ export function raceDetailToPackage(race) {
 }
 
 export async function checkApiHealth() {
-  const r = await fetch(HEALTH_URL, { cache: 'no-store' });
+  const r = await fetchWithTimeout(HEALTH_URL, { cache: 'no-store' }, 4000);
   if (!r.ok) throw new Error(`health ${r.status}`);
   return r.json();
 }
 
 export async function fetchRaceCatalog() {
-  const r = await fetch(`${API_BASE}/race`, { cache: 'no-store' });
+  const r = await fetchWithTimeout(`${API_BASE}/race`, { cache: 'no-store' }, 7000);
   if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
   return r.json();
 }
 
 export async function fetchRace(id) {
-  const r = await fetch(`${API_BASE}/race/${encodeURIComponent(id)}`, { cache: 'no-store' });
+  const r = await fetchWithTimeout(`${API_BASE}/race/${encodeURIComponent(id)}`, { cache: 'no-store' }, 7000);
   if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
   return r.json();
 }
@@ -149,7 +150,7 @@ export async function cacheRaceAssets(pkg, onProgress = () => {}) {
   for (let i = 0; i < names.length; i++) {
     const url = assetUrl(names[i]);
     try {
-      const r = await fetch(url);
+      const r = await fetchWithTimeout(url,{},12000);
       if (r.ok) { await cache.put(url, r.clone()); cached++; }
     } catch {}
     onProgress(i + 1, names.length,{background:false});

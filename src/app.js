@@ -6,7 +6,7 @@ import { normalizePackage } from './normalize.js';
 import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
 import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
-import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan } from './offline-map.js';
+import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan, setOfflineMapDiagnosticsListener } from './offline-map.js';
 import { downloadTerrain, removeTerrain, discardTerrainRevision, buildTerrainDownloadPlan } from './terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from './app/export.js';
 import { startOfLocalDay, raceDateRange, distanceFromTodayDays, raceWithinWeek, pickDefaultRace } from './app/catalog-dates.js';
@@ -26,6 +26,7 @@ import { showPointElevation, showRouteElevationProfile } from './app/elevation-u
 import { processCachedRallyPackUpdates } from './app/rally-pack-update.js';
 import { renderRallyPackUpdateStatus } from './app/rally-pack-update-ui.js';
 import { reportClientError, setupErrorTelemetry } from './app/telemetry.js';
+import { markBoot, setupBootDiagnosticsUi } from './app/boot-diagnostics.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -35,8 +36,17 @@ let catalog = [];
 let selectedPoint = null;
 let compassHeading = null;
 let compassListening = false;
+let swRegistration = null;
 
 setupErrorTelemetry();
+let firstOfflineTileMarked=false;
+setOfflineMapDiagnosticsListener(stats=>{
+  if(!firstOfflineTileMarked && stats?.hits>0){
+    firstOfflineTileMarked=true;
+    markBoot('first-offline-tile',{bytes:stats.last?.bytes||0});
+  }
+});
+setupBootDiagnosticsUi();
 setupPwaInstall();
 setupPushUi();
 initRaceMediaModal();
@@ -124,6 +134,7 @@ window.addEventListener('offline',updateNetwork); updateNetwork();
 
 async function refreshList() {
   const pkgs = (await getAllPackages()).sort((a,b)=>b.savedAt.localeCompare(a.savedAt));
+  markBoot('local-packages-read',{count:pkgs.length});
   const list=$('packageList'); list.innerHTML='';
   const q=($('packageSearch')?.value||'').trim().toLowerCase();
   let visible;
@@ -151,8 +162,9 @@ async function refreshList() {
   let persisted=false; try{ persisted=Boolean(await navigator.storage?.persisted?.()); }catch{}
   $('storageStats').innerHTML=`<strong>${pkgs.length} гонок</strong><span class="muted">JSON: ${fmtBytes(total)} · карты: ${fmtBytes(mapStats.bytes)} (${mapStats.count} тайлов) · persistent: ${persisted?'да':'нет'}</span>`;
 
-  if (!currentPackageId && visible[0]) selectPackage(visible[0].id);
-  renderCatalog();
+  if (!currentPackageId && visible[0]) await selectPackage(visible[0].id);
+  await renderCatalog();
+  markBoot('local-ui-ready',{packageId:currentPackageId,visible:visible.length});
 }
 
 function renderPointList(pkg){
@@ -184,7 +196,9 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ reportClientError(new Error(msg),'map'); const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  const mapInstance=renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ reportClientError(new Error(msg),'map'); const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  markBoot('map-created',{packageId:p.id,offline:Boolean(om)});
+  mapInstance?.once?.('load',()=>markBoot('map-loaded',{packageId:p.id,offline:Boolean(om)}));
   updateOfflineMapUi(p);
   terrainControls.update(p);
   renderPointList(p);
@@ -584,18 +598,54 @@ $('importYandexBtn').onclick = async () => {
   finally { btn.disabled=false; }
 };
 
-const swRegistration=await setupServiceWorkerUpdates();
-await ensurePersistentStorage();
-await setupPeriodicBackgroundSync(swRegistration);
-requestRallyPackBackgroundRefresh(swRegistration);
-await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(e=>console.warn('Smart Rally Pack update failed',e));
-await refreshPushUi();
-try {
-  if(await getPushSubscription()) await scheduleAllSavedReminders();
-} catch(e) {
-  console.warn('Could not refresh scheduled race reminders on startup',e);
-}
+markBoot('local-start');
 await refreshList();
+
+async function runStartupMaintenance(){
+  markBoot('maintenance-start',{online:navigator.onLine});
+  swRegistration=await setupServiceWorkerUpdates({
+    onDiagnostic:(name,detail)=>markBoot(name,detail)
+  });
+  markBoot('sw-setup-finished',{registered:Boolean(swRegistration)});
+
+  const storage=await ensurePersistentStorage();
+  markBoot('persistent-storage-checked',storage);
+
+  await setupPeriodicBackgroundSync(swRegistration);
+  markBoot('periodic-sync-checked');
+
+  if(navigator.onLine) requestRallyPackBackgroundRefresh(swRegistration);
+
+  const smartUpdate=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders})
+    .catch(e=>{console.warn('Smart Rally Pack update failed',e);return null;});
+  markBoot('cached-updates-processed',smartUpdate);
+
+  await refreshPushUi();
+  markBoot('push-ui-ready');
+
+  if(navigator.onLine){
+    try {
+      if(await getPushSubscription()) await scheduleAllSavedReminders();
+      markBoot('push-reminders-refreshed');
+    } catch(e) {
+      console.warn('Could not refresh scheduled race reminders on startup',e);
+      markBoot('push-reminders-failed',{message:String(e?.message||e)});
+    }
+  }else{
+    markBoot('push-reminders-skipped',{reason:'offline'});
+  }
+
+  void loadCatalog().then(()=>markBoot('catalog-refresh-finished')).catch(()=>{});
+}
+
+const scheduleMaintenance=()=>{
+  if('requestIdleCallback' in window){
+    requestIdleCallback(()=>void runStartupMaintenance(),{timeout:1500});
+  }else{
+    setTimeout(()=>void runStartupMaintenance(),300);
+  }
+};
+scheduleMaintenance();
 window.addEventListener('rfm:periodic-update',async()=>{
   const result=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(()=>null);
   if(result?.applied||result?.pending){
@@ -611,4 +661,3 @@ window.addEventListener('rfm:background-fetch',event=>{
   if(detail.status==='failure') status.textContent='Не удалось скачать часть офлайн-материалов.';
 });
 
-await loadCatalog();
