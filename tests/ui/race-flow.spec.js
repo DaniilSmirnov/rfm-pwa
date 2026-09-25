@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { openApp, downloadFixtureRace, raceFixture } from './helpers.js';
+import { openApp, seedFixtureRace, raceFixture } from './helpers.js';
 
 test.describe('saved race user flows',()=>{
-  test.beforeEach(async({page})=>{await openApp(page);await downloadFixtureRace(page);});
+  test.beforeEach(async({page})=>{await openApp(page);await seedFixtureRace(page);});
+  const openMap=page=>page.getByRole('button',{name:'Карта'}).click();
 
   test('opens downloaded race details',async({page})=>{
     await expect(page.locator('#raceTitle')).toHaveText(raceFixture.name);
@@ -57,6 +58,13 @@ test.describe('saved race user flows',()=>{
     await expect(page.locator('#storageStats')).toContainText('1 гонок');
   });
 
+  test('shows saved race artwork and Rally Pack refresh on Today tab',async({page})=>{
+    await page.getByRole('button',{name:'Сегодня'}).click();
+    await expect(page.locator('.today-race-card')).toContainText(raceFixture.name);
+    await expect(page.locator('.today-race-card')).toContainText('Обновить Rally Pack');
+    await expect(page.locator('.today-race-card')).toHaveAttribute('style',/hero\.jpg/);
+  });
+
   test('filters saved package list',async({page})=>{
     await page.locator('#packageSearch').fill('Sortavala');
     await expect(page.locator('#packageList')).toContainText(raceFixture.name);
@@ -65,6 +73,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('exports a valid GeoJSON file',async({page})=>{
+    await openMap(page);
     const downloadPromise=page.waitForEvent('download');
     await page.locator('#exportGeoJsonBtn').click();
     const download=await downloadPromise;
@@ -78,6 +87,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('exports a GPX file with rally waypoints',async({page})=>{
+    await openMap(page);
     const downloadPromise=page.waitForEvent('download');
     await page.locator('#exportGpxBtn').click();
     const download=await downloadPromise;
@@ -92,12 +102,14 @@ test.describe('saved race user flows',()=>{
   });
 
   test('renders rally point list',async({page})=>{
+    await openMap(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await expect(page.locator('#pointList')).toContainText('Смотровая точка');
     await expect(page.locator('#pointList')).toContainText('Парковка зрителей');
   });
 
   test('opens actions for selected point',async({page})=>{
+    await openMap(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').filter({hasText:'Смотровая точка'}).locator('.point-row-copy').click();
     await expect(page.locator('#pointActions')).toBeVisible();
@@ -106,6 +118,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('adds and removes point from favorites',async({page})=>{
+    await openMap(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     const row=page.locator('.point-row').filter({hasText:'Смотровая точка'});
     await row.locator('[data-nav="favorite"]').click();
@@ -115,6 +128,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('favorite state is reflected in point button',async({page})=>{
+    await openMap(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     const row=page.locator('.point-row').filter({hasText:'Смотровая точка'});
     const fav=row.locator('[data-nav="favorite"]');
@@ -123,6 +137,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('favorite survives page reload',async({page})=>{
+    await openMap(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').filter({hasText:'Смотровая точка'}).locator('[data-nav="favorite"]').click();
     await page.reload();
@@ -131,6 +146,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('copies point coordinates',async({page})=>{
+    await openMap(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     const row=page.locator('.point-row').filter({hasText:'Смотровая точка'});
     await row.locator('[data-nav="copy"]').click();
@@ -138,6 +154,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('saves current geolocation as car position',async({page})=>{
+    await openMap(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await expect(page.locator('#carCoords')).toContainText('61.700000');
@@ -145,6 +162,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('saved car position survives page reload',async({page})=>{
+    await openMap(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await page.reload();
@@ -154,6 +172,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('opens spectator compass for saved car',async({page})=>{
+    await openMap(page);
     await page.locator('#saveCarBtn').click();
     await page.locator('#carCompassBtn').click();
     await expect(page.locator('#pointActions')).toBeVisible();
@@ -163,6 +182,7 @@ test.describe('saved race user flows',()=>{
   });
 
   test('deletes saved car position',async({page})=>{
+    await openMap(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await page.locator('#carDeleteBtn').click();
@@ -170,17 +190,21 @@ test.describe('saved race user flows',()=>{
   });
 
   test('location button updates GPS status',async({page})=>{
+    await openMap(page);
     await page.locator('#locateBtn').click();
     await expect(page.locator('#geoStatus')).toContainText('точность ±5 м');
   });
 
   test('map engine diagnostic reports MapLibre',async({page})=>{
+    await openMap(page);
     await expect(page.locator('#offlineMapDiag')).toContainText('MapLibre ✓');
   });
 
   test('clear all removes offline race and favorites',async({page})=>{
+    await openMap(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('[data-nav="favorite"]').click();
+    await page.getByRole('button',{name:'Ещё'}).click();
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('#clearBtn').click();
     await expect(page.locator('#packageList')).toContainText('Пока ничего не скачано');

@@ -222,8 +222,25 @@ export async function openApp(page,options={}){
   await page.waitForFunction(()=>document.querySelector('#catalogStatus')?.textContent?.includes('гонок') || document.querySelector('#catalogStatus')?.textContent?.includes('недоступен') || document.querySelector('#catalogStatus')?.textContent?.includes('Офлайн'));
 }
 
-export async function downloadFixtureRace(page){
-  const row=page.locator('.catalog-row').filter({hasText:raceFixture.name});
-  await row.getByRole('button',{name:/Скачать Rally Pack|Обновить Rally Pack/}).click();
+export async function seedFixtureRace(page){
+  await page.getByRole('button',{name:'Ещё'}).click();
+  await page.evaluate(async race=>{
+    const request=indexedDB.open('rallyfans-offline',3);
+    request.onupgradeneeded=()=>{
+      const db=request.result;
+      if(!db.objectStoreNames.contains('packages'))db.createObjectStore('packages',{keyPath:'id'});
+      if(!db.objectStoreNames.contains('maptiles')){const store=db.createObjectStore('maptiles',{keyPath:'key'});store.createIndex('raceId','raceId',{unique:false});}
+      if(!db.objectStoreNames.contains('crewSubscriptions')){const store=db.createObjectStore('crewSubscriptions',{keyPath:'key'});store.createIndex('asmgRaceId','asmgRaceId',{unique:false});}
+    };
+    const db=await new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+    const features=(race.coordinates||[]).map(point=>{
+      const [lat,lon]=String(point.coordinates||'').split(',').map(Number);
+      return {type:'Feature',properties:{kind:'race-point',name:point.name},geometry:{type:'Point',coordinates:[lon,lat]}};
+    }).filter(feature=>feature.geometry.coordinates.every(Number.isFinite));
+    const pkg={id:`race-${race.id}`,raceId:race.id,name:race.name,source:`api.rallyfansmap.ru/race/${race.id}`,savedAt:new Date().toISOString(),size:JSON.stringify(race).length,original:race,geojson:{type:'FeatureCollection',features},assetNames:[],summary:{category:race.category_race||'',stage:race.stage_race||'',status:race.status_race||'',dates:race.date_race||race.dates||'',city:race.city_race_details||race.city_race||'',totalDistance:race.total_distance||'',combatKm:race.combat_km||'',days:race.days_race||''},yandexMapEmbed:null};
+    await new Promise((resolve,reject)=>{const tx=db.transaction('packages','readwrite');tx.objectStore('packages').put(pkg);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+    db.close();
+    window.dispatchEvent(new Event('rfm:refresh-local-data'));
+  },raceFixture);
   await page.locator('#raceDetails').waitFor({state:'visible'});
 }
