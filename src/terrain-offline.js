@@ -1,6 +1,7 @@
 import { geometryBounds } from './normalize.js';
 import { saveMapTile, getMapTile, deleteMapTiles } from './db.js';
 import { downloadTileRevision } from './tile-revision-downloader.js';
+import { fetchWithTimeout } from './app/net.js';
 
 const TERRAIN_URL='/api/terrain';
 const MIN_ZOOM=6;
@@ -71,7 +72,7 @@ export async function downloadTerrain(pkg,onProgress=()=>{}){
       storageId,
       getTile:getMapTile,
       fetchTile:async tile=>{
-        const response=await fetch(`${TERRAIN_URL}/${tile.z}/${tile.x}/${tile.y}.webp`,{cache:'no-store'});
+        const response=await fetchWithTimeout(`${TERRAIN_URL}/${tile.z}/${tile.x}/${tile.y}.webp`,{cache:'no-store'},12_000);
         if(!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.arrayBuffer();
       },

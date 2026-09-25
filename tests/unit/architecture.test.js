@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { RFM_FONTS } from '../../src/worker/proxies.js';
+import { inspectOfflineRevisionSamples } from '../../src/app/offline-diagnostics.js';
 
 const read=path=>readFileSync(path,'utf8');
 const lines=path=>read(path).split(/\r?\n/).length;
@@ -7,7 +9,15 @@ const lines=path=>read(path).split(/\r?\n/).length;
 describe('architecture guardrails',()=>{
   it('keeps React entrypoint minimal',()=>expect(lines('src/main.jsx')).toBeLessThan(40));
   it('keeps React app composition below 500 lines',()=>expect(lines('src/react/App.jsx')).toBeLessThan(500));
-  it('keeps React application hook below 700 lines',()=>expect(lines('src/react/useRfmApp.js')).toBeLessThan(700));
+  it('keeps React application hook below 480 lines',()=>expect(lines('src/react/useRfmApp.js')).toBeLessThan(480));
+  it('keeps offline storage controls in a dedicated hook',()=>{
+    expect(lines('src/react/useOfflineStorageControls.js')).toBeLessThan(140);
+    expect(read('src/react/useRfmApp.js')).toContain('useOfflineStorageControls');
+  });
+  it('keeps offline diagnostics bounded to representative tile samples',()=>{
+    expect(lines('src/app/offline-diagnostics.js')).toBeLessThan(100);
+    expect(read('src/app/offline-diagnostics.js')).toContain('limit=12');
+  });
   it('keeps map controller below 500 lines',()=>expect(lines('src/map.js')).toBeLessThan(500));
   it('keeps basemap style isolated below 700 lines',()=>expect(lines('src/map/style.js')).toBeLessThan(700));
   it('keeps Worker entrypoint below 100 lines',()=>expect(lines('_worker.js')).toBeLessThan(100));
@@ -60,6 +70,24 @@ describe('architecture guardrails',()=>{
     expect(wrangler).toContain('upload_source_maps = true');
   });
 
+  it('keeps runtime font URLs aligned with the Cloudflare Worker allowlist',()=>{
+    const css=read('src/styles.css');
+    const fonts=[...css.matchAll(/url\('\/rfm\/fonts\/([^']+)'\)/g)].map(match=>match[1]).sort();
+    expect(fonts).toEqual([...RFM_FONTS].sort());
+  });
+
+  it('samples representative tiles without scanning entire offline revisions',async()=>{
+    let calls=0;
+    const getTile=async(_id,z,x,y)=>{calls++;return z===8&&x===2?null:{data:new Uint8Array([1]).buffer};};
+    const buildPlan=()=>({tiles:[{z:7,x:1,y:1},{z:8,x:2,y:2},{z:9,x:3,y:3},{z:10,x:4,y:4}]});
+    const result=await inspectOfflineRevisionSamples([{
+      id:'race-1',name:'Rally 1',geojson:{},offlineMap:{ready:true,storageId:'map-1'}
+    }],{getTile,buildMapPlan:buildPlan,buildTerrainPlan:buildPlan});
+    expect(result.checkedRevisions).toBe(1);
+    expect(result.samples[0]).toMatchObject({kind:'map',checked:3,missing:1});
+    expect(calls).toBe(3);
+  });
+
   it('keeps MapLibre worker and PMTiles as same-origin vendor assets during the Vite migration',()=>{
     const app=read('src/react/useRfmApp.js');
     const config=read('vite.config.js');
@@ -88,7 +116,7 @@ describe('architecture guardrails',()=>{
   });
 
   it('updates offline map revisions through a staged metadata commit',()=>{
-    const hook=read('src/react/useRfmApp.js');
+    const hook=read('src/react/useOfflineStorageControls.js');
     const revision=read('src/app/offline-revision.js');
     expect(hook).toContain('replaceOfflineRevision');
     expect(hook).toContain('previousMap:currentPackage.offlineMap||null');

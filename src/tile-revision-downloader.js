@@ -41,6 +41,7 @@ export async function downloadTileRevision({
   cleanupOnFailure = false,
   deleteRevision,
   onProgress = () => {},
+  progressIntervalMs = 150,
   maxZoom,
 }) {
   if (!Array.isArray(tiles) || !tiles.length) throw new Error('Tile plan is empty');
@@ -55,6 +56,7 @@ export async function downloadTileRevision({
   let reused = 0;
   const errors = [];
   const queue = [...tiles];
+  let lastProgressAt=-Infinity;
 
   async function worker() {
     while (queue.length) {
@@ -78,7 +80,11 @@ export async function downloadTileRevision({
         errors.push({ tile, error });
       }
       done++;
-      onProgress({ done, total: tiles.length, saved, bytes, failed, reused, maxZoom });
+      const now=globalThis.performance?.now?.()??Date.now();
+      if(done===tiles.length || now-lastProgressAt>=progressIntervalMs){
+        lastProgressAt=now;
+        onProgress({ done, total: tiles.length, saved, bytes, failed, reused, maxZoom });
+      }
     }
   }
 

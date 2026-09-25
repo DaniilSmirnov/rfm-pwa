@@ -1,4 +1,4 @@
-import { bytesToBase64Url, textToBase64Url, sha256Base64Url, readJson, json } from './http.js';
+import { bytesToBase64Url, textToBase64Url, sha256Base64Url, readJson, fetchWithTimeout, json } from './http.js';
 
 function pushEndpointAllowed(endpoint) {
   try {
@@ -50,14 +50,14 @@ async function sendEmptyPush(endpoint, env, ttlSeconds=21600) {
     return {ok:false,status:0,error:'vapid'};
   }
   try {
-    const response=await fetch(endpoint,{
+    const response=await fetchWithTimeout(endpoint,{
       method:'POST',
       headers:{
         'TTL':String(Math.max(60,Math.min(172800,Number(ttlSeconds)||21600))),
         'Urgency':'normal',
         'Authorization':`vapid t=${token}, k=${env.VAPID_PUBLIC_KEY}`
       }
-    });
+    },10_000);
     return {ok:response.ok,status:response.status};
   } catch {
     return {ok:false,status:0,error:'fetch'};
@@ -80,15 +80,32 @@ function validReminder(item) {
     && String(item?.title||'').length<=120
     && String(item?.body||'').length<=240;
 }
-async function countPushSubscriptions(store) {
+async function countPushSubscriptions(store,{maxPages=100}={}) {
   let cursor;
   let subscriptions=0;
+  let pages=0;
+  const seenCursors=new Set();
   do {
     const page=await store.list({prefix:'sub:',cursor,limit:1000});
+    pages++;
     subscriptions += page.keys.length;
-    cursor=page.list_complete?undefined:page.cursor;
+    if(page.list_complete){cursor=undefined;continue;}
+    if(pages>=maxPages) throw new Error(`Push subscription scan exceeded ${maxPages} pages`);
+    cursor=page.cursor;
+    if(!cursor||seenCursors.has(cursor)) throw new Error('Push subscription listing returned a missing or repeated cursor');
+    seenCursors.add(cursor);
   } while(cursor);
   return subscriptions;
+}
+
+function adminTokenMatches(supplied,expected){
+  const encoder=new TextEncoder();
+  const actual=encoder.encode(String(supplied||''));
+  const secret=encoder.encode(String(expected||''));
+  let mismatch=actual.length^secret.length;
+  const size=Math.max(actual.length,secret.length);
+  for(let i=0;i<size;i++) mismatch|=(actual[i]||0)^(secret[i]||0);
+  return secret.length>0&&mismatch===0;
 }
 
 async function clearReminderPrefix(store,prefix) {
@@ -278,10 +295,12 @@ async function handlePushApi(request, env, url, ctx) {
   if (url.pathname==='/api/push/stats') {
     if (request.method!=='GET') return json({ok:false,error:'Method not allowed'},405);
     const auth=request.headers.get('authorization')||'';
-    if (!env.PUSH_ADMIN_TOKEN || auth!==`Bearer ${env.PUSH_ADMIN_TOKEN}`) return json({ok:false,error:'Unauthorized'},401);
+    if (!adminTokenMatches(auth.startsWith('Bearer ')?auth.slice(7):'',env.PUSH_ADMIN_TOKEN)) return json({ok:false,error:'Unauthorized'},401);
     if (!env?.PUSH_SUBSCRIPTIONS) return json({ok:false,error:'Push storage is missing'},503);
 
-    const subscriptions=await countPushSubscriptions(env.PUSH_SUBSCRIPTIONS);
+    let subscriptions;
+    try{subscriptions=await countPushSubscriptions(env.PUSH_SUBSCRIPTIONS);}
+    catch(error){return json({ok:false,error:'Could not complete push subscription stats scan',detail:String(error?.message||error)},503);}
     return json({
       ok:true,
       subscriptions,
@@ -371,4 +390,4 @@ async function handlePushApi(request, env, url, ctx) {
 }
 
 
-export { pushEndpointAllowed, pushConfigured, validReminder, reminderPrefix, countPushSubscriptions, runDueReminders, handlePushApi };
+export { pushEndpointAllowed, pushConfigured, validReminder, reminderPrefix, countPushSubscriptions, adminTokenMatches, runDueReminders, handlePushApi };

@@ -22,6 +22,13 @@ state. Keep their keys and lifecycle boundaries explicit when adding caches.
 `src/tile-revision-downloader.js` owns retry, concurrency, progress, reuse,
 byte accounting and failure aggregation. Map and terrain modules own source
 URLs, tile plans, revision IDs and their different failure cleanup policies.
+Progress notifications are throttled to at most one update per 150 ms, except
+for the final completion event, to keep large downloads from rerendering the UI
+once per tile.
+
+Client API and terrain tile requests have explicit deadlines. Cloudflare Worker
+proxy calls and push/Wallet provider calls also use abortable deadlines, so
+unavailable upstreams fail promptly instead of holding an operation open.
 
 ## Cache boundaries
 
@@ -38,3 +45,30 @@ URLs, tile plans, revision IDs and their different failure cleanup policies.
 If any ownership rule changes, update the relevant module and this table in the
 same change. Browser lifecycle and migration behavior belongs in Playwright
 PWA tests; deterministic planning and commit-order behavior belongs in Vitest.
+
+## Diagnostics and recovery
+
+The boot diagnostics screen opens after five taps on the header logo. It records
+startup milestones and can inspect package metadata, planned map/terrain tile
+counts, legacy IndexedDB tile count, browser storage usage/quota and Cache Storage
+entry counts. It also reads up to three representative map/terrain tiles from
+each of at most twelve saved revisions. This catches obvious missing revisions
+without walking every OPFS file. The storage inspection is on demand; it must not run during normal
+startup because walking OPFS files can be expensive on mobile devices. The
+exported JSON report contains browser and storage details and should be shared
+only when needed for support. The UI can reread saved package metadata without
+clearing any data.
+
+The screen is read-only. To recover after a suspected stale view, close and
+reopen the PWA or use the normal package refresh controls. Do not automatically
+delete unreferenced tile revisions during startup: an uncommitted revision may
+belong to a download that is still in progress.
+
+Push subscription statistics read KV in batches of up to 1,000 keys and stop
+after 100 batches. A repeated/missing cursor or a scan beyond that limit returns
+a service error instead of looping or timing out indefinitely.
+
+Vite leaves `/rfm/fonts/*` URLs unresolved by design: those same-origin paths
+are served by the Cloudflare Worker font proxy at runtime, not bundled assets.
+The build emits a warning for this route; a unit guard keeps the CSS font list
+aligned with the Worker allowlist.

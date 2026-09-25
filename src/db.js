@@ -55,7 +55,9 @@ export function openDb() {
 async function withStore(name, mode, fn) {
   const db = await openDb();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(name, mode);
+    let tx;
+    try{tx=db.transaction(name, mode);}
+    catch(error){reject(error);return;}
     const store = tx.objectStore(name);
     let result;
     try { result=fn(store); } catch(e) { try{tx.abort();}catch{} reject(e); return; }
@@ -230,4 +232,8 @@ export async function getMapStorageStats(){
     terrainBytes:terrains.reduce((sum,item)=>sum+(Number(item.bytes)||0),0),
     source:'metadata'
   };
+}
+
+export async function getLegacyMapTileCount(){
+  return withStore(TILE_STORE,'readonly',store=>store.count());
 }

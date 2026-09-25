@@ -1,10 +1,13 @@
+Warning: truncated output (original token count: 6037)
+Total output lines: 445
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from '../db.js';
 import { normalizePackage } from '../normalize.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, enrichPackageWithYandex } from '../rallyfans.js';
 import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from '../navigation.js';
-import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan } from '../offline-map.js';
-import { downloadTerrain, removeTerrain, discardTerrainRevision, buildTerrainDownloadPlan } from '../terrain-offline.js';
+import { buildDownloadPlan } from '../offline-map.js';
+import { buildTerrainDownloadPlan } from '../terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from '../app/export.js';
 import { distanceMeters, bearingDegrees, formatDistance, compassDirection } from '../app/geo.js';
 import { getPushSubscription, refreshPushUi, scheduleRaceReminders, scheduleAllSavedReminders, setupPushUi } from '../app/push-client.js';
@@ -17,16 +20,14 @@ import { rallyPackProgressText } from '../app/rally-pack-ui.js';
 import { processCachedRallyPackUpdates } from '../app/rally-pack-update.js';
 import { setupErrorTelemetry } from '../app/telemetry.js';
 import { raceWithinWeek, pickDefaultRace } from '../app/catalog-dates.js';
-import { replaceOfflineRevision } from '../app/offline-revision.js';
+import { markBoot } from '../app/boot-diagnostics.js';
+import { formatBytes } from '../app/format.js';
+import { useOfflineStorageControls } from './useOfflineStorageControls.js';
 
 let bootstrapPromise=null;
 let mapLibrePromise=null;
 
-export function formatBytes(n=0){
-  if(n<1024) return `${n} Б`;
-  if(n<1024**2) return `${(n/1024).toFixed(1)} КБ`;
-  return `${(n/1024**2).toFixed(1)} МБ`;
-}
+export { formatBytes };
 
 export async function ensureMapLibre(){
   if(window.maplibregl) return window.maplibregl;
@@ -44,19 +45,26 @@ export async function ensureMapLibre(){
 
 function bootstrapRuntime(){
   if(bootstrapPromise) return bootstrapPromise;
+  markBoot('runtime-bootstrap-start',{online:navigator.onLine});
   setupErrorTelemetry();
   setupPwaInstall();
   setupPushUi();
   initRaceMediaModal();
   bootstrapPromise=(async()=>{
-    const sw=await setupServiceWorkerUpdates();
-    await ensurePersistentStorage();
-    await setupPeriodicBackgroundSync(sw);
+    const sw=await setupServiceWorkerUpdates({onDiagnostic:(name,detail)=>markBoot(name,detail)});
+    markBoot('service-worker-ready',{registered:Boolean(sw)});
+    const storage=await ensurePersistentStorage();
+    markBoot('persistent-storage-checked',storage);
+    const periodic=await setupPeriodicBackgroundSync(sw);
+    markBoot('periodic-sync-checked',periodic);
     requestRallyPackBackgroundRefresh(sw);
-    await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(e=>console.warn('Smart Rally Pack update failed',e));
+    const smartUpdate=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(e=>{console.warn('Smart Rally Pack update failed',e);return null;});
+    markBoot('cached-updates-processed',smartUpdate);
     await refreshPushUi();
+    markBoot('push-ui-ready');
     try{ if(await getPushSubscription()) await scheduleAllSavedReminders(); }
-    catch(e){ console.warn('Could not refresh scheduled race reminders on startup',e); }
+    catch(e){ console.warn('Could not refresh scheduled race reminders on startup',e);markBoot('push-reminders-failed',{message:String(e?.message||e)}); }
+    markBoot('runtime-bootstrap-finished');
     return sw;
   })();
   return bootstrapPromise;
@@ -116,9 +124,6 @@ export function useRfmApp(){
   const [geoStatus,setGeoStatus]=useState('Геопозиция ещё не запрашивалась.');
   const [geoClass,setGeoClass]=useState('');
   const [navStatus,setNavStatus]=useState('');
-  const [mapProgress,setMapProgress]=useState(null);
-  const [mapError,setMapError]=useState(null);
-  const [terrainProgress,setTerrainProgress]=useState(null);
   const [raceProgress,setRaceProgress]=useState({});
   const [mapDiag,setMapDiag]=useState('');
   const [compassHeading,setCompassHeading]=useState(null);
@@ -126,15 +131,15 @@ export function useRfmApp(){
   const swRef=useRef(null);
   const geoWatchRef=useRef(null);
 
-  useEffect(()=>setMapError(null),[currentPackage?.id]);
-
   const refreshPackages=useCallback(async(preferredId=null)=>{
+    const started=performance.now();
     const pkgs=(await getAllPackages()).sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
     setPackages(pkgs);
     const jsonBytes=pkgs.reduce((sum,p)=>sum+(p.size||0),0);
     const maps=await getMapStorageStats();
     let persisted=false;try{persisted=Boolean(await navigator.storage?.persisted?.());}catch{}
     setStorageStats({count:pkgs.length,jsonBytes,mapBytes:maps.bytes,mapCount:maps.count,persisted});
+    markBoot('saved-data-loaded',{packages:pkgs.length,mapTiles:maps.count,durationMs:Math.round(performance.now()-started)});
     const currentId=preferredId||currentPackage?.id;
     if(currentId){
       const next=pkgs.find(p=>p.id===currentId)||null;
@@ -146,16 +151,31 @@ export function useRfmApp(){
     return pkgs;
   },[currentPackage?.id,packageQuery]);
 
+  const offlineStorage=useOfflineStorageControls({currentPackage,setCurrentPackage,refreshPackages});
+
+  useEffect(()=>{
+    const refresh=()=>void refreshPackages(currentPackage?.id).catch(error=>markBoot('saved-data-refresh-failed',{message:String(error?.message||error)}));
+    window.addEventListener('rfm:refresh-local-data',refresh);
+    return()=>window.removeEventListener('rfm:refresh-local-data',refresh);
+  },[refreshPackages,currentPackage?.id]);
+
   const selectPackage=useCallback(async id=>{
-    const pkg=await getPackage(id);
-    if(pkg){setCurrentPackage(pkg);setMapError(null);}
-    return pkg;
-  },[]);
+    try{
+      const pkg=await getPackage(id);
+      if(pkg){setCurrentPackage(pkg);offlineStorage.clearMapError();}
+      return pkg;
+    }catch(error){
+      markBoot('saved-package-read-failed',{id,message:String(error?.message||error)});
+      setNavStatus(`Не удалось открыть сохранённые данные: ${error.message}`);
+      return null;
+    }
+  },[offlineStorage.clearMapError]);
 
   const loadCatalog=useCallback(async()=>{
     if(!navigator.onLine){
       setCatalogStatus('Офлайн: доступны уже скачанные гонки.');
       setCatalog([]);
+      markBoot('catalog-refresh-skipped',{reason:'offline'});
       return;
     }
     setCatalogStatus('Проверяю serverless proxy…');
@@ -165,15 +185,17 @@ export function useRfmApp(){
       const rows=await fetchRaceCatalog();
       setCatalog(rows);
       setCatalogStatus(`${rows.length} гонок · обновление сохранённых данных через Rally Pack`);
+      markBoot('catalog-refresh-finished',{count:rows.length});
     }catch(error){
       setCatalogStatus(`API недоступен: ${error.message}`);
+      markBoot('catalog-refresh-failed',{message:String(error?.message||error)});
     }
   },[]);
 
   useEffect(()=>{
     let alive=true;
     bootstrapRuntime().then(sw=>{if(alive) swRef.current=sw;});
-    refreshPackages();
+    refreshPackages().catch(error=>markBoot('saved-data-load-failed',{message:String(error?.message||error)}));
     loadCatalog();
     const onOnline=()=>{setOnline(true);loadCatalog();requestRallyPackBackgroundRefresh(swRef.current);};
     const onOffline=()=>setOnline(false);
@@ -218,11 +240,7 @@ export function useRfmApp(){
   const visiblePackages=useMemo(()=>chooseVisiblePackages(packages,packageQuery),[packages,packageQuery]);
   const visibleCatalog=useMemo(()=>chooseCatalog(catalog,catalogQuery),[catalog,catalogQuery]);
   const downloadedIds=useMemo(()=>new Set(packages.filter(x=>x.raceId!=null).map(x=>Number(x.raceId))),[packages]);
-  const favorites=useMemo(()=>currentPackage?favoritesForPackage(currentPackage.id):[],[currentPackage?.id,favoritesRevision]);
-
-  useEffect(()=>{
-    if(!currentPackage&&visiblePackages[0]) setCurrentPackage(visiblePackages[0]);
-  },[currentPackage,visiblePackages]);
+  const favorites=useMemo(()=>currentPackage?favoritesForPackage(currentPackage.id):[],[currentPackage?.id…37 tokens truncated…blePackages]);
 
   const importFiles=useCallback(async files=>{
     for(const file of files){
@@ -349,69 +367,6 @@ export function useRfmApp(){
     }catch{return null;}
   },[selectedPoint,userPos,compassHeading]);
 
-  const downloadMap=useCallback(async()=>{
-    if(!currentPackage) return;
-    setMapError(null);
-    setMapProgress({text:'Подготавливаю карту…',busy:true});
-    try{
-      if(navigator.storage?.persist) try{await navigator.storage.persist();}catch{}
-      const pkg=await replaceOfflineRevision({
-        packageData:currentPackage,
-        key:'offlineMap',
-        download:()=>downloadOfflineMap(currentPackage,p=>{
-          setMapProgress({
-            text:`Скачано ${p.saved} тайлов · ${formatBytes(p.bytes)}${p.failed?` · ошибок ${p.failed}`:''}`,
-            button:`Карта ${p.done}/${p.total}`,busy:true
-          });
-        },{previousMap:currentPackage.offlineMap||null}),
-        savePackage,
-        discardRevision:discardOfflineMapRevision
-      });
-      setCurrentPackage(pkg);await refreshPackages(pkg.id);
-    }catch(error){
-      setMapError(error);
-      alert(`Не удалось скачать карту: ${error.message}`);
-    }finally{setMapProgress(null);}
-  },[currentPackage,refreshPackages]);
-
-  const deleteMap=useCallback(async()=>{
-    if(!currentPackage||!confirm('Удалить офлайн-подложку этой гонки?')) return;
-    setMapError(null);
-    await removeOfflineMap(currentPackage);
-    const pkg={...currentPackage};delete pkg.offlineMap;
-    await savePackage(pkg);setCurrentPackage(pkg);await refreshPackages(pkg.id);
-  },[currentPackage,refreshPackages]);
-
-  const downloadTerrainForRace=useCallback(async()=>{
-    if(!currentPackage) return;
-    let plan;
-    try{plan=buildTerrainDownloadPlan(currentPackage.geojson);}catch(error){alert(`Не удалось подготовить рельеф: ${error.message}`);return;}
-    if(!confirm(`Рельеф карты скачивается отдельно и может занимать много места на устройстве.\n\nДля этой гонки будет загружено до ${plan.tiles.length} DEM-тайлов (z${plan.minZoom}–${plan.maxZoom}).\n\nПродолжить загрузку?`)) return;
-    setTerrainProgress({text:'Подготавливаю рельеф…',busy:true});
-    try{
-      const pkg=await replaceOfflineRevision({
-        packageData:currentPackage,
-        key:'terrain',
-        download:()=>downloadTerrain(currentPackage,p=>setTerrainProgress({
-          text:`Скачано ${p.saved} DEM-тайлов · ${formatBytes(p.bytes)}${p.failed?` · ошибок ${p.failed}`:''}`,
-          button:`Рельеф ${p.done}/${p.total}`,busy:true
-        })),
-        savePackage,
-        discardRevision:discardTerrainRevision
-      });
-      setCurrentPackage(pkg);await refreshPackages(pkg.id);
-    }catch(error){
-      alert(`Не удалось скачать рельеф: ${error.message}`);
-    }finally{setTerrainProgress(null);}
-  },[currentPackage,refreshPackages]);
-
-  const deleteTerrain=useCallback(async()=>{
-    if(!currentPackage||!confirm('Удалить скачанный рельеф этой гонки? Офлайн-карта и данные гонки останутся.')) return;
-    await removeTerrain(currentPackage);
-    const pkg={...currentPackage};delete pkg.terrain;
-    await savePackage(pkg);setCurrentPackage(pkg);await refreshPackages(pkg.id);
-  },[currentPackage,refreshPackages]);
-
   const importYandex=useCallback(async()=>{
     if(!currentPackage) return;
     try{
@@ -423,12 +378,19 @@ export function useRfmApp(){
 
   const clearAll=useCallback(async()=>{
     if(!confirm('Удалить все сохранённые гонки, карты, изображения и избранные точки?')) return;
-    localStorage.removeItem(FAVORITES_KEY);
-    await deleteAllPackages();await clearMapTiles();
-    if('caches' in window) await caches.delete('rfm-race-assets-v1');
+    try{
+      await deleteAllPackages();await clearMapTiles();
+      if('caches' in window) await caches.delete('rfm-race-assets-v1');
+      localStorage.removeItem(FAVORITES_KEY);
+    }catch(error){
+      markBoot('offline-data-clear-failed',{message:String(error?.message||error)});
+      await refreshPackages().catch(()=>{});
+      alert(`Не удалось полностью очистить офлайн-данные: ${error.message}. Проверь хранилище в Boot diagnostics и повтори попытку.`);
+      return;
+    }
     setPackages([]);setCurrentPackage(null);setSelectedPoint(null);setFavoritesRevision(v=>v+1);
     setStorageStats({count:0,jsonBytes:0,mapBytes:0,mapCount:0,persisted:false});
-  },[]);
+  },[refreshPackages]);
 
   const exportGeoJson=useCallback(()=>{
     if(!currentPackage) return;
@@ -442,8 +404,8 @@ export function useRfmApp(){
   const mapUi=useMemo(()=>{
     const p=currentPackage;
     if(!p) return {button:'Скачать офлайн-карту',status:'Сначала выбери сохранённую гонку.',deleteHidden:true,disabled:true};
-    if(mapProgress) return {button:mapProgress.button||'Офлайн-карта…',status:mapProgress.text,deleteHidden:!p.offlineMap?.ready,disabled:true};
-    if(mapError) return {button:p.offlineMap?.ready?'Повторить обновление карты':'Повторить скачивание карты',status:`Не удалось скачать карту: ${mapError.message}`,deleteHidden:!p.offlineMap?.ready,disabled:false};
+    if(offlineStorage.mapProgress) return {button:offlineStorage.mapProgress.button||'Офлайн-карта…',status:offlineStorage.mapProgress.text,deleteHidden:!p.offlineMap?.ready,disabled:true};
+    if(offlineStorage.mapError) return {button:p.offlineMap?.ready?'Повторить обновление карты':'Повторить скачивание карты',status:`Не удалось скачать карту: ${offlineStorage.mapError.message}`,deleteHidden:!p.offlineMap?.ready,disabled:false};
     if(p.offlineMap?.ready){
       const layers=(p.offlineMap.vectorLayers||[]).map(v=>typeof v==='string'?v:v?.id).filter(Boolean);
       return {button:`Обновить карту (${formatBytes(p.offlineMap.bytes||0)})`,status:`Офлайн-подложка готова · ${p.offlineMap.tileCount||0} тайлов · ${layers.length} слоёв · ${formatBytes(p.offlineMap.bytes||0)} · z${p.offlineMap.minZoom}–${p.offlineMap.maxZoom}`,deleteHidden:false,disabled:false};
@@ -451,17 +413,17 @@ export function useRfmApp(){
     let status='Офлайн-подложка ещё не скачана.';
     try{const plan=buildDownloadPlan(p.geojson);status=`Будет скачано до ${plan.tiles.length} векторных тайлов · z${plan.minZoom}–${plan.maxZoom}. Размер зависит от района.`;}catch{}
     return {button:'Скачать офлайн-карту',status,deleteHidden:true,disabled:false};
-  },[currentPackage,mapProgress,mapError]);
+  },[currentPackage,offlineStorage.mapProgress,offlineStorage.mapError]);
 
   const terrainUi=useMemo(()=>{
     const p=currentPackage;
     if(!p) return {button:'Рельеф карты',status:'Сначала выбери сохранённую гонку.',deleteHidden:true,disabled:true};
-    if(terrainProgress) return {button:terrainProgress.button||'Рельеф…',status:terrainProgress.text,deleteHidden:!p.terrain?.ready,disabled:true};
+    if(offlineStorage.terrainProgress) return {button:offlineStorage.terrainProgress.button||'Рельеф…',status:offlineStorage.terrainProgress.text,deleteHidden:!p.terrain?.ready,disabled:true};
     if(p.terrain?.ready) return {button:`Обновить рельеф (${formatBytes(p.terrain.bytes||0)})`,status:`Рельеф готов · ${p.terrain.tileCount||0} DEM-тайлов · ${formatBytes(p.terrain.bytes||0)} · z${p.terrain.minZoom}–${p.terrain.maxZoom}`,deleteHidden:false,disabled:false};
     let status='Рельеф ещё не скачан.';
     try{const plan=buildTerrainDownloadPlan(p.geojson);status=`Отдельная загрузка DEM: до ${plan.tiles.length} тайлов · z${plan.minZoom}–${plan.maxZoom}. Может занимать много места.`;}catch{}
     return {button:'Рельеф карты',status,deleteHidden:true,disabled:false};
-  },[currentPackage,terrainProgress]);
+  },[currentPackage,offlineStorage.terrainProgress]);
 
   const mapSubtitle=useMemo(()=>{
     const p=currentPackage;if(!p)return 'Выбери сохранённую гонку';
@@ -476,7 +438,7 @@ export function useRfmApp(){
     selectedPoint,showPoint,setSelectedPoint,favorites,toggleFavorite,favoritesRevision,
     carPoint,saveCar,removeCar,userPos,requestLocation,geoStatus,geoClass,
     navStatus,setNavStatus,sharePoint,compass,compassEnabled,enableCompass,
-    mapUi,terrainUi,mapSubtitle,mapDiag,setMapDiag,downloadMap,deleteMap,downloadTerrainForRace,deleteTerrain,
+    mapUi,terrainUi,mapSubtitle,mapDiag,setMapDiag,...offlineStorage,
     importYandex,exportGeoJson,exportGpx
   };
 }

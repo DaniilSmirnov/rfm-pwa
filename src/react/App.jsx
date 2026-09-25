@@ -15,6 +15,7 @@ import { syncWalletPassesForPackage } from '../app/wallet-client.js';
 import { showPointElevation, showRouteElevationProfile } from '../app/elevation-ui.js';
 import { reportClientError } from '../app/telemetry.js';
 import { formatDistance } from '../app/geo.js';
+import { setupBootDiagnosticsUi } from '../app/boot-diagnostics.js';
 
 function Portal({id,children}){
   const node=document.getElementById(id);
@@ -215,6 +216,8 @@ function DomBindings({app}){
 export default function App(){
   const app=useRfmApp();
   const pkg=app.currentPackage;
+
+  useEffect(()=>{setupBootDiagnosticsUi();},[]);
 
   useEffect(()=>{
     setProps('networkBadge',{text:app.online?'онлайн':'офлайн',className:`badge ${app.online?'online':'offline'}`});

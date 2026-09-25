@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { bytesToBase64Url, textToBase64Url, sha256Base64Url, readJson, commonHeaders, json } from '../../src/worker/http.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { bytesToBase64Url, textToBase64Url, sha256Base64Url, readJson, commonHeaders, fetchWithTimeout, json } from '../../src/worker/http.js';
+
+afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals();});
 
 describe('worker HTTP helpers',()=>{
   it('encodes bytes as base64url',()=>expect(bytesToBase64Url(new Uint8Array([255,254,253]))).toBe('__79'));
@@ -16,5 +18,14 @@ describe('worker HTTP helpers',()=>{
     expect(r.status).toBe(201);
     expect(r.headers.get('cache-control')).toBe('no-store');
     expect(await r.json()).toEqual({ok:true});
+  });
+  it('aborts upstream requests at their deadline',async()=>{
+    vi.useFakeTimers();
+    const fetch=vi.fn((url,{signal})=>new Promise((resolve,reject)=>signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})));
+    vi.stubGlobal('fetch',fetch);
+    const request=fetchWithTimeout('https://upstream.test/',{},5000);
+    const assertion=expect(request).rejects.toMatchObject({name:'UpstreamTimeoutError',timeoutMs:5000});
+    await vi.advanceTimersByTimeAsync(5000);
+    await assertion;
   });
 });

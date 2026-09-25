@@ -1,4 +1,4 @@
-import { commonHeaders, json } from './http.js';
+import { commonHeaders, fetchWithTimeout, json } from './http.js';
 
 export const API_ORIGIN = 'https://api.rallyfansmap.ru';
 export const BASEMAP_PM = 'https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles';
@@ -48,9 +48,10 @@ async function proxyRallyFans(request, url) {
 
   let upstream;
   try {
-    upstream = await fetch(target.toString(), {
+    upstream = await fetchWithTimeout(target.toString(), {
       method: request.method,
       headers,
+      signal:request.signal,
       redirect: 'follow',
       cf: isAsset ? { cacheEverything: true, cacheTtl: 86400 } : undefined,
     });
@@ -106,7 +107,7 @@ async function importYandexConstructor(request, url) {
   if (!target) return json({ok:false,error:'Unsupported Yandex Constructor URL'},400);
   let upstream;
   try {
-    upstream = await fetch(target.toString(), { headers:{ 'accept':'text/html,*/*', 'user-agent':'RallyFans-Companion/0.3.1' }, redirect:'follow' });
+    upstream = await fetchWithTimeout(target.toString(), { headers:{ 'accept':'text/html,*/*', 'user-agent':'RallyFans-Companion/0.3.1' }, redirect:'follow',signal:request.signal },12_000);
   } catch (e) { return json({ok:false,error:'Yandex Constructor unavailable',detail:String(e?.message||e)},502); }
   if (!upstream.ok) return json({ok:false,error:`Yandex HTTP ${upstream.status}`},502);
   const html = await upstream.text();
@@ -125,7 +126,7 @@ async function proxyBasemap(request) {
   const range=request.headers.get('range'); if(range) headers.set('range',range);
   headers.set('accept','application/octet-stream,*/*');
   let upstream;
-  try { upstream=await fetch(BASEMAP_PM,{method:request.method,headers,redirect:'follow'}); }
+  try { upstream=await fetchWithTimeout(BASEMAP_PM,{method:request.method,headers,redirect:'follow',signal:request.signal},15_000); }
   catch(e){ return json({ok:false,error:'Basemap upstream unavailable',detail:String(e?.message||e)},502); }
   const out=new Headers(commonHeaders({'content-type':upstream.headers.get('content-type')||'application/octet-stream','cache-control':'public, max-age=86400'}));
   for(const h of ['accept-ranges','content-range','content-length','etag','last-modified']){ const v=upstream.headers.get(h); if(v) out.set(h,v); }
@@ -139,7 +140,7 @@ async function proxyTerrainTile(request,url){
   const [z,x,y]=match.slice(1).map(Number);
   if(!Number.isInteger(z)||!Number.isInteger(x)||!Number.isInteger(y)||z<0||z>17||x<0||y<0||x>=2**z||y>=2**z) return new Response('Invalid tile',{status:400,headers:commonHeaders()});
   let upstream;
-  try { upstream=await fetch(`${TERRAIN_TILE_ORIGIN}/${z}/${x}/${y}.webp`,{method:request.method,headers:{accept:'image/webp,*/*'},redirect:'follow',cf:{cacheEverything:true,cacheTtl:604800}}); }
+  try { upstream=await fetchWithTimeout(`${TERRAIN_TILE_ORIGIN}/${z}/${x}/${y}.webp`,{method:request.method,headers:{accept:'image/webp,*/*'},redirect:'follow',signal:request.signal,cf:{cacheEverything:true,cacheTtl:604800}},10_000); }
   catch(e){ return json({ok:false,error:'Terrain upstream unavailable',detail:String(e?.message||e)},502); }
   const headers=new Headers(commonHeaders({
     'content-type':upstream.headers.get('content-type')||'image/webp',
@@ -158,7 +159,9 @@ export const RFM_FONTS = new Set([
 async function proxyRfmFont(request,url){
   const name=url.pathname.split('/').pop();
   if(!RFM_FONTS.has(name)) return new Response('Not found',{status:404});
-  const upstream=await fetch(`https://rallyfansmap.ru/fonts/${name}`,{cf:{cacheEverything:true,cacheTtl:604800}});
+  let upstream;
+  try{upstream=await fetchWithTimeout(`https://rallyfansmap.ru/fonts/${name}`,{signal:request.signal,cf:{cacheEverything:true,cacheTtl:604800}},8_000);}
+  catch(error){return json({ok:false,error:'Font upstream unavailable',detail:String(error?.message||error)},502);}
   const h=new Headers(commonHeaders({'content-type':upstream.headers.get('content-type')||'font/ttf','cache-control':'public, max-age=604800'}));
   return new Response(upstream.body,{status:upstream.status,headers:h});
 }

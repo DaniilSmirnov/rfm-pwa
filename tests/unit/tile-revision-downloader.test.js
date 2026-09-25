@@ -57,4 +57,12 @@ describe('tile revision downloader', () => {
     await expect(downloadTileRevision(ctx.options)).rejects.toThrow(/Failed to download 1 of 1/);
     expect(deleteRevision).not.toHaveBeenCalled();
   });
+
+  it('throttles progress callbacks during large downloads and always reports completion',async()=>{
+    vi.spyOn(performance,'now').mockReturnValue(10);
+    const ctx=setup({tiles:Array.from({length:20},(_,i)=>({z:1,x:0,y:i})),concurrency:1});
+    await downloadTileRevision(ctx.options);
+    expect(ctx.onProgress.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(ctx.onProgress).toHaveBeenLastCalledWith(expect.objectContaining({done:20,total:20}));
+  });
 });
