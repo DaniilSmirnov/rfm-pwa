@@ -274,6 +274,99 @@ export function classifyStageScheduleEvent(item,event){
   return {kind,stageName,stageKey:normalizeStageKey(stageName),eventText};
 }
 
+function featureText(feature){
+  return Object.values(feature?.properties||{})
+    .filter(v=>typeof v==='string'||typeof v==='number')
+    .join(' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function stageNumber(value){
+  return String(value||'').match(/(?:СУ|SS)\s*[-№#]?\s*(\d+)/i)?.[1]
+    || String(value||'').match(/\b(\d+)\b/)?.[1]
+    || null;
+}
+
+export function stageFeatureScore(feature,stage){
+  if(!feature?.geometry || !['LineString','MultiLineString'].includes(feature.geometry.type)) return -1;
+  const text=featureText(feature);
+  if(!text) return -1;
+  const normalizedText=normalizeStageKey(text);
+  const normalizedName=normalizeStageKey(stage?.name);
+  const normalizedKey=normalizeStageKey(stage?.key);
+  if(normalizedName && normalizedText===normalizedName) return 100;
+  if(normalizedName && normalizedText.includes(normalizedName)) return 90;
+  if(normalizedKey && normalizedText.includes(normalizedKey)) return 85;
+  const expectedNumber=stageNumber(stage?.name||stage?.key);
+  const actualNumber=stageNumber(text);
+  if(expectedNumber && actualNumber===expectedNumber) return 70;
+  return stageFeatureMatches(feature,stage)?50:-1;
+}
+
+export function matchStageFeature(stage,features=[]){
+  const candidates=(features||[])
+    .map(feature=>({feature,score:stageFeatureScore(feature,stage)}))
+    .filter(item=>item.score>=0)
+    .sort((a,b)=>b.score-a.score);
+  return candidates[0]?.feature||null;
+}
+
+export function buildStageDescriptors(pkg){
+  const schedule=asArray(pkg?.original?.schedule);
+  const features=pkg?.geojson?.features||[];
+  const byKey=new Map();
+
+  for(const item of schedule){
+    const identity=stageIdentity(item);
+    if(!identity) continue;
+    let descriptor=byKey.get(identity.key);
+    if(!descriptor){
+      descriptor={
+        key:identity.key,
+        name:identity.name,
+        date:String(item?.date||''),
+        location:String(item?.location||''),
+        scheduleItems:[],
+        events:[],
+        geometryFeature:null,
+        geometry:null
+      };
+      byKey.set(identity.key,descriptor);
+    }
+    descriptor.scheduleItems.push(item);
+    for(const event of asArray(item?.events)){
+      const classified=classifyStageScheduleEvent(item,event);
+      const at=parseScheduleDateTime(item?.date,event?.time,pkg);
+      descriptor.events.push({
+        date:String(item?.date||''),
+        time:String(event?.time||'').trim(),
+        text:String(event?.text||'').trim(),
+        kind:classified?.kind||null,
+        at:at?at.toISOString():null
+      });
+    }
+  }
+
+  for(const descriptor of byKey.values()){
+    const feature=matchStageFeature(descriptor,features);
+    descriptor.geometryFeature=feature;
+    descriptor.geometry=feature?.geometry||null;
+  }
+  return [...byKey.values()];
+}
+
+export function findStageDescriptorByFeature(descriptors,feature){
+  if(!feature) return null;
+  let best=null;
+  for(const stage of descriptors||[]){
+    if(stage.geometryFeature===feature) return stage;
+    const score=stageFeatureScore(feature,stage);
+    if(score>=0 && (!best || score>best.score)) best={stage,score};
+  }
+  return best?.stage||null;
+}
+
 export function reminderLeadLabel(minutes){
   if(minutes===60) return '1 час';
   return `${minutes} мин`;
