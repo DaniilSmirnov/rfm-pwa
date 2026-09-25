@@ -444,3 +444,7 @@ export function clearStageOnMap(){
     return false;
   }
 }
+
+export function resizeActiveMap(){
+  try{ activeMap?.resize?.(); return Boolean(activeMap); }catch{return false;}
+}
