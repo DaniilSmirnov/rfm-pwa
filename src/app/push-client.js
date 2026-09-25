@@ -2,18 +2,9 @@ import { getAllPackages } from '../db.js';
 import { buildRaceReminders } from './schedule.js';
 import { subscribedStageKeys } from './preferences.js';
 import { isIOSDevice, isStandalonePwa, syncInstallUi, requestPwaInstall } from './pwa.js';
+import { fetchWithTimeout } from './net.js';
 
 const $=id=>document.getElementById(id);
-
-async function fetchWithTimeout(url,options={},timeoutMs=5000){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),timeoutMs);
-  try{
-    return await fetch(url,{...options,signal:controller.signal});
-  }finally{
-    clearTimeout(timer);
-  }
-}
 
 export function base64UrlToUint8Array(value) {
   const padding='='.repeat((4-value.length%4)%4);
@@ -123,11 +114,11 @@ export async function enablePushNotifications() {
     if(existing){
       const endpoint=existing.endpoint;
       await existing.unsubscribe();
-      fetch('/api/push/unsubscribe',{
+      fetchWithTimeout('/api/push/unsubscribe',{
         method:'POST',
         headers:{'content-type':'application/json'},
         body:JSON.stringify({endpoint})
-      }).catch(()=>{});
+      },5000).catch(()=>{});
       setPushStatus('Уведомления выключены.');
       return;
     }
@@ -138,7 +129,7 @@ export async function enablePushNotifications() {
       : await Notification.requestPermission();
     if(permission!=='granted') throw new Error('Разрешение на уведомления не выдано');
 
-    const configRes=await fetch('/api/push/config',{cache:'no-store'});
+    const configRes=await fetchWithTimeout('/api/push/config',{cache:'no-store'},5000);
     const config=await configRes.json();
     if(!config?.enabled || !config?.publicKey) throw new Error('Push ещё не настроен на Cloudflare Pages');
 
@@ -147,11 +138,11 @@ export async function enablePushNotifications() {
       applicationServerKey:base64UrlToUint8Array(config.publicKey)
     });
 
-    const saveRes=await fetch('/api/push/subscribe',{
+    const saveRes=await fetchWithTimeout('/api/push/subscribe',{
       method:'POST',
       headers:{'content-type':'application/json'},
       body:JSON.stringify({subscription:subscription.toJSON()})
-    });
+    },5000);
     const saved=await saveRes.json();
     if(!saveRes.ok || !saved?.ok) throw new Error(saved?.error || 'Не удалось сохранить push-подписку');
     if(saved.stored){
@@ -177,11 +168,11 @@ export async function sendTestPush() {
     const subscription=await getPushSubscription();
     if(!subscription) throw new Error('Нет активной push-подписки');
     setPushStatus('Отправляю тестовый push…');
-    const res=await fetch('/api/push/test',{
+    const res=await fetchWithTimeout('/api/push/test',{
       method:'POST',
       headers:{'content-type':'application/json'},
       body:JSON.stringify({subscription:subscription.toJSON(),delaySeconds:10})
-    });
+    },5000);
     const data=await res.json();
     if(!res.ok || !data?.ok) throw new Error(data?.error || `Push service HTTP ${data?.status||res.status}`);
     setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть PWA.','geo-ok');
