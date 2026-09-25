@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   raceYearHint, validTimeZone, raceTimezone, textualMonth, parseScheduleDateTime,
   normalizeStageKey, stageIdentity, parseCoordinatePair, pointCoordinate,
-  stageFeatureMatches, findStageLocations, classifyStageScheduleEvent, buildRaceReminders
+  stageFeatureMatches, stageFeatureScore, matchStageFeature, buildStageDescriptors, findStageDescriptorByFeature,
+  findStageLocations, classifyStageScheduleEvent, buildRaceReminders
 } from '../../src/app/schedule.js';
 
 afterEach(()=>vi.useRealTimers());
@@ -66,6 +67,36 @@ describe('stage helpers',()=>{
 
   it('matches stage number in feature properties',()=>{
     expect(stageFeatureMatches({properties:{name:'Старт СУ 7'}},{name:'СУ 7',key:'су-7'})).toBe(true);
+  });
+
+  it('matches SS geometry to the same numbered СУ descriptor',()=>{
+    const feature={properties:{name:'SS 3 Harlu'},geometry:{type:'LineString',coordinates:[[30,60],[31,61]]}};
+    expect(stageFeatureScore(feature,{name:'СУ 3',key:'су-3'})).toBeGreaterThanOrEqual(70);
+    expect(matchStageFeature({name:'СУ 3',key:'су-3'},[feature])).toBe(feature);
+  });
+
+  it('builds stage descriptors with geometry and road closure events',()=>{
+    const route={properties:{kind:'yandex-line',name:'SS 3 Harlu'},geometry:{type:'LineString',coordinates:[[30,60],[31,61]]}};
+    const p=makePkg({
+      original:{city_race:'Карелия',schedule:[{
+        date:'10.10.2026',location:'СУ 3',events:[
+          {time:'09:30',text:'Закрытие дороги'},
+          {time:'13:00',text:'Старт первого экипажа'},
+          {time:'15:00',text:'Открытие дороги'}
+        ]
+      }]},
+      geojson:{type:'FeatureCollection',features:[route]}
+    });
+    const [stage]=buildStageDescriptors(p);
+    expect(stage).toMatchObject({key:'су-3',name:'СУ 3',geometry:route.geometry});
+    expect(stage.events.map(x=>x.kind)).toEqual(['close',null,'open']);
+    expect(findStageDescriptorByFeature([stage],route)?.key).toBe('су-3');
+  });
+
+  it('prefers an exact stage line over weaker same-number metadata',()=>{
+    const exact={properties:{name:'СУ 4'},geometry:{type:'LineString',coordinates:[[1,2],[2,3]]}};
+    const weak={properties:{name:'SS 4 spectator access'},geometry:{type:'LineString',coordinates:[[3,4],[4,5]]}};
+    expect(matchStageFeature({name:'СУ 4',key:'су-4'},[weak,exact])).toBe(exact);
   });
 
   it('derives stage ends from route geometry',()=>{
