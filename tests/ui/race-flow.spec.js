@@ -122,6 +122,9 @@ test.describe('saved race user flows',()=>{
     await expect(page.locator('#pointActions')).toBeVisible();
     await expect(page.locator('#pointName')).toHaveText('Смотровая точка');
     await expect(page.locator('#pointCoords')).toContainText('61.702000');
+    await expect(page.locator('#pointStageDistance')).toContainText('СУ 1:');
+    await expect(page.locator('#pointStageDistance')).toContainText('от старта');
+    await expect(page.locator('#pointStageDistance')).toContainText('до финиша');
   });
 
   test('adds and removes point from favorites',async({page})=>{

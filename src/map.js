@@ -2,6 +2,7 @@ import { geometryBounds } from './normalize.js';
 import { baseStyle } from './map/style.js';
 import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
 import { TerrainModeControl } from './map/terrain-control.js';
+import { bearingDegrees, distanceMeters } from './app/geo.js';
 
 let activeMap = null;
 let activeRaceLabelMarkers = [];
@@ -129,36 +130,6 @@ function installBasemapInspector(map, offlineMap){
   });
 }
 
-function placeKind(props={}, layerName='') {
-  const raw=[props.place,props.kind,props.class,props.type,props.category,props.subclass]
-    .filter(Boolean).join(' ').toLowerCase();
-  const known=['city','town','village','hamlet','settlement','locality','municipality','suburb','borough','neighbourhood','neighborhood','isolated_dwelling'];
-  const hit=known.find(k=>raw.includes(k));
-  if(hit) return hit;
-  if(String(layerName).toLowerCase().includes('place')) return 'place';
-  return null;
-}
-
-function placePriority(kind) {
-  return ({
-    city:100,town:90,municipality:82,village:72,settlement:68,
-    suburb:58,borough:56,hamlet:50,neighbourhood:46,neighborhood:46,
-    locality:42,isolated_dwelling:35,place:60
-  })[kind] || 0;
-}
-
-function placeMinZoom(kind) {
-  return ({
-    city:6,town:8,municipality:8,village:10,settlement:10,
-    suburb:11,borough:11,hamlet:12,neighbourhood:12,neighborhood:12,
-    locality:12,isolated_dwelling:13,place:10
-  })[kind] ?? 11;
-}
-
-function boxesOverlap(a,b,pad=4) {
-  return !(a.right+pad<b.left || a.left-pad>b.right || a.bottom+pad<b.top || a.top-pad>b.bottom);
-}
-
 function installRacePointLabels(map, points, onPointClick, {alwaysVisible=false}={}) {
   clearMarkers(activeRaceLabelMarkers);
   const maplibregl=window.maplibregl;
@@ -195,6 +166,57 @@ function installRacePointLabels(map, points, onPointClick, {alwaysVisible=false}
   };
   update();
   map.on('zoom',update);
+}
+
+function installRouteDirectionAnimation(map,maplibregl,collections){
+  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches||!maplibregl?.Marker) return;
+  const tracks=[];
+  for(const collection of collections){
+    for(const feature of collection?.features||[]){
+      const geometry=feature?.geometry;
+      const segments=geometry?.type==='LineString'?[geometry.coordinates]
+        :geometry?.type==='MultiLineString'?geometry.coordinates:[];
+      for(const coords of segments){
+        if(!Array.isArray(coords)||coords.length<2) continue;
+        const valid=coords.filter(c=>Array.isArray(c)&&Number.isFinite(c[0])&&Number.isFinite(c[1]));
+        if(valid.length<2) continue;
+        const el=document.createElement('div');
+        el.className='map-route-direction';
+        el.textContent='➤';
+        el.setAttribute('aria-label',`Направление движения: ${featureName(feature.properties)||'СУ'}`);
+        const marker=new maplibregl.Marker({element:el,anchor:'center',rotationAlignment:'map'})
+          .setLngLat(valid[0]).addTo(map);
+        const lengths=[];
+        let total=0;
+        for(let i=1;i<valid.length;i++){
+          total+=distanceMeters({lat:valid[i-1][1],lon:valid[i-1][0]},{lat:valid[i][1],lon:valid[i][0]});
+          lengths.push(total);
+        }
+        tracks.push({marker,valid,lengths,total,start:performance.now()+Math.random()*5000});
+      }
+    }
+  }
+  if(!tracks.length||typeof map.once!=='function'||tracks.some(track=>typeof track.marker.setRotation!=='function')) return;
+  let frame=0;
+  let lastUpdate=0;
+  const animate=now=>{
+    if(now-lastUpdate<40){frame=requestAnimationFrame(animate);return;}
+    lastUpdate=now;
+    for(const track of tracks){
+      const distance=((now-track.start)%12000+12000)%12000/12000*track.total;
+      let i=track.lengths.findIndex(length=>length>=distance);
+      if(i<0)i=track.lengths.length-1;
+      const before=i?track.lengths[i-1]:0;
+      const span=track.lengths[i]-before;
+      const t=span?(distance-before)/span:0;
+      const a=track.valid[i],b=track.valid[i+1];
+      const position=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+      track.marker.setLngLat(position).setRotation(bearingDegrees({lat:a[1],lon:a[0]},{lat:b[1],lon:b[0]}));
+    }
+    frame=requestAnimationFrame(animate);
+  };
+  frame=requestAnimationFrame(animate);
+  map.once('remove',()=>{cancelAnimationFrame(frame);for(const track of tracks)track.marker.remove();});
 }
 
 
@@ -249,6 +271,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     map.addSource('rfm-yandex-lines',{type:'geojson',data:yandexLines});
     map.addLayer({id:'rfm-yandex-lines-casing',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#111318','line-width':['interpolate',['linear'],['zoom'],5,7,12,10,17,14],'line-opacity':0.82}});
     map.addLayer({id:'rfm-yandex-lines',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#ffd21e','line-width':['interpolate',['linear'],['zoom'],5,4,12,7,17,10],'line-opacity':1}});
+    installRouteDirectionAnimation(map,maplibregl,[lines,yandexLines]);
 
     map.addSource('rfm-selected-stage',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'rfm-selected-stage-casing',type:'line',source:'rfm-selected-stage',minzoom:0,maxzoom:24,paint:{

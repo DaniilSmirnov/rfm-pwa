@@ -20,6 +20,10 @@ async function waitForAppWorker(page){
   });
 }
 
+async function openTab(page,label){
+  await page.getByRole('button',{name:label}).click();
+}
+
 
 async function seedSavedRace(page,{offlineMap=false,withAssets=false,terrain=false}={}){
   await page.evaluate(async({offlineMap,withAssets,terrain})=>{
@@ -186,8 +190,10 @@ test.describe('PWA migration safety',()=>{
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
 
     await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
+    await openTab(reopened,'Ещё');
     await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
+    await openTab(reopened,'Карта');
     await expect(reopened.locator('#pointList')).toContainText('Offline spectator point');
     await expect(reopened.locator('#favoritesList')).toContainText('Offline spectator point');
   });
@@ -205,7 +211,9 @@ test.describe('PWA migration safety',()=>{
     reopened.on('request',request=>requests.push(request.url()));
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
 
+    await openTab(reopened,'Ещё');
     await reopened.locator('#packageList .package-row').first().click();
+    await openTab(reopened,'Карта');
 
     await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
     await expect(reopened.locator('#offlineMapDiag')).toContainText('локальная подложка 1 тайлов');
@@ -224,7 +232,9 @@ test.describe('PWA migration safety',()=>{
 
     const reopened=await context.newPage();
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
+    await openTab(reopened,'Ещё');
     await reopened.locator('#packageList .package-row').first().click();
+    await openTab(reopened,'Карта');
 
     await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
     await expect(reopened.locator('#mapSubtitle')).toContainText('рельеф ✓');
@@ -242,6 +252,7 @@ test.describe('PWA migration safety',()=>{
 
     const reopened=await context.newPage();
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
+    await openTab(reopened,'Ещё');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
 
     const hero=await reopened.locator('#raceImage').evaluate(img=>({
@@ -276,6 +287,7 @@ test.describe('PWA migration safety',()=>{
 
     const reopened=await context.newPage();
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
+    await openTab(reopened,'Карта');
 
     const geoDownloadPromise=reopened.waitForEvent('download');
     await reopened.locator('#exportGeoJsonBtn').click();
@@ -305,6 +317,7 @@ test.describe('PWA migration safety',()=>{
     await seedSavedRace(page);
     await page.reload({waitUntil:'domcontentloaded'});
 
+    await openTab(page,'Ещё');
     await expect(page.locator('#raceTitle')).toHaveText('Offline Migration Rally');
     await expect(page.locator('#networkBadge')).toHaveText('онлайн');
 
@@ -312,6 +325,7 @@ test.describe('PWA migration safety',()=>{
 
     await expect(page.locator('#networkBadge')).toHaveText('офлайн');
     await expect(page.locator('#raceDetails')).toBeVisible();
+    await openTab(page,'Карта');
     await expect(page.locator('#pointList')).toContainText('Offline spectator point');
     await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
 
@@ -331,6 +345,7 @@ test.describe('PWA migration safety',()=>{
     const reopened=await context.newPage();
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
 
+    await openTab(reopened,'Ещё');
     await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
     reopened.once('dialog',dialog=>dialog.accept());
     await reopened.locator('#clearBtn').click();

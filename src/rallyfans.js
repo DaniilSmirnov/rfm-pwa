@@ -1,4 +1,3 @@
-import { hashId } from './normalize.js';
 import { fetchYandexConstructorFeatures, yandexFeaturesToGeoJson, mergeGeoJson } from './yandex.js';
 import { fetchWithTimeout } from './app/net.js';
 

@@ -24,6 +24,10 @@ async function waitForWorker(page){
   });
 }
 
+async function openMoreTab(page){
+  await page.getByRole('button',{name:'Ещё'}).click();
+}
+
 test.describe('production service worker lifecycle',()=>{
   test('installs and precaches same-origin application shell',async({page})=>{
     await page.goto('/');
@@ -66,6 +70,7 @@ test.describe('production service worker lifecycle',()=>{
 
     await context.setOffline(true);
     await page.reload({waitUntil:'domcontentloaded'});
+    await openMoreTab(page);
     await expect(page.getByText('RALLY FANS MAP · OFFLINE')).toBeVisible();
     await expect(page.locator('#networkBadge')).toHaveText('офлайн');
   });
@@ -74,6 +79,7 @@ test.describe('production service worker lifecycle',()=>{
     await page.goto('/');
     await waitForWorker(page);
     await page.reload({waitUntil:'domcontentloaded'});
+    await openMoreTab(page);
     await expect(page.getByText('RALLY FANS MAP · OFFLINE')).toBeVisible();
 
     await page.close();
@@ -81,6 +87,7 @@ test.describe('production service worker lifecycle',()=>{
 
     const reopened=await context.newPage();
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
+    await openMoreTab(reopened);
     await expect(reopened.getByText('RALLY FANS MAP · OFFLINE')).toBeVisible();
     await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
   });
