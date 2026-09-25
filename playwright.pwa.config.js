@@ -19,7 +19,7 @@ export default defineConfig({
     video:'retain-on-failure'
   },
   webServer:{
-    command:'npm run build && mkdir -p dist/migration-test && cp tests/pwa/fixtures/migration-harness.html dist/migration-test/migration-harness.html && cp tests/pwa/fixtures/sw-upgrade-v1.js dist/migration-test/sw-upgrade-v1.js && cp tests/pwa/fixtures/sw-upgrade-v2.js dist/migration-test/sw-upgrade-v2.js && npx http-server dist -p 4174 -c-1 --silent',
+    command:'npm run build && mkdir -p dist/migration-test && cp tests/pwa/fixtures/migration-harness.html dist/migration-test/migration-harness.html && cp tests/pwa/fixtures/sw-upgrade-v1.js dist/migration-test/sw-upgrade-v1.js && cp tests/pwa/fixtures/sw-upgrade-v2.js dist/migration-test/sw-upgrade-v2.js && node scripts/serve-static.mjs --root dist --port 4174',
     url:baseURL,
     reuseExistingServer:true,
     timeout:30_000

@@ -19,7 +19,7 @@ export default defineConfig({
     video: 'retain-on-failure'
   },
   webServer: externalBaseURL ? undefined : {
-    command: 'npm run build && npx http-server dist -p 4173 -c-1 --silent',
+    command: 'npm run build && node scripts/serve-static.mjs --root dist --port 4173',
     url: baseURL,
     reuseExistingServer: true,
     timeout: 20_000
