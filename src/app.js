@@ -6,7 +6,7 @@ import { normalizePackage } from './normalize.js';
 import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
 import { normalizePoint, googleMapsDirections, yandexNavigatorLink, yandexWebFallback, mapsMeLink, mapsMeWebFallback, coordinateText, openCustomSchemeWithFallback } from './navigation.js';
-import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan } from './offline-map.js';
+import { downloadOfflineMap, removeOfflineMap, discardOfflineMapRevision, buildDownloadPlan, setOfflineMapDiagnosticsListener } from './offline-map.js';
 import { downloadTerrain, removeTerrain, discardTerrainRevision, buildTerrainDownloadPlan } from './terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from './app/export.js';
 import { startOfLocalDay, raceDateRange, distanceFromTodayDays, raceWithinWeek, pickDefaultRace } from './app/catalog-dates.js';
@@ -39,6 +39,13 @@ let compassListening = false;
 let swRegistration = null;
 
 setupErrorTelemetry();
+let firstOfflineTileMarked=false;
+setOfflineMapDiagnosticsListener(stats=>{
+  if(!firstOfflineTileMarked && stats?.hits>0){
+    firstOfflineTileMarked=true;
+    markBoot('first-offline-tile',{bytes:stats.last?.bytes||0});
+  }
+});
 setupBootDiagnosticsUi();
 setupPwaInstall();
 setupPushUi();
@@ -631,7 +638,14 @@ async function runStartupMaintenance(){
   void loadCatalog().then(()=>markBoot('catalog-refresh-finished')).catch(()=>{});
 }
 
-void runStartupMaintenance();
+const scheduleMaintenance=()=>{
+  if('requestIdleCallback' in window){
+    requestIdleCallback(()=>void runStartupMaintenance(),{timeout:1500});
+  }else{
+    setTimeout(()=>void runStartupMaintenance(),300);
+  }
+};
+scheduleMaintenance();
 window.addEventListener('rfm:periodic-update',async()=>{
   const result=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(()=>null);
   if(result?.applied||result?.pending){
