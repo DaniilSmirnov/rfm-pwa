@@ -12,6 +12,20 @@ test.describe('offline, import and failure states',()=>{
     await expect(page.locator('#catalogStatus')).toContainText('API недоступен');
   });
 
+  test('updates network badge when connectivity disappears after launch',async({page})=>{
+    await openApp(page);
+    await expect(page.locator('#networkBadge')).toHaveText('онлайн');
+
+    await page.evaluate(()=>{
+      window.__rfmTestOnline=false;
+      window.dispatchEvent(new Event('offline'));
+    });
+
+    await expect(page.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(page.locator('#networkBadge')).toHaveClass(/offline/);
+    await expect(page.locator('#catalogStatus')).toContainText('Офлайн');
+  });
+
   test('shows offline catalog state when navigator is offline',async({page})=>{
     await openApp(page,{online:false});
     await expect(page.locator('#networkBadge')).toHaveText('офлайн');

@@ -29,6 +29,7 @@ import { renderRallyPackUpdateStatus } from './app/rally-pack-update-ui.js';
 import { reportClientError, setupErrorTelemetry } from './app/telemetry.js';
 import { scheduleStartupMaintenance } from './app/startup-maintenance.js';
 import { markBoot, setupBootDiagnosticsUi } from './app/boot-diagnostics.js';
+import { createConnectivityMonitor } from './app/network-status.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -39,6 +40,7 @@ let selectedPoint = null;
 let compassHeading = null;
 let compassListening = false;
 let swRegistration = null;
+let networkOnline=Boolean(navigator.onLine);
 const stageSelection = createStageSelection();
 
 setupErrorTelemetry();
@@ -132,9 +134,17 @@ async function sharePoint(point) {
   }
 }
 
-function updateNetwork() { const online=navigator.onLine; $('networkBadge').textContent=online?'онлайн':'офлайн'; $('networkBadge').className=`badge ${online?'online':'offline'}`; }
-window.addEventListener('online',()=>{ updateNetwork(); loadCatalog(); requestRallyPackBackgroundRefresh(swRegistration); });
-window.addEventListener('offline',updateNetwork); updateNetwork();
+function renderNetworkBadge(){
+  $('networkBadge').textContent=networkOnline?'онлайн':'офлайн';
+  $('networkBadge').className=`badge ${networkOnline?'online':'offline'}`;
+}
+renderNetworkBadge();
+createConnectivityMonitor({onChange:online=>{
+  networkOnline=online;
+  renderNetworkBadge();
+  loadCatalog();
+  if(online) requestRallyPackBackgroundRefresh(swRegistration);
+}});
 
 async function refreshList() {
   const pkgs = (await getAllPackages()).sort((a,b)=>b.savedAt.localeCompare(a.savedAt));
@@ -188,7 +198,7 @@ async function selectPackage(id){
   const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:(p.offlineMap.storageId||p.id)} : null;
   const terrain=p.terrain?.ready ? p.terrain : null;
   await stageSelection.setPackage(p,terrain);
-  $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}${terrain?'рельеф ✓ · ':''}сохранено ${new Date(p.savedAt).toLocaleString()}`;
+  $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:networkOnline?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}${terrain?'рельеф ✓ · ':''}сохранено ${new Date(p.savedAt).toLocaleString()}`;
   try {
     await ensureMapLibre();
     const diag=$('offlineMapDiag');
@@ -295,7 +305,7 @@ async function downloadRace(id,button){
 }
 
 async function loadCatalog(){
-  if(!navigator.onLine){ $('catalogStatus').textContent='Офлайн: доступны уже скачанные гонки.'; catalog=[]; await renderCatalog(); return; }
+  if(!networkOnline){ $('catalogStatus').textContent='Офлайн: доступны уже скачанные гонки.'; catalog=[]; await renderCatalog(); return; }
   $('catalogStatus').textContent='Проверяю serverless proxy…';
   try{
     await checkApiHealth();
