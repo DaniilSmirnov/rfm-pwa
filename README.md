@@ -7,6 +7,7 @@ Cloudflare Pages build based on v0.3.4.3.
 - Visual language is matched to the public RallyFansMap frontend captured in the supplied HAR: RF Dewi Expanded typography, black/white controls, 24px white race content sheet, dark date labels, race-photo cards and section hierarchy.
 - Full race materials are rendered from the public race API: safety leaflet, overlap schedule, organiser map image, declared crews (`lists[]` and legacy `list_crews*`), results (`results[]` and legacy `results_race*`), `how_it_was`, plus uncategorised cached race images.
 - All known race material images are included in the offline asset cache when the race is downloaded.
+- ASMG race standings can be loaded, searched and followed per crew; followed results are cached by the Service Worker for offline use.
 - Images open in a fullscreen viewer.
 - Existing offline map, Yandex import, GPS, external navigator buttons and automatic PWA updates are retained.
 
@@ -92,6 +93,13 @@ Current parser accepts schedule dates such as `dd.mm.yyyy`, `dd/mm/yyyy`, `dd-mm
 ### Per-stage notification subscriptions
 
 Scheduled race reminders are opt-in per special stage. The schedule UI shows a `🔔 Уведомлять` control for detected `СУ`/`SS` entries. Preferences are stored locally in the PWA by race and stage, and only subscribed stages produce opening/closing reminders at T-60, T-30 and T-15 minutes. Updating the choice rebuilds that race's server-side reminder queue without duplicates.
+
+
+### ASMG crew results
+
+Each saved race can load the public ASMG results table. The ASMG event ID defaults to the Rally Fans Map race ID and can be corrected in the results panel when the two catalogs use different IDs. The latest available special stage is selected initially; the first three classified crews are shown, with search for the remaining crews. Expanding a crew shows its place, class, time, gaps, speed, car and penalties.
+
+Following a crew stores the subscription locally in IndexedDB. The Service Worker caches the complete ASMG standings response when it is opened and refreshes standings for followed events through Periodic Background Sync (15-minute minimum interval where supported). The last successful response remains available offline. Browser scheduling is best effort and controlled by the browser.
 
 
 ### Apple Wallet stage passes

@@ -1,7 +1,7 @@
 import * as maplibregl from '/vendor/maplibre-gl/maplibre-gl.mjs';
 maplibregl.setWorkerUrl('/vendor/maplibre-gl/maplibre-gl-worker.mjs');
 window.maplibregl = maplibregl;
-import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from './db.js';
+import { savePackage, getAllPackages, deleteAllPackages, deleteAllCrewSubscriptions, getPackage, clearMapTiles, getMapStorageStats } from './db.js';
 import { normalizePackage } from './normalize.js';
 import { renderMap, updateLiveUserPosition } from './map.js';
 import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, assetUrl, enrichPackageWithYandex } from './rallyfans.js';
@@ -16,6 +16,7 @@ import { FAVORITES_KEY, pointKey, favoritesForPackage, isFavoritePoint, setFavor
 import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from './app/runtime.js';
 import { renderPointList as renderPointListUi } from './app/point-list.js';
 import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
+import { renderCrewResults } from './app/crew-results.js';
 import { renderSchedule } from './app/schedule-ui.js';
 import { createStageSelection } from './app/stage-selection.js';
 import { syncWalletPassesForPackage } from './app/wallet-client.js';
@@ -234,6 +235,7 @@ async function selectPackage(id){
   const img=$('raceImage');
   if(p.original?.image){ img.src=assetUrl(p.original.image); img.hidden=false; img.onerror=()=>img.hidden=true; } else img.hidden=true;
   renderSchedule(p,stageSelection.scheduleOptions());
+  renderCrewResults(p).catch(error=>console.warn('Crew results UI failed',error));
   syncWalletPassesForPackage(p).catch(e=>console.warn('Wallet pass refresh failed',e));
   renderRaceMedia(p);
   renderRallyPackUpdateStatus(p);
@@ -557,7 +559,7 @@ for(const id of ['deleteMapBtn','deleteMapBtnTop']) if($(id)) $(id).onclick=hand
 $('catalogSearch').addEventListener('input',renderCatalog);
 $('packageSearch')?.addEventListener('input',refreshList);
 $('refreshCatalogBtn').onclick=loadCatalog;
-$('clearBtn').onclick = async () => { if(!confirm('Удалить все сохранённые гонки, карты, изображения и избранные точки?'))return; localStorage.removeItem(FAVORITES_KEY); await deleteAllPackages(); await clearMapTiles(); if('caches' in window) await caches.delete('rfm-race-assets-v1'); currentPackageId=null; $('raceDetails').hidden=true; $('map').innerHTML='<div class="empty">Офлайн-данные удалены</div>'; await refreshList(); };
+$('clearBtn').onclick = async () => { if(!confirm('Удалить все сохранённые гонки, карты, результаты, подписки и избранные точки?'))return; localStorage.removeItem(FAVORITES_KEY); await deleteAllPackages(); await deleteAllCrewSubscriptions(); await clearMapTiles(); if('caches' in window){await caches.delete('rfm-race-assets-v1');await caches.delete('rfm-periodic-data-v1');} currentPackageId=null; $('raceDetails').hidden=true; $('map').innerHTML='<div class="empty">Офлайн-данные удалены</div>'; await refreshList(); };
 async function updateGeoStatus(text, cls='') { const el=$('geoStatus'); if(el){ el.textContent=text; el.className=`muted small ${cls}`; } }
 
 async function requestLocation() {
@@ -636,4 +638,3 @@ window.addEventListener('rfm:background-fetch',event=>{
   if(detail.status==='success') status.textContent='Офлайн-материалы готовы ✓';
   if(detail.status==='failure') status.textContent='Не удалось скачать часть офлайн-материалов.';
 });
-

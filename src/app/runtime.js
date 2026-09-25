@@ -19,6 +19,13 @@ export function requestRallyPackBackgroundRefresh(reg){
   return true;
 }
 
+export function requestCrewResultsBackgroundRefresh(reg){
+  const worker=reg?.active||navigator.serviceWorker?.controller;
+  if(!worker?.postMessage)return false;
+  worker.postMessage({type:'REFRESH_CREW_RESULTS'});
+  return true;
+}
+
 export async function setupPeriodicBackgroundSync(reg){
   if(!reg?.periodicSync?.register) return {supported:false};
   try{
@@ -31,7 +38,12 @@ export async function setupPeriodicBackgroundSync(reg){
     }
     if(!granted) return {supported:true,registered:false};
     await reg.periodicSync.register('rfm-refresh-races',{minInterval:12*60*60*1000});
-    return {supported:true,registered:true};
+    let crewResultsRegistered=false;
+    try{
+      await reg.periodicSync.register('rfm-refresh-crew-results',{minInterval:15*60*1000});
+      crewResultsRegistered=true;
+    }catch(error){console.warn('Periodic crew results sync registration failed',error);}
+    return {supported:true,registered:true,crewResultsRegistered};
   }catch(e){
     console.warn('Periodic Background Sync registration failed',e);
     return {supported:true,registered:false};

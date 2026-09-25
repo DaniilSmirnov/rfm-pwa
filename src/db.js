@@ -1,7 +1,8 @@
 const DB_NAME = 'rallyfans-offline';
 const PACKAGE_STORE = 'packages';
 const TILE_STORE = 'maptiles';
-const VERSION = 2;
+const VERSION = 3;
+const CREW_SUBSCRIPTION_STORE = 'crewSubscriptions';
 const OPFS_TILE_ROOT = 'rfm-maptiles';
 let opfsRootPromise=null;
 const opfsRaceDirs=new Map();
@@ -29,6 +30,10 @@ export function openDb() {
         const s=db.createObjectStore(TILE_STORE,{keyPath:'key'});
         s.createIndex('raceId','raceId',{unique:false});
       }
+      if (!db.objectStoreNames.contains(CREW_SUBSCRIPTION_STORE)) {
+        const s=db.createObjectStore(CREW_SUBSCRIPTION_STORE,{keyPath:'key'});
+        s.createIndex('asmgRaceId','asmgRaceId',{unique:false});
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -52,6 +57,10 @@ export const savePackage = pkg => withStore(PACKAGE_STORE,'readwrite',s=>s.put(p
 export const deleteAllPackages = () => withStore(PACKAGE_STORE,'readwrite',s=>s.clear());
 export const getAllPackages = () => withStore(PACKAGE_STORE,'readonly',s=>s.getAll());
 export const getPackage = id => withStore(PACKAGE_STORE,'readonly',s=>s.get(id));
+export const getCrewSubscriptions = () => withStore(CREW_SUBSCRIPTION_STORE,'readonly',s=>s.getAll());
+export const saveCrewSubscription = subscription => withStore(CREW_SUBSCRIPTION_STORE,'readwrite',s=>s.put(subscription));
+export const deleteCrewSubscription = key => withStore(CREW_SUBSCRIPTION_STORE,'readwrite',s=>s.delete(key));
+export const deleteAllCrewSubscriptions = () => withStore(CREW_SUBSCRIPTION_STORE,'readwrite',s=>s.clear());
 
 export function tileKey(raceId,z,x,y){ return `${raceId}:${z}:${x}:${y}`; }
 const legacySaveMapTile = (raceId,z,x,y,data) => withStore(TILE_STORE,'readwrite',s=>s.put({key:tileKey(raceId,z,x,y),raceId:String(raceId),z,x,y,data,bytes:data?.byteLength||0}));
