@@ -142,10 +142,16 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
     const results=stage?.results||[];
     const query=search.value.trim();
     const visible=visibleCrewResults(results,query);
+    const expandedCrewIds=new Set([...list.querySelectorAll('[data-crew-card][open]')]
+      .map(card=>card.querySelector('[data-subscribe]')?.dataset.subscribe)
+      .filter(Boolean));
     list.innerHTML=visible.length?visible.map(result=>{
       const id=String(result?.crew?.id||result?.crew?.number||resultName(result));
       return resultCard(result,results.indexOf(result),stage,subscriptions.some(s=>s.key===subscriptionKey(data.eventId,id)));
     }).join(''):'<p class="muted">Экипажи по этому запросу не найдены.</p>';
+    list.querySelectorAll('[data-crew-card]').forEach(card=>{
+      card.open=expandedCrewIds.has(card.querySelector('[data-subscribe]')?.dataset.subscribe);
+    });
     if(!query&&results.length>3)list.insertAdjacentHTML('beforeend',`<p class="muted small">Ещё ${results.length-3} экипажа. Введи номер или фамилию в поиск.</p>`);
     list.querySelectorAll('[data-subscribe]').forEach(button=>button.addEventListener('click',async event=>{
       event.preventDefault();event.stopPropagation();

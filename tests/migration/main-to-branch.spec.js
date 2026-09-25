@@ -37,7 +37,7 @@ async function seedPersistentData(page){
     localStorage.setItem('rfm-wallet-stage-passes-v1',JSON.stringify({'9901':['stage-1']}));
 
     const db=await new Promise((resolve,reject)=>{
-      const request=indexedDB.open('rallyfans-offline',2);
+      const request=indexedDB.open('rallyfans-offline');
       request.onupgradeneeded=()=>{
         const database=request.result;
         if(!database.objectStoreNames.contains('packages')) database.createObjectStore('packages',{keyPath:'id'});
@@ -160,7 +160,7 @@ async function seedPersistentData(page){
 async function readPersistentState(page,seed){
   return page.evaluate(async seed=>{
     const db=await new Promise((resolve,reject)=>{
-      const request=indexedDB.open('rallyfans-offline',2);
+      const request=indexedDB.open('rallyfans-offline');
       request.onsuccess=()=>resolve(request.result);
       request.onerror=()=>reject(request.error);
     });

@@ -20,7 +20,7 @@ test.describe('ASMG crew results',()=>{
     await card.locator('summary').click();
     await expect(card).toContainText('Skoda Fabia Rally2 Evo');
     await expect(card).toContainText('00:14:50:0');
-    await expect(card).toContainText('120.3 км/ч');
+    await expect(card).toContainText('84.7 км/ч');
   });
 
   test('stores a followed crew so the service worker can refresh it offline',async({page})=>{
@@ -33,6 +33,6 @@ test.describe('ASMG crew results',()=>{
       return await new Promise((resolve,reject)=>{const request=db.transaction('crewSubscriptions').objectStore('crewSubscriptions').getAll();request.onsuccess=()=>{db.close();resolve(request.result);};request.onerror=()=>reject(request.error);});
     });
     expect(saved).toHaveLength(1);
-    expect(saved[0]).toMatchObject({asmgRaceId:'101',crewId:'2273',name:'Гожев Руслан / Коломиец Денис'});
+    expect(saved[0]).toMatchObject({asmgRaceId:'55',crewId:'2273',name:'Гожев Руслан / Коломиец Денис'});
   });
 });

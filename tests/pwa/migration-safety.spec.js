@@ -24,7 +24,7 @@ async function waitForAppWorker(page){
 async function seedSavedRace(page,{offlineMap=false,withAssets=false,terrain=false}={}){
   await page.evaluate(async({offlineMap,withAssets,terrain})=>{
     const db=await new Promise((resolve,reject)=>{
-      const request=indexedDB.open('rallyfans-offline',2);
+      const request=indexedDB.open('rallyfans-offline');
       request.onupgradeneeded=()=>{
         const database=request.result;
         if(!database.objectStoreNames.contains('packages')) database.createObjectStore('packages',{keyPath:'id'});
@@ -340,7 +340,7 @@ test.describe('PWA migration safety',()=>{
 
     const state=await reopened.evaluate(async()=>{
       const db=await new Promise((resolve,reject)=>{
-        const request=indexedDB.open('rallyfans-offline',2);
+        const request=indexedDB.open('rallyfans-offline');
         request.onsuccess=()=>resolve(request.result);
         request.onerror=()=>reject(request.error);
       });
@@ -400,7 +400,7 @@ test.describe('PWA migration safety',()=>{
     await seedSavedRace(page);
     const before=await page.evaluate(async()=>{
       const db=await new Promise((resolve,reject)=>{
-        const request=indexedDB.open('rallyfans-offline',2);
+        const request=indexedDB.open('rallyfans-offline');
         request.onsuccess=()=>resolve(request.result);
         request.onerror=()=>reject(request.error);
       });
@@ -420,7 +420,7 @@ test.describe('PWA migration safety',()=>{
 
     const after=await page.evaluate(async()=>{
       const db=await new Promise((resolve,reject)=>{
-        const request=indexedDB.open('rallyfans-offline',2);
+        const request=indexedDB.open('rallyfans-offline');
         request.onsuccess=()=>resolve(request.result);
         request.onerror=()=>reject(request.error);
       });
