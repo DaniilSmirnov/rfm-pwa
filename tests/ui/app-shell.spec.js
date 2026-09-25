@@ -8,6 +8,8 @@ test.describe('app shell and catalog',()=>{
   test('renders product identity and version',async({page})=>{
     await openApp(page);
     await expect(page).toHaveTitle('Rally Fans Map Offline');
+    await expect(page.locator('.app-footer')).toBeHidden();
+    await page.getByRole('button',{name:'Ещё'}).click();
     await expect(page.locator('.app-footer')).toContainText(release.version);
     await expect(page.locator('.header-brand')).toContainText('Rally Fans Map');
   });
@@ -28,12 +30,14 @@ test.describe('app shell and catalog',()=>{
 
   test('shows only closest race by default',async({page})=>{
     await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
     await expect(page.locator('#catalogList')).toContainText(raceFixture.name);
     await expect(page.locator('#catalogList')).not.toContainText(secondRace.name);
   });
 
   test('catalog search reveals races outside week window',async({page})=>{
     await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
     await page.locator('#catalogSearch').fill('Пермь');
     await expect(page.locator('#catalogList')).toContainText(secondRace.name);
     await expect(page.locator('#catalogList')).toContainText('Пермь');
@@ -41,6 +45,7 @@ test.describe('app shell and catalog',()=>{
 
   test('catalog search can find by race name',async({page})=>{
     await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
     await page.locator('#catalogSearch').fill('Far Future');
     await expect(page.locator('.catalog-row')).toHaveCount(1);
     await expect(page.locator('.catalog-row')).toContainText(secondRace.name);
@@ -48,6 +53,7 @@ test.describe('app shell and catalog',()=>{
 
   test('catalog search shows empty state',async({page})=>{
     await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
     await page.locator('#catalogSearch').fill('does-not-exist');
     await expect(page.locator('#catalogList')).toContainText('Ничего не найдено');
   });
@@ -67,6 +73,7 @@ test.describe('app shell and catalog',()=>{
 
   test('refresh catalog button keeps catalog operational',async({page})=>{
     await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
     await page.locator('#refreshCatalogBtn').click();
     await expect(page.locator('#catalogStatus')).toContainText('2 гонок');
     await expect(page.locator('#catalogList')).toContainText(raceFixture.name);

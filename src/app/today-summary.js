@@ -1,4 +1,4 @@
-import { crewResultClasses, crewResultViews, filterCrewResultsByClass } from './crew-results.js';
+import { parseScheduleDateTime } from './schedule.js';
 
 const asArray=value=>Array.isArray(value)?value:(value&&typeof value==='object'?Object.values(value):[]);
 const dateKey=value=>String(value||'').match(/\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}/)?.[0]||'';
@@ -8,19 +8,19 @@ export function scheduleForDate(pkg,date=new Date()){
   return asArray(pkg?.original?.schedule).filter(item=>dateKey(item?.date)===key);
 }
 
-export function podiumByClass(snapshot){
-  const view=crewResultViews(snapshot?.eventResults).find(item=>item.key==='overall');
-  const results=view?.results||[];
-  return crewResultClasses(results).map(className=>({
-    className,
-    results:filterCrewResultsByClass(results,className).filter(result=>!result.goingOff&&!result.goingOffAfterSu).slice(0,3)
-  })).filter(group=>group.results.length);
+function hasFinished(schedule,pkg,now){
+  const moments=schedule.flatMap(item=>asArray(item?.events)
+    .map(event=>parseScheduleDateTime(item?.date,event?.time,pkg))
+    .filter(Boolean));
+  return moments.length>0&&moments.every(moment=>moment.getTime()<=now.getTime());
 }
 
-export function todaySummary(pkg,date=new Date()){
+export function todaySummary(pkg,now=new Date()){
+  const today=scheduleForDate(pkg,now);
+  const tomorrowDate=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+  const showTomorrow=hasFinished(today,pkg,now);
   return {
-    schedule:scheduleForDate(pkg,date),
-    yesterday:scheduleForDate(pkg,new Date(date.getFullYear(),date.getMonth(),date.getDate()-1)),
-    podiums:podiumByClass(pkg?.crewResults)
+    schedule:showTomorrow?scheduleForDate(pkg,tomorrowDate):today,
+    scheduleLabel:showTomorrow?'ПРОГРАММА НА ЗАВТРА':'ПРОГРАММА НА СЕГОДНЯ'
   };
 }
