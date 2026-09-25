@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 8451)
-Total output lines: 640
-
 import * as maplibregl from '/vendor/maplibre-gl/maplibre-gl.mjs';
 maplibregl.setWorkerUrl('/vendor/maplibre-gl/maplibre-gl-worker.mjs');
 window.maplibregl = maplibregl;
@@ -282,7 +279,51 @@ async function downloadRace(id,button){
   const old=button.textContent;
   button.disabled=true;
   try{
-    await ens…451 tokens truncated…чала выбери точку.'; return; }
+    await ensurePersistentStorage();
+    const result=await downloadRallyPack(id,{
+      fetchRace,
+      raceDetailToPackage,
+      getPackage,
+      enrichPackageWithYandex,
+      downloadOfflineMap,
+      cacheRaceAssets,
+      savePackage,
+      scheduleRaceReminders,
+      discardOfflineMapRevision,
+      onOptionalError:(phase,error)=>console.warn(`Rally Pack optional step failed: ${phase}`,error)
+    },event=>{
+      button.textContent=rallyPackProgressText(event,fmtBytes);
+    });
+    currentPackageId=result.pkg.id;
+    await refreshList();
+    await selectPackage(result.pkg.id);
+    button.textContent=rallyPackProgressText({phase:'done',assetDownload:result.assetDownload},fmtBytes);
+  }catch(err){
+    alert(`Не удалось скачать Rally Pack: ${err.message}`);
+    button.textContent=old;
+  }finally{
+    button.disabled=false;
+  }
+}
+
+async function loadCatalog(){
+  if(!networkOnline){ $('catalogStatus').textContent='Офлайн: доступны уже скачанные гонки.'; catalog=[]; await renderCatalog(); return; }
+  $('catalogStatus').textContent='Проверяю serverless proxy…';
+  try{
+    await checkApiHealth();
+    $('catalogStatus').textContent='Загружаю список из api.rallyfansmap.ru…';
+    catalog=await fetchRaceCatalog();
+    await renderCatalog();
+    $('catalogStatus').textContent=`${catalog.length} гонок · обновление сохранённых данных через Rally Pack`;
+  }
+  catch(err){ $('catalogStatus').textContent=`API недоступен: ${err.message}`; }
+}
+
+
+function updateSpectatorCompass(){
+  const display=$('compassDisplay'), status=$('compassStatus'), arrow=$('compassArrow');
+  if(!display||!status||!arrow) return;
+  if(!selectedPoint){ display.hidden=true; status.textContent='Сначала выбери точку.'; return; }
   if(!userPos){
     display.hidden=true;
     status.textContent='Нужна геопозиция для расчёта направления.';
