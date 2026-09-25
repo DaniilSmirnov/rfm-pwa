@@ -108,6 +108,18 @@
       <div class="section-head"><div><div id="mapTitle" class="block-title">КАРТА РАЛЛИ</div><p id="mapSubtitle" class="muted">Выбери сохранённую гонку</p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button><button id="downloadTerrainBtn" class="button" disabled>Рельеф карты</button><button id="deleteTerrainBtn" class="button danger" hidden>Удалить рельеф</button></div></div>
       <p id="offlineMapStatus" class="muted small">Офлайн-подложка ещё не скачана.</p><p id="terrainStatus" class="muted small">Рельеф ещё не скачан.</p><p id="offlineMapDiag" class="muted small" hidden></p>
       <div id="map" class="map" aria-label="offline rally map"></div>
+      <section id="stagePanel" class="stage-panel" hidden aria-live="polite">
+        <div class="stage-panel-head">
+          <div>
+            <div class="eyebrow">выбранный спецучасток</div>
+            <div id="stagePanelTitle" class="block-title">СУ</div>
+            <p id="stagePanelMeta" class="muted small"></p>
+          </div>
+          <button id="stagePanelClose" class="button compact" type="button">Закрыть</button>
+        </div>
+        <div id="stagePanelEvents"></div>
+        <div id="stagePanelElevation"></div>
+      </section>
 
       <section class="favorites-panel" aria-labelledby="favoritesTitle">
         <div class="section-head compact-section-head">

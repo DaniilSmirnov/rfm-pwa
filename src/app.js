@@ -17,6 +17,7 @@ import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriod
 import { renderPointList as renderPointListUi } from './app/point-list.js';
 import { initRaceMediaModal, renderRaceMedia } from './app/race-media.js';
 import { renderSchedule } from './app/schedule-ui.js';
+import { createStageSelection } from './app/stage-selection.js';
 import { syncWalletPassesForPackage } from './app/wallet-client.js';
 import { setupPwaInstall } from './app/pwa.js';
 import { downloadRallyPack } from './app/rally-pack.js';
@@ -38,6 +39,7 @@ let selectedPoint = null;
 let compassHeading = null;
 let compassListening = false;
 let swRegistration = null;
+const stageSelection = createStageSelection();
 
 setupErrorTelemetry();
 let firstOfflineTileMarked=false;
@@ -51,6 +53,7 @@ setupBootDiagnosticsUi();
 setupPwaInstall();
 setupPushUi();
 initRaceMediaModal();
+$('stagePanelClose')?.addEventListener('click',()=>stageSelection.clear());
 
 function downloadBlob(filename,type,text){
   const url=URL.createObjectURL(new Blob([text],{type}));
@@ -184,6 +187,7 @@ async function selectPackage(id){
   $('mapTitle').textContent=p.name;
   const om=p.offlineMap?.ready ? {...p.offlineMap,raceId:(p.offlineMap.storageId||p.id)} : null;
   const terrain=p.terrain?.ready ? p.terrain : null;
+  await stageSelection.setPackage(p,terrain);
   $('mapSubtitle').textContent=`${om?`ИСПОЛЬЗУЕТСЯ офлайн-подложка · ${om.vectorLayers?.length||0} слоёв · `:navigator.onLine?'онлайн-подложка · ':'офлайн · только локальная геометрия · '}${terrain?'рельеф ✓ · ':''}сохранено ${new Date(p.savedAt).toLocaleString()}`;
   try {
     await ensureMapLibre();
@@ -197,7 +201,7 @@ async function selectPackage(id){
   const mapGeoJson=carPoint
     ? {...p.geojson,features:[...(p.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[carPoint.lon,carPoint.lat]}}]}
     : p.geojson;
-  const mapInstance=renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:route=>showRouteElevationProfile(terrain,route),onMapError:(msg)=>{ reportClientError(new Error(msg),'map'); const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
+  const mapInstance=renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:stageSelection.selectRoute,onMapError:(msg)=>{ reportClientError(new Error(msg),'map'); const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   markBoot('map-created',{packageId:p.id,offline:Boolean(om)});
   mapInstance?.once?.('load',()=>markBoot('map-loaded',{packageId:p.id,offline:Boolean(om)}));
   updateOfflineMapUi(p);
@@ -219,7 +223,7 @@ async function selectPackage(id){
   ].filter(x=>x[1]).map(([k,v])=>`<div><strong>${esc(v)}</strong><span>${esc(k)}</span></div>`).join('');
   const img=$('raceImage');
   if(p.original?.image){ img.src=assetUrl(p.original.image); img.hidden=false; img.onerror=()=>img.hidden=true; } else img.hidden=true;
-  renderSchedule(p);
+  renderSchedule(p,stageSelection.scheduleOptions());
   syncWalletPassesForPackage(p).catch(e=>console.warn('Wallet pass refresh failed',e));
   renderRaceMedia(p);
   renderRallyPackUpdateStatus(p);
