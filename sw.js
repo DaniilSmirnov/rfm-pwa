@@ -39,11 +39,14 @@ self.addEventListener('message', event=>{
   if(event.data?.type==='REFRESH_RALLY_PACKS') event.waitUntil(refreshPeriodicRaceData());
 });
 
-async function fetchWithTimeout(request,timeoutMs=1200){
+async function fetchWithTimeout(input,timeoutMs=1200){
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{
-    return await fetch(new Request(request,{cache:'no-store',signal:controller.signal}));
+    const request=input instanceof Request
+      ? new Request(input,{cache:'no-store',signal:controller.signal})
+      : new Request(new URL(String(input),self.location.origin),{cache:'no-store',signal:controller.signal});
+    return await fetch(request);
   }finally{
     clearTimeout(timer);
   }
@@ -125,7 +128,7 @@ self.addEventListener('push', event => {
       try{
         const subscription=await self.registration.pushManager.getSubscription();
         if(subscription?.endpoint){
-          const response=await fetchWithTimeout(new Request('/api/push/pending',{
+          const response=await fetchWithTimeout(new Request(new URL('/api/push/pending',self.location.origin),{
             method:'POST',
             headers:{'content-type':'application/json'},
             body:JSON.stringify({endpoint:subscription.endpoint})
@@ -196,7 +199,7 @@ async function prefetchRaceAssets(race){
     const url=`/api/rallyfans/public/${encodeURIComponent(name)}`;
     if(await cache.match(url)) return;
     try{
-      const response=await fetchWithTimeout(new Request(url,{cache:'no-store'}),12000);
+      const response=await fetchWithTimeout(url,12000);
       if(response.ok) await cache.put(url,response);
     }catch{}
   }));
@@ -205,14 +208,14 @@ async function prefetchRaceAssets(race){
 async function refreshPeriodicRaceData(){
   const cache=await caches.open(PERIODIC_CACHE);
   try{
-    const catalog=await fetchWithTimeout(new Request('/api/rallyfans/race',{cache:'no-store'}),8000);
+    const catalog=await fetchWithTimeout('/api/rallyfans/race',8000);
     if(catalog.ok) await cache.put('/api/rallyfans/race',catalog);
   }catch{}
   const ids=await savedRaceIds();
   await Promise.all([...new Set(ids)].map(async id=>{
     const url=`/api/rallyfans/race/${encodeURIComponent(id)}`;
     try{
-      const response=await fetchWithTimeout(new Request(url,{cache:'no-store'}),8000);
+      const response=await fetchWithTimeout(url,8000);
       if(!response.ok) return;
       await cache.put(url,response.clone());
       const race=await response.json();
