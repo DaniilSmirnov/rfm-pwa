@@ -23,10 +23,22 @@ function resultSearchText(result){
   return [result?.crew?.number,resultName(result),result?.crew?.car,result?.discipline?.name].join(' ').toLocaleLowerCase('ru');
 }
 
-export function visibleCrewResults(results,query=''){
+export function crewResultClasses(results){
+  return [...new Set((Array.isArray(results)?results:[])
+    .map(result=>String(result?.discipline?.name||'').trim())
+    .filter(Boolean))].sort((left,right)=>left.localeCompare(right,'ru'));
+}
+
+export function filterCrewResultsByClass(results,className=''){
   const source=Array.isArray(results)?results:[];
+  return className?source.filter(result=>String(result?.discipline?.name||'').trim()===className):source;
+}
+
+export function visibleCrewResults(results,query='',{className='',limitToTopThree=true}={}){
+  const source=filterCrewResultsByClass(results,className);
   const normalized=String(query).trim().toLocaleLowerCase('ru');
-  return normalized?source.filter(result=>resultSearchText(result).includes(normalized)):source.slice(0,3);
+  const matching=normalized?source.filter(result=>resultSearchText(result).includes(normalized)):source;
+  return !normalized&&limitToTopThree?matching.slice(0,3):matching;
 }
 
 export function sortCrewResults(results){
@@ -121,9 +133,10 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
   const asmgRaceId=String(pkg?.asmgRaceId??pkg?.original?.asmg_id??pkg?.original?.asmgId??pkg?.raceId??pkg?.original?.id??'');
   root.innerHTML=`<section class="crew-results-section" aria-labelledby="crewResultsTitle">
     <div class="section-head"><div><div id="crewResultsTitle" class="block-title">РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ</div><p class="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p></div><button class="button primary" id="crewResultsOpen" type="button" hidden>Открыть результаты</button></div>
+    <div class="crew-results-class-filter" id="crewResultsClassFilter" hidden><label for="crewResultsClass">Класс</label><select id="crewResultsClass" class="crew-results-stage"><option value="">Все классы</option></select></div>
     <form class="crew-results-controls"><label for="asmgRaceId">Номер гонки на АСМГ</label><div class="crew-results-load"><input id="asmgRaceId" inputmode="numeric" pattern="[0-9]*" value="${esc(asmgRaceId)}" aria-label="Номер гонки на АСМГ"/><button class="button compact primary" type="submit">${pkg?.crewResults?'Обновить':'Загрузить результаты'}</button></div></form>
     <p class="muted small crew-results-status" aria-live="polite">${asmgRaceId?'Загружаю результаты…':'Введи номер гонки на asmg.ru, если он отличается от номера Rally Fans Map.'}</p>
-    <dialog class="crew-results-dialog" aria-labelledby="crewResultsDialogTitle"><header class="crew-results-dialog-head"><div><h2 id="crewResultsDialogTitle">Результаты экипажей</h2><p class="muted small">Показаны три лидера. Остальных найди поиском.</p></div><button class="button crew-results-close" type="button" aria-label="Закрыть результаты">×</button></header><div class="crew-results-toolbar"><label class="sr-only" for="crewResultsStage">Спецучасток</label><select id="crewResultsStage" class="crew-results-stage"></select><input id="crewResultsSearch" class="search" placeholder="Поиск по экипажу, номеру или машине…" aria-label="Поиск экипажа" /></div><div class="crew-results-table-wrap"><table class="crew-results-table"><thead><tr><th scope="col">Место</th><th scope="col">Экипаж</th><th scope="col">Автомобиль / зачёт</th><th scope="col" id="crewResultsTimeHeading">Время</th><th scope="col"><span class="sr-only">Подписка</span></th></tr></thead><tbody class="crew-results-body"></tbody></table></div></dialog>
+    <dialog class="crew-results-dialog" aria-labelledby="crewResultsDialogTitle"><header class="crew-results-dialog-head"><div><h2 id="crewResultsDialogTitle">Результаты экипажей</h2><p class="muted small">Выбери класс, чтобы увидеть весь его состав.</p></div><button class="button crew-results-close" type="button" aria-label="Закрыть результаты">×</button></header><div class="crew-results-toolbar"><label class="sr-only" for="crewResultsStage">Спецучасток</label><select id="crewResultsStage" class="crew-results-stage"></select><label class="sr-only" for="crewResultsDialogClass">Класс</label><select id="crewResultsDialogClass" class="crew-results-stage"><option value="">Все классы</option></select><input id="crewResultsSearch" class="search" placeholder="Поиск по экипажу, номеру или машине…" aria-label="Поиск экипажа" /></div><div class="crew-results-table-wrap"><table class="crew-results-table"><thead><tr><th scope="col">Место</th><th scope="col">Экипаж</th><th scope="col">Автомобиль / зачёт</th><th scope="col" id="crewResultsTimeHeading">Время</th><th scope="col"><span class="sr-only">Подписка</span></th></tr></thead><tbody class="crew-results-body"></tbody></table></div></dialog>
   </section>`;
   const form=root.querySelector('form');
   const input=root.querySelector('#asmgRaceId');
@@ -131,6 +144,9 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
   const openButton=root.querySelector('#crewResultsOpen');
   const dialog=root.querySelector('.crew-results-dialog');
   const stageSelect=root.querySelector('#crewResultsStage');
+  const classFilter=root.querySelector('#crewResultsClass');
+  const dialogClassFilter=root.querySelector('#crewResultsDialogClass');
+  const classFilterPanel=root.querySelector('#crewResultsClassFilter');
   const search=root.querySelector('#crewResultsSearch');
   const tableBody=root.querySelector('.crew-results-body');
   const timeHeading=root.querySelector('#crewResultsTimeHeading');
@@ -144,18 +160,28 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
   openButton.addEventListener('click',openResults);
   root.querySelector('.crew-results-close').addEventListener('click',()=>dialog.close());
 
+  const updateClassOptions=()=>{
+    const stage=resultViews.find(view=>view.key===stageSelect.value)||resultViews[0];
+    const names=crewResultClasses(stage?.results);
+    const selected=classFilter.value||dialogClassFilter.value;
+    const options='<option value="">Все классы</option>'+names.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join('');
+    classFilter.innerHTML=options;
+    dialogClassFilter.innerHTML=options;
+    if(names.includes(selected)){classFilter.value=selected;dialogClassFilter.value=selected;}
+  };
+
   const draw=()=>{
     if(!data)return;
     const stage=resultViews.find(view=>view.key===stageSelect.value)||resultViews[0];
     const results=stage?.results||[];
     const query=search.value.trim();
-    const visible=visibleCrewResults(results,query);
+    const className=dialogClassFilter.value;
+    const visible=visibleCrewResults(results,query,{className,limitToTopThree:false});
     timeHeading.textContent=stage?.name||'Время';
     tableBody.innerHTML=visible.length?visible.map(result=>{
       const id=String(result?.crew?.id||result?.crew?.number||resultName(result));
-      return resultRow(result,results.indexOf(result),stage,subscriptions.some(s=>s.key===subscriptionKey(data.eventId,id)));
+      return resultRow(result,filterCrewResultsByClass(results,className).indexOf(result),stage,subscriptions.some(s=>s.key===subscriptionKey(data.eventId,id)));
     }).join():'<tr><td colspan="5" class="crew-results-empty">Экипажи по этому запросу не найдены.</td></tr>';
-    if(!query&&results.length>3)tableBody.insertAdjacentHTML('beforeend',`<tr class="crew-results-more"><td colspan="5">Ещё ${results.length-3} экипажа. Введи фамилию, номер или машину в поиск.</td></tr>`);
     tableBody.querySelectorAll('[data-subscribe]').forEach(button=>button.addEventListener('click',async event=>{
       event.preventDefault();event.stopPropagation();
       const crewId=button.dataset.subscribe,key=subscriptionKey(data.eventId,crewId);
@@ -173,7 +199,9 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
       }catch(error){status.textContent=`Не удалось изменить подписку: ${error.message||error}`;}
     }));
   };
-  stageSelect.addEventListener('change',draw);
+  stageSelect.addEventListener('change',()=>{updateClassOptions();draw();});
+  classFilter.addEventListener('change',()=>{dialogClassFilter.value=classFilter.value;draw();});
+  dialogClassFilter.addEventListener('change',()=>{classFilter.value=dialogClassFilter.value;draw();});
   search.addEventListener('input',draw);
   form.addEventListener('submit',async event=>{
     event.preventDefault();
@@ -185,6 +213,8 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
       await savePackage(pkg);
       stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
       stageSelect.value='overall';
+      updateClassOptions();
+      classFilterPanel.hidden=false;
       openButton.hidden=false;
       status.textContent=`${data.tournamentTitle?`${data.tournamentTitle} · `:''}${data.eventResults.length} спецучастка · сохранено для офлайн-доступа.`;
       draw();
@@ -207,6 +237,8 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
       if(!root.isConnected)return;
       stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
       stageSelect.value='overall';
+      updateClassOptions();
+      classFilterPanel.hidden=false;
       openButton.hidden=false;
       const updatedAt=data.updatedAt||new Date().toISOString();
       pkg.crewResults={eventId:data.eventId,updatedAt};

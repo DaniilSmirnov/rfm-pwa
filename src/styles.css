@@ -256,6 +256,9 @@ html[data-pwa-installed="true"] .pwa-install-prompt{display:none!important}
 
 .crew-results-section{margin:22px 0;padding:18px 0;border-top:1px solid var(--line)}
 .crew-results-section .block-title{margin-bottom:5px}
+.crew-results-class-filter{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px;font-weight:600}
+.crew-results-class-filter[hidden]{display:none}
+.crew-results-class-filter .crew-results-stage{max-width:240px}
 .crew-results-controls{display:grid;gap:7px;max-width:460px;margin:14px 0 8px;font-size:12px;font-weight:600}
 .crew-results-load{display:flex;gap:8px}
 .crew-results-load input,.crew-results-stage{min-width:0;border:1px solid #d9d9d9;border-radius:4px;background:#fff;color:#000;padding:9px 10px}

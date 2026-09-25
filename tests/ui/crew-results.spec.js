@@ -4,21 +4,33 @@ import { downloadFixtureRace, openApp } from './helpers.js';
 test.describe('ASMG crew results',()=>{
   test.beforeEach(async({page})=>{await openApp(page);await downloadFixtureRace(page);});
 
-  test('opens results only on demand and searches crews in the full-screen table',async({page})=>{
+  test('opens results only on demand, filters both views by class, and searches crews',async({page})=>{
     const dialog=page.locator('.crew-results-dialog');
     const openButton=page.getByRole('button',{name:'Открыть результаты'});
+    const pageClass=page.locator('#crewResultsClass');
+    const dialogClass=page.locator('#crewResultsDialogClass');
     await expect(openButton).toBeVisible();
+    await expect(pageClass).toBeVisible();
     await expect(dialog).not.toBeVisible();
+    await pageClass.selectOption('Абсолют');
     await openButton.click();
     await expect(dialog).toBeVisible();
     await expect(page.locator('#crewResultsStage')).toHaveValue('overall');
+    await expect(dialogClass).toHaveValue('Абсолют');
 
     const rows=page.locator('[data-crew-row]');
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(4);
     await expect(rows.first()).toContainText('Гожев Руслан / Коломиец Денис');
     await expect(rows.first()).toContainText('Skoda Fabia Rally2 Evo');
     await expect(rows.first()).toContainText('Абсолют');
     await expect(rows.nth(2)).toContainText('Гаврилов Клим / Еникеев Кирилл');
+
+    await dialogClass.selectOption('R5');
+    await expect(pageClass).toHaveValue('R5');
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText('Сидоров Иван / Петров Павел');
+    await pageClass.selectOption('');
+    await expect(rows).toHaveCount(5);
 
     await page.locator('#crewResultsSearch').fill('40');
     await expect(rows).toHaveCount(1);

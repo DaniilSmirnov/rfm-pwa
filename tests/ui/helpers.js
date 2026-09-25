@@ -59,7 +59,8 @@ export const asmgResultsFixture={
       {id:'r1',time:890000,speed:120.3,crew:{id:'2273',number:5,car:'Skoda Fabia Rally2 Evo',pilot:{firstName:'Руслан',lastName:'Гожев'},navigator:{firstName:'Денис',lastName:'Коломиец'}},discipline:{name:'Абсолют'},formattedTime:'00:14:50:0',formattedFromLeader:'00:00:00:0',formattedTimeFromPrevious:'00:00:00:0'},
       {id:'r2',time:895000,speed:119.3,crew:{id:'2275',number:4,car:'Skoda Fabia RS Rally2',pilot:{firstName:'Денис',lastName:'Ростилов'},navigator:{firstName:'Василий',lastName:'Слобожанинов'}},discipline:{name:'Абсолют'},formattedTime:'00:14:55:0',formattedFromLeader:'00:00:05:0',formattedTimeFromPrevious:'00:00:05:0'},
       {id:'r3',time:900000,speed:118.5,crew:{id:'2274',number:1,car:'Skoda Fabia Rally2 Evo',pilot:{firstName:'Клим',lastName:'Гаврилов'},navigator:{firstName:'Кирилл',lastName:'Еникеев'}},discipline:{name:'Абсолют'},formattedTime:'00:15:00:0',formattedFromLeader:'00:00:10:0',formattedTimeFromPrevious:'00:00:05:0'},
-      {id:'r4',time:930000,speed:114.7,crew:{id:'2332',number:40,car:'Toyota GR Yaris Rally2',pilot:{firstName:'Андрей',lastName:'Жигунов'},navigator:{firstName:'Алексей',lastName:'Аксаков'}},discipline:{name:'Абсолют'},formattedTime:'00:15:30:0',formattedFromLeader:'00:00:40:0',formattedTimeFromPrevious:'00:00:30:0'}
+      {id:'r4',time:930000,speed:114.7,crew:{id:'2332',number:40,car:'Toyota GR Yaris Rally2',pilot:{firstName:'Андрей',lastName:'Жигунов'},navigator:{firstName:'Алексей',lastName:'Аксаков'}},discipline:{name:'Абсолют'},formattedTime:'00:15:30:0',formattedFromLeader:'00:00:40:0',formattedTimeFromPrevious:'00:00:30:0'},
+      {id:'r5',time:940000,speed:113.5,crew:{id:'2401',number:51,car:'Renault Clio Rally5',pilot:{firstName:'Иван',lastName:'Сидоров'},navigator:{firstName:'Павел',lastName:'Петров'}},discipline:{name:'R5'},formattedTime:'00:15:40:0',formattedFromLeader:'00:00:50:0',formattedTimeFromPrevious:'00:00:10:0'}
     ]
   }]
 };
