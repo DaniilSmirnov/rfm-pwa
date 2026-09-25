@@ -6,6 +6,11 @@ const lines=path=>read(path).split(/\r?\n/).length;
 
 describe('architecture guardrails',()=>{
   it('keeps app.js orchestration-focused below 650 lines',()=>expect(lines('src/app.js')).toBeLessThan(650));
+  it('keeps offline map UI orchestration in its feature controller',()=>{
+    expect(read('src/app.js')).not.toContain('async function handleDownloadMap');
+    expect(read('src/app/offline-map-controls.js')).toContain('export function createOfflineMapControls');
+    expect(lines('src/app.js')).toBeLessThan(600);
+  });
   it('keeps map controller below 500 lines',()=>expect(lines('src/map.js')).toBeLessThan(500));
   it('keeps basemap style isolated below 700 lines',()=>expect(lines('src/map/style.js')).toBeLessThan(700));
   it('keeps Worker entrypoint below 100 lines',()=>expect(lines('_worker.js')).toBeLessThan(100));
@@ -71,5 +76,13 @@ describe('architecture guardrails',()=>{
     expect(pkg.scripts['test:unit']).toBeTruthy();
     expect(pkg.scripts['test:ui']).toBeTruthy();
     expect(pkg.scripts['test:pwa']).toBeTruthy();
+  });
+
+  it('documents offline data ownership and uses one shared tile revision engine',()=>{
+    const doc=read('docs/architecture/offline-storage.md');
+    expect(doc).toContain('Package metadata is the commit record');
+    expect(doc).toContain('Other `/api/*` endpoints are network-only');
+    expect(read('src/offline-map.js')).toContain("from './tile-revision-downloader.js'");
+    expect(read('src/terrain-offline.js')).toContain("from './tile-revision-downloader.js'");
   });
 });

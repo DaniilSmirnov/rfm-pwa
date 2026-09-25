@@ -29,6 +29,7 @@ import { renderRallyPackUpdateStatus } from './app/rally-pack-update-ui.js';
 import { reportClientError, setupErrorTelemetry } from './app/telemetry.js';
 import { scheduleStartupMaintenance } from './app/startup-maintenance.js';
 import { markBoot, setupBootDiagnosticsUi } from './app/boot-diagnostics.js';
+import { createOfflineMapControls } from './app/offline-map-controls.js';
 
 const $ = id => document.getElementById(id);
 let currentPackageId = null;
@@ -204,7 +205,7 @@ async function selectPackage(id){
   const mapInstance=renderMap($('map'),mapGeoJson,userPos, showPointActions,{offlineMap:om,terrain,onRouteClick:stageSelection.selectRoute,onMapError:(msg)=>{ reportClientError(new Error(msg),'map'); const el=$('offlineMapDiag'); if(el){el.hidden=false;el.textContent=`Ошибка карты: ${msg}`;} }});
   markBoot('map-created',{packageId:p.id,offline:Boolean(om)});
   mapInstance?.once?.('load',()=>markBoot('map-loaded',{packageId:p.id,offline:Boolean(om)}));
-  updateOfflineMapUi(p);
+  offlineMapControls.update(p);
   terrainControls.update(p);
   renderPointList(p);
   renderFavorites(p);
@@ -455,33 +456,6 @@ $('copyCoordsBtn').onclick = async () => {
   catch { $('navStatus').textContent=`Координаты: ${text}`; }
 };
 
-function mapUiEls(){
-  return {
-    buttons:[$('downloadMapBtn'),$('downloadMapBtnTop')].filter(Boolean),
-    deletes:[$('deleteMapBtn'),$('deleteMapBtnTop')].filter(Boolean),
-    statuses:[$('offlineMapStatus'),$('offlineMapStatusTop')].filter(Boolean)
-  };
-}
-function setMapUiText({button,status,deleteHidden,disabled}){
-  const els=mapUiEls();
-  for(const el of els.buttons){ if(button!=null) el.textContent=button; if(disabled!=null) el.disabled=disabled; }
-  for(const el of els.statuses){ if(status!=null) el.textContent=status; }
-  for(const el of els.deletes){
-    if(deleteHidden!=null) el.hidden=deleteHidden;
-    if(disabled!=null) el.disabled=disabled;
-  }
-}
-function updateOfflineMapUi(p){
-  if(!p){ setMapUiText({button:'Скачать офлайн-карту',status:'Сначала выбери сохранённую гонку.',deleteHidden:true,disabled:true}); return; }
-  if(p?.offlineMap?.ready){
-    const layerNames=(p.offlineMap.vectorLayers||[]).map(v=>typeof v==='string'?v:v?.id).filter(Boolean);
-    setMapUiText({button:`Обновить карту (${fmtBytes(p.offlineMap.bytes||0)})`,status:`Офлайн-подложка готова · ${p.offlineMap.tileCount||0} тайлов · ${layerNames.length} слоёв · ${fmtBytes(p.offlineMap.bytes||0)} · z${p.offlineMap.minZoom}–${p.offlineMap.maxZoom}${layerNames.length?` · ${layerNames.slice(0,8).join(', ')}`:''}`,deleteHidden:false,disabled:false});
-  } else {
-    let msg='Офлайн-подложка ещё не скачана.';
-    try { const plan=buildDownloadPlan(p.geojson); msg=`Будет скачано до ${plan.tiles.length} векторных тайлов · z${plan.minZoom}–${plan.maxZoom}. Размер зависит от района.`; } catch {}
-    setMapUiText({button:'Скачать офлайн-карту',status:msg,deleteHidden:true,disabled:false});
-  }
-}
 const terrainControls=createTerrainControls({
   getCurrentPackageId:()=>currentPackageId,
   getPackage,
@@ -493,56 +467,18 @@ const terrainControls=createTerrainControls({
   formatBytes:fmtBytes,
   onPackageChanged:async id=>{ await selectPackage(id); await refreshList(); }
 });
-
-async function handleDownloadMap(){
-  if(!currentPackageId) return;
-  setMapUiText({disabled:true});
-  let stagedMap=null;
-  let previousMap=null;
-  let packageId=currentPackageId;
-  try{
-    let p=await getPackage(currentPackageId);
-    packageId=p.id;
-    previousMap=p.offlineMap||null;
-    if(navigator.storage?.persist) { try { await navigator.storage.persist(); } catch {} }
-
-    stagedMap=await downloadOfflineMap(p,pr=>{
-      setMapUiText({
-        button:`Карта ${pr.done}/${pr.total}`,
-        status:`Скачано ${pr.saved} тайлов · ${fmtBytes(pr.bytes)}${pr.failed?` · ошибок ${pr.failed}`:''}`
-      });
-    });
-
-    p.offlineMap=stagedMap;
-    await savePackage(p);
-    stagedMap=null; // The new revision is now the committed active map.
-
-    if(previousMap){
-      try{ await discardOfflineMapRevision(previousMap,p.id); }
-      catch(e){ console.warn('Could not remove previous offline map revision',e); }
-    }
-
-    await selectPackage(p.id);
-    await refreshList();
-  }catch(e){
-    if(stagedMap){
-      try{ await discardOfflineMapRevision(stagedMap); }
-      catch(cleanupError){ console.warn('Could not remove staged offline map revision',cleanupError); }
-    }
-    const msg=`Не удалось скачать карту: ${e.message}`;
-    setMapUiText({status:msg});
-    alert(msg);
-  }finally{
-    const p=await getPackage(packageId);
-    updateOfflineMapUi(p);
-  }
-}
-async function handleDeleteMap(){
-  if(!currentPackageId||!confirm('Удалить офлайн-подложку этой гонки?')) return;
-  let p=await getPackage(currentPackageId); await removeOfflineMap(p); delete p.offlineMap; await savePackage(p); await selectPackage(p.id); await refreshList();
-}
-for(const id of ['downloadMapBtn','downloadMapBtnTop']) if($(id)) $(id).onclick=handleDownloadMap;
-for(const id of ['deleteMapBtn','deleteMapBtnTop']) if($(id)) $(id).onclick=handleDeleteMap;
+const offlineMapControls=createOfflineMapControls({
+  getCurrentPackageId:()=>currentPackageId,
+  getPackage,
+  savePackage,
+  downloadOfflineMap,
+  removeOfflineMap,
+  discardOfflineMapRevision,
+  buildDownloadPlan,
+  formatBytes:fmtBytes,
+  selectPackage,
+  refreshList
+});
 
 $('catalogSearch').addEventListener('input',renderCatalog);
 $('packageSearch')?.addEventListener('input',refreshList);
@@ -626,4 +562,3 @@ window.addEventListener('rfm:background-fetch',event=>{
   if(detail.status==='success') status.textContent='Офлайн-материалы готовы ✓';
   if(detail.status==='failure') status.textContent='Не удалось скачать часть офлайн-материалов.';
 });
-
