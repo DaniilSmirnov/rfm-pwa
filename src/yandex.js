@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from './app/net.js';
 export const YANDEX_IMPORT_URL = '/api/yandex/constructor';
 
 export function extractYandexEmbedUrl(embed) {
@@ -16,7 +17,7 @@ export function extractYandexEmbedUrl(embed) {
 export async function fetchYandexConstructorFeatures(embed) {
   const url = extractYandexEmbedUrl(embed);
   if (!url) throw new Error('В карточке гонки не найдена ссылка Yandex Constructor');
-  const r = await fetch(`${YANDEX_IMPORT_URL}?url=${encodeURIComponent(url)}`, { cache: 'no-store' });
+  const r = await fetchWithTimeout(`${YANDEX_IMPORT_URL}?url=${encodeURIComponent(url)}`, { cache: 'no-store' }, 10000);
   const text = await r.text();
   let data;
   try { data = JSON.parse(text); } catch { throw new Error(`${r.status} ${text.slice(0,160)}`); }
