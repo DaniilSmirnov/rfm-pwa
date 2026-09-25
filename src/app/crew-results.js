@@ -1,0 +1,212 @@
+import { deleteCrewSubscription, getCrewSubscriptions, saveCrewSubscription, savePackage } from '../db.js';
+import { requestCrewResultsBackgroundRefresh } from './runtime.js';
+
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const crewName=crew=>[
+  [crew?.pilot?.lastName,crew?.pilot?.firstName].filter(Boolean).join(' '),
+  [crew?.navigator?.lastName,crew?.navigator?.firstName].filter(Boolean).join(' ')
+].filter(Boolean).join(' / ');
+const subscriptionKey=(asmgRaceId,crewId)=>`${asmgRaceId}:${crewId}`;
+
+export async function fetchAsmgResults(asmgRaceId,fetcher=fetch){
+  const id=String(asmgRaceId??'').trim();
+  if(!/^\d+$/.test(id))throw new Error('Укажи номер гонки на asmg.ru.');
+  const response=await fetcher(`/api/asmg/race/${encodeURIComponent(id)}/results`,{cache:'no-store'});
+  if(!response.ok)throw new Error(`АСМГ ответил с ошибкой (${response.status}).`);
+  const data=await response.json();
+  if(!Array.isArray(data?.eventResults))throw new Error('АСМГ не вернул таблицу результатов.');
+  return data;
+}
+
+function resultName(result){return crewName(result?.crew)||`Экипаж № ${result?.crew?.number||'—'}`;}
+function resultSearchText(result){
+  return [result?.crew?.number,resultName(result),result?.crew?.car,result?.discipline?.name].join(' ').toLocaleLowerCase('ru');
+}
+
+export function visibleCrewResults(results,query=''){
+  const source=Array.isArray(results)?results:[];
+  const normalized=String(query).trim().toLocaleLowerCase('ru');
+  return normalized?source.filter(result=>resultSearchText(result).includes(normalized)):source.slice(0,3);
+}
+
+export function sortCrewResults(results){
+  return (Array.isArray(results)?results:[]).slice().sort((left,right)=>{
+    const leftRetired=left?.goingOff||left?.goingOffAfterSu?1:0;
+    const rightRetired=right?.goingOff||right?.goingOffAfterSu?1:0;
+    return leftRetired-rightRetired||(Number(left?.time)||Infinity)-(Number(right?.time)||Infinity);
+  });
+}
+
+function formatRallyTime(milliseconds){
+  const tenths=Math.max(0,Math.round((Number(milliseconds)||0)/100));
+  const hours=Math.floor(tenths/36000);
+  const minutes=Math.floor(tenths%36000/600);
+  const seconds=Math.floor(tenths%600/10);
+  return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}:${tenths%10}`;
+}
+
+export function overallCrewResults(stages){
+  const crews=new Map();
+  let distance=0;
+  for(const stage of Array.isArray(stages)?stages:[]){
+    distance+=Number(stage?.specialStage?.distance)||0;
+    for(const result of Array.isArray(stage?.results)?stage.results:[]){
+      const crew=result?.crew||{};
+      const key=String(crew.id||crew.number||result.id||'');
+      if(!key)continue;
+      const row=crews.get(key)||{crew,discipline:result.discipline,time:0,timePenalty:0,goingOff:false,goingOffAfterSu:false,reasonGoingOff:''};
+      row.crew=crew;
+      row.discipline=result.discipline||row.discipline;
+      if(!result.goingOff){
+        row.time+=Number(result.time)||0;
+        row.timePenalty+=Number(result.timePenalty)||0;
+      }
+      if(result.goingOff||result.goingOffAfterSu){
+        row.goingOff=row.goingOff||Boolean(result.goingOff);
+        row.goingOffAfterSu=row.goingOffAfterSu||Boolean(result.goingOffAfterSu);
+        row.reasonGoingOff=result.reasonGoingOff||row.reasonGoingOff;
+      }
+      crews.set(key,row);
+    }
+  }
+  const results=[...crews.values()].filter(result=>result.time>0||result.goingOff).map(result=>{
+    const time=result.time+result.timePenalty;
+    return {...result,time,formattedTime:formatRallyTime(time),formattedTimePenalty:formatRallyTime(result.timePenalty),distance};
+  });
+  const ordered=sortCrewResults(results);
+  let leaderTime=null,previousTime=null;
+  for(const result of ordered){
+    if(result.goingOff){
+      result.formattedFromLeader='—';
+      result.formattedTimeFromPrevious='—';
+      result.speed=0;
+      continue;
+    }
+    leaderTime??=result.time;
+    result.formattedFromLeader=formatRallyTime(result.time-leaderTime);
+    result.formattedTimeFromPrevious=formatRallyTime(previousTime==null?0:result.time-previousTime);
+    result.speed=result.time>0?Math.round(distance*3_600_000/result.time*10)/10:0;
+    previousTime=result.time;
+  }
+  return ordered;
+}
+
+export function crewResultViews(eventResults){
+  const stages=Array.isArray(eventResults)?eventResults:[];
+  const lastName=stages.at(-1)?.specialStage?.name||'последнего СУ';
+  return [
+    {key:'overall',name:`Общий итог после ${lastName}`,results:overallCrewResults(stages)},
+    ...stages.map((stage,index)=>({key:String(index),name:stage?.specialStage?.name||`Спецучасток ${index+1}`,results:sortCrewResults(stage?.results?.filter(result=>Number(result?.time)>0||result?.goingOff||result?.goingOffAfterSu))}))
+  ];
+}
+
+function resultCard(result,index,stage,subscribed){
+  const crew=result?.crew||{};
+  const name=resultName(result);
+  const id=String(crew.id||crew.number||name);
+  const status=result.goingOff?'Сход':result.goingOffAfterSu?'Сход после финиша':'';
+  const time=status?(result.reasonGoingOff||status):(result.formattedTime||'Время пока недоступно');
+  const place=result.goingOff||result.goingOffAfterSu?'—':index+1;
+  return `<details class="crew-result-card" data-crew-card data-search="${esc(resultSearchText(result))}">
+    <summary><span class="crew-result-place">${place}</span><span class="crew-result-summary"><strong>${esc(name)}</strong><small>Стартовый № ${esc(crew.number||'—')}</small></span><span class="crew-result-expand">Подробнее <span aria-hidden="true">⌄</span></span></summary>
+    <div class="crew-result-details"><div class="crew-result-stats"><span><small>Место</small><strong>${place}</strong></span><span><small>Зачёт</small><strong>${esc(result?.discipline?.name||'—')}</strong></span><span><small>${esc(stage?.name||'Время')}</small><strong>${esc(time)}</strong></span>
+      <span><small>От лидера</small><strong>${esc(result.formattedFromLeader||'—')}</strong></span><span><small>От предыдущего</small><strong>${esc(result.formattedTimeFromPrevious||'—')}</strong></span><span><small>Скорость</small><strong>${Number(result.speed)>0?`${esc(result.speed)} км/ч`:'—'}</strong></span></div>
+      <p class="muted small">${esc(crew.car||'Автомобиль не указан')}${result.formattedTimePenalty?` · штраф ${esc(result.formattedTimePenalty)}`:''}${status?` · ${esc(status)}`:''}</p>
+      <button class="button compact crew-subscribe-button ${subscribed?'downloaded':''}" type="button" data-subscribe="${esc(id)}" data-name="${esc(name)}">${subscribed?'Отписаться от экипажа':'Следить за экипажем'}</button>
+    </div>
+  </details>`;
+}
+
+export async function renderCrewResults(pkg,root=document.getElementById('crewResults')){
+  if(!root)return;
+  const asmgRaceId=String(pkg?.asmgRaceId??pkg?.original?.asmg_id??pkg?.original?.asmgId??pkg?.raceId??pkg?.original?.id??'');
+  root.innerHTML=`<section class="crew-results-section" aria-labelledby="crewResultsTitle">
+    <div class="section-head"><div><div id="crewResultsTitle" class="block-title">РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ</div><p class="muted small">Три лидера показаны сразу. Остальных найди поиском.</p></div></div>
+    <form class="crew-results-controls"><label for="asmgRaceId">Номер гонки на АСМГ</label><div class="crew-results-load"><input id="asmgRaceId" inputmode="numeric" pattern="[0-9]*" value="${esc(asmgRaceId)}" aria-label="Номер гонки на АСМГ"/><button class="button compact primary" type="submit">${pkg?.crewResults?'Обновить':'Загрузить результаты'}</button></div></form>
+    <p class="muted small crew-results-status" aria-live="polite">${asmgRaceId?'Загружаю результаты…':'Введи номер гонки на asmg.ru, если он отличается от номера Rally Fans Map.'}</p>
+    <div class="crew-results-content" hidden><div class="crew-results-toolbar"><label class="sr-only" for="crewResultsStage">Спецучасток</label><select id="crewResultsStage" class="crew-results-stage"></select><input id="crewResultsSearch" class="search" placeholder="Поиск остальных экипажей…" aria-label="Поиск экипажа" /></div><div class="crew-results-list"></div></div>
+  </section>`;
+  const form=root.querySelector('form');
+  const input=root.querySelector('#asmgRaceId');
+  const status=root.querySelector('.crew-results-status');
+  const content=root.querySelector('.crew-results-content');
+  const stageSelect=root.querySelector('#crewResultsStage');
+  const search=root.querySelector('#crewResultsSearch');
+  const list=root.querySelector('.crew-results-list');
+  let data=null,resultViews=[],subscriptions=[];
+  try{subscriptions=await getCrewSubscriptions();}catch{}
+
+  const draw=()=>{
+    if(!data)return;
+    const stage=resultViews.find(view=>view.key===stageSelect.value)||resultViews[0];
+    const results=stage?.results||[];
+    const query=search.value.trim();
+    const visible=visibleCrewResults(results,query);
+    list.innerHTML=visible.length?visible.map(result=>{
+      const id=String(result?.crew?.id||result?.crew?.number||resultName(result));
+      return resultCard(result,results.indexOf(result),stage,subscriptions.some(s=>s.key===subscriptionKey(data.eventId,id)));
+    }).join(''):'<p class="muted">Экипажи по этому запросу не найдены.</p>';
+    if(!query&&results.length>3)list.insertAdjacentHTML('beforeend',`<p class="muted small">Ещё ${results.length-3} экипажа. Введи номер или фамилию в поиск.</p>`);
+    list.querySelectorAll('[data-subscribe]').forEach(button=>button.addEventListener('click',async event=>{
+      event.preventDefault();event.stopPropagation();
+      const crewId=button.dataset.subscribe,key=subscriptionKey(data.eventId,crewId);
+      try{
+        if(subscriptions.some(item=>item.key===key)){
+          await deleteCrewSubscription(key);subscriptions=subscriptions.filter(item=>item.key!==key);
+          status.textContent=`Подписка на экипаж ${button.dataset.name} отключена.`;
+        }else{
+          const subscription={key,asmgRaceId:String(data.eventId),crewId,name:button.dataset.name,raceId:String(pkg.raceId??pkg.id),raceName:pkg.name,addedAt:new Date().toISOString()};
+          await saveCrewSubscription(subscription);subscriptions.push(subscription);
+          status.textContent=`Экипаж ${button.dataset.name} добавлен. Результаты будут обновляться при периодической синхронизации и сохраняться офлайн.`;
+        }
+        requestCrewResultsBackgroundRefresh(await navigator.serviceWorker?.ready?.catch?.(()=>null));
+        draw();
+      }catch(error){status.textContent=`Не удалось изменить подписку: ${error.message||error}`;}
+    }));
+  };
+  stageSelect.addEventListener('change',draw);
+  search.addEventListener('input',draw);
+  form.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const id=input.value.trim();status.textContent='Загружаю результаты АСМГ…';content.hidden=true;
+    try{
+      data=await fetchAsmgResults(id);
+      resultViews=crewResultViews(data.eventResults);
+      pkg.asmgRaceId=id;pkg.crewResults={eventId:data.eventId,updatedAt:data.updatedAt||new Date().toISOString()};
+      await savePackage(pkg);
+      stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
+      stageSelect.value='overall';
+      content.hidden=false;
+      status.textContent=`${data.tournamentTitle?`${data.tournamentTitle} · `:''}${data.eventResults.length} спецучастка · сохранено для офлайн-доступа.`;
+      draw();
+    }catch(error){
+      status.textContent=`${error.message||error} Проверь номер гонки и подключение.`;
+    }
+  });
+  if(root.__crewResultsRefreshListener)window.removeEventListener('rfm:periodic-update',root.__crewResultsRefreshListener);
+  root.__crewResultsRefreshListener=event=>{
+    if(!root.isConnected||!input.value.trim())return;
+    if(event.detail?.scope&&event.detail.scope!=='crew-results')return;
+    form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  };
+  window.addEventListener('rfm:periodic-update',root.__crewResultsRefreshListener);
+
+  if(asmgRaceId){
+    try{
+      data=await fetchAsmgResults(asmgRaceId);
+      resultViews=crewResultViews(data.eventResults);
+      if(!root.isConnected)return;
+      stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
+      stageSelect.value='overall';
+      content.hidden=false;
+      const updatedAt=data.updatedAt||new Date().toISOString();
+      pkg.crewResults={eventId:data.eventId,updatedAt};
+      await savePackage(pkg);
+      const stamp=new Date(updatedAt).toLocaleString();
+      status.textContent=`${data.tournamentTitle?`${data.tournamentTitle} · `:''}обновлено ${stamp}. Результаты доступны офлайн.`;
+      draw();
+    }catch(error){
+      status.textContent=`Нет новых данных. ${error.message||error} Если результаты уже загружались, проверь, что для этой гонки сохранена последняя версия приложения.`;
+    }
+  }
+}
