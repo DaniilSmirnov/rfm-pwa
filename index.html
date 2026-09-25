@@ -33,9 +33,10 @@
     <div class="header-brand"><img id="headerLogo" class="header-logo" src="/rfm/icon.png?v=__APP_VERSION_CACHE__" alt="" /><div><div class="brand-small">Rally Fans Map</div><h1>OFFLINE</h1></div></div>
     <div class="top-actions"><button id="installBtn" class="button compact" hidden>Установить PWA</button><span id="networkBadge" class="badge">…</span></div>
   </header>
+  <div id="reactRoot"></div>
 
   <main>
-    <section id="pwaInstallPrompt" class="pwa-install-prompt" hidden aria-live="polite">
+    <section id="pwaInstallPrompt" class="pwa-install-prompt legacy-more" hidden aria-live="polite">
       <div class="pwa-install-copy">
         <div class="eyebrow">УСТАНОВКА PWA</div>
         <strong id="pwaInstallTitle">Установи Rally Fans Map Offline</strong>
@@ -45,7 +46,7 @@
       <button id="pwaInstallAction" class="button primary" type="button">Установить приложение</button>
     </section>
 
-    <section class="intro-panel">
+    <section id="settingsSection" class="intro-panel legacy-more">
       <div class="block-title">RALLY FANS MAP · OFFLINE</div>
       <p>Скачивай гонку заранее: карта, точки, расписание и материалы останутся в приложении без связи.</p>
       <div class="actions intro-actions">
@@ -56,7 +57,7 @@
       <p id="pushStatus" class="muted small">Уведомления ещё не настроены.</p>
     </section>
 
-    <section class="rfm-section">
+    <section id="catalogSection" class="rfm-section legacy-more">
       <div class="section-head">
         <div><div class="block-title">ГОНКИ</div><p id="catalogStatus" class="muted"></p></div>
         <input id="catalogSearch" class="search" placeholder="Карелия, Псков…" />
@@ -64,7 +65,7 @@
       <div id="catalogList" class="catalog-list"></div>
     </section>
 
-    <section class="grid two compact-grid">
+    <section id="savedRacesSection" class="grid two compact-grid legacy-more">
       <article class="rfm-section">
         <div class="section-head saved-head">
           <div><div class="block-title">СОХРАНЕНО ОФЛАЙН</div><div id="storageStats" class="stats"></div></div>
@@ -80,7 +81,7 @@
       </article>
     </section>
 
-    <section id="raceDetails" class="race-page" hidden>
+    <section id="raceDetails" class="race-page legacy-more" hidden>
       <div id="raceHero" class="race-hero">
         <div class="race-hero-overlay"></div>
         <div class="race-hero-top"><div class="brand-small light">Rally Fans Map</div><div id="raceKicker" class="race-category"></div></div>
@@ -106,7 +107,7 @@
       </div>
     </section>
 
-    <section class="rfm-section map-card">
+    <section id="mapSection" class="rfm-section map-card legacy-map">
       <div class="section-head"><div><div id="mapTitle" class="block-title"></div><p id="mapSubtitle" class="muted"></p></div><div class="actions"><button id="downloadMapBtn" class="button primary" disabled>Скачать офлайн-карту</button><button id="deleteMapBtn" class="button danger" hidden>Удалить карту</button><button id="downloadTerrainBtn" class="button" disabled>Рельеф карты</button><button id="deleteTerrainBtn" class="button danger" hidden>Удалить рельеф</button></div></div>
       <p id="offlineMapStatus" class="muted small">Офлайн-подложка ещё не скачана.</p><p id="terrainStatus" class="muted small">Рельеф ещё не скачан.</p><p id="offlineMapDiag" class="muted small" hidden></p>
       <div id="map" class="map" aria-label="offline rally map"></div>
@@ -209,7 +210,6 @@
   <footer class="app-footer"><div class="brand-small">Rally Fans Map</div><div>Companion v__APP_VERSION__ · __APP_CODENAME__</div></footer>
 
   <template id="packageTpl"><button class="package-row"><span><strong class="package-name"></strong><small class="package-meta"></small></span><img class="row-arrow" src="/assets/arrow-right.svg" alt="" /></button></template>
-  <div id="reactRoot" hidden></div>
   <script src="/vendor/pmtiles/pmtiles.js"></script>
   <script type="module" src="/src/main.jsx"></script>
 </body>

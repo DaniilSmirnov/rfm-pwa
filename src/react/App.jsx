@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRfmApp, ensureMapLibre, formatBytes } from './useRfmApp.js';
-import { renderMap, updateLiveUserPosition } from '../map.js';
+import { renderMap, resizeActiveMap, updateLiveUserPosition } from '../map.js';
 import { assetUrl } from '../rallyfans.js';
 import {
   googleMapsDirections,yandexNavigatorLink,yandexWebFallback,mapsMeLink,mapsMeWebFallback,
@@ -16,7 +16,9 @@ import { syncWalletPassesForPackage } from '../app/wallet-client.js';
 import { showPointElevation, showRouteElevationProfile } from '../app/elevation-ui.js';
 import { reportClientError } from '../app/telemetry.js';
 import { formatDistance } from '../app/geo.js';
-import { setupBootDiagnosticsUi } from '../app/boot-diagnostics.js';
+import { openBootDiagnostics, setupBootDiagnosticsUi } from '../app/boot-diagnostics.js';
+import { todaySummary } from '../app/today-summary.js';
+import { distanceFromTodayDays } from '../app/catalog-dates.js';
 
 function Portal({id,children}){
   const node=document.getElementById(id);
@@ -214,9 +216,34 @@ function DomBindings({app}){
   return null;
 }
 
+const tabs=[['today','Сегодня','◉'],['map','Карта','⌖'],['more','Ещё','•••']];
+function readTab(){return new URLSearchParams(location.search).get('tab')||'today';}
+function crewName(result){
+  const crew=result?.crew||{};
+  return [crew.pilot?.lastName||crew.pilot?.name,crew.coPilot?.lastName||crew.coPilot?.name].filter(Boolean).join(' / ')||'Экипаж';
+}
+function TodayTab({app,onMap}){
+  const current=app.catalog.find(race=>distanceFromTodayDays(race)===0)||null;
+  const downloaded=Boolean(current&&app.downloadedIds.has(Number(current.id)));
+  const todayPackage=app.packages.find(item=>distanceFromTodayDays(item.original||item.summary||item)===0)||app.currentPackage;
+  const summary=useMemo(()=>todaySummary(todayPackage),[todayPackage]);
+  if(current&&!downloaded)return <section className="today-empty"><div className="block-title">Сегодня</div><strong>{current.name}</strong><p className="muted">Гонка проходит сегодня. Скачай Rally Pack сейчас, чтобы карта, программа и результаты работали без связи.</p><button className="button primary" onClick={()=>app.downloadRace(Number(current.id))}>Скачать Rally Pack</button></section>;
+  if(!todayPackage)return <section className="today-empty"><div className="block-title">Сегодня</div><p className="muted">Нет сохранённой гонки на сегодня.</p></section>;
+  return <section className="today-screen"><div className="today-hero"><div className="eyebrow">текущая гонка</div><h2>{todayPackage.name}</h2><p>{todayPackage.summary?.dates||'Расписание сохранено офлайн'}</p></div><section className="today-card"><div className="block-title">ПРОГРАММА НА СЕГОДНЯ</div>{summary.schedule.length?summary.schedule.map((item,index)=><button className="today-stage" key={index} onClick={onMap}><strong>{item.location||'Событие'}</strong><span>{(item.events||[]).map(event=>`${event.time||''} ${event.text||''}`.trim()).join(' · ')||'Открыть на карте'}</span></button>):<p className="muted">На сегодня событий в сохранённом расписании нет.</p>}</section>{summary.yesterday.length>0&&summary.podiums.length>0&&<section className="today-card"><div className="block-title">ИТОГИ ВЧЕРАШНЕГО ДНЯ</div>{summary.podiums.map(group=><div className="podium-group" key={group.className}><strong>{group.className}</strong><ol>{group.results.map((result,index)=><li key={`${result.position||index}-${crewName(result)}`}><span>{crewName(result)}</span><b>{result.time||result.result||'—'}</b></li>)}</ol></div>)}</section>}<button className="button primary today-map-button" onClick={onMap}>Открыть карту</button></section>;
+}
+function MoreTab({onResults}){const go=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});return <section className="more-menu"><button className="more-menu-row" onClick={onResults}><strong>Все результаты</strong><span>Полная таблица экипажей и классы</span></button><button className="more-menu-row" onClick={()=>go('catalogSection')}><strong>Мои гонки</strong><span>Rally Pack, каталог и импорт</span></button><button className="more-menu-row" onClick={()=>go('settingsSection')}><strong>Настройки</strong><span>Уведомления, PWA и хранилище</span></button><button className="more-menu-row" onClick={openBootDiagnostics}><strong>Диагностика</strong><span>Boot diagnostics</span></button></section>;}
+
 export default function App(){
   const app=useRfmApp();
   const pkg=app.currentPackage;
+  const [tab,setTab]=useState(readTab());
+  const activate=next=>{const url=new URL(location.href);url.searchParams.set('tab',next);history.pushState({tab:next},'',url);setTab(next);};
+
+  useEffect(()=>{document.body.dataset.activeTab=tab;},[tab]);
+
+  useEffect(()=>{
+    if(tab==='map') requestAnimationFrame(()=>resizeActiveMap());
+  },[tab]);
 
   useEffect(()=>{setupBootDiagnosticsUi();},[]);
 
@@ -287,6 +314,8 @@ export default function App(){
   const favSelected=Boolean(app.selectedPoint&&pkg&&isFavoritePoint(app.selectedPoint,pkg.id));
 
   return <>
+    <div className="react-tab-content">{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')}/>} {tab==='more'&&<MoreTab onResults={()=>{document.getElementById('raceDetails')?.scrollIntoView({behavior:'smooth'});document.getElementById('crewResultsOpen')?.click();}}/>}</div>
+    <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(([key,label,icon])=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><span>{icon}</span><b>{label}</b></button>)}</nav>
     <DomBindings app={app}/>
     <MapLifecycle app={app}/>
 

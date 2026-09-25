@@ -442,7 +442,7 @@ export function useRfmApp(){
   },[currentPackage,online]);
 
   return {
-    online,catalogStatus,catalogQuery,setCatalogQuery,visibleCatalog,downloadedIds,raceProgress,loadCatalog,downloadRace,
+    online,catalog,catalogStatus,catalogQuery,setCatalogQuery,visibleCatalog,downloadedIds,raceProgress,loadCatalog,downloadRace,
     packages,packageQuery,setPackageQuery,visiblePackages,storageStats,currentPackage,selectPackage,refreshPackages,
     importFiles,clearAll,
     selectedPoint,showPoint,setSelectedPoint,favorites,toggleFavorite,favoritesRevision,

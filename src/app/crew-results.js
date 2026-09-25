@@ -209,7 +209,7 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
     try{
       data=await fetchAsmgResults(id);
       resultViews=crewResultViews(data.eventResults);
-      pkg.asmgRaceId=id;pkg.crewResults={eventId:data.eventId,updatedAt:data.updatedAt||new Date().toISOString()};
+      pkg.asmgRaceId=id;pkg.crewResults={eventId:data.eventId,updatedAt:data.updatedAt||new Date().toISOString(),tournamentTitle:data.tournamentTitle||'',eventResults:data.eventResults};
       await savePackage(pkg);
       stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
       stageSelect.value='overall';
@@ -230,6 +230,20 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
   };
   window.addEventListener('rfm:periodic-update',root.__crewResultsRefreshListener);
 
+  // A complete snapshot is kept inside the Rally Pack, so the table remains
+  // usable after a cold offline start instead of depending on ASMG.
+  if(Array.isArray(pkg?.crewResults?.eventResults)){
+    data={eventId:pkg.crewResults.eventId||asmgRaceId,eventResults:pkg.crewResults.eventResults,tournamentTitle:pkg.crewResults.tournamentTitle||''};
+    resultViews=crewResultViews(data.eventResults);
+    stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
+    stageSelect.value='overall';
+    updateClassOptions();
+    classFilterPanel.hidden=false;
+    openButton.hidden=false;
+    status.textContent=`Показана сохранённая версия результатов${pkg.crewResults.updatedAt?` · ${new Date(pkg.crewResults.updatedAt).toLocaleString()}`:''}.`;
+    draw();
+  }
+
   if(asmgRaceId){
     try{
       data=await fetchAsmgResults(asmgRaceId);
@@ -241,7 +255,7 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
       classFilterPanel.hidden=false;
       openButton.hidden=false;
       const updatedAt=data.updatedAt||new Date().toISOString();
-      pkg.crewResults={eventId:data.eventId,updatedAt};
+      pkg.crewResults={eventId:data.eventId,updatedAt,tournamentTitle:data.tournamentTitle||'',eventResults:data.eventResults};
       await savePackage(pkg);
       const stamp=new Date(updatedAt).toLocaleString();
       status.textContent=`${data.tournamentTitle?`${data.tournamentTitle} · `:''}обновлено ${stamp}. Результаты доступны офлайн.`;

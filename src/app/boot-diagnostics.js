@@ -103,7 +103,7 @@ function escapeHtml(value){
   })[ch]);
 }
 
-function open(){
+export function openBootDiagnostics(){
   const modal=document.getElementById('bootDiagnosticsModal');
   if(!modal) return;
   render();
@@ -162,7 +162,7 @@ export function setupBootDiagnosticsUi(){
       tapTimes.push(now);
       if(tapTimes.length>=5){
         tapTimes=[];
-        open();
+        openBootDiagnostics();
       }
     });
   }

@@ -14,6 +14,7 @@ test.describe('app shell and catalog',()=>{
 
   test('shows browser PWA installation CTA',async({page})=>{
     await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
     await expect(page.locator('#pwaInstallPrompt')).toBeVisible();
     await expect(page.locator('#installBtn')).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context','browser');
@@ -53,6 +54,7 @@ test.describe('app shell and catalog',()=>{
 
   test('manual import section is available',async({page})=>{
     await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
     await expect(page.getByText('РУЧНОЙ ИМПОРТ')).toBeVisible();
     await expect(page.locator('label[for="fileInput"]')).toContainText('Импортировать файл');
   });
