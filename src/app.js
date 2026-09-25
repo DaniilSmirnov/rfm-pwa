@@ -26,6 +26,7 @@ import { showPointElevation, showRouteElevationProfile } from './app/elevation-u
 import { processCachedRallyPackUpdates } from './app/rally-pack-update.js';
 import { renderRallyPackUpdateStatus } from './app/rally-pack-update-ui.js';
 import { reportClientError, setupErrorTelemetry } from './app/telemetry.js';
+import { scheduleStartupMaintenance } from './app/startup-maintenance.js';
 import { markBoot, setupBootDiagnosticsUi } from './app/boot-diagnostics.js';
 
 const $ = id => document.getElementById(id);
@@ -601,51 +602,12 @@ $('importYandexBtn').onclick = async () => {
 markBoot('local-start');
 await refreshList();
 
-async function runStartupMaintenance(){
-  markBoot('maintenance-start',{online:navigator.onLine});
-  swRegistration=await setupServiceWorkerUpdates({
-    onDiagnostic:(name,detail)=>markBoot(name,detail)
-  });
-  markBoot('sw-setup-finished',{registered:Boolean(swRegistration)});
-
-  const storage=await ensurePersistentStorage();
-  markBoot('persistent-storage-checked',storage);
-
-  await setupPeriodicBackgroundSync(swRegistration);
-  markBoot('periodic-sync-checked');
-
-  if(navigator.onLine) requestRallyPackBackgroundRefresh(swRegistration);
-
-  const smartUpdate=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders})
-    .catch(e=>{console.warn('Smart Rally Pack update failed',e);return null;});
-  markBoot('cached-updates-processed',smartUpdate);
-
-  await refreshPushUi();
-  markBoot('push-ui-ready');
-
-  if(navigator.onLine){
-    try {
-      if(await getPushSubscription()) await scheduleAllSavedReminders();
-      markBoot('push-reminders-refreshed');
-    } catch(e) {
-      console.warn('Could not refresh scheduled race reminders on startup',e);
-      markBoot('push-reminders-failed',{message:String(e?.message||e)});
-    }
-  }else{
-    markBoot('push-reminders-skipped',{reason:'offline'});
-  }
-
-  void loadCatalog().then(()=>markBoot('catalog-refresh-finished')).catch(()=>{});
-}
-
-const scheduleMaintenance=()=>{
-  if('requestIdleCallback' in window){
-    requestIdleCallback(()=>void runStartupMaintenance(),{timeout:1500});
-  }else{
-    setTimeout(()=>void runStartupMaintenance(),300);
-  }
-};
-scheduleMaintenance();
+scheduleStartupMaintenance({
+  markBoot,setupServiceWorkerUpdates,ensurePersistentStorage,setupPeriodicBackgroundSync,
+  requestRallyPackBackgroundRefresh,processCachedRallyPackUpdates,getAllPackages,savePackage,
+  scheduleRaceReminders,refreshPushUi,getPushSubscription,scheduleAllSavedReminders,loadCatalog,
+  onRegistration:registration=>{swRegistration=registration;}
+});
 window.addEventListener('rfm:periodic-update',async()=>{
   const result=await processCachedRallyPackUpdates({getAllPackages,savePackage,scheduleRaceReminders}).catch(()=>null);
   if(result?.applied||result?.pending){
