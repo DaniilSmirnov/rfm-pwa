@@ -14,9 +14,8 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const asArray=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[]);
 const WALLET_STAGE_FEATURE_ENABLED=false;
 
-export function renderSchedule(pkg,{selectedStageKey=null,onStageSelect}={}){
-  const schedule=asArray(pkg.original?.schedule);
-  const root=$('scheduleList');
+export function renderSchedule(pkg,{selectedStageKey=null,onStageSelect,root=$('scheduleList'),schedule=asArray(pkg.original?.schedule)}={}){
+  if(!root) return;
   root.innerHTML='';
   if(!schedule.length){
     root.innerHTML='<p class="muted">Расписание отсутствует.</p>';
@@ -87,7 +86,7 @@ export function renderSchedule(pkg,{selectedStageKey=null,onStageSelect}={}){
           if(result.stored===0&&shouldEnable){
             setPushStatus(`${stage.name}: подписка сохранена, но будущих событий открытия/закрытия пока нет.`);
           }
-          renderSchedule(pkg,{selectedStageKey,onStageSelect});
+          renderSchedule(pkg,{selectedStageKey,onStageSelect,root,schedule});
         }catch(error){
           setPushStatus(`Не удалось изменить подписку ${stage.name}: ${error.message}`,'geo-error');
           toggle.disabled=false;
@@ -109,7 +108,7 @@ export function renderSchedule(pkg,{selectedStageKey=null,onStageSelect}={}){
               : `${stage.name}: карточка Wallet подготовлена.`,
             'geo-ok'
           );
-          renderSchedule(pkg,{selectedStageKey,onStageSelect});
+          renderSchedule(pkg,{selectedStageKey,onStageSelect,root,schedule});
         }catch(error){
           setPushStatus(`Wallet · ${stage.name}: ${error.message}`,'geo-error');
           walletButton.disabled=false;
