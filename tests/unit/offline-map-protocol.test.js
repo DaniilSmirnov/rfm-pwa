@@ -16,7 +16,7 @@ afterEach(()=>{
 });
 
 describe('offline vector tile protocol',()=>{
-  it('reads persisted tiles by revision id and safely represents missing tiles',async()=>{
+  it('reads persisted tiles by revision id and rejects missing tiles',async()=>{
     const bytes=new Uint8Array([1,2,3]).buffer;
     getMapTile.mockResolvedValueOnce({data:bytes,bytes:3}).mockResolvedValueOnce(null);
     let handler;
@@ -34,9 +34,7 @@ describe('offline vector tile protocol',()=>{
     expect(getMapTile).toHaveBeenNthCalledWith(1,'race-901@map',14,9588,4599);
     expect(new Uint8Array(hit.data)).toEqual(new Uint8Array([1,2,3]));
 
-    const miss=await handler({url:'rfmoffline://race-901%40map/14/9588/4600'});
+    await expect(handler({url:'rfmoffline://race-901%40map/14/9588/4600'})).rejects.toThrow('Offline map tile unavailable');
     expect(getMapTile).toHaveBeenNthCalledWith(2,'race-901@map',14,9588,4600);
-    expect(miss.data).toBeInstanceOf(ArrayBuffer);
-    expect(miss.data.byteLength).toBe(0);
   });
 });
