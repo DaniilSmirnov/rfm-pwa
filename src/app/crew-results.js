@@ -2,7 +2,7 @@ import { deleteCrewSubscription, getCrewSubscriptions, saveCrewSubscription, sav
 import { requestCrewResultsBackgroundRefresh } from './runtime.js';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-const crewName=crew=>[
+export const crewName=crew=>[
   [crew?.pilot?.lastName,crew?.pilot?.firstName].filter(Boolean).join(' '),
   [crew?.navigator?.lastName,crew?.navigator?.firstName].filter(Boolean).join(' ')
 ].filter(Boolean).join(' / ');
@@ -211,6 +211,7 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
       resultViews=crewResultViews(data.eventResults);
       pkg.asmgRaceId=id;pkg.crewResults={eventId:data.eventId,updatedAt:data.updatedAt||new Date().toISOString(),tournamentTitle:data.tournamentTitle||'',eventResults:data.eventResults};
       await savePackage(pkg);
+      window.dispatchEvent(new CustomEvent('rfm:crew-results-updated',{detail:{packageId:pkg.id,results:pkg.crewResults}}));
       stageSelect.innerHTML=resultViews.map(view=>`<option value="${view.key}">${esc(view.name)}</option>`).join('');
       stageSelect.value='overall';
       updateClassOptions();
@@ -257,6 +258,7 @@ export async function renderCrewResults(pkg,root=document.getElementById('crewRe
       const updatedAt=data.updatedAt||new Date().toISOString();
       pkg.crewResults={eventId:data.eventId,updatedAt,tournamentTitle:data.tournamentTitle||'',eventResults:data.eventResults};
       await savePackage(pkg);
+      window.dispatchEvent(new CustomEvent('rfm:crew-results-updated',{detail:{packageId:pkg.id,results:pkg.crewResults}}));
       const stamp=new Date(updatedAt).toLocaleString();
       status.textContent=`${data.tournamentTitle?`${data.tournamentTitle} · `:''}обновлено ${stamp}. Результаты доступны офлайн.`;
       draw();
