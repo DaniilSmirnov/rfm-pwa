@@ -3,6 +3,7 @@ import { assetUrl } from '../rallyfans.js';
 import { todaySummary } from '../app/today-summary.js';
 import { distanceFromTodayDays } from '../app/catalog-dates.js';
 import TodayLeaders from './TodayLeaders.jsx';
+import ScheduleList from './ScheduleList.jsx';
 
 export default function TodayTab({app,onMap}){
   const current=app.catalog.find(race=>distanceFromTodayDays(race)===0)||null;
@@ -22,5 +23,5 @@ export default function TodayTab({app,onMap}){
   const image=todayPackage.original?.image||todayPackage.image;
   const refreshProgress=app.raceProgress[raceId];
   const hasSavedPack=app.downloadedIds.has(raceId);
-  return <section className="today-screen"><article className="today-race-card" style={{'--race-bg':`url('${assetUrl(image||'')}')`}}><div className="today-race-shade"/><div className="today-race-copy"><div className="eyebrow">сохранённая гонка</div><h2>{todayPackage.name}</h2><p>{todayPackage.summary?.dates||'Расписание сохранено офлайн'}</p></div><button className="button primary" onClick={()=>app.downloadRace(raceId)} disabled={!Number.isFinite(raceId)}>{refreshProgress||(hasSavedPack?'Обновить Rally Pack':'Скачать Rally Pack')}</button></article><section className="today-card"><div className="block-title">{summary.scheduleLabel}</div>{summary.schedule.length?summary.schedule.map((item,index)=><button className="today-stage" key={index} onClick={onMap}><strong>{item.location||'Событие'}</strong><span>{(item.events||[]).map(event=>`${event.time||''} ${event.text||''}`.trim()).join(' · ')||'Открыть на карте'}</span></button>):<p className="muted">В расписании нет событий.</p>}</section><TodayLeaders key={todayPackage.id} pkg={todayPackage}/><button className="button primary today-map-button" onClick={onMap}>Открыть карту</button></section>;
+  return <section className="today-screen"><article className="today-race-card" style={{'--race-bg':`url('${assetUrl(image||'')}')`}}><div className="today-race-shade"/><div className="today-race-copy"><div className="eyebrow">сохранённая гонка</div><h2>{todayPackage.name}</h2><p>{todayPackage.summary?.dates||'Расписание сохранено офлайн'}</p></div><button className="button primary" onClick={()=>app.downloadRace(raceId)} disabled={!Number.isFinite(raceId)}>{refreshProgress||(hasSavedPack?'Обновить Rally Pack':'Скачать Rally Pack')}</button></article><section className="today-card"><div className="block-title">{summary.scheduleLabel}</div><ScheduleList pkg={todayPackage} schedule={summary.schedule} onStageSelect={onMap}/></section><TodayLeaders key={todayPackage.id} pkg={todayPackage}/></section>;
 }
