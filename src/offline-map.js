@@ -133,19 +133,27 @@ export async function removeOfflineMap(pkg){
 
 export function registerOfflineMapProtocol(){
   if(protocolRegistered || !window.maplibregl) return;
-  window.maplibregl.addProtocol('rfmoffline', async params => {
+  window.maplibregl.addProtocol('rfmoffline', async (params,abortController) => {
     try{
+      abortController?.signal.throwIfAborted();
       const raw=params.url.replace(/^rfmoffline:\/\//,'');
       const [raceId,z,x,yPart]=raw.split('/'); const y=String(yPart||'').split(/[?#]/)[0];
       const rec=await getMapTile(decodeURIComponent(raceId),Number(z),Number(x),Number(y));
-      if(!rec?.data){ emit('miss',{raceId,z:Number(z),x:Number(x),y:Number(y)}); return {data:new ArrayBuffer(0)}; }
-      const data=normalizeTileData(rec.data);
+      abortController?.signal.throwIfAborted();
+      const data=normalizeTileData(rec?.data);
+      if(!data?.byteLength){
+        emit('miss',{raceId,z:Number(z),x:Number(x),y:Number(y)});
+        // A successful empty vector tile replaces the visible parent with a blank
+        // tile. Keep this request failed so MapLibre can retain its fallback.
+        throw new Error(`Offline map tile unavailable: ${z}/${x}/${y}`);
+      }
       emit('hit',{raceId,z:Number(z),x:Number(x),y:Number(y),bytes:data?.byteLength||0});
       return {data};
     }catch(error){
+      if(abortController?.signal.aborted) throw error;
       emit('error',{message:String(error?.message||error)});
       console.error('offline map protocol failed',error);
-      return {data:new ArrayBuffer(0)};
+      throw error;
     }
   });
   protocolRegistered=true;
