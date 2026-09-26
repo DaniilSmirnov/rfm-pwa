@@ -221,7 +221,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     map.addSource('rfm-yandex-lines',{type:'geojson',data:yandexLines});
     map.addLayer({id:'rfm-yandex-lines-casing',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#111318','line-width':['interpolate',['linear'],['zoom'],5,7,12,10,17,14],'line-opacity':0.82}});
     map.addLayer({id:'rfm-yandex-lines',type:'line',source:'rfm-yandex-lines',minzoom:0,maxzoom:24,paint:{'line-color':'#ffd21e','line-width':['interpolate',['linear'],['zoom'],5,4,12,7,17,10],'line-opacity':1}});
-    activeRouteDirectionMarkers=installRouteDirections(map,maplibregl,[lines,yandexLines]);
+    activeRouteDirectionMarkers=installRouteDirections(map,maplibregl,[lines,yandexLines],{...options.routePackage,geojson:fc});
 
     map.addSource('rfm-selected-stage',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'rfm-selected-stage-casing',type:'line',source:'rfm-selected-stage',minzoom:0,maxzoom:24,paint:{
