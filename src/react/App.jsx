@@ -151,7 +151,7 @@ function MapLifecycle({app}){
       }]}:pkg.geojson;
       app.setMapDiag(`MapLibre ✓ · WebGL ✓${om?` · локальная подложка ${om.tileCount||0} тайлов`:''}`);
       renderMap(container,geojson,app.userPos,app.showPoint,{
-        offlineMap:om,terrain,
+        offlineMap:om,terrain,routePackage:pkg,
         onRouteClick:route=>showRouteElevationProfile(terrain,route),
         onMapError:message=>{reportClientError(new Error(message),'map');app.setMapDiag(`Ошибка карты: ${message}`);}
       });
