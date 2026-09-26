@@ -188,6 +188,13 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
     attributionControl:true,
     cooperativeGestures:false,
     maxPitch:85,
+    ...(options.offlineMap?.ready?{
+      // Finish loading coarser local tiles while zooming so they can cover the
+      // viewport until the new detail level is ready. Above the downloaded
+      // maxzoom, reuse those tiles instead of repeatedly slicing them in workers.
+      cancelPendingTileRequestsWhileZooming:false,
+      zoomLevelsToOverscale:undefined
+    }:{}),
     ...offlineViewportOptions(options.offlineMap)
   });
   activeMap=map;
