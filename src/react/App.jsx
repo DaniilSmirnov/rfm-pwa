@@ -20,7 +20,7 @@ import { formatDistance } from '../app/geo.js';
 import { openBootDiagnostics, setupBootDiagnosticsUi } from '../app/boot-diagnostics.js';
 import { todaySummary } from '../app/today-summary.js';
 import { distanceFromTodayDays } from '../app/catalog-dates.js';
-import { buildStageDescriptors, distanceAlongStage } from '../app/schedule.js';
+import { nearestStageDistance } from '../app/point-stage-distance.js';
 
 function Portal({id,children}){
   const node=document.getElementById(id);
@@ -242,13 +242,9 @@ function MoreTab({onResults}){const go=id=>document.getElementById(id)?.scrollIn
 export default function App(){
   const app=useRfmApp();
   const pkg=app.currentPackage;
-  const pointStageDistance=useMemo(()=>{
-    if(!pkg||!app.selectedPoint) return null;
-    return buildStageDescriptors(pkg)
-      .map(stage=>({stage,distance:distanceAlongStage(stage,app.selectedPoint)}))
-      .filter(item=>item.distance)
-      .sort((a,b)=>a.distance.offset-b.distance.offset)[0]||null;
-  },[pkg,app.selectedPoint]);
+  const pointStageDistance=useMemo(
+    ()=>nearestStageDistance(pkg,app.selectedPoint),[pkg,app.selectedPoint]
+  );
   const [tab,setTab]=useState(readTab());
   const activate=next=>{const url=new URL(location.href);url.searchParams.set('tab',next);history.pushState({tab:next},'',url);setTab(next);};
 

@@ -313,4 +313,5 @@ html[data-pwa-installed="true"] .pwa-install-prompt{display:none!important}
   .crew-results-table th{background:#1d2127}
   .crew-results-table td small,.crew-results-empty,.crew-results-more{color:#9aa0a9}
 }
-.map-route-direction{color:#fff;font-size:17px;line-height:1;text-shadow:0 1px 3px #111,0 0 4px #111;pointer-events:none;will-change:transform}
+.map-route-direction{width:14px;height:18px;pointer-events:none;filter:drop-shadow(0 1px 2px #111)}
+.map-route-direction::before{content:"";display:block;width:100%;height:100%;background:#fff;clip-path:polygon(50% 0,100% 100%,50% 70%,0 100%)}
