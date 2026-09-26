@@ -130,7 +130,7 @@ function resultRow(result,index,stage,subscribed){
 
 export async function renderCrewResults(pkg,root=document.getElementById('crewResults')){
   if(!root)return;
-  const asmgRaceId=String(pkg?.asmgRaceId??pkg?.original?.asmg_id??pkg?.original?.asmgId??pkg?.raceId??pkg?.original?.id??'');
+  const asmgRaceId=String(pkg?.asmgRaceId??pkg?.original?.asmg_id??pkg?.original?.asmgId??'55');
   root.innerHTML=`<section class="crew-results-section" aria-labelledby="crewResultsTitle">
     <div class="section-head"><div><div id="crewResultsTitle" class="block-title">РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ</div><p class="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p></div><button class="button primary" id="crewResultsOpen" type="button" hidden>Открыть результаты</button></div>
     <div class="crew-results-class-filter" id="crewResultsClassFilter" hidden><label for="crewResultsClass">Класс</label><select id="crewResultsClass" class="crew-results-stage"><option value="">Все классы</option></select></div>
