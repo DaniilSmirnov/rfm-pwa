@@ -18,8 +18,7 @@ import { showPointElevation, showRouteElevationProfile } from '../app/elevation-
 import { reportClientError } from '../app/telemetry.js';
 import { formatDistance } from '../app/geo.js';
 import { openBootDiagnostics, setupBootDiagnosticsUi } from '../app/boot-diagnostics.js';
-import { todaySummary } from '../app/today-summary.js';
-import { distanceFromTodayDays } from '../app/catalog-dates.js';
+import TodayTab from './TodayTab.jsx';
 import { nearestStageDistance } from '../app/point-stage-distance.js';
 
 function Portal({id,children}){
@@ -224,19 +223,6 @@ const tabs=[
   {key:'more',label:'Ещё',Icon:CircleEllipsis}
 ];
 function readTab(){return new URLSearchParams(location.search).get('tab')||'today';}
-function TodayTab({app,onMap}){
-  const current=app.catalog.find(race=>distanceFromTodayDays(race)===0)||null;
-  const downloaded=Boolean(current&&app.downloadedIds.has(Number(current.id)));
-  const todayPackage=app.packages.find(item=>distanceFromTodayDays(item.original||item.summary||item)===0)||app.currentPackage;
-  const summary=useMemo(()=>todaySummary(todayPackage),[todayPackage]);
-  if(current&&!downloaded)return <section className="today-empty"><div className="block-title">Сегодня</div><strong>{current.name}</strong><p className="muted">Гонка проходит сегодня. Скачай Rally Pack сейчас, чтобы карта, программа и результаты работали без связи.</p><button className="button primary" onClick={()=>app.downloadRace(Number(current.id))}>Скачать Rally Pack</button></section>;
-  if(!todayPackage)return <section className="today-empty"><div className="block-title">Сегодня</div><p className="muted">Нет сохранённой гонки на сегодня.</p></section>;
-  const raceId=Number(todayPackage.raceId||todayPackage.original?.id||todayPackage.original?.raceId||todayPackage.id);
-  const image=todayPackage.original?.image||todayPackage.image;
-  const refreshProgress=app.raceProgress[raceId];
-  const hasSavedPack=app.downloadedIds.has(raceId);
-  return <section className="today-screen"><article className="today-race-card" style={{'--race-bg':`url('${assetUrl(image||'')}')`}}><div className="today-race-shade"/><div className="today-race-copy"><div className="eyebrow">сохранённая гонка</div><h2>{todayPackage.name}</h2><p>{todayPackage.summary?.dates||'Расписание сохранено офлайн'}</p></div><button className="button primary" onClick={()=>app.downloadRace(raceId)} disabled={!Number.isFinite(raceId)}>{refreshProgress||(hasSavedPack?'Обновить Rally Pack':'Скачать Rally Pack')}</button></article><section className="today-card"><div className="block-title">{summary.scheduleLabel}</div>{summary.schedule.length?summary.schedule.map((item,index)=><button className="today-stage" key={index} onClick={onMap}><strong>{item.location||'Событие'}</strong><span>{(item.events||[]).map(event=>`${event.time||''} ${event.text||''}`.trim()).join(' · ')||'Открыть на карте'}</span></button>):<p className="muted">В расписании нет событий.</p>}</section><button className="button primary today-map-button" onClick={onMap}>Открыть карту</button></section>;
-}
 function MoreTab({onResults}){const go=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});return <section className="more-menu"><button className="more-menu-row" onClick={onResults}><strong>Все результаты</strong><span>Полная таблица экипажей и классы</span></button><button className="more-menu-row" onClick={()=>go('catalogSection')}><strong>Мои гонки</strong><span>Rally Pack, каталог и импорт</span></button><button className="more-menu-row" onClick={()=>go('settingsSection')}><strong>Настройки</strong><span>Уведомления, PWA и хранилище</span></button><button className="more-menu-row" onClick={openBootDiagnostics}><strong>Диагностика</strong><span>Boot diagnostics</span></button></section>;}
 
 export default function App(){
