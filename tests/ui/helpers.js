@@ -226,7 +226,10 @@ export async function openMapWithAcceptedSafety(page){
   await page.getByRole('button',{name:'Карта'}).click();
   const gate=page.locator('.safety-gate');
   if(!await gate.isVisible())return;
-  await gate.locator('.safety-gate-content').evaluate(node=>node.scrollTo(0,node.scrollHeight));
+  await gate.locator('.safety-gate-content').evaluate(node=>{
+    node.scrollTop=node.scrollHeight;
+    node.dispatchEvent(new Event('scroll'));
+  });
   await page.waitForFunction(()=>{
     const button=document.querySelector('.safety-accept');
     return Boolean(button&&!button.disabled);

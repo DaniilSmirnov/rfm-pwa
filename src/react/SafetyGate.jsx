@@ -8,14 +8,11 @@ export default function SafetyGate({onAccept,onClose,fullScreen=false}){
   useEffect(()=>{
     const node=content.current;
     if(!node)return;
-    const images=[...node.querySelectorAll('img')];
-    const check=()=>setReadToEnd(images.every(image=>image.complete)&&node.scrollTop+node.clientHeight>=node.scrollHeight-8);
+    const check=()=>setReadToEnd(node.scrollTop+node.clientHeight>=node.scrollHeight-8);
     node.addEventListener('scroll',check,{passive:true});
-    images.forEach(image=>{image.addEventListener('load',check);image.addEventListener('error',check);});
     check();
     return()=>{
       node.removeEventListener('scroll',check);
-      images.forEach(image=>{image.removeEventListener('load',check);image.removeEventListener('error',check);});
     };
   },[]);
 
