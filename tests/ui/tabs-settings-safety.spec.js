@@ -73,6 +73,25 @@ test.describe('Today tab and settings flows',()=>{
     await expect(fullScreen.locator('.safety-memo')).toBeVisible();
   });
 
+  test('adapts the safety leaflet surfaces to light and dark color schemes',async({page})=>{
+    await openApp(page);
+    await seedFixtureRace(page);
+    await page.getByRole('button',{name:'Карта'}).click();
+    const memo=page.locator('.safety-memo');
+    await expect(memo).toBeVisible();
+
+    await page.emulateMedia({colorScheme:'light'});
+    const lightBackground=await memo.evaluate(element=>getComputedStyle(element).backgroundColor);
+    const lightPanel=await page.locator('.safety-main-rules').evaluate(element=>getComputedStyle(element).backgroundColor);
+    await page.emulateMedia({colorScheme:'dark'});
+    const darkBackground=await memo.evaluate(element=>getComputedStyle(element).backgroundColor);
+    const darkPanel=await page.locator('.safety-main-rules').evaluate(element=>getComputedStyle(element).backgroundColor);
+
+    expect(darkBackground).not.toBe(lightBackground);
+    expect(darkPanel).not.toBe(lightPanel);
+    expect(darkBackground).toBe('rgb(23, 31, 40)');
+  });
+
   test('preserves the map scroll position when switching tabs',async({page})=>{
     await openApp(page);
     await seedFixtureRace(page);
