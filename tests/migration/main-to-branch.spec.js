@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
-const branchRelease=JSON.parse(readFileSync(new URL('../../version.json',import.meta.url),'utf8'));
+const branchRelease={...JSON.parse(readFileSync(new URL('../../version.json',import.meta.url),'utf8')), ...JSON.parse(readFileSync(new URL('../../package.json',import.meta.url),'utf8'))};
 
 async function waitForActiveWorker(page){
   return page.evaluate(async()=>{

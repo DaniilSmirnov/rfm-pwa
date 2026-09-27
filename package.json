@@ -1,7 +1,7 @@
 {
   "name": "rfm-pwa",
   "private": true,
-  "version": "0.0.0-private",
+  "version": "1.0.10",
   "type": "module",
   "engines": {
     "node": ">=20.19"

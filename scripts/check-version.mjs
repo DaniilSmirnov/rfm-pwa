@@ -2,8 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const root=resolve(import.meta.dirname,'..');
+const pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));
+const lock=JSON.parse(await readFile(resolve(root,'package-lock.json'),'utf8'));
 const meta=JSON.parse(await readFile(resolve(root,'version.json'),'utf8'));
-if(!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(String(meta.version||''))) throw new Error('Invalid version.json version');
+if(!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(String(pkg.version||''))) throw new Error('Invalid package.json version');
+if(lock.version!==pkg.version || lock.packages?.['']?.version!==pkg.version) throw new Error('package-lock.json version must match package.json');
 if(!String(meta.codename||'').trim()) throw new Error('Invalid version.json codename');
 
 const expectations={
@@ -17,4 +20,4 @@ for(const [file,tokens] of Object.entries(expectations)){
     if(!text.includes(token)) throw new Error(`${file} must use ${token} instead of a hard-coded release value`);
   }
 }
-console.log(`Release metadata OK: ${meta.version} · ${meta.codename}`);
+console.log(`Release metadata OK: ${pkg.version} · ${meta.codename}`);
