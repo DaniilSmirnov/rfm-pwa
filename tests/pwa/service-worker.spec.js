@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
-const release=JSON.parse(readFileSync(new URL('../../version.json',import.meta.url),'utf8'));
+const release={...JSON.parse(readFileSync(new URL('../../version.json',import.meta.url),'utf8')), ...JSON.parse(readFileSync(new URL('../../package.json',import.meta.url),'utf8'))};
 const expectedShell=`rfm-companion-v${String(release.version).replace(/\D/g,'')}-${String(release.codename).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}`;
 
 async function waitForWorker(page){

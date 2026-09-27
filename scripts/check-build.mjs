@@ -48,6 +48,9 @@ const index=await readFile(resolve(dist,'index.html'),'utf8');
 const sw=await readFile(resolve(dist,'sw.js'),'utf8');
 const manifest=await readFile(resolve(dist,'manifest.webmanifest'),'utf8');
 const worker=await readFile(resolve(dist,'_worker.js'),'utf8');
+const pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));
+const release=JSON.parse(await readFile(resolve(dist,'version.json'),'utf8'));
+assert(release.version===pkg.version,`dist/version.json version ${release.version} does not match package.json ${pkg.version}`);
 
 assert(/src="\/assets\/[^"]+\.js"/.test(index),'index.html does not reference a Vite JS asset');
 assert(!index.includes('/src/app.js'),'index.html still references the unbundled client entrypoint');

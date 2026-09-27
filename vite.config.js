@@ -3,8 +3,9 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 const root=resolve(import.meta.dirname);
+const pkg=JSON.parse(readFileSync(resolve(root,'package.json'),'utf8'));
 const meta=JSON.parse(readFileSync(resolve(root,'version.json'),'utf8'));
-const version=String(meta.version||'').trim();
+const version=String(pkg.version||'').trim();
 const codename=String(meta.codename||'').trim();
 const versionCache=version.replace(/\D/g,'');
 const codenameSlug=codename.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');

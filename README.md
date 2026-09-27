@@ -30,7 +30,7 @@ For Cloudflare Pages Git integration use:
 
 `wrangler.toml` also pins `pages_build_output_dir = "./dist"` for CLI/config-driven deployments.
 
-Release metadata lives only in `version.json`; the build injects it into the footer, Service Worker cache namespace and `/api/health`.
+The release version lives in `package.json`; the codename lives in `version.json`. The build combines them in the footer, Service Worker cache namespace and `/api/health`.
 
 
 ## Web Share
@@ -194,6 +194,6 @@ Run the production Service Worker lifecycle suite:
 npm run test:pwa
 ```
 
-Release version and codename live only in `version.json`. `npm run build` injects them into the generated shell, manifest, Service Worker cache namespace and health endpoint.
+The release version lives in `package.json`, and the codename lives in `version.json`. `npm run build` injects both into the generated shell, manifest, Service Worker cache namespace and health endpoint.
 
 GitHub Actions runs the Vitest unit suite and the full Playwright suite on pull requests and pushes to `develop` and `main`. Playwright HTML reports are uploaded on every UI run, and failure artifacts are retained for debugging.

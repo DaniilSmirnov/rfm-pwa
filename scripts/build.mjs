@@ -5,10 +5,11 @@ import { build as viteBuild } from 'vite';
 const root=resolve(import.meta.dirname,'..');
 const dist=resolve(root,'dist');
 const publicDir=resolve(root,'.vite-public');
+const pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));
 const meta=JSON.parse(await readFile(resolve(root,'version.json'),'utf8'));
-const version=String(meta.version||'').trim();
+const version=String(pkg.version||'').trim();
 const codename=String(meta.codename||'').trim();
-if(!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('version.json must contain an x.y.z or x.y.z.n version');
+if(!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(version)) throw new Error('package.json must contain an x.y.z or x.y.z.n version');
 if(!codename) throw new Error('version.json must contain a codename');
 
 const versionCache=version.replace(/\D/g,'');
