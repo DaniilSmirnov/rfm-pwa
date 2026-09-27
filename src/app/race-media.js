@@ -1,5 +1,6 @@
 import { assetUrl } from '../rallyfans.js';
 import { sanitizeRichHtml } from './sanitize.js';
+import { raceHasFinished } from './today-summary.js';
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -46,9 +47,9 @@ export function renderRaceMedia(pkg){
   root.innerHTML=[
     race.mapsimg?mediaSection('КАРТА ОРГАНИЗАТОРА',[race.mapsimg]):'',
     mediaSection('ПАМЯТКА ПО БЕЗОПАСНОСТИ',race.safety_leaflet?[race.safety_leaflet]:[]),
-    mediaSection('ГРАФИК ПЕРЕКРЫТИЙ',race.overlap_schedule?[race.overlap_schedule]:[]),
+    '',
     mediaSection('ЗАЯВЛЕННЫЕ ЭКИПАЖИ',crews),
-    mediaSection('РЕЗУЛЬТАТЫ',results),
+    raceHasFinished(pkg)?'':mediaSection('РЕЗУЛЬТАТЫ',results),
     extra.length?mediaSection('МАТЕРИАЛЫ ГОНКИ',extra):'',
     `<details class="race-material collapsible-section"><summary><span class="block-title">КАК ЭТО БЫЛО</span><span class="summary-chevron">⌄</span></summary><div class="collapsible-body">${race.how_it_was?`<div class="how-it-was">${sanitizeRichHtml(race.how_it_was)}</div>`:'<p class="gray-label">Информация появится позже :)</p>'}</div></details>`
   ].join('');

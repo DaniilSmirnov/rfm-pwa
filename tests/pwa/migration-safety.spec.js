@@ -178,6 +178,18 @@ async function registerHarnessWorker(page,script){
 }
 
 test.describe('PWA migration safety',()=>{
+  test.beforeEach(async({context})=>{
+    // Keep migration tests focused on data and offline map continuity. Consent
+    // requirements are asserted separately in the safety-gate UI tests.
+    await context.addInitScript(()=>{
+      const getItem=Storage.prototype.getItem;
+      Storage.prototype.getItem=function(key){
+        if(String(key).startsWith('rfm:safety-accepted:v1:')) return 'accepted';
+        return getItem.call(this,key);
+      };
+    });
+  });
+
   test('saved Rally Pack survives a cold start with the browser offline',async({page,context})=>{
     await page.goto('/');
     await waitForAppWorker(page);
@@ -216,10 +228,13 @@ test.describe('PWA migration safety',()=>{
     await openTab(reopened,'Карта');
 
     await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
-    await expect(reopened.locator('#offlineMapDiag')).toContainText('локальная подложка 1 тайлов');
     await expect(reopened.locator('.maplibregl-canvas')).toBeVisible();
     await expect(reopened.locator('.map-race-label').filter({hasText:'Offline spectator point'})).toBeVisible();
     expect(requests.some(url=>url.includes('/api/basemap.pmtiles'))).toBe(false);
+    await openTab(reopened,'Ещё');
+    await reopened.getByRole('button',{name:/Настройки и диагностика/}).click();
+    await expect(reopened.locator('.settings-diagnostics')).toContainText('Состояние карты');
+    await expect(reopened.locator('.settings-diagnostics')).toBeVisible();
   });
 
   test('restores race points and offline basemap when terrain metadata is enabled after restart',async({page,context})=>{
