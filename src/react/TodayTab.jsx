@@ -11,11 +11,6 @@ function raceImage(race){return race?.original?.image||race?.image||'';}
 function overlaps(race){const value=race?.original?.overlap_schedule||race?.overlap_schedule;return Array.isArray(value)?value.filter(Boolean):value?[value]:[];}
 
 export default function TodayTab({app,onMap,onResults}){
-  const current=app.catalog.find(race=>distanceFromTodayDays(race)===0)||null;
-  const upcoming=nextUpcomingRace(app.catalog);
-  const target=current||upcoming;
-  const todayPackage=app.packages.find(item=>packageRaceId(item)===Number(target?.id))||
-    (target?null:app.currentPackage)||null;
   const [now,setNow]=useState(()=>new Date());
   useEffect(()=>{
     const update=()=>setNow(new Date());
@@ -23,6 +18,12 @@ export default function TodayTab({app,onMap,onResults}){
     document.addEventListener('visibilitychange',update);
     return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',update);};
   },[]);
+  const current=app.catalog.find(race=>distanceFromTodayDays(race)===0)||null;
+  const upcoming=nextUpcomingRace(app.catalog);
+  const finishedPackage=app.currentPackage&&raceHasFinished(app.currentPackage,now)&&distanceFromTodayDays(app.currentPackage,now)===1?app.currentPackage:null;
+  const target=current||finishedPackage||upcoming;
+  const todayPackage=app.packages.find(item=>packageRaceId(item)===Number(target?.id))||
+    finishedPackage||(target?null:app.currentPackage)||null;
   const summary=todaySummary(todayPackage,now);
   if(!todayPackage&&target){
     const date=target.dates||target.date_race||'';
@@ -36,5 +37,7 @@ export default function TodayTab({app,onMap,onResults}){
   const refreshProgress=app.raceProgress[raceId];
   const hasSavedPack=app.downloadedIds.has(raceId);
   const overlapImages=overlaps(todayPackage.original||todayPackage);
-  return <section className="today-screen"><article className="today-race-card" style={{'--race-bg':`url('${assetUrl(image)}')`}}><div className="today-race-shade"/><div className="today-race-copy"><div className="eyebrow">{current?'гонка сегодня':'сохранённая гонка'}</div><h2>{todayPackage.name}</h2><p>{todayPackage.summary?.dates||'Расписание сохранено офлайн'}</p></div><button className="button primary" onClick={()=>app.downloadRace(raceId)} disabled={!Number.isFinite(raceId)}>{refreshProgress||(hasSavedPack?'Обновить Rally Pack':'Скачать Rally Pack')}</button></article><section className="today-card"><div className="block-title">{summary.scheduleLabel}</div><ScheduleList pkg={todayPackage} schedule={summary.schedule} onStageSelect={onMap}/></section>{overlapImages.length>0&&<section className="today-card today-overlap"><div className="block-title">ГРАФИК ПЕРЕКРЫТИЙ</div>{overlapImages.map((name,index)=><img key={`${name}-${index}`} src={assetUrl(name)} alt={`График перекрытий ${index+1}`} loading="lazy"/>)}</section>}{!summary.raceFinished&&!raceHasFinished(todayPackage,now)&&<TodayLeaders key={todayPackage.id} pkg={todayPackage} onResults={onResults}/>}</section>;
+  const raceFinished=summary.raceFinished||raceHasFinished(todayPackage,now);
+  const finishedYesterday=distanceFromTodayDays(todayPackage,now)===1;
+  return <section className="today-screen"><article className="today-race-card" style={{'--race-bg':`url('${assetUrl(image)}')`}}><div className="today-race-shade"/><div className="today-race-copy"><div className="eyebrow">{raceFinished?'ГОНКА ЗАВЕРШЕНА':current?'гонка сегодня':'сохранённая гонка'}</div><h2>{todayPackage.name}</h2><p>{todayPackage.summary?.dates||'Расписание сохранено офлайн'}</p></div>{!raceFinished&&<button className="button primary" onClick={()=>app.downloadRace(raceId)} disabled={!Number.isFinite(raceId)}>{refreshProgress||(hasSavedPack?'Обновить Rally Pack':'Скачать Rally Pack')}</button>}</article>{raceFinished?<section className="today-card"><div className="block-title">ГОНКА ЗАВЕРШЕНА</div><p className="muted">{finishedYesterday?'Гонка завершилась вчера.':'Эта гонка уже завершилась.'}</p></section>:<section className="today-card"><div className="block-title">{summary.scheduleLabel}</div><ScheduleList pkg={todayPackage} schedule={summary.schedule} onStageSelect={onMap}/></section>}{overlapImages.length>0&&<section className="today-card today-overlap"><div className="block-title">ГРАФИК ПЕРЕКРЫТИЙ</div>{overlapImages.map((name,index)=><img key={`${name}-${index}`} src={assetUrl(name)} alt={`График перекрытий ${index+1}`} loading="lazy"/>)}</section>}{!raceFinished?<TodayLeaders key={todayPackage.id} pkg={todayPackage} onResults={onResults}/>:todayPackage.crewResults?.eventResults?.length>0&&<TodayLeaders key={todayPackage.id} pkg={todayPackage}/>}</section>;
 }
