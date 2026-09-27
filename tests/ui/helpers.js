@@ -222,6 +222,22 @@ export async function openApp(page,options={}){
   await page.waitForFunction(()=>document.querySelector('#catalogStatus')?.textContent?.includes('гонок') || document.querySelector('#catalogStatus')?.textContent?.includes('недоступен') || document.querySelector('#catalogStatus')?.textContent?.includes('Офлайн'));
 }
 
+export async function openMapWithAcceptedSafety(page){
+  await page.getByRole('button',{name:'Карта'}).click();
+  const gate=page.locator('.safety-gate');
+  if(!await gate.isVisible())return;
+  await gate.locator('.safety-gate-content').evaluate(node=>{
+    node.scrollTop=node.scrollHeight;
+    node.dispatchEvent(new Event('scroll'));
+  });
+  await page.waitForFunction(()=>{
+    const button=document.querySelector('.safety-accept');
+    return Boolean(button&&!button.disabled);
+  },null,{timeout:10000});
+  await gate.locator('.safety-accept').click();
+  await gate.waitFor({state:'hidden'});
+}
+
 export async function seedFixtureRace(page){
   await page.getByRole('button',{name:'Ещё'}).click();
   await page.evaluate(async ({race,results})=>{
