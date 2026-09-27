@@ -227,7 +227,7 @@ const tabs=[
   {key:'more',label:'Ещё',Icon:CircleEllipsis}
 ];
 function readTab(){return new URLSearchParams(location.search).get('tab')||'today';}
-function MoreTab({onResults,onSettings}){const go=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});return <section className="more-menu">{onResults&&<button className="more-menu-row" onClick={onResults}><strong>Все результаты</strong><span>Полная таблица экипажей и классы</span></button>}<button className="more-menu-row" onClick={()=>go('catalogSection')}><strong>Мои гонки</strong><span>Rally Pack, каталог и импорт</span></button><button className="more-menu-row" onClick={onSettings}><strong>Настройки и диагностика</strong><span>Уведомления, приложение и техническая информация</span></button></section>;}
+function MoreTab({onSettings}){const go=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});return <section className="more-menu"><button className="more-menu-row" onClick={()=>go('catalogSection')}><strong>Мои гонки</strong><span>Каталог и сохранённые Rally Pack</span></button><button className="more-menu-row" onClick={onSettings}><strong>Настройки и диагностика</strong><span>Правила безопасности и состояние приложения</span></button></section>;}
 
 export default function App(){
   const app=useRfmApp();
@@ -353,9 +353,10 @@ export default function App(){
   const acceptSafety=()=>{saveSafetyConsent(pkg);setSafetyAccepted(true);};
   const openSettings=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current='more:settings';setMoreScreen('settings');};
   const closeSettings=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current='more:menu';setMoreScreen('menu');};
+  const openCrewResults=()=>document.getElementById('crewResultsOpen')?.click();
 
   return <>
-    <div className="react-tab-content">{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={openBootDiagnostics}/>:<MoreTab onSettings={openSettings} onResults={pkg&&!raceHasFinished(pkg,clock)?()=>{document.getElementById('raceDetails')?.scrollIntoView({behavior:'smooth'});document.getElementById('crewResultsOpen')?.click();}:null}/>)}</div>
+    <div className="react-tab-content">{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={openBootDiagnostics}/>:<MoreTab onSettings={openSettings}/>)}</div>
     <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></button>)}</nav>
     <DomBindings app={app}/>
     <MapLifecycle app={app}/>

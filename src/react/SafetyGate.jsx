@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { assetUrl } from '../rallyfans.js';
 
-export default function SafetyGate({pkg,onAccept}){
+export default function SafetyGate({pkg,onAccept,onClose,fullScreen=false}){
   const content=useRef(null);
   const [readToEnd,setReadToEnd]=useState(false);
   useEffect(()=>{
@@ -19,9 +19,10 @@ export default function SafetyGate({pkg,onAccept}){
     return()=>{node.removeEventListener('scroll',check);image?.removeEventListener('load',check);image?.removeEventListener('error',check);};
   },[pkg]);
   const leaflet=pkg?.original?.safety_leaflet;
-  return <section className="safety-gate" role="dialog" aria-modal="true" aria-labelledby="safetyGateTitle">
-    <header className="safety-gate-head"><span className="eyebrow">ПЕРЕД ПРОСМОТРОМ КАРТЫ</span><h2 id="safetyGateTitle">Правила безопасности</h2>
-      <p>Зритель сам отвечает за свою безопасность. Следуй указаниям организаторов и не заходи в опасные зоны.</p>
+  return <section className={`safety-gate${fullScreen?' safety-gate-fullscreen':''}`} role="dialog" aria-modal="true" aria-labelledby="safetyGateTitle">
+    <header className={`safety-gate-head${fullScreen?' safety-gate-head-fullscreen':''}`}><div><span className="eyebrow">{fullScreen?'ПАМЯТКА ЗРИТЕЛЯ':'ПЕРЕД ПРОСМОТРОМ КАРТЫ'}</span><h2 id="safetyGateTitle">Правила безопасности</h2>
+      <p>Зритель сам отвечает за свою безопасность. Следуй указаниям организаторов и не заходи в опасные зоны.</p></div>
+      {fullScreen&&<button className="button compact safety-close" type="button" aria-label="Закрыть правила безопасности" onClick={onClose}>Закрыть</button>}
     </header>
     <div className="safety-gate-content" ref={content} tabIndex={0} aria-label="Памятка по безопасности">
       {leaflet&&<img className="safety-leaflet" src={assetUrl(leaflet)} alt="Памятка по безопасности от организатора"/>}
@@ -34,8 +35,8 @@ export default function SafetyGate({pkg,onAccept}){
       </ol>
       <p>Памятка и правила организатора обязательны для прочтения перед просмотром карты.</p>
     </div>
-    <button className="button primary safety-accept" type="button" disabled={!readToEnd} onClick={onAccept}>
+    {fullScreen?<button className="button primary safety-accept" type="button" onClick={onClose}>Закрыть правила</button>:<button className="button primary safety-accept" type="button" disabled={!readToEnd} onClick={onAccept}>
       {readToEnd?'Прочитал(а), открыть карту':'Прокрути памятку до конца'}
-    </button>
+    </button>}
   </section>;
 }
