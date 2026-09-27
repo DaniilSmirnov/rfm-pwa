@@ -29,6 +29,18 @@ async function openMoreTab(page){
 }
 
 test.describe('production service worker lifecycle',()=>{
+  test.beforeEach(async({context})=>{
+    // These lifecycle tests cover offline boot and caching. The safety gate
+    // itself is covered by the UI suite, so seed consent for the map flow.
+    await context.addInitScript(()=>{
+      const getItem=Storage.prototype.getItem;
+      Storage.prototype.getItem=function(key){
+        if(String(key).startsWith('rfm:safety-accepted:v1:')) return 'accepted';
+        return getItem.call(this,key);
+      };
+    });
+  });
+
   test('installs and precaches same-origin application shell',async({page})=>{
     await page.goto('/');
     const worker=await waitForWorker(page);

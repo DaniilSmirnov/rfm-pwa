@@ -133,78 +133,7 @@ async function seedSavedRace(page,{offlineMap=false,withAssets=false,terrain=fal
     if(withAssets){
       const cache=await caches.open('rfm-race-assets-v1');
       const svg=name=>`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="white"/><text x="1" y="12" font-size="4">${name}</text></svg>`;
-      for(const name of ['hero.svg','organizer-map.svg','safety.svg']){
-        await cache.put(
-          `/api/rallyfans/public/${encodeURIComponent(name)}`,
-          new Response(svg(name),{status:200,headers:{'content-type':'image/svg+xml'}})
-        );
-      }
-    }
-
-    localStorage.setItem('rfm-favorite-points-v1',JSON.stringify({
-      'race-901':[{
-        name:'Offline spectator point',
-        lat:61.7,
-        lon:30.69
-      }]
-    }));
-  },{offlineMap,withAssets,terrain});
-}
-
-async function registerHarnessWorker(page,script){
-  return page.evaluate(async script=>{
-    const previous=navigator.serviceWorker.controller?.scriptURL||null;
-    const registration=await navigator.serviceWorker.register(script,{scope:'/migration-test/'});
-    await navigator.serviceWorker.ready;
-    if(registration.installing){
-      await new Promise(resolve=>{
-        const worker=registration.installing;
-        const done=()=>worker.state==='activated'&&resolve();
-        worker.addEventListener('statechange',done);
-        done();
-      });
-    }
-    if(!navigator.serviceWorker.controller || navigator.serviceWorker.controller.scriptURL===previous){
-      await new Promise(resolve=>{
-        const timeout=setTimeout(resolve,5000);
-        navigator.serviceWorker.addEventListener('controllerchange',()=>{
-          clearTimeout(timeout);
-          resolve();
-        },{once:true});
-      });
-    }
-    return navigator.serviceWorker.controller?.scriptURL||null;
-  },script);
-}
-
-test.describe('PWA migration safety',()=>{
-  test('saved Rally Pack survives a cold start with the browser offline',async({page,context})=>{
-    await page.goto('/');
-    await waitForAppWorker(page);
-    await seedSavedRace(page);
-
-    await page.close();
-    await context.setOffline(true);
-
-    const reopened=await context.newPage();
-    await reopened.goto('/',{waitUntil:'domcontentloaded'});
-
-    await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
-    await openTab(reopened,'Ещё');
-    await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
-    await expect(reopened.locator('#raceDetails')).toBeVisible();
-    await openTab(reopened,'Карта');
-    await expect(reopened.locator('#pointList')).toContainText('Offline spectator point');
-    await expect(reopened.locator('#favoritesList')).toContainText('Offline spectator point');
-  });
-
-  test('reopens a saved offline map after restart, reads local tiles and restores race points',async({page,context})=>{
-    await page.goto('/');
-    await waitForAppWorker(page);
-    await seedSavedRace(page,{offlineMap:true});
-
-    await page.close();
-    await context.setOffline(true);
+      for(const name of ['hero.svg','org…812 tokens truncated…Offline(true);
 
     const requests=[];
     const reopened=await context.newPage();
