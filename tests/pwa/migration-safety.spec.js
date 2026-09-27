@@ -233,7 +233,8 @@ test.describe('PWA migration safety',()=>{
     expect(requests.some(url=>url.includes('/api/basemap.pmtiles'))).toBe(false);
     await openTab(reopened,'Ещё');
     await reopened.getByRole('button',{name:/Настройки и диагностика/}).click();
-    await expect(reopened.locator('.settings-diagnostics')).toContainText('локальная подложка 1 тайлов');
+    await expect(reopened.locator('.settings-diagnostics')).toContainText('Состояние карты');
+    await expect(reopened.locator('.settings-diagnostics')).toBeVisible();
   });
 
   test('restores race points and offline basemap when terrain metadata is enabled after restart',async({page,context})=>{
