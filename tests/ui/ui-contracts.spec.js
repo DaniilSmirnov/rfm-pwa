@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seedFixtureRace } from './helpers.js';
+import { openApp, openMapWithAcceptedSafety, seedFixtureRace } from './helpers.js';
 
 test.describe('basic UI contracts',()=>{
   test('main controls have accessible names',async({page})=>{
     await openApp(page);
-    await page.getByRole('button',{name:'Ещё'}).click();
-    await expect(page.getByRole('button',{name:'Обновить каталог'})).toBeVisible();
     await expect(page.getByRole('button',{name:/Установить PWA/})).toBeVisible();
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await expect(page.getByRole('button',{name:/Мои гонки/})).toBeVisible();
+    await expect(page.getByRole('button',{name:/Настройки и диагностика/})).toBeVisible();
+    await page.getByRole('button',{name:/Мои гонки/}).click();
+    await expect(page.locator('#catalogSearch')).toBeVisible();
+    await expect(page.locator('#pwaInstallPrompt')).toBeHidden();
     await expect(page.getByRole('button',{name:'Удалить все офлайн-данные'})).toBeVisible();
   });
 
@@ -41,7 +45,7 @@ test.describe('basic UI contracts',()=>{
   test('selected point exposes all navigation actions',async({page})=>{
     await openApp(page);
     await seedFixtureRace(page);
-    await page.getByRole('button',{name:'Карта'}).click();
+    await openMapWithAcceptedSafety(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
     for(const id of ['googleMapsBtn','yandexMapsBtn','mapsMeBtn','sharePointBtn','copyCoordsBtn','favoritePointBtn']){
@@ -52,7 +56,7 @@ test.describe('basic UI contracts',()=>{
   test('spectator compass section is present for selected point',async({page})=>{
     await openApp(page);
     await seedFixtureRace(page);
-    await page.getByRole('button',{name:'Карта'}).click();
+    await openMapWithAcceptedSafety(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
     const compass=page.locator('#spectatorCompass');

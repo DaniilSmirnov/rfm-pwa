@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, installAppMocks, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
+import { openApp, installAppMocks, openMapWithAcceptedSafety, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
 
 test.describe('offline, import and failure states',()=>{
   test('shows API health failure',async({page})=>{
@@ -76,7 +76,7 @@ test.describe('offline, import and failure states',()=>{
     test.skip(browserName!=='chromium','OPFS/IndexedDB map download is covered in Chromium UI run');
     await openApp(page);
     await seedFixtureRace(page);
-    await page.getByRole('button',{name:'Карта'}).click();
+    await openMapWithAcceptedSafety(page);
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова',{timeout:20_000});
     await expect(page.locator('#deleteMapBtn')).toBeVisible();
@@ -86,7 +86,7 @@ test.describe('offline, import and failure states',()=>{
     test.skip(browserName!=='chromium','OPFS/IndexedDB map download is covered in Chromium UI run');
     await openApp(page);
     await seedFixtureRace(page);
-    await page.getByRole('button',{name:'Карта'}).click();
+    await openMapWithAcceptedSafety(page);
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова',{timeout:20_000});
     page.once('dialog',dialog=>dialog.accept());
@@ -98,7 +98,7 @@ test.describe('offline, import and failure states',()=>{
     test.skip(browserName!=='chromium','OPFS/IndexedDB map revision behavior is covered in Chromium UI run');
     await openApp(page);
     await seedFixtureRace(page);
-    await page.getByRole('button',{name:'Карта'}).click();
+    await openMapWithAcceptedSafety(page);
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова',{timeout:20_000});
     const before=await page.evaluate(()=>new Promise((resolve,reject)=>{

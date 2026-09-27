@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seedFixtureRace, raceFixture } from './helpers.js';
+import { openApp, openMapWithAcceptedSafety, seedFixtureRace, raceFixture } from './helpers.js';
 
 test.describe('saved race user flows',()=>{
   test.beforeEach(async({page})=>{await openApp(page);await seedFixtureRace(page);});
-  const openMap=page=>page.getByRole('button',{name:'Карта'}).click();
+  const openMap=page=>openMapWithAcceptedSafety(page);
 
   test('opens downloaded race details',async({page})=>{
     await expect(page.locator('#raceTitle')).toHaveText(raceFixture.name);
@@ -207,7 +207,9 @@ test.describe('saved race user flows',()=>{
 
   test('map engine diagnostic reports MapLibre',async({page})=>{
     await openMap(page);
-    await expect(page.locator('#offlineMapDiag')).toContainText('MapLibre ✓');
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
+    await expect(page.locator('.settings-diagnostics')).toContainText('MapLibre ✓');
   });
 
   test('clear all removes offline race and favorites',async({page})=>{

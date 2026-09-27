@@ -14,12 +14,13 @@ test.describe('app shell and catalog',()=>{
     await expect(page.locator('.header-brand')).toContainText('Rally Fans Map');
   });
 
-  test('shows browser PWA installation CTA',async({page})=>{
+  test('shows browser PWA installation CTA on Today only',async({page})=>{
     await openApp(page);
-    await page.getByRole('button',{name:'Ещё'}).click();
     await expect(page.locator('#pwaInstallPrompt')).toBeVisible();
     await expect(page.locator('#installBtn')).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context','browser');
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await expect(page.locator('#pwaInstallPrompt')).toBeHidden();
   });
 
   test('shows online network badge',async({page})=>{
@@ -71,10 +72,10 @@ test.describe('app shell and catalog',()=>{
     await expect(page.locator('#mapSubtitle')).toContainText('Выбери сохранённую гонку');
   });
 
-  test('refresh catalog button keeps catalog operational',async({page})=>{
+  test('opens the current catalog from More',async({page})=>{
     await openApp(page);
     await page.getByRole('button',{name:'Ещё'}).click();
-    await page.locator('#refreshCatalogBtn').click();
+    await page.getByRole('button',{name:/Мои гонки/}).click();
     await expect(page.locator('#catalogStatus')).toContainText('2 гонок');
     await expect(page.locator('#catalogList')).toContainText(raceFixture.name);
   });
