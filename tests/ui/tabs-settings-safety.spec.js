@@ -19,6 +19,24 @@ test.describe('Today tab and settings flows',()=>{
     await expect(page.locator('#catalogSection')).toBeHidden();
   });
 
+  test('switches the app theme from settings and remembers it after reload',async({page})=>{
+    await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
+    await page.getByRole('button',{name:'☾ Тёмная'}).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content','#111318');
+    await expect(page.getByRole('button',{name:'☾ Тёмная'})).toHaveAttribute('aria-pressed','true');
+
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
+    await page.getByRole('button',{name:'☀ Светлая'}).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme','light');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content','#f5f5f5');
+  });
+
   test('opens the safety rules as a full-screen reader from settings',async({page})=>{
     await openApp(page);
     await page.getByRole('button',{name:'Ещё'}).click();
@@ -73,17 +91,19 @@ test.describe('Today tab and settings flows',()=>{
     await expect(fullScreen.locator('.safety-memo')).toBeVisible();
   });
 
-  test('adapts the safety leaflet surfaces to light and dark color schemes',async({page})=>{
+  test('adapts the safety leaflet surfaces to the selected app theme',async({page})=>{
     await openApp(page);
     await seedFixtureRace(page);
     await page.getByRole('button',{name:'Карта'}).click();
     const memo=page.locator('.safety-memo');
     await expect(memo).toBeVisible();
 
-    await page.emulateMedia({colorScheme:'light'});
     const lightBackground=await memo.evaluate(element=>getComputedStyle(element).backgroundColor);
     const lightPanel=await page.locator('.safety-main-rules').evaluate(element=>getComputedStyle(element).backgroundColor);
-    await page.emulateMedia({colorScheme:'dark'});
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
+    await page.getByRole('button',{name:'☾ Тёмная'}).click();
+    await page.getByRole('button',{name:'Карта'}).click();
     const darkBackground=await memo.evaluate(element=>getComputedStyle(element).backgroundColor);
     const darkPanel=await page.locator('.safety-main-rules').evaluate(element=>getComputedStyle(element).backgroundColor);
 
