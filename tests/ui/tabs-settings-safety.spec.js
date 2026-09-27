@@ -16,6 +16,7 @@ test.describe('Today tab and settings flows',()=>{
     await expect(page.getByRole('heading',{name:'Настройки и диагностика'})).toBeVisible();
     await expect(page.locator('#settingsSection')).toBeVisible();
     await expect(page.getByRole('button',{name:'Открыть диагностику приложения'})).toBeVisible();
+    await expect(page.getByRole('button',{name:'Открыть правила безопасности'})).toHaveCount(0);
     await expect(page.locator('#catalogSection')).toBeHidden();
   });
 
@@ -35,20 +36,6 @@ test.describe('Today tab and settings flows',()=>{
     await page.getByRole('button',{name:'☀ Светлая'}).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme','light');
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content','#f5f5f5');
-  });
-
-  test('opens the safety rules as a full-screen reader from settings',async({page})=>{
-    await openApp(page);
-    await page.getByRole('button',{name:'Ещё'}).click();
-    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
-    await page.getByRole('button',{name:'Открыть правила безопасности'}).click();
-    const dialog=page.getByRole('dialog',{name:'Безопасность'});
-    await expect(dialog).toBeVisible();
-    await expect(dialog).toHaveClass(/safety-gate-fullscreen/);
-    await expect(dialog).toHaveCSS('top','0px');
-    await expect(dialog).toHaveCSS('bottom','0px');
-    await page.getByRole('button',{name:'Закрыть правила безопасности'}).click();
-    await expect(dialog).toBeHidden();
   });
 
   test('gates and blurs the map until the safety rules have been accepted',async({page})=>{
@@ -83,12 +70,6 @@ test.describe('Today tab and settings flows',()=>{
     const mapImage=gate.locator('.safety-map-image');
     await expect(mapImage).toBeVisible();
     await expect.poll(()=>mapImage.evaluate(image=>image.naturalWidth)).toBeGreaterThan(0);
-    await page.getByRole('button',{name:'Ещё'}).click();
-    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
-    await page.getByRole('button',{name:'Открыть правила безопасности'}).click();
-    const fullScreen=page.getByRole('dialog',{name:'Безопасность'});
-    await expect(fullScreen).toHaveClass(/safety-gate-fullscreen/);
-    await expect(fullScreen.locator('.safety-memo')).toBeVisible();
   });
 
   test('adapts the safety leaflet surfaces to the selected app theme',async({page})=>{
