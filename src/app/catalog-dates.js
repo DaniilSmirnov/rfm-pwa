@@ -20,13 +20,20 @@ export function raceDateRange(race) {
   return single?{start:single,end:single}:null;
 }
 
-export function distanceFromTodayDays(race) {
+export function distanceFromTodayDays(race,now=new Date()) {
   const range=raceDateRange(race); if(!range) return Infinity;
-  const today=startOfLocalDay();
+  const today=startOfLocalDay(now);
   const start=startOfLocalDay(range.start), end=startOfLocalDay(range.end);
   if(today>=start && today<=end) return 0;
   const target=today<start?start:end;
   return Math.abs(target-today)/86400000;
+}
+
+export function nextUpcomingRace(rows,now=new Date()){
+  return (rows||[])
+    .map(race=>({race,range:raceDateRange(race)}))
+    .filter(item=>item.range&&startOfLocalDay(item.range.end)>startOfLocalDay(now))
+    .sort((a,b)=>startOfLocalDay(a.range.start)-startOfLocalDay(b.range.start))[0]?.race||null;
 }
 
 export function raceWithinWeek(race){ return distanceFromTodayDays(race)<=7; }

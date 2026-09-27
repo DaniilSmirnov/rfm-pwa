@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { startOfLocalDay, parseDdMmYyyy, raceDateRange, distanceFromTodayDays, raceWithinWeek, pickDefaultRace } from '../../src/app/catalog-dates.js';
+import { startOfLocalDay, parseDdMmYyyy, raceDateRange, distanceFromTodayDays, raceWithinWeek, pickDefaultRace, nextUpcomingRace } from '../../src/app/catalog-dates.js';
 
 afterEach(()=>vi.useRealTimers());
 
@@ -67,4 +67,13 @@ describe('catalog date helpers',()=>{
   });
 
   it('returns null when nothing has a date',()=>expect(pickDefaultRace([{dates:'TBA'}])).toBeNull());
+
+  it('selects the nearest upcoming race while ignoring past and undated entries',()=>{
+    const past={id:1,dates:'25.09.2026'},near={id:2,dates:'28.09.2026'},far={id:3,dates:'10.10.2026'},undated={id:4};
+    expect(nextUpcomingRace([past,far,undated,near],new Date(2026,8,26))).toBe(near);
+  });
+
+  it('returns no upcoming race when the catalog only has past events',()=>{
+    expect(nextUpcomingRace([{id:1,dates:'25.09.2026'}],new Date(2026,8,26))).toBeNull();
+  });
 });

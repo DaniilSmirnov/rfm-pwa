@@ -28,7 +28,24 @@ async function openMoreTab(page){
   await page.getByRole('button',{name:'Ещё'}).click();
 }
 
+async function openSettings(page){
+  await openMoreTab(page);
+  await page.getByRole('button',{name:/Настройки и диагностика/}).click();
+}
+
 test.describe('production service worker lifecycle',()=>{
+  test.beforeEach(async({context})=>{
+    // These lifecycle tests cover offline boot and caching. The safety gate
+    // itself is covered by the UI suite, so seed consent for the map flow.
+    await context.addInitScript(()=>{
+      const getItem=Storage.prototype.getItem;
+      Storage.prototype.getItem=function(key){
+        if(String(key).startsWith('rfm:safety-accepted:v1:')) return 'accepted';
+        return getItem.call(this,key);
+      };
+    });
+  });
+
   test('installs and precaches same-origin application shell',async({page})=>{
     await page.goto('/');
     const worker=await waitForWorker(page);
@@ -70,8 +87,8 @@ test.describe('production service worker lifecycle',()=>{
 
     await context.setOffline(true);
     await page.reload({waitUntil:'domcontentloaded'});
-    await openMoreTab(page);
-    await expect(page.getByText('RALLY FANS MAP · OFFLINE')).toBeVisible();
+    await openSettings(page);
+    await expect(page.getByRole('heading',{name:'Настройки и диагностика'})).toBeVisible();
     await expect(page.locator('#networkBadge')).toHaveText('офлайн');
   });
 
@@ -79,16 +96,16 @@ test.describe('production service worker lifecycle',()=>{
     await page.goto('/');
     await waitForWorker(page);
     await page.reload({waitUntil:'domcontentloaded'});
-    await openMoreTab(page);
-    await expect(page.getByText('RALLY FANS MAP · OFFLINE')).toBeVisible();
+    await openSettings(page);
+    await expect(page.getByRole('heading',{name:'Настройки и диагностика'})).toBeVisible();
 
     await page.close();
     await context.setOffline(true);
 
     const reopened=await context.newPage();
     await reopened.goto('/',{waitUntil:'domcontentloaded'});
-    await openMoreTab(reopened);
-    await expect(reopened.getByText('RALLY FANS MAP · OFFLINE')).toBeVisible();
+    await openSettings(reopened);
+    await expect(reopened.getByRole('heading',{name:'Настройки и диагностика'})).toBeVisible();
     await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
   });
 
