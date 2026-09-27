@@ -321,6 +321,7 @@ html[data-pwa-installed="true"] .pwa-install-prompt{display:none!important}
 main{padding-bottom:calc(92px + var(--safe-bottom))}
 #reactRoot,#reactShell,.react-tab-content{padding-bottom:calc(76px + var(--safe-bottom))}
 .today-screen,.today-empty,.more-menu,.settings-screen{padding-bottom:calc(24px + var(--safe-bottom))}
+body:not([data-active-tab="today"]) .pwa-install-prompt{display:none!important}
 .today-overlap img{display:block;width:100%;height:auto;max-height:72vh;object-fit:contain;margin:12px auto 0;border-radius:10px}
 .settings-screen{padding:18px 12px 24px}
 .settings-screen-head{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px;margin-bottom:12px}
