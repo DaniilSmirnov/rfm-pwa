@@ -40,7 +40,7 @@ test.describe('Today tab and settings flows',()=>{
     const gate=page.getByRole('dialog',{name:'Безопасность'});
     await expect(gate).toBeVisible();
     await expect(page.locator('#mapSection')).toHaveCSS('filter',/blur/);
-    const accept=page.getByRole('button',{name:/открыть карту/i});
+    const accept=page.locator('.safety-accept');
     if(await accept.isDisabled()){
       await page.locator('.safety-gate-content').evaluate(node=>{node.scrollTop=node.scrollHeight;node.dispatchEvent(new Event('scroll'));});
     }
@@ -77,16 +77,17 @@ test.describe('Today tab and settings flows',()=>{
     await openApp(page);
     await seedFixtureRace(page);
     await page.getByRole('button',{name:'Карта'}).click();
-    const accept=page.getByRole('button',{name:/открыть карту/i});
+    const accept=page.locator('.safety-accept');
     if(await accept.isVisible()){
       if(await accept.isDisabled())await page.locator('.safety-gate-content').evaluate(node=>{node.scrollTop=node.scrollHeight;node.dispatchEvent(new Event('scroll'));});
       await accept.click();
     }
-    await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+    await page.evaluate(()=>window.scrollTo(0,250));
     const before=await page.evaluate(()=>window.scrollY);
+    expect(before).toBeGreaterThan(0);
     await page.getByRole('button',{name:'Сегодня'}).click();
     await page.getByRole('button',{name:'Карта'}).click();
-    await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThanOrEqual(before-2);
+    await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeCloseTo(before,0);
   });
 
   test('disables page pinch zoom',async({page})=>{
