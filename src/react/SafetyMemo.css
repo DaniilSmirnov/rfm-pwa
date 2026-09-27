@@ -73,6 +73,26 @@
 .safety-sweep-note p{margin:0;font-size:11px;line-height:1.35}
 .safety-memo-footer{padding:9px 16px;background:#202d3b;color:#fff;text-align:center;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 
+@media(prefers-color-scheme:dark){
+  .safety-gate,.safety-gate-fullscreen{background:#111820}
+  .safety-gate-content{color:#f1f3f5}
+  .safety-memo{background:#171f28;color:#eef1f4;box-shadow:0 5px 26px #0008;color-scheme:dark}
+  .safety-memo-lead{color:#d4d9df}
+  .safety-main-rules{background:#28323d}
+  .safety-marshal-note{background:#28323d;color:#e1e5e9}
+  .safety-danger-map{background:#1e2832}
+  .safety-section-heading p{color:#d4d9df}
+  .safety-danger-legend{background:#17212beF;color:#f1f3f5}
+  .safety-danger-examples{border-color:#53606c}
+  .safety-danger-example{border-color:#53606c}
+  .safety-danger-footer{border-color:#a84635}
+  .safety-danger-footer p{border-color:#53606c}
+  .safety-stage-guide{background:#202a34}
+  .safety-stage-card{border-color:#53606c}
+  .safety-sweep-note{border-color:#53606c}
+  .safety-broom-mark{color:#f1f3f5}
+}
+
 @media(max-width:640px){
   .safety-gate{width:calc(100% - 12px);right:6px;left:6px;padding:8px}
   .safety-gate-fullscreen{width:100%;right:0;left:0;padding:max(8px,var(--safe-top)) max(8px,var(--safe-right)) max(8px,var(--safe-bottom)) max(8px,var(--safe-left))}
@@ -86,6 +106,7 @@
   .safety-main-rules ul{grid-template-columns:1fr 1fr;gap:8px 12px;font-size:11px}
   .safety-main-rules li{padding-left:14px}
   .safety-main-rules li::before{width:8px;height:8px}
+  .safety-main-rules li:nth-child(5){margin-top:-16px}
   .safety-cars-copy{width:72%;flex-basis:72%}
   .safety-cars h3{font-size:20px}
   .safety-cars ol{font-size:10px}
