@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { seedFixtureRace, openApp } from './helpers.js';
 
+async function openAllResults(page){
+  await page.getByRole('button',{name:'Сегодня'}).click();
+  await page.getByRole('button',{name:'Все результаты'}).click();
+}
+
 test.describe('ASMG crew results',()=>{
   test.beforeEach(async({page})=>{await openApp(page);await seedFixtureRace(page);});
 
@@ -8,7 +13,7 @@ test.describe('ASMG crew results',()=>{
     const dialog=page.locator('.crew-results-dialog');
     const dialogClass=page.locator('#crewResultsDialogClass');
     await expect(dialog).not.toBeVisible();
-    await page.getByRole('button',{name:/Все результаты/}).click();
+    await openAllResults(page);
     await expect(dialog).toBeVisible();
     await expect(page.locator('#crewResultsStage')).toHaveValue('overall');
     await dialogClass.selectOption('Абсолют');
@@ -34,7 +39,7 @@ test.describe('ASMG crew results',()=>{
   });
 
   test('shows cumulative time and selected-stage time in the table',async({page})=>{
-    await page.getByRole('button',{name:/Все результаты/}).click();
+    await openAllResults(page);
     await expect(page.locator('.crew-results-dialog')).toBeVisible();
     const firstRow=page.locator('[data-crew-row]').first();
     await expect(firstRow).toContainText('00:14:50:0');
@@ -46,7 +51,7 @@ test.describe('ASMG crew results',()=>{
   });
 
   test('stores a followed crew so the service worker can refresh it offline',async({page})=>{
-    await page.getByRole('button',{name:/Все результаты/}).click();
+    await openAllResults(page);
     await expect(page.locator('.crew-results-dialog')).toBeVisible();
     const row=page.locator('[data-crew-row]').first();
     await row.getByRole('button',{name:/Следить за экипажем/}).click();

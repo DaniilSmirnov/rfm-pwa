@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { crewName, crewResultClasses, filterCrewResultsByClass, overallCrewResults } from '../app/crew-results.js';
 
-export default function TodayLeaders({pkg}){
+export default function TodayLeaders({pkg,onResults}){
   const [snapshot,setSnapshot]=useState(pkg.crewResults);
   useEffect(()=>{
     setSnapshot(pkg.crewResults);
@@ -25,5 +25,6 @@ export default function TodayLeaders({pkg}){
         <span>{leader.crew?.car} · {leader.formattedTime}</span>
       </article>;
     }):<p className="muted">Результаты пока не загружены или нет финишировавших экипажей.</p>}
+    {onResults&&<button className="button compact" type="button" onClick={onResults}>Все результаты</button>}
   </section>;
 }

@@ -19,6 +19,20 @@ test.describe('Today tab and settings flows',()=>{
     await expect(page.locator('#catalogSection')).toBeHidden();
   });
 
+  test('opens the safety rules as a full-screen reader from settings',async({page})=>{
+    await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
+    await page.getByRole('button',{name:'Открыть правила безопасности'}).click();
+    const dialog=page.getByRole('dialog',{name:'Правила безопасности'});
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveClass(/safety-gate-fullscreen/);
+    await expect(dialog).toHaveCSS('top','0px');
+    await expect(dialog).toHaveCSS('bottom','0px');
+    await page.getByRole('button',{name:'Закрыть правила безопасности'}).click();
+    await expect(dialog).toBeHidden();
+  });
+
   test('gates and blurs the map until the safety rules have been accepted',async({page})=>{
     await openApp(page);
     await seedFixtureRace(page);
