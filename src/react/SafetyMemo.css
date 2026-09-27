@@ -106,6 +106,7 @@
   .safety-main-rules ul{grid-template-columns:1fr 1fr;gap:8px 12px;font-size:11px}
   .safety-main-rules li{padding-left:14px}
   .safety-main-rules li::before{width:8px;height:8px}
+  .safety-main-rules li:nth-child(5){margin-top:-16px}
   .safety-cars-copy{width:72%;flex-basis:72%}
   .safety-cars h3{font-size:20px}
   .safety-cars ol{font-size:10px}
