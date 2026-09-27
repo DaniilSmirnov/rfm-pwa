@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarDays, CircleEllipsis, Map } from 'lucide-react';
 import { useRfmApp, ensureMapLibre, formatBytes } from './useRfmApp.js';
@@ -20,6 +20,10 @@ import { formatDistance } from '../app/geo.js';
 import { openBootDiagnostics, setupBootDiagnosticsUi } from '../app/boot-diagnostics.js';
 import TodayTab from './TodayTab.jsx';
 import { nearestStageDistance } from '../app/point-stage-distance.js';
+import SafetyGate from './SafetyGate.jsx';
+import SettingsTab from './SettingsTab.jsx';
+import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
+import { raceHasFinished } from '../app/today-summary.js';
 
 function Portal({id,children}){
   const node=document.getElementById(id);
@@ -223,7 +227,7 @@ const tabs=[
   {key:'more',label:'Ещё',Icon:CircleEllipsis}
 ];
 function readTab(){return new URLSearchParams(location.search).get('tab')||'today';}
-function MoreTab({onResults}){const go=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});return <section className="more-menu"><button className="more-menu-row" onClick={onResults}><strong>Все результаты</strong><span>Полная таблица экипажей и классы</span></button><button className="more-menu-row" onClick={()=>go('catalogSection')}><strong>Мои гонки</strong><span>Rally Pack, каталог и импорт</span></button><button className="more-menu-row" onClick={()=>go('settingsSection')}><strong>Настройки</strong><span>Уведомления, PWA и хранилище</span></button><button className="more-menu-row" onClick={openBootDiagnostics}><strong>Диагностика</strong><span>Boot diagnostics</span></button></section>;}
+function MoreTab({onResults,onSettings}){const go=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});return <section className="more-menu">{onResults&&<button className="more-menu-row" onClick={onResults}><strong>Все результаты</strong><span>Полная таблица экипажей и классы</span></button>}<button className="more-menu-row" onClick={()=>go('catalogSection')}><strong>Мои гонки</strong><span>Rally Pack, каталог и импорт</span></button><button className="more-menu-row" onClick={onSettings}><strong>Настройки и диагностика</strong><span>Уведомления, приложение и техническая информация</span></button></section>;}
 
 export default function App(){
   const app=useRfmApp();
@@ -232,9 +236,38 @@ export default function App(){
     ()=>nearestStageDistance(pkg,app.selectedPoint),[pkg,app.selectedPoint]
   );
   const [tab,setTab]=useState(readTab());
-  const activate=next=>{const url=new URL(location.href);url.searchParams.set('tab',next);history.pushState({tab:next},'',url);setTab(next);};
+  const [moreScreen,setMoreScreen]=useState('menu');
+  const [safetyAccepted,setSafetyAccepted]=useState(()=>hasSafetyConsent(pkg));
+  const [clock,setClock]=useState(()=>new Date());
+  const finishedResultsHidden=useRef(new Set());
+  const scrollPositions=useRef({});
+  const activeScrollKey=tab==='more'?`more:${moreScreen}`:tab;
+  const restoreScrollKey=useRef(activeScrollKey);
+  const activate=next=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current=next==='more'?`more:${moreScreen}`:next;const url=new URL(location.href);url.searchParams.set('tab',next);history.pushState({tab:next},'',url);setTab(next);if(next!=='more')setMoreScreen('menu');};
 
-  useEffect(()=>{document.body.dataset.activeTab=tab;},[tab]);
+  useEffect(()=>{document.body.dataset.activeTab=tab;document.body.dataset.moreScreen=moreScreen;},[tab,moreScreen]);
+
+  useEffect(()=>{
+    setSafetyAccepted(hasSafetyConsent(pkg));
+  },[pkg?.id,pkg?.original?.safety_leaflet]);
+
+  useEffect(()=>{const timer=setInterval(()=>setClock(new Date()),30000);return()=>clearInterval(timer);},[]);
+
+  useEffect(()=>{
+    const update=()=>{const next=new URLSearchParams(location.search).get('tab')||'today';scrollPositions.current[activeScrollKey]=window.scrollY;setMoreScreen('menu');setTab(next);restoreScrollKey.current=next;};
+    window.addEventListener('popstate',update);return()=>window.removeEventListener('popstate',update);
+  },[activeScrollKey]);
+
+  useEffect(()=>{
+    const save=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;};
+    window.addEventListener('scroll',save,{passive:true});return()=>window.removeEventListener('scroll',save);
+  },[activeScrollKey]);
+
+  useLayoutEffect(()=>{
+    const key=restoreScrollKey.current;let second=0;
+    const first=requestAnimationFrame(()=>{window.scrollTo(0,scrollPositions.current[key]||0);second=requestAnimationFrame(()=>window.scrollTo(0,scrollPositions.current[key]||0));});
+    return()=>{cancelAnimationFrame(first);cancelAnimationFrame(second);};
+  },[activeScrollKey]);
 
   useEffect(()=>{
     if(tab==='map') requestAnimationFrame(()=>resizeActiveMap());
@@ -265,7 +298,6 @@ export default function App(){
     for(const id of ['downloadTerrainBtn','downloadTerrainBtnTop']) setProps(id,{text:app.terrainUi.button,disabled:app.terrainUi.disabled});
     for(const id of ['deleteTerrainBtn','deleteTerrainBtnTop']) setProps(id,{hidden:app.terrainUi.deleteHidden,disabled:app.terrainUi.disabled});
     for(const id of ['terrainStatus','terrainStatusTop']) setProps(id,{text:app.terrainUi.status});
-    setProps('offlineMapDiag',{hidden:!app.mapDiag,text:app.mapDiag});
   },[app.mapUi,app.terrainUi,app.mapDiag]);
 
   useEffect(()=>{
@@ -278,7 +310,9 @@ export default function App(){
     }
     if(pkg){
       renderSchedule(pkg);
-      renderCrewResults(pkg).catch(error=>console.warn('Crew results UI failed',error));
+      if(raceHasFinished(pkg)){
+        const crewResults=document.getElementById('crewResults');if(crewResults)crewResults.replaceChildren();
+      }else renderCrewResults(pkg).catch(error=>console.warn('Crew results UI failed',error));
       renderRaceMedia(pkg);
       syncWalletPassesForPackage(pkg).catch(e=>console.warn('Wallet pass refresh failed',e));
     }else{
@@ -287,6 +321,13 @@ export default function App(){
       const media=document.getElementById('raceMedia');if(media)media.innerHTML='';
     }
   },[pkg?.id,pkg?.savedAt]);
+
+  useEffect(()=>{
+    if(!pkg||!raceHasFinished(pkg,clock)||finishedResultsHidden.current.has(pkg.id))return;
+    finishedResultsHidden.current.add(pkg.id);
+    const crewResults=document.getElementById('crewResults');if(crewResults)crewResults.replaceChildren();
+    renderRaceMedia(pkg);
+  },[pkg,clock]);
 
   useEffect(()=>{
     if(!app.selectedPoint)return;
@@ -307,9 +348,14 @@ export default function App(){
   ].filter(x=>x[1]):[];
 
   const favSelected=Boolean(app.selectedPoint&&pkg&&isFavoritePoint(app.selectedPoint,pkg.id));
+  const requiresSafety=tab==='map'&&!safetyAccepted;
+  useEffect(()=>{document.body.dataset.safetyGate=requiresSafety?'true':'false';},[requiresSafety]);
+  const acceptSafety=()=>{saveSafetyConsent(pkg);setSafetyAccepted(true);};
+  const openSettings=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current='more:settings';setMoreScreen('settings');};
+  const closeSettings=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current='more:menu';setMoreScreen('menu');};
 
   return <>
-    <div className="react-tab-content">{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')}/>} {tab==='more'&&<MoreTab onResults={()=>{document.getElementById('raceDetails')?.scrollIntoView({behavior:'smooth'});document.getElementById('crewResultsOpen')?.click();}}/>}</div>
+    <div className="react-tab-content">{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={openBootDiagnostics}/>:<MoreTab onSettings={openSettings} onResults={pkg&&!raceHasFinished(pkg,clock)?()=>{document.getElementById('raceDetails')?.scrollIntoView({behavior:'smooth'});document.getElementById('crewResultsOpen')?.click();}:null}/>)}</div>
     <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></button>)}</nav>
     <DomBindings app={app}/>
     <MapLifecycle app={app}/>
@@ -344,5 +390,6 @@ export default function App(){
       :app.selectedPoint?'Нужна геопозиция для расчёта направления.':'Сначала выбери точку.'}</Portal>
 
     <Portal id="mapLegend"><><span><i style={{background:'#f3f5f7'}}></i>RallyFansMap</span><span><i style={{background:'#ffd21e'}}></i>Yandex Constructor</span><span><i style={{background:'#4da3ff'}}></i>вы</span></></Portal>
+    {requiresSafety&&<SafetyGate pkg={pkg} onAccept={acceptSafety}/>}
   </>;
 }
