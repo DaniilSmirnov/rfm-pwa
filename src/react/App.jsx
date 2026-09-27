@@ -22,6 +22,7 @@ import TodayTab from './TodayTab.jsx';
 import { nearestStageDistance } from '../app/point-stage-distance.js';
 import SafetyGate from './SafetyGate.jsx';
 import SettingsTab from './SettingsTab.jsx';
+import PwaInstallPrompt from './PwaInstallPrompt.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { raceHasFinished } from '../app/today-summary.js';
 
@@ -356,7 +357,7 @@ export default function App(){
   const openCrewResults=()=>document.getElementById('crewResultsOpen')?.click();
 
   return <>
-    <div className="react-tab-content">{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={openBootDiagnostics}/>:<MoreTab onSettings={openSettings}/>)}</div>
+    <div className="react-tab-content"><PwaInstallPrompt/>{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={openBootDiagnostics}/>:<MoreTab onSettings={openSettings}/>)}</div>
     <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></button>)}</nav>
     <DomBindings app={app}/>
     <MapLifecycle app={app}/>

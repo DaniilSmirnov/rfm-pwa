@@ -51,6 +51,21 @@ test.describe('Today tab and settings flows',()=>{
     expect(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('rfm:safety-accepted:v1:')))).toBe(true);
   });
 
+  test('shows the organizer leaflet in the safety gate and opens it full screen',async({page})=>{
+    await openApp(page);
+    await seedFixtureRace(page);
+    await page.getByRole('button',{name:'Карта'}).click();
+    const leaflet=page.getByRole('img',{name:'Памятка по безопасности от организатора'}).first();
+    await expect(leaflet).toBeVisible();
+    await expect(leaflet).toHaveJSProperty('naturalWidth',1);
+    await page.getByRole('button',{name:'Открыть памятку по безопасности на весь экран'}).click();
+    const viewer=page.getByRole('dialog',{name:'Памятка по безопасности на весь экран'});
+    await expect(viewer).toBeVisible();
+    await expect(viewer).toHaveCSS('position','fixed');
+    await page.getByRole('button',{name:'Закрыть памятку'}).click();
+    await expect(viewer).toBeHidden();
+  });
+
   test('preserves the map scroll position when switching tabs',async({page})=>{
     await openApp(page);
     await seedFixtureRace(page);
