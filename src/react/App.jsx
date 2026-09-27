@@ -10,44 +10,25 @@ import {
 } from '../navigation.js';
 import { pointFeatures, pointFromFeature } from '../app/point-list.js';
 import { isFavoritePoint } from '../app/local-points.js';
-import { renderSchedule } from '../app/schedule-ui.js';
-import { renderRaceMedia } from '../app/race-media.js';
-import { renderCrewResults } from '../app/crew-results.js';
 import { syncWalletPassesForPackage } from '../app/wallet-client.js';
-import { showPointElevation, showRouteElevationProfile } from '../app/elevation-ui.js';
+import { pointElevationText } from '../app/elevation-ui.js';
 import { reportClientError } from '../app/telemetry.js';
-import { formatDistance } from '../app/geo.js';
-import { openBootDiagnostics, setupBootDiagnosticsUi } from '../app/boot-diagnostics.js';
 import TodayTab from './TodayTab.jsx';
 import { nearestStageDistance } from '../app/point-stage-distance.js';
 import SafetyGate from './SafetyGate.jsx';
 import SettingsTab from './SettingsTab.jsx';
 import PwaInstallPrompt from './PwaInstallPrompt.jsx';
+import AppLayout from './AppLayout.jsx';
+import ScheduleList from './ScheduleList.jsx';
+import RaceMedia from './RaceMedia.jsx';
+import CrewResults from './CrewResults.jsx';
+import BootDiagnostics from './BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { raceHasFinished } from '../app/today-summary.js';
 
 function Portal({id,children}){
   const node=document.getElementById(id);
   return node?createPortal(children,node):null;
-}
-
-function useDomEvent(id,event,handler){
-  useEffect(()=>{
-    const el=document.getElementById(id);
-    if(!el||!handler)return;
-    el.addEventListener(event,handler);
-    return()=>el.removeEventListener(event,handler);
-  },[id,event,handler]);
-}
-
-function setProps(id,props){
-  const el=document.getElementById(id);if(!el)return;
-  for(const [key,value] of Object.entries(props)){
-    if(key==='text') el.textContent=value??'';
-    else if(key==='className') el.className=value;
-    else if(key==='style') Object.assign(el.style,value||{});
-    else el[key]=value;
-  }
 }
 
 function Catalog({app}){
@@ -127,24 +108,12 @@ function Favorites({app}){
   </article>)}</>;
 }
 
-function RallyPackUpdate({pkg}){
-  const pending=pkg?.pendingUpdate;
-  const applied=pkg?.lastSmartUpdate;
-  const changes=(pending?.changes||applied?.changes||[]).map(x=>x.label||x.key).join(' · ');
-  if(!changes)return null;
-  const title=pending?'ЕСТЬ ОБНОВЛЕНИЕ RALLY PACK':'RALLY PACK ОБНОВЛЁН В ФОНЕ';
-  const reason=pending?.reason==='geometry'?'Изменилась геометрия: нужен полный Rally Pack update.'
-    :pending?.reason==='yandex'?'Изменилась карта Yandex Constructor: нужен полный Rally Pack update.'
-    :pending?'Не все новые материалы удалось скачать в фоне.':'Все необходимые данные были скачаны, поэтому изменения уже применены.';
-  return <><strong>{changes}</strong><p className="muted small">{reason}{pending?' Старый офлайн-пакет остаётся активным.':''}</p><Portal id="rallyPackUpdateTitle">{title}</Portal></>;
-}
-
-function MapLifecycle({app}){
+function MapLifecycle({app,onRouteClick}){
   useEffect(()=>{
     const pkg=app.currentPackage;
     const container=document.getElementById('map');
     if(!container){return;}
-    if(!pkg){container.innerHTML='<div class="empty">Выбери сохранённую гонку</div>';app.setMapDiag('');return;}
+    if(!pkg){app.setMapDiag('');return;}
     let cancelled=false;
     ensureMapLibre().then(()=>{
       if(cancelled)return;
@@ -157,68 +126,16 @@ function MapLifecycle({app}){
       app.setMapDiag(`MapLibre ✓ · WebGL ✓${om?` · локальная подложка ${om.tileCount||0} тайлов`:''}`);
       renderMap(container,geojson,app.userPos,app.showPoint,{
         offlineMap:om,terrain,routePackage:pkg,
-        onRouteClick:route=>showRouteElevationProfile(terrain,route),
+        onRouteClick,
         onMapError:message=>{reportClientError(new Error(message),'map');app.setMapDiag(`Ошибка карты: ${message}`);}
       });
     }).catch(error=>app.setMapDiag(`Карта недоступна: ${error.message}`));
     return()=>{cancelled=true;};
-  },[app.currentPackage?.id,app.currentPackage?.offlineMap?.storageId,app.currentPackage?.terrain?.storageId,app.carPoint?.savedAt]);
+  },[app.currentPackage?.id,app.currentPackage?.offlineMap?.storageId,app.currentPackage?.terrain?.storageId,app.carPoint?.savedAt,onRouteClick]);
 
   useEffect(()=>{
     if(app.userPos) updateLiveUserPosition(app.userPos,{center:Boolean(app.userPos.__center)});
   },[app.userPos]);
-  return null;
-}
-
-function DomBindings({app}){
-  useDomEvent('refreshCatalogBtn','click',app.loadCatalog);
-  useDomEvent('clearBtn','click',app.clearAll);
-  useDomEvent('downloadMapBtn','click',app.downloadMap);
-  useDomEvent('downloadMapBtnTop','click',app.downloadMap);
-  useDomEvent('deleteMapBtn','click',app.deleteMap);
-  useDomEvent('deleteMapBtnTop','click',app.deleteMap);
-  useDomEvent('downloadTerrainBtn','click',app.downloadTerrainForRace);
-  useDomEvent('downloadTerrainBtnTop','click',app.downloadTerrainForRace);
-  useDomEvent('deleteTerrainBtn','click',app.deleteTerrain);
-  useDomEvent('deleteTerrainBtnTop','click',app.deleteTerrain);
-  useDomEvent('importYandexBtn','click',app.importYandex);
-  useDomEvent('saveCarBtn','click',app.saveCar);
-  useDomEvent('carDeleteBtn','click',app.removeCar);
-  useDomEvent('locateBtn','click',app.requestLocation);
-  useDomEvent('exportGeoJsonBtn','click',app.exportGeoJson);
-  useDomEvent('exportGpxBtn','click',app.exportGpx);
-  useDomEvent('compassEnableBtn','click',app.enableCompass);
-
-  useDomEvent('googleMapsBtn','click',()=>{if(app.selectedPoint)window.location.href=googleMapsDirections(app.selectedPoint);});
-  useDomEvent('yandexMapsBtn','click',()=>{if(app.selectedPoint)openCustomSchemeWithFallback(yandexNavigatorLink(app.selectedPoint),yandexWebFallback(app.selectedPoint));});
-  useDomEvent('mapsMeBtn','click',()=>{if(app.selectedPoint)openCustomSchemeWithFallback(mapsMeLink(app.selectedPoint),mapsMeWebFallback());});
-  useDomEvent('sharePointBtn','click',()=>app.selectedPoint&&app.sharePoint(app.selectedPoint));
-  useDomEvent('copyCoordsBtn','click',async()=>{
-    if(!app.selectedPoint)return;
-    const text=coordinateText(app.selectedPoint);
-    try{await navigator.clipboard.writeText(text);app.setNavStatus(`Скопировано: ${text}`);}
-    catch{app.setNavStatus(`Координаты: ${text}`);}
-  });
-  useDomEvent('favoritePointBtn','click',()=>app.selectedPoint&&app.toggleFavorite(app.selectedPoint));
-
-  useDomEvent('carCompassBtn','click',async()=>{
-    if(!app.carPoint)return;
-    app.showPoint(app.carPoint);
-    const details=document.getElementById('spectatorCompass');if(details)details.open=true;
-    await app.enableCompass();
-  });
-  useDomEvent('carGoogleBtn','click',()=>{if(app.carPoint)window.location.href=googleMapsDirections(app.carPoint);});
-  useDomEvent('carYandexBtn','click',()=>{if(app.carPoint)openCustomSchemeWithFallback(yandexNavigatorLink(app.carPoint),yandexWebFallback(app.carPoint));});
-  useDomEvent('carShareBtn','click',()=>app.carPoint&&app.sharePoint(app.carPoint));
-
-  useEffect(()=>{
-    const input=document.getElementById('fileInput');
-    if(!input)return;
-    const handler=async e=>{await app.importFiles([...e.target.files]);e.target.value='';};
-    input.addEventListener('change',handler);
-    return()=>input.removeEventListener('change',handler);
-  },[app.importFiles]);
-
   return null;
 }
 
@@ -238,9 +155,12 @@ export default function App(){
   );
   const [tab,setTab]=useState(readTab());
   const [moreScreen,setMoreScreen]=useState('menu');
+  const [crewResultsOpen,setCrewResultsOpen]=useState(false);
+  const [selectedRoute,setSelectedRoute]=useState(null);
+  const [pointElevation,setPointElevation]=useState('Высота: выбери точку.');
+  const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
   const [safetyAccepted,setSafetyAccepted]=useState(()=>hasSafetyConsent(pkg));
   const [clock,setClock]=useState(()=>new Date());
-  const finishedResultsHidden=useRef(new Set());
   const scrollPositions=useRef({});
   const activeScrollKey=tab==='more'?`more:${moreScreen}`:tab;
   const restoreScrollKey=useRef(activeScrollKey);
@@ -274,124 +194,45 @@ export default function App(){
     if(tab==='map') requestAnimationFrame(()=>resizeActiveMap());
   },[tab]);
 
-  useEffect(()=>{setupBootDiagnosticsUi();},[]);
+  const logoTaps=useRef([]);
+  const handleLogoClick=()=>{
+    const now=Date.now();
+    logoTaps.current=logoTaps.current.filter(timestamp=>now-timestamp<2500);
+    logoTaps.current.push(now);
+    if(logoTaps.current.length>=5){logoTaps.current=[];setDiagnosticsOpen(true);}
+  };
+
+  useEffect(()=>{if(pkg) syncWalletPassesForPackage(pkg).catch(e=>console.warn('Wallet pass refresh failed',e));},[pkg?.id,pkg?.savedAt]);
 
   useEffect(()=>{
-    setProps('networkBadge',{text:app.online?'онлайн':'офлайн',className:`badge ${app.online?'online':'offline'}`});
-    setProps('raceDetails',{hidden:!pkg});
-    setProps('pointActions',{hidden:!app.selectedPoint});
-    setProps('carPointCard',{hidden:!app.carPoint});
-    setProps('saveCarBtn',{text:app.carPoint?'Обновить координаты машины':'Запомнить машину'});
-    setProps('carCoords',{text:app.carPoint?coordinateText(app.carPoint):''});
-    setProps('carStatus',{text:app.carPoint?`Сохранено ${app.carPoint.savedAt?new Date(app.carPoint.savedAt).toLocaleString():''}`:'Сохрани текущие GPS-координаты машины.'});
-    setProps('geoStatus',{text:app.geoStatus,className:`muted small ${app.geoClass}`});
-    setProps('exportGpxBtn',{disabled:!pkg});setProps('exportGeoJsonBtn',{disabled:!pkg});
-    setProps('importYandexBtn',{disabled:!pkg?.yandexMapEmbed,text:pkg?.yandexImport?.featureCount?`Yandex: ${pkg.yandexImport.featureCount} объектов ✓`:'Импорт из Yandex'});
-    const hasUpdate=Boolean(pkg?.pendingUpdate?.changes?.length||pkg?.lastSmartUpdate?.changes?.length);
-    setProps('rallyPackUpdatePanel',{hidden:!hasUpdate});
-    setProps('favoritePointBtn',{className:`button ${pkg&&app.selectedPoint&&isFavoritePoint(app.selectedPoint,pkg.id)?'downloaded':''}`});
-  },[app.online,pkg,app.selectedPoint,app.carPoint,app.geoStatus,app.geoClass,app.favoritesRevision]);
-
-  useEffect(()=>{
-    for(const id of ['downloadMapBtn','downloadMapBtnTop']) setProps(id,{text:app.mapUi.button,disabled:app.mapUi.disabled});
-    for(const id of ['deleteMapBtn','deleteMapBtnTop']) setProps(id,{hidden:app.mapUi.deleteHidden,disabled:app.mapUi.disabled});
-    for(const id of ['offlineMapStatus','offlineMapStatusTop']) setProps(id,{text:app.mapUi.status});
-    for(const id of ['downloadTerrainBtn','downloadTerrainBtnTop']) setProps(id,{text:app.terrainUi.button,disabled:app.terrainUi.disabled});
-    for(const id of ['deleteTerrainBtn','deleteTerrainBtnTop']) setProps(id,{hidden:app.terrainUi.deleteHidden,disabled:app.terrainUi.disabled});
-    for(const id of ['terrainStatus','terrainStatusTop']) setProps(id,{text:app.terrainUi.status});
-  },[app.mapUi,app.terrainUi,app.mapDiag]);
-
-  useEffect(()=>{
-    const hero=document.getElementById('raceHero');
-    const img=document.getElementById('raceImage');
-    if(hero) hero.style.backgroundImage=pkg?.original?.image?`url('${assetUrl(pkg.original.image)}')`:'';
-    if(img){
-      if(pkg?.original?.image){img.src=assetUrl(pkg.original.image);img.hidden=false;img.onerror=()=>{img.hidden=true;};}
-      else{img.hidden=true;img.removeAttribute('src');}
-    }
-    if(pkg){
-      renderSchedule(pkg);
-      if(raceHasFinished(pkg)){
-        const crewResults=document.getElementById('crewResults');if(crewResults)crewResults.replaceChildren();
-      }else renderCrewResults(pkg).catch(error=>console.warn('Crew results UI failed',error));
-      renderRaceMedia(pkg);
-      syncWalletPassesForPackage(pkg).catch(e=>console.warn('Wallet pass refresh failed',e));
-    }else{
-      const schedule=document.getElementById('scheduleList');if(schedule)schedule.innerHTML='';
-      const crewResults=document.getElementById('crewResults');if(crewResults)crewResults.innerHTML='';
-      const media=document.getElementById('raceMedia');if(media)media.innerHTML='';
-    }
-  },[pkg?.id,pkg?.savedAt]);
-
-  useEffect(()=>{
-    if(!pkg||!raceHasFinished(pkg,clock)||finishedResultsHidden.current.has(pkg.id))return;
-    finishedResultsHidden.current.add(pkg.id);
-    const crewResults=document.getElementById('crewResults');if(crewResults)crewResults.replaceChildren();
-    renderRaceMedia(pkg);
-  },[pkg,clock]);
-
-  useEffect(()=>{
-    if(!app.selectedPoint)return;
-    showPointElevation(pkg?.terrain,app.selectedPoint).catch(()=>{});
+    let cancelled=false;
+    if(!app.selectedPoint){setPointElevation('Высота: выбери точку.');return undefined;}
+    pointElevationText(pkg?.terrain,app.selectedPoint).then(text=>{if(!cancelled)setPointElevation(text);});
     document.getElementById('pointActions')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    return()=>{cancelled=true;};
   },[app.selectedPoint,pkg?.terrain?.storageId]);
 
-  useEffect(()=>{
-    const display=document.getElementById('compassDisplay');
-    const arrow=document.getElementById('compassArrow');
-    if(display)display.hidden=!app.compass;
-    if(arrow&&app.compass)arrow.style.transform=`translate(-50%,-55%) rotate(${app.compass.relative}deg)`;
-    setProps('compassEnableBtn',{text:app.compassEnabled?'Компас включён':'Включить компас'});
-  },[app.compass,app.compassEnabled]);
+  useEffect(()=>setSelectedRoute(null),[pkg?.id]);
 
-  const stats=pkg?[
-    ['Общая дистанция',pkg.summary?.totalDistance],['Боевых км',pkg.summary?.combatKm],['Дней',pkg.summary?.days]
-  ].filter(x=>x[1]):[];
 
-  const favSelected=Boolean(app.selectedPoint&&pkg&&isFavoritePoint(app.selectedPoint,pkg.id));
   const requiresSafety=tab==='map'&&!safetyAccepted;
   useEffect(()=>{document.body.dataset.safetyGate=requiresSafety?'true':'false';},[requiresSafety]);
   const acceptSafety=()=>{saveSafetyConsent(pkg);setSafetyAccepted(true);};
   const openSettings=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current='more:settings';setMoreScreen('settings');};
   const closeSettings=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current='more:menu';setMoreScreen('menu');};
-  const openCrewResults=()=>document.getElementById('crewResultsOpen')?.click();
+  const openCrewResults=()=>setCrewResultsOpen(true);
 
   return <>
-    <div className="react-tab-content"><PwaInstallPrompt/>{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={openBootDiagnostics}/>:<MoreTab onSettings={openSettings}/>)}</div>
+    <AppLayout app={app} selectedRoute={selectedRoute} onLogoClick={handleLogoClick} pointElevation={pointElevation} pointStageDistance={pointStageDistance}
+      catalogContent={<Catalog app={app}/>} packagesContent={<SavedPackages app={app}/>} statsContent={<><strong>{app.storageStats.count} гонок</strong><span className="muted">JSON: {formatBytes(app.storageStats.jsonBytes)} · карты: {formatBytes(app.storageStats.mapBytes)} ({app.storageStats.mapCount} тайлов) · persistent: {app.storageStats.persisted?'да':'нет'}</span></>}
+      pointListContent={<PointList app={app}/>} favoritesContent={<Favorites app={app}/>} scheduleContent={pkg&&<ScheduleList pkg={pkg}/>} mediaContent={<RaceMedia pkg={pkg}/>}/>
+    <BootDiagnostics open={diagnosticsOpen} onClose={()=>setDiagnosticsOpen(false)}/>
+    <div className="react-tab-content"><PwaInstallPrompt/>{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={()=>setDiagnosticsOpen(true)}/>:<MoreTab onSettings={openSettings}/>)}</div>
     <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></button>)}</nav>
-    <DomBindings app={app}/>
-    <MapLifecycle app={app}/>
+    <MapLifecycle app={app} onRouteClick={setSelectedRoute}/>
 
-    <Portal id="catalogStatus">{app.catalogStatus}</Portal>
-    <Portal id="catalogList"><Catalog app={app}/></Portal>
-    <Portal id="packageList"><SavedPackages app={app}/></Portal>
-    <Portal id="storageStats"><><strong>{app.storageStats.count} гонок</strong><span className="muted">JSON: {formatBytes(app.storageStats.jsonBytes)} · карты: {formatBytes(app.storageStats.mapBytes)} ({app.storageStats.mapCount} тайлов) · persistent: {app.storageStats.persisted?'да':'нет'}</span></></Portal>
+    <Portal id="crewResults"><CrewResults pkg={pkg&&(!raceHasFinished(pkg,clock)||pkg.crewResults?.eventResults?.length)?pkg:null} open={crewResultsOpen} onOpen={openCrewResults} onClose={()=>setCrewResultsOpen(false)}/></Portal>
 
-    <Portal id="raceKicker">{pkg?[pkg.summary?.category,pkg.summary?.stage].filter(Boolean).join(' / '):''}</Portal>
-    <Portal id="raceTitle">{pkg?.name||''}</Portal>
-    <Portal id="raceMeta">{pkg?[pkg.summary?.dates,pkg.summary?.city,pkg.summary?.status].filter(Boolean).join(' · '):''}</Portal>
-    <Portal id="raceStats">{stats.map(([k,v])=><div key={k}><strong>{v}</strong><span>{k}</span></div>)}</Portal>
-    <Portal id="rallyPackUpdateBody"><RallyPackUpdate pkg={pkg}/></Portal>
-
-    <Portal id="mapTitle">{pkg?.name||'КАРТА РАЛЛИ'}</Portal>
-    <Portal id="mapSubtitle">{app.mapSubtitle}</Portal>
-    <Portal id="favoritesStatus">{app.favorites.length?`${app.favorites.length} сохранено для этой гонки.`:'Добавляй точки в избранное, чтобы они были всегда под рукой.'}</Portal>
-    <Portal id="favoritesList"><Favorites app={app}/></Portal>
-    <Portal id="pointList"><PointList app={app}/></Portal>
-
-    <Portal id="pointName">{app.selectedPoint?.name||''}</Portal>
-    <Portal id="pointCoords">{app.selectedPoint?coordinateText(app.selectedPoint):''}</Portal>
-    <Portal id="pointStageDistance">{pointStageDistance?`${pointStageDistance.stage.name}: ${formatDistance(pointStageDistance.distance.fromStart)} от старта · ${formatDistance(pointStageDistance.distance.toFinish)} до финиша`:''}</Portal>
-    <Portal id="navStatus">{app.navStatus}</Portal>
-    <Portal id="favoritePointBtn">{favSelected?'★ В избранном':'☆ В избранное'}</Portal>
-
-    <Portal id="compassDistance">{app.compass?formatDistance(app.compass.distance):'—'}</Portal>
-    <Portal id="compassBearing">{app.compass?`Азимут ${Math.round(app.compass.bearing)}° · ${app.compass.direction}`:'—'}</Portal>
-    <Portal id="compassStatus">{app.compass
-      ?Number.isFinite(app.userPos?.accuracy)?`Курс ${app.compassEnabled?'активен':'по северу'} · точность геопозиции ±${Math.round(app.userPos.accuracy||0)} м`:'Компас включён.'
-      :app.selectedPoint?'Нужна геопозиция для расчёта направления.':'Сначала выбери точку.'}</Portal>
-
-    <Portal id="mapLegend"><><span><i style={{background:'#f3f5f7'}}></i>RallyFansMap</span><span><i style={{background:'#ffd21e'}}></i>Yandex Constructor</span><span><i style={{background:'#4da3ff'}}></i>вы</span></></Portal>
     {requiresSafety&&<SafetyGate pkg={pkg} onAccept={acceptSafety}/>}
   </>;
 }

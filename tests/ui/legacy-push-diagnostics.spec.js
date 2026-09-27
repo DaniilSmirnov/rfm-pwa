@@ -7,6 +7,8 @@ test.describe('legacy push and diagnostics controls',()=>{
       Object.defineProperty(window,'PushManager',{configurable:true,value:undefined});
     });
     await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
     await expect(page.locator('#pushEnableBtn')).toBeDisabled();
     await expect(page.locator('#pushStatus')).toContainText('не поддерживаются');
   });

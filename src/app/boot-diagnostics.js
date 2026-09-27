@@ -5,10 +5,8 @@ import { inspectOfflineRevisionSamples } from './offline-diagnostics.js';
 
 const startedAt=performance.now();
 const marks=[];
-let tapTimes=[];
 let storageSnapshot=null;
 let refreshPromise=null;
-let initialized=false;
 
 function snapshotMeta(){
   const nav=performance.getEntriesByType?.('navigation')?.[0];
@@ -70,110 +68,6 @@ export async function collectStorageDiagnostics(){
     return storageSnapshot;
   })().finally(()=>{refreshPromise=null;});
   return refreshPromise;
-}
-
-function render(){
-  const list=document.getElementById('bootDiagnosticsList');
-  const meta=document.getElementById('bootDiagnosticsMeta');
-  if(!list||!meta) return;
-  const snap=bootSnapshot();
-  list.innerHTML=snap.marks.length
-    ? snap.marks.map((entry,index)=>{
-        const previous=index?snap.marks[index-1].ms:0;
-        const delta=entry.ms-previous;
-        const detail=entry.detail==null?'':`<small>${escapeHtml(typeof entry.detail==='string'?entry.detail:JSON.stringify(entry.detail))}</small>`;
-        return `<div class="boot-diagnostic-row"><span>${escapeHtml(entry.name)}</span><strong>${entry.ms} ms</strong><em>+${delta} ms</em>${detail}</div>`;
-      }).join('')
-    : '<p class="muted">Пока нет отметок.</p>';
-  meta.textContent=[
-    `online: ${snap.meta.online}`,
-    `display: ${snap.meta.displayMode}`,
-    `navigation: ${snap.meta.navigationType}`,
-    `SW controlled: ${snap.meta.serviceWorkerControlled}`,
-    `DOMContentLoaded: ${snap.meta.domContentLoadedMs} ms`,
-    `load: ${snap.meta.loadEventMs} ms`,
-    snap.meta.userAgent,
-    snap.storage?`\nЛокальные данные:\n${JSON.stringify(snap.storage,null,2)}`:'\nЛокальные данные: нажми «Проверить локальное хранилище». '
-  ].join('\n');
-}
-
-function escapeHtml(value){
-  return String(value??'').replace(/[&<>"']/g,ch=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  })[ch]);
-}
-
-export function openBootDiagnostics(){
-  const modal=document.getElementById('bootDiagnosticsModal');
-  if(!modal) return;
-  render();
-  modal.hidden=false;
-  document.body.classList.add('modal-open');
-}
-
-function close(){
-  const modal=document.getElementById('bootDiagnosticsModal');
-  if(!modal) return;
-  modal.hidden=true;
-  document.body.classList.remove('modal-open');
-}
-
-async function copy(){
-  const snap=bootSnapshot();
-  const text=JSON.stringify(snap,null,2);
-  try{
-    await navigator.clipboard.writeText(text);
-    const button=document.getElementById('bootDiagnosticsCopy');
-    if(button){
-      const old=button.textContent;
-      button.textContent='Скопировано';
-      setTimeout(()=>{button.textContent=old;},1200);
-    }
-  }catch{}
-}
-
-async function refreshStorage(){
-  const button=document.getElementById('bootDiagnosticsRefresh');
-  if(button) button.disabled=true;
-  try{await collectStorageDiagnostics();render();}
-  catch(error){
-    storageSnapshot={checkedAt:new Date().toISOString(),error:String(error?.message||error)};
-    markBoot('storage-diagnostics-failed',{message:storageSnapshot.error});
-    render();
-  }finally{if(button)button.disabled=false;}
-}
-
-function exportReport(){
-  const blob=new Blob([JSON.stringify(bootSnapshot(),null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const link=document.createElement('a');
-  link.href=url;link.download=`rfm-diagnostics-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
-  link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-
-export function setupBootDiagnosticsUi(){
-  if(initialized) return;
-  initialized=true;
-  const logo=document.getElementById('headerLogo');
-  if(logo){
-    logo.addEventListener('click',()=>{
-      const now=Date.now();
-      tapTimes=tapTimes.filter(ts=>now-ts<2500);
-      tapTimes.push(now);
-      if(tapTimes.length>=5){
-        tapTimes=[];
-        openBootDiagnostics();
-      }
-    });
-  }
-  document.getElementById('bootDiagnosticsClose')?.addEventListener('click',close);
-  document.getElementById('bootDiagnosticsCopy')?.addEventListener('click',copy);
-  document.getElementById('bootDiagnosticsRefreshPackages')?.addEventListener('click',()=>window.dispatchEvent(new Event('rfm:refresh-local-data')));
-  document.getElementById('bootDiagnosticsRefresh')?.addEventListener('click',refreshStorage);
-  document.getElementById('bootDiagnosticsExport')?.addEventListener('click',exportReport);
-  document.getElementById('bootDiagnosticsModal')?.addEventListener('click',event=>{
-    if(event.target?.id==='bootDiagnosticsModal') close();
-  });
 }
 
 markBoot('app-script-start');

@@ -7,11 +7,10 @@ import { buildDownloadPlan, downloadOfflineMap, discardOfflineMapRevision } from
 import { buildTerrainDownloadPlan } from '../terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from '../app/export.js';
 import { distanceMeters, bearingDegrees, compassDirection } from '../app/geo.js';
-import { getPushSubscription, refreshPushUi, scheduleRaceReminders, scheduleAllSavedReminders, setupPushUi } from '../app/push-client.js';
+import { getPushSubscription, refreshPushUi, scheduleRaceReminders, scheduleAllSavedReminders } from '../app/push-client.js';
 import { FAVORITES_KEY, favoritesForPackage, isFavoritePoint, setFavoritePoint, loadCarPoint, saveCarPoint, deleteCarPoint } from '../app/local-points.js';
 import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from '../app/runtime.js';
 import { setupPwaInstall } from '../app/pwa.js';
-import { initRaceMediaModal } from '../app/race-media.js';
 import { downloadRallyPack } from '../app/rally-pack.js';
 import { rallyPackProgressText } from '../app/rally-pack-ui.js';
 import { processCachedRallyPackUpdates } from '../app/rally-pack-update.js';
@@ -48,8 +47,6 @@ function bootstrapRuntime(){
   markBoot('runtime-bootstrap-start',{online:navigator.onLine});
   setupErrorTelemetry();
   setupPwaInstall();
-  setupPushUi();
-  initRaceMediaModal();
   bootstrapPromise=(async()=>{
     const sw=await setupServiceWorkerUpdates({onDiagnostic:(name,detail)=>markBoot(name,detail)});
     markBoot('service-worker-ready',{registered:Boolean(sw)});
@@ -230,20 +227,6 @@ export function useRfmApp(){
     };
   },[]);
 
-  useEffect(()=>{
-    const input=document.getElementById('catalogSearch');
-    if(!input) return;
-    const handler=e=>setCatalogQuery(e.target.value);
-    input.addEventListener('input',handler);
-    return()=>input.removeEventListener('input',handler);
-  },[]);
-  useEffect(()=>{
-    const input=document.getElementById('packageSearch');
-    if(!input) return;
-    const handler=e=>setPackageQuery(e.target.value);
-    input.addEventListener('input',handler);
-    return()=>input.removeEventListener('input',handler);
-  },[]);
 
   const visiblePackages=useMemo(()=>chooseVisiblePackages(packages,packageQuery),[packages,packageQuery]);
   const visibleCatalog=useMemo(()=>chooseCatalog(catalog,catalogQuery),[catalog,catalogQuery]);

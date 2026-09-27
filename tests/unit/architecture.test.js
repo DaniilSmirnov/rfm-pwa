@@ -26,6 +26,14 @@ describe('architecture guardrails',()=>{
   it('keeps schedule timezone logic out of React entrypoint',()=>expect(read('src/main.jsx')).not.toContain('RACE_REGION_TIMEZONES'));
   it('keeps sanitizer out of React entrypoint',()=>expect(read('src/main.jsx')).not.toContain('SAFE_RICH_HTML_TAGS'));
   it('removes the legacy imperative app entrypoint',()=>expect(()=>read('src/app.js')).toThrow());
+  it('mounts the application through React without legacy interface nodes in index.html',()=>{
+    const html=read('index.html');
+    expect(html).toContain('id="reactRoot"');
+    expect(html).not.toContain('id="catalogSection"');
+    expect(html).not.toContain('id="mapSection"');
+    expect(html).not.toContain('id="scheduleList"');
+    expect(read('src/main.jsx')).toContain('createRoot');
+  });
 
   it('uses Vite for the client production bundle',()=>{
     const pkg=JSON.parse(read('package.json'));

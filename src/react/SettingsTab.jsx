@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import SafetyGate from './SafetyGate.jsx';
 import { loadThemePreference, resolveTheme, saveThemePreference } from '../app/preferences.js';
+import PushSettings from './PushSettings.jsx';
 
 export default function SettingsTab({app,onBack,onDiagnostics}){
-  const [safetyOpen,setSafetyOpen]=useState(false);
   const [theme,setTheme]=useState(()=>document.documentElement.dataset.theme||resolveTheme(loadThemePreference(),window.matchMedia?.('(prefers-color-scheme: dark)').matches));
   useEffect(()=>{
     const systemTheme=window.matchMedia?.('(prefers-color-scheme: dark)');
@@ -18,7 +17,7 @@ export default function SettingsTab({app,onBack,onDiagnostics}){
     setTheme(value);
     saveThemePreference(value);
   };
-  return <section className="settings-screen">
+  return <section id="settingsSection" className="settings-screen">
     <header className="settings-screen-head"><button className="button compact" onClick={onBack}>← Ещё</button><h2>Настройки и диагностика</h2></header>
     <p className="muted small">Диагностика, правила безопасности и настройки приложения.</p>
     <fieldset className="settings-group">
@@ -29,9 +28,8 @@ export default function SettingsTab({app,onBack,onDiagnostics}){
       </div>
       <p className="muted small">Выбор сохраняется на этом устройстве.</p>
     </fieldset>
-    <button className="button" type="button" onClick={()=>setSafetyOpen(true)}>Открыть правила безопасности</button>
+    <PushSettings/>
     <div className="settings-diagnostics"><strong>Состояние карты</strong><p className="muted small">{app.mapDiag||'Диагностика карты появится, когда откроешь карту.'}</p></div>
     <button className="button" type="button" onClick={onDiagnostics}>Открыть диагностику приложения</button>
-    {safetyOpen&&<SafetyGate pkg={app.currentPackage} fullScreen onClose={()=>setSafetyOpen(false)}/>}
   </section>;
 }
