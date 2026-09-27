@@ -107,6 +107,8 @@ export async function enablePushNotifications() {
   if(!pushSupported()) return refreshPushUi();
   const btn=$('pushEnableBtn');
   btn.disabled=true;
+  let refreshAfterAction=true;
+  let statusAfterRefresh='';
   try {
     const reg=await navigator.serviceWorker.ready;
     const existing=await reg.pushManager.getSubscription();
@@ -119,7 +121,7 @@ export async function enablePushNotifications() {
         headers:{'content-type':'application/json'},
         body:JSON.stringify({endpoint})
       },5000).catch(()=>{});
-      setPushStatus('Уведомления выключены.');
+      statusAfterRefresh='Уведомления выключены.';
       return;
     }
 
@@ -154,10 +156,14 @@ export async function enablePushNotifications() {
       setPushStatus('Уведомления включены. KV-хранилище ещё не подключено: доступен тестовый push.');
     }
   } catch(e) {
+    refreshAfterAction=false;
     setPushStatus(`Push: ${e.message}`,'geo-error');
   } finally {
     btn.disabled=false;
-    await refreshPushUi();
+    if(refreshAfterAction){
+      await refreshPushUi();
+      if(statusAfterRefresh) setPushStatus(statusAfterRefresh);
+    }
   }
 }
 
