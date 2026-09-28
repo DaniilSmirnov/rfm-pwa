@@ -6,6 +6,7 @@ import CompassReadout from './CompassReadout.jsx';
 import { googleMapsDirections, yandexNavigatorLink, yandexWebFallback, coordinateText, openCustomSchemeWithFallback } from '../navigation.js';
 import { isFavoritePoint } from '../app/local-points.js';
 import { formatDistance } from '../app/geo.js';
+import { assetUrl } from '../rallyfans.js';
 function OfflineActions({app,top=false}) {
   const variant=top?'Top':'';
   return <div className={top?'offline-cta':'actions'}>
@@ -80,7 +81,7 @@ export default function AppLayout({
 
       <section id="raceDetails" className="race-page legacy-more" hidden={!pkg}>
         <div className="race-hero" style={{
-          backgroundImage: pkg?.original?.image ? `url('${pkg.original.image}')` : undefined
+          backgroundImage: pkg?.original?.image ? `url('${assetUrl(pkg.original.image)}')` : undefined
         }}><div className="race-hero-overlay" /><div className="race-hero-top"><div className="brand-small light">Rally Fans Map</div><div id="raceKicker" className="race-category">{pkg ? [pkg.summary?.category, pkg.summary?.stage].filter(Boolean).join(' / ') : ''}</div></div><div className="race-hero-bottom"><h2 id="raceTitle">{pkg?.name || ''}</h2><p id="raceMeta">{pkg ? [pkg.summary?.dates, pkg.summary?.city, pkg.summary?.status].filter(Boolean).join(' · ') : ''}</p></div></div>
         <div className="race-content"><div id="raceStats" className="race-stats">{pkg && [['Общая дистанция', pkg.summary?.totalDistance], ['Боевых км', pkg.summary?.combatKm], ['Дней', pkg.summary?.days]].filter(x => x[1]).map(([k, v]) => <div key={k}><strong>{v}</strong><span>{k}</span></div>)}</div>
           {Boolean(pkg?.pendingUpdate?.changes?.length || pkg?.lastSmartUpdate?.changes?.length) && <section className="rally-pack-update-panel"><div id="rallyPackUpdateTitle" className="block-title">{pkg.pendingUpdate ? 'ЕСТЬ ОБНОВЛЕНИЕ RALLY PACK' : 'RALLY PACK ОБНОВЛЁН В ФОНЕ'}</div><strong>{(pkg.pendingUpdate?.changes || pkg.lastSmartUpdate?.changes || []).map(item => item.label || item.key).join(' · ')}</strong><p className="muted small">{pkg.pendingUpdate ? 'Есть изменения материалов. Старый офлайн-пакет остаётся активным.' : 'Все необходимые данные были скачаны, поэтому изменения уже применены.'}</p></section>}
