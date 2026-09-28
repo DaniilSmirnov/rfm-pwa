@@ -451,7 +451,7 @@ export async function openApp(page, options = {}) {
 }
 
 export async function openMapWithAcceptedSafety(page) {
-  await page.getByRole('button', { name: 'Карта' }).click();
+  await page.getByRole('button', { name: 'Карта', exact: true }).click();
   const gate = page.locator('.safety-gate');
   if (!(await gate.isVisible())) return;
   await gate.locator('.safety-gate-content').evaluate(node => {
@@ -554,7 +554,7 @@ export async function seedFixtureRace(page) {
     },
     { race: raceFixture, results: asmgResultsFixture },
   );
-  await page.getByRole('button', { name: 'Карта' }).click();
+  await openMapWithAcceptedSafety(page);
   await page.locator('.race-page').waitFor({ state: 'visible' });
   await page.waitForFunction(() =>
     Boolean(

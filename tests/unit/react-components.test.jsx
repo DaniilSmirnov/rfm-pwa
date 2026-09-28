@@ -115,6 +115,7 @@ import RallyMap from '../../src/components/RallyMap.jsx';
 import SafetyMemo from '../../src/components/SafetyMemo.jsx';
 import SavedOfflineSection from '../../src/components/SavedOfflineSection.jsx';
 import SavedPackagesList from '../../src/components/SavedPackagesList.jsx';
+import DownloadedRacesList from '../../src/components/DownloadedRacesList.jsx';
 import ScheduleList from '../../src/components/ScheduleList.jsx';
 import TodayLeaders from '../../src/components/TodayLeaders.jsx';
 import AppLayout from '../../src/views/AppLayout.jsx';
@@ -380,6 +381,19 @@ describe('application components', () => {
     expect(app.downloadRace).toHaveBeenCalledWith(101);
     fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
     expect(app.deleteRace).toHaveBeenCalledWith('race-101');
+  });
+
+  it('keeps a stable downloaded races list container in empty and no-match states', () => {
+    const { rerender } = render(
+      <DownloadedRacesList app={appFixture({ packages: [], packageQuery: '' })} />,
+    );
+    expect(document.querySelector('#packageList')).toBeTruthy();
+    expect(screen.getByText('Скачанных гонок пока нет.')).toBeTruthy();
+    rerender(
+      <DownloadedRacesList app={appFixture({ packages: [race], packageQuery: 'missing' })} />,
+    );
+    expect(document.querySelector('#packageList')).toBeTruthy();
+    expect(screen.getByText('По этому запросу гонок не найдено.')).toBeTruthy();
   });
 
   it('renders point lists, favorites, offline actions, and saved packages', () => {

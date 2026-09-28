@@ -24,7 +24,7 @@ async function waitForAppWorker(page) {
 }
 
 async function openTab(page, label) {
-  await page.getByRole('button', { name: label }).click();
+  await page.getByRole('button', { name: label, exact: true }).click();
 }
 
 async function seedSavedRace(
@@ -403,15 +403,16 @@ test.describe('PWA migration safety', () => {
     await seedSavedRace(page);
     await page.reload({ waitUntil: 'domcontentloaded' });
 
-    await openTab(page, 'Ещё');
+    await openTab(page, 'Гонки');
+    await page.locator('#packageList .downloaded-race-open').first().click();
     await expect(page.locator('#raceTitle')).toHaveText('Offline Migration Rally');
     await expect(page.locator('#networkBadge')).toHaveText('онлайн');
 
     await context.setOffline(true);
 
     await expect(page.locator('#networkBadge')).toHaveText('офлайн');
-    await expect(page.locator('#raceDetails')).toBeVisible();
     await openTab(page, 'Карта');
+    await expect(page.locator('#raceDetails')).toBeVisible();
     await expect(page.locator('#pointList')).toContainText('Offline spectator point');
     await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
 
