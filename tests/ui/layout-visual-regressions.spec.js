@@ -16,8 +16,10 @@ test('aligns the brand left and network status right without a PWA install butto
   const actions=await getBounds(page,'.top-actions');
 
   expect(header.height).toBeGreaterThan(0);
+  expect(brand.left-header.left).toBeLessThanOrEqual(40);
   expect(brand.left).toBeLessThan(header.left+header.width/2);
   expect(brand.right).toBeLessThanOrEqual(actions.left);
+  expect(header.right-actions.right).toBeLessThanOrEqual(40);
   expect(actions.left).toBeGreaterThan(header.left+header.width/2);
   await expect(page.getByRole('button',{name:'Установить PWA'})).toHaveCount(0);
   await expect(page.locator('.top-actions button')).toHaveCount(0);

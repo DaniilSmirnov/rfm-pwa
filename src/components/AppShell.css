@@ -12,9 +12,9 @@
     align-items: center;
     gap: var(--space-3);
     padding-top: calc(var(--space-3) + var(--safe-top));
-    padding-right: max(var(--space-4),calc((100vw - 920px)/2 + var(--space-4)),calc(var(--space-4) + var(--safe-right)));
+    padding-right: max(var(--space-4),calc(var(--space-4) + var(--safe-right)));
     padding-bottom: var(--space-3);
-    padding-left: max(var(--space-4),calc((100vw - 920px)/2 + var(--space-4)),calc(var(--space-4) + var(--safe-left)));
+    padding-left: max(var(--space-4),calc(var(--space-4) + var(--safe-left)));
     background: rgba(0,0,0,.92);
     color: #fff;
   }
