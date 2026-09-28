@@ -2,6 +2,7 @@ import './CrewResultsModal.css';
 import React, { useEffect, useRef } from 'react';
 import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
+import SelectField from '../components/SelectField.jsx';
 
 export default function CrewResultsModal({open,onClose,data,views,activeView,className,onClassChange,onStageChange,classes,query,onQueryChange,visible,selectedClassResults,subscriptions,onToggleSubscription,resultLabel,subscriptionKey}){
   const dialog=useRef(null);
@@ -15,7 +16,7 @@ export default function CrewResultsModal({open,onClose,data,views,activeView,cla
   return (
     <dialog ref={dialog} className="crew-results-dialog" aria-labelledby="crewResultsDialogTitle" onClose={onClose}>
       <header className="crew-results-dialog-head"><div><h2 id="crewResultsDialogTitle">Результаты экипажей</h2><p className="muted small">Выбери класс, чтобы увидеть весь его состав.</p></div><Button className="button crew-results-close" type="button" aria-label="Закрыть результаты" onClick={()=>dialog.current?.close()}>×</Button></header>
-      <div className="crew-results-toolbar"><label className="sr-only" htmlFor="crewResultsStage">Спецучасток</label><select id="crewResultsStage" className="crew-results-stage" value={activeView?.key||''} onChange={event=>{onStageChange(event.target.value);onClassChange('');}}>{views.map(view=><option key={view.key} value={view.key}>{view.name}</option>)}</select><label className="sr-only" htmlFor="crewResultsDialogClass">Класс</label><select id="crewResultsDialogClass" className="crew-results-stage" value={className} onChange={event=>onClassChange(event.target.value)}><option value="">Все классы</option>{classes.map(name=><option key={name} value={name}>{name}</option>)}</select><SearchField ref={searchRef} id="crewResultsSearch" placeholder="Поиск по экипажу, номеру или машине…" aria-label="Поиск экипажа" value={query} onChange={event=>onQueryChange(event.target.value)}/></div>
+      <div className="crew-results-toolbar"><label className="sr-only" htmlFor="crewResultsStage">Спецучасток</label><SelectField id="crewResultsStage" className="crew-results-stage" value={activeView?.key||''} onChange={event=>{onStageChange(event.target.value);onClassChange('');}}>{views.map(view=><option key={view.key} value={view.key}>{view.name}</option>)}</SelectField><label className="sr-only" htmlFor="crewResultsDialogClass">Класс</label><SelectField id="crewResultsDialogClass" className="crew-results-stage" value={className} onChange={event=>onClassChange(event.target.value)}><option value="">Все классы</option>{classes.map(name=><option key={name} value={name}>{name}</option>)}</SelectField><SearchField ref={searchRef} id="crewResultsSearch" placeholder="Поиск по экипажу, номеру или машине…" aria-label="Поиск экипажа" value={query} onChange={event=>onQueryChange(event.target.value)}/></div>
       <div className="crew-results-table-wrap"><table className="crew-results-table"><thead><tr><th scope="col">Место</th><th scope="col">Экипаж</th><th scope="col">Автомобиль / зачёт</th><th scope="col" id="crewResultsTimeHeading">{activeView?.name||'Время'}</th><th scope="col"><span className="sr-only">Подписка</span></th></tr></thead><tbody className="crew-results-body">
         {visible.length?visible.map(result=>{
           const crew=result?.crew||{};

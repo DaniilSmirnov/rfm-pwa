@@ -10,6 +10,7 @@ import EmptyState from '../../src/components/EmptyState.jsx';
 import MountainTerrainIcon from '../../src/components/MountainTerrainIcon.jsx';
 import Panel from '../../src/components/Panel.jsx';
 import SearchField from '../../src/components/SearchField.jsx';
+import SelectField from '../../src/components/SelectField.jsx';
 import SectionHeader from '../../src/components/SectionHeader.jsx';
 
 afterEach(cleanup);
@@ -72,6 +73,20 @@ describe('shared UI primitives', () => {
     expect(input.value).toBe('Karelia');
     expect(ref.current).toBe(input);
     fireEvent.change(input, { target: { value: 'Pskov' } });
+    expect(onChange).toHaveBeenCalledOnce();
+  });
+
+  it('keeps select attributes, options, value changes, and refs', () => {
+    const ref = React.createRef();
+    const onChange = vi.fn();
+    render(<SelectField ref={ref} aria-label="Stage" className="stage-filter" value="ss1" onChange={onChange}>
+      <option value="ss1">SS1</option><option value="ss2">SS2</option>
+    </SelectField>);
+    const select = screen.getByRole('combobox', { name: 'Stage' });
+    expect(select.className).toBe('select-field stage-filter');
+    expect(select.value).toBe('ss1');
+    expect(ref.current).toBe(select);
+    fireEvent.change(select, { target: { value: 'ss2' } });
     expect(onChange).toHaveBeenCalledOnce();
   });
 
