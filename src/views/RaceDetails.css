@@ -23,11 +23,17 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.18) 35%,rgba(0,0,0,.74));
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.28),
+      rgba(0, 0, 0, 0.18) 35%,
+      rgba(0, 0, 0, 0.74)
+    );
   }
 }
 @layer views {
-  .race-hero-top,.race-hero-bottom {
+  .race-hero-top,
+  .race-hero-bottom {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -45,14 +51,20 @@
   .race-hero-bottom h2 {
     margin: 0;
     color: #fff;
-    font: italic 800 clamp(32px,8vw,48px)/1 'RF Dewi Expanded Italic',Arial,sans-serif;
+    font:
+      italic 800 clamp(32px, 8vw, 48px) / 1 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
   }
 }
 @layer views {
   .race-hero-bottom p {
     margin: 0;
-    color: rgba(255,255,255,.7);
-    font: italic 600 18px/1.2 'RF Dewi Expanded Italic',Arial,sans-serif;
+    color: rgba(255, 255, 255, 0.7);
+    font:
+      italic 600 18px/1.2 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
   }
 }
 @layer views {
@@ -78,7 +90,7 @@
   }
 }
 @layer views {
-  .race-stats>div {
+  .race-stats > div {
     position: relative;
     overflow: hidden;
     min-width: 0;
@@ -97,7 +109,10 @@
 }
 @layer views {
   .race-stats strong {
-    font: 600 26px/1 'RF Dewi Expanded Semibold',Arial,sans-serif;
+    font:
+      600 26px/1 'RF Dewi Expanded Semibold',
+      Arial,
+      sans-serif;
   }
 }
 @layer views {
@@ -115,7 +130,7 @@
   }
 }
 @layer responsive {
-  @media (min-width:760px) {
+  @media (min-width: 760px) {
     .race-content {
       padding-left: 28px;
       padding-right: 28px;
@@ -123,7 +138,7 @@
   }
 }
 @layer responsive {
-  @media (min-width:760px) {
+  @media (min-width: 760px) {
     .race-hero {
       padding-left: 28px;
       padding-right: 28px;
@@ -131,41 +146,42 @@
   }
 }
 @layer responsive {
-  @media (max-width:760px) {
+  @media (max-width: 760px) {
     .race-stats {
       gap: 6px;
     }
   }
 }
 @layer responsive {
-  @media (max-width:760px) {
-    .race-stats>div {
+  @media (max-width: 760px) {
+    .race-stats > div {
       padding: 9px;
     }
   }
 }
 @layer responsive {
-  @media (max-width:760px) {
+  @media (max-width: 760px) {
     .race-stats strong {
       font-size: 22px;
     }
   }
 }
 @layer responsive {
-  @media (max-width:760px) {
+  @media (max-width: 760px) {
     .race-stats span {
       font-size: 11px;
     }
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .race-page,:root[data-theme="dark"] .race-content {
+  :root[data-theme='dark'] .race-page,
+  :root[data-theme='dark'] .race-content {
     background: #171a1f;
     color: #f5f7fa;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .race-stats>div {
+  :root[data-theme='dark'] .race-stats > div {
     background: #23272e;
   }
 }

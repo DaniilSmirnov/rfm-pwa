@@ -3,7 +3,7 @@
   .elevation-profile-panel {
     margin: 18px 0;
     padding: var(--space-4);
-    border: 1px solid var(--line,#d8d8d8);
+    border: 1px solid var(--line, #d8d8d8);
     border-radius: 14px;
   }
 }
@@ -13,7 +13,7 @@
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-4);
     margin: 10px 0;
-    font-size: .9rem;
+    font-size: 0.9rem;
   }
 }
 @layer components {
@@ -34,15 +34,16 @@
 @layer components {
   .elevation-grid-row line {
     stroke: currentColor;
-    stroke-opacity: .14;
+    stroke-opacity: 0.14;
     stroke-width: 1;
   }
 }
 @layer components {
-  .elevation-grid-row text,.elevation-distance-label {
+  .elevation-grid-row text,
+  .elevation-distance-label {
     font-size: 12px;
     fill: currentColor;
-    opacity: .66;
+    opacity: 0.66;
   }
 }
 @layer components {

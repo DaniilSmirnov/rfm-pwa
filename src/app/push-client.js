@@ -4,169 +4,222 @@ import { subscribedStageKeys } from './preferences.js';
 import { isIOSDevice, isStandalonePwa, requestPwaInstall } from './pwa.js';
 import { fetchWithTimeout } from './net.js';
 
-let pushStatus={text:'Уведомления ещё не настроены.',className:''};
+let pushStatus = { text: 'Уведомления ещё не настроены.', className: '' };
 
 export function base64UrlToUint8Array(value) {
-  const padding='='.repeat((4-value.length%4)%4);
-  const base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/');
-  const raw=atob(base64);
-  return Uint8Array.from(raw,c=>c.charCodeAt(0));
+  const padding = '='.repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from(raw, c => c.charCodeAt(0));
 }
 
 export function pushSupported() {
   return Boolean(
-    navigator.serviceWorker
-    && typeof window.PushManager!=='undefined'
-    && typeof window.Notification!=='undefined'
+    navigator.serviceWorker &&
+      typeof window.PushManager !== 'undefined' &&
+      typeof window.Notification !== 'undefined',
   );
 }
 
-export function setPushStatus(text, cls='') {
-  pushStatus={text,className:cls};
-  window.dispatchEvent(new CustomEvent('rfm:push-status',{detail:pushStatus}));
+export function setPushStatus(text, cls = '') {
+  pushStatus = { text, className: cls };
+  window.dispatchEvent(new CustomEvent('rfm:push-status', { detail: pushStatus }));
 }
 
-export function getPushStatus(){return pushStatus;}
+export function getPushStatus() {
+  return pushStatus;
+}
 
 export async function getPushSubscription() {
-  if(!pushSupported()) return null;
-  const reg=await navigator.serviceWorker.ready;
+  if (!pushSupported()) return null;
+  const reg = await navigator.serviceWorker.ready;
   return reg.pushManager.getSubscription();
 }
 
-export async function refreshPushUi({updateStatus=true}={}) {
-  if(!pushSupported()){
-    if(updateStatus)setPushStatus('Push-уведомления не поддерживаются этим браузером.');
-    return {supported:false,requiresInstall:false,active:false,testVisible:false,label:'Включить уведомления'};
+export async function refreshPushUi({ updateStatus = true } = {}) {
+  if (!pushSupported()) {
+    if (updateStatus) setPushStatus('Push-уведомления не поддерживаются этим браузером.');
+    return {
+      supported: false,
+      requiresInstall: false,
+      active: false,
+      testVisible: false,
+      label: 'Включить уведомления',
+    };
   }
-  if(isIOSDevice() && !isStandalonePwa()){
-    if(updateStatus)setPushStatus('Сейчас приложение открыто в браузере. Установи PWA на экран «Домой», затем включи уведомления.');
-    return {supported:true,requiresInstall:true,active:false,testVisible:false,label:'Сначала установить PWA'};
+  if (isIOSDevice() && !isStandalonePwa()) {
+    if (updateStatus)
+      setPushStatus(
+        'Сейчас приложение открыто в браузере. Установи PWA на экран «Домой», затем включи уведомления.',
+      );
+    return {
+      supported: true,
+      requiresInstall: true,
+      active: false,
+      testVisible: false,
+      label: 'Сначала установить PWA',
+    };
   }
-  const sub=await getPushSubscription().catch(()=>null);
-  if(sub){
-    if(updateStatus)setPushStatus('Устройство подписано на уведомления.');
-    return {supported:true,requiresInstall:false,active:true,testVisible:true,label:'Выключить уведомления'};
+  const sub = await getPushSubscription().catch(() => null);
+  if (sub) {
+    if (updateStatus) setPushStatus('Устройство подписано на уведомления.');
+    return {
+      supported: true,
+      requiresInstall: false,
+      active: true,
+      testVisible: true,
+      label: 'Выключить уведомления',
+    };
   } else {
-    const p=Notification.permission;
-    const status=p==='denied'
-      ? 'Уведомления запрещены в настройках браузера/системы.'
-      : 'Уведомления ещё не включены.';
-    if(updateStatus)setPushStatus(status);
-    return {supported:true,requiresInstall:false,active:false,testVisible:false,label:'Включить уведомления'};
+    const p = Notification.permission;
+    const status =
+      p === 'denied'
+        ? 'Уведомления запрещены в настройках браузера/системы.'
+        : 'Уведомления ещё не включены.';
+    if (updateStatus) setPushStatus(status);
+    return {
+      supported: true,
+      requiresInstall: false,
+      active: false,
+      testVisible: false,
+      label: 'Включить уведомления',
+    };
   }
 }
 
-export async function scheduleRaceReminders(pkg){
-  if(!pkg || !pushSupported()) return {stored:0,skipped:true};
-  const subscription=await getPushSubscription();
-  if(!subscription) return {stored:0,skipped:true};
-  const raceId=String(pkg.raceId ?? pkg.id ?? '').trim();
-  if(!raceId) return {stored:0,skipped:true};
-  const reminders=buildRaceReminders(pkg,subscribedStageKeys(pkg));
-  const res=await fetchWithTimeout('/api/push/schedule',{
-    method:'POST',
-    headers:{'content-type':'application/json'},
-    body:JSON.stringify({subscription:subscription.toJSON(),raceId,reminders})
-  },5000);
-  const data=await res.json().catch(()=>({}));
-  if(!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось запланировать напоминания');
-  return {stored:Number(data.stored)||0,skipped:false};
+export async function scheduleRaceReminders(pkg) {
+  if (!pkg || !pushSupported()) return { stored: 0, skipped: true };
+  const subscription = await getPushSubscription();
+  if (!subscription) return { stored: 0, skipped: true };
+  const raceId = String(pkg.raceId ?? pkg.id ?? '').trim();
+  if (!raceId) return { stored: 0, skipped: true };
+  const reminders = buildRaceReminders(pkg, subscribedStageKeys(pkg));
+  const res = await fetchWithTimeout(
+    '/api/push/schedule',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ subscription: subscription.toJSON(), raceId, reminders }),
+    },
+    5000,
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.ok) throw new Error(data?.error || 'Не удалось запланировать напоминания');
+  return { stored: Number(data.stored) || 0, skipped: false };
 }
 
-export async function scheduleAllSavedReminders(){
-  const pkgs=await getAllPackages();
-  let total=0;
-  for(const pkg of pkgs){
-    try{
-      const result=await scheduleRaceReminders(pkg);
-      total+=result.stored||0;
-    }catch(e){
-      console.warn('Could not schedule race reminders',pkg?.id,e);
+export async function scheduleAllSavedReminders() {
+  const pkgs = await getAllPackages();
+  let total = 0;
+  for (const pkg of pkgs) {
+    try {
+      const result = await scheduleRaceReminders(pkg);
+      total += result.stored || 0;
+    } catch (e) {
+      console.warn('Could not schedule race reminders', pkg?.id, e);
     }
   }
   return total;
 }
 
 export async function enablePushNotifications() {
-  if(isIOSDevice() && !isStandalonePwa()){
+  if (isIOSDevice() && !isStandalonePwa()) {
     await requestPwaInstall();
     return refreshPushUi();
   }
-  if(!pushSupported()) return refreshPushUi();
-  let refreshAfterAction=true;
-  let statusAfterRefresh='';
+  if (!pushSupported()) return refreshPushUi();
+  let refreshAfterAction = true;
+  let statusAfterRefresh = '';
   try {
-    const reg=await navigator.serviceWorker.ready;
-    const existing=await reg.pushManager.getSubscription();
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
 
-    if(existing){
-      const endpoint=existing.endpoint;
+    if (existing) {
+      const endpoint = existing.endpoint;
       await existing.unsubscribe();
-      fetchWithTimeout('/api/push/unsubscribe',{
-        method:'POST',
-        headers:{'content-type':'application/json'},
-        body:JSON.stringify({endpoint})
-      },5000).catch(()=>{});
-      statusAfterRefresh='Уведомления выключены.';
+      fetchWithTimeout(
+        '/api/push/unsubscribe',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ endpoint }),
+        },
+        5000,
+      ).catch(() => {});
+      statusAfterRefresh = 'Уведомления выключены.';
       return;
     }
 
-    if(Notification.permission==='denied') throw new Error('Уведомления запрещены в настройках системы');
-    const permission=Notification.permission==='granted'
-      ? 'granted'
-      : await Notification.requestPermission();
-    if(permission!=='granted') throw new Error('Разрешение на уведомления не выдано');
+    if (Notification.permission === 'denied')
+      throw new Error('Уведомления запрещены в настройках системы');
+    const permission =
+      Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+    if (permission !== 'granted') throw new Error('Разрешение на уведомления не выдано');
 
-    const configRes=await fetchWithTimeout('/api/push/config',{cache:'no-store'},5000);
-    const config=await configRes.json();
-    if(!config?.enabled || !config?.publicKey) throw new Error('Push ещё не настроен на Cloudflare Pages');
+    const configRes = await fetchWithTimeout('/api/push/config', { cache: 'no-store' }, 5000);
+    const config = await configRes.json();
+    if (!config?.enabled || !config?.publicKey)
+      throw new Error('Push ещё не настроен на Cloudflare Pages');
 
-    const subscription=await reg.pushManager.subscribe({
-      userVisibleOnly:true,
-      applicationServerKey:base64UrlToUint8Array(config.publicKey)
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlToUint8Array(config.publicKey),
     });
 
-    const saveRes=await fetchWithTimeout('/api/push/subscribe',{
-      method:'POST',
-      headers:{'content-type':'application/json'},
-      body:JSON.stringify({subscription:subscription.toJSON()})
-    },5000);
-    const saved=await saveRes.json();
-    if(!saveRes.ok || !saved?.ok) throw new Error(saved?.error || 'Не удалось сохранить push-подписку');
-    if(saved.stored){
-      const count=await scheduleAllSavedReminders();
-      setPushStatus(count
-        ? `Уведомления включены · запланировано напоминаний: ${count}.`
-        : 'Уведомления включены. Будущих событий для напоминаний пока нет.');
+    const saveRes = await fetchWithTimeout(
+      '/api/push/subscribe',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ subscription: subscription.toJSON() }),
+      },
+      5000,
+    );
+    const saved = await saveRes.json();
+    if (!saveRes.ok || !saved?.ok)
+      throw new Error(saved?.error || 'Не удалось сохранить push-подписку');
+    if (saved.stored) {
+      const count = await scheduleAllSavedReminders();
+      setPushStatus(
+        count
+          ? `Уведомления включены · запланировано напоминаний: ${count}.`
+          : 'Уведомления включены. Будущих событий для напоминаний пока нет.',
+      );
     } else {
-      setPushStatus('Уведомления включены. KV-хранилище ещё не подключено: доступен тестовый push.');
+      setPushStatus(
+        'Уведомления включены. KV-хранилище ещё не подключено: доступен тестовый push.',
+      );
     }
-  } catch(e) {
-    refreshAfterAction=false;
-    setPushStatus(`Push: ${e.message}`,'geo-error');
+  } catch (e) {
+    refreshAfterAction = false;
+    setPushStatus(`Push: ${e.message}`, 'geo-error');
   } finally {
-    if(refreshAfterAction){
+    if (refreshAfterAction) {
       await refreshPushUi();
-      if(statusAfterRefresh) setPushStatus(statusAfterRefresh);
+      if (statusAfterRefresh) setPushStatus(statusAfterRefresh);
     }
   }
 }
 
 export async function sendTestPush() {
   try {
-    const subscription=await getPushSubscription();
-    if(!subscription) throw new Error('Нет активной push-подписки');
+    const subscription = await getPushSubscription();
+    if (!subscription) throw new Error('Нет активной push-подписки');
     setPushStatus('Отправляю тестовый push…');
-    const res=await fetchWithTimeout('/api/push/test',{
-      method:'POST',
-      headers:{'content-type':'application/json'},
-      body:JSON.stringify({subscription:subscription.toJSON(),delaySeconds:10})
-    },5000);
-    const data=await res.json();
-    if(!res.ok || !data?.ok) throw new Error(data?.error || `Push service HTTP ${data?.status||res.status}`);
-    setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть PWA.','geo-ok');
-  } catch(e) {
-    setPushStatus(`Тестовый push: ${e.message}`,'geo-error');
+    const res = await fetchWithTimeout(
+      '/api/push/test',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ subscription: subscription.toJSON(), delaySeconds: 10 }),
+      },
+      5000,
+    );
+    const data = await res.json();
+    if (!res.ok || !data?.ok)
+      throw new Error(data?.error || `Push service HTTP ${data?.status || res.status}`);
+    setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть PWA.', 'geo-ok');
+  } catch (e) {
+    setPushStatus(`Тестовый push: ${e.message}`, 'geo-error');
   }
 }

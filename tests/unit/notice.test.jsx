@@ -16,7 +16,11 @@ describe('Notice', () => {
   });
 
   it('supports warning variant, semantic element, custom classes, and accessibility attributes', () => {
-    render(<Notice as="div" variant="warning" className="storage-note" role="status" aria-live="polite">Free up space</Notice>);
+    render(
+      <Notice as="div" variant="warning" className="storage-note" role="status" aria-live="polite">
+        Free up space
+      </Notice>,
+    );
     const notice = screen.getByRole('status');
     expect(notice.tagName).toBe('DIV');
     expect(notice.className).toBe('notice notice--warning storage-note');

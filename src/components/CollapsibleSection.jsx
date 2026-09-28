@@ -11,7 +11,12 @@ export default function CollapsibleSection({
   ...props
 }) {
   return (
-    <details {...props} className={`collapsible-section ${className}`.trim()} open={open} onToggle={onToggle}>
+    <details
+      {...props}
+      className={`collapsible-section ${className}`.trim()}
+      open={open}
+      onToggle={onToggle}
+    >
       <summary>{summary}</summary>
       <div className={`collapsible-body ${bodyClassName}`.trim()}>{children}</div>
     </details>

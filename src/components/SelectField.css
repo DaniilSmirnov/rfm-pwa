@@ -10,7 +10,7 @@
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .select-field {
+  :root[data-theme='dark'] .select-field {
     background: #1a1e23;
     border-color: #30353d;
     color: #f5f7fa;
