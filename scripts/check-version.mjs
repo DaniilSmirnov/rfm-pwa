@@ -13,7 +13,7 @@ if (!String(meta.codename || '').trim()) throw new Error('Invalid version.json c
 
 const expectations = {
   'index.html': ['__APP_VERSION__', '__APP_CODENAME__'],
-  'sw.js': ['__APP_VERSION_CACHE__', '__APP_CODENAME_SLUG__', '/*__BUILD_ASSETS__*/[]'],
+  'sw.js': ['__APP_VERSION_CACHE__', '__APP_CODENAME_SLUG__'],
   '_worker.js': ['__APP_VERSION__'],
 };
 for (const [file, tokens] of Object.entries(expectations)) {
@@ -23,4 +23,7 @@ for (const [file, tokens] of Object.entries(expectations)) {
       throw new Error(`${file} must use ${token} instead of a hard-coded release value`);
   }
 }
+const serviceWorker = await readFile(resolve(root, 'sw.js'), 'utf8');
+if (!/\/\*__BUILD_ASSETS__\*\/\s*\[\]/.test(serviceWorker))
+  throw new Error('sw.js must use the build asset placeholder instead of a hard-coded list');
 console.log(`Release metadata OK: ${pkg.version} · ${meta.codename}`);
