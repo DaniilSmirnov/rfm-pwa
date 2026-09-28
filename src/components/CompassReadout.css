@@ -5,12 +5,12 @@
   }
 }
 @layer components {
-  .spectator-compass>summary {
+  .spectator-compass > summary {
     padding: 14px 0;
   }
 }
 @layer components {
-  .spectator-compass>summary .block-title {
+  .spectator-compass > summary .block-title {
     font-size: 15px;
   }
 }
@@ -39,11 +39,12 @@
     flex: 0 0 112px;
     border: 2px solid #111;
     border-radius: 50%;
-    background: radial-gradient(circle at center,#fff 0 52%,#f2f2f2 53% 100%);
+    background: radial-gradient(circle at center, #fff 0 52%, #f2f2f2 53% 100%);
   }
 }
 @layer components {
-  .compass-dial::before,.compass-dial::after {
+  .compass-dial::before,
+  .compass-dial::after {
     content: '';
     position: absolute;
     background: #c9c9c9;
@@ -82,11 +83,11 @@
     left: 50%;
     top: 50%;
     z-index: 3;
-    transform: translate(-50%,-55%) rotate(0deg);
+    transform: translate(-50%, -55%) rotate(0deg);
     transform-origin: 50% 58%;
     font-size: 64px;
     line-height: 1;
-    transition: transform .18s linear;
+    transition: transform 0.18s linear;
   }
 }
 @layer components {
@@ -99,18 +100,21 @@
 }
 @layer components {
   .compass-copy strong {
-    font: 600 28px/1 'RF Dewi Expanded Semibold',Arial,sans-serif;
+    font:
+      600 28px/1 'RF Dewi Expanded Semibold',
+      Arial,
+      sans-serif;
   }
 }
 @layer responsive {
-  @media (max-width:460px) {
+  @media (max-width: 460px) {
     .compass-display {
       gap: var(--space-3);
     }
   }
 }
 @layer responsive {
-  @media (max-width:460px) {
+  @media (max-width: 460px) {
     .compass-dial {
       width: 92px;
       height: 92px;
@@ -119,38 +123,40 @@
   }
 }
 @layer responsive {
-  @media (max-width:460px) {
+  @media (max-width: 460px) {
     .compass-arrow {
       font-size: 52px;
     }
   }
 }
 @layer responsive {
-  @media (max-width:460px) {
+  @media (max-width: 460px) {
     .compass-copy strong {
       font-size: 23px;
     }
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .compass-display {
+  :root[data-theme='dark'] .compass-display {
     background: #1a1e23;
     border-color: #30353d;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .compass-dial {
+  :root[data-theme='dark'] .compass-dial {
     border-color: #e5e8ec;
-    background: radial-gradient(circle at center,#171a1f 0 52%,#23272e 53% 100%);
+    background: radial-gradient(circle at center, #171a1f 0 52%, #23272e 53% 100%);
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .compass-dial::before,:root[data-theme="dark"] .compass-dial::after {
+  :root[data-theme='dark'] .compass-dial::before,
+  :root[data-theme='dark'] .compass-dial::after {
     background: #464c55;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .compass-north,:root[data-theme="dark"] .compass-arrow {
+  :root[data-theme='dark'] .compass-north,
+  :root[data-theme='dark'] .compass-arrow {
     color: #f5f7fa;
   }
 }

@@ -13,8 +13,8 @@ export default defineConfig({
       reporter: ['text', 'json-summary'],
       thresholds: {
         perFile: true,
-        lines: 70
-      }
-    }
-  }
+        lines: 70,
+      },
+    },
+  },
 });

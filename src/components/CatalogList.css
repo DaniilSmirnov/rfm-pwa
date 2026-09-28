@@ -2,7 +2,7 @@
 @layer views {
   .catalog-list {
     display: grid;
-    grid-template-columns: repeat(2,minmax(0,1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-4);
     margin-top: var(--space-4);
   }
@@ -29,7 +29,7 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.72));
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.72));
   }
 }
 @layer views {
@@ -82,13 +82,13 @@
   }
 }
 @layer views {
-  .catalog-copy>span:last-child {
+  .catalog-copy > span:last-child {
     font-size: 13px;
     line-height: 1.35;
   }
 }
 @layer views {
-  .catalog-row>.button {
+  .catalog-row > .button {
     margin-top: var(--space-3);
     background: #000;
     border-color: #000;
@@ -96,21 +96,21 @@
   }
 }
 @layer views {
-  .catalog-row>.button.downloaded {
+  .catalog-row > .button.downloaded {
     background: #fff;
     color: #000;
     border-color: #fff;
   }
 }
 @layer responsive {
-  @media (max-width:760px) {
+  @media (max-width: 760px) {
     .catalog-list {
       grid-template-columns: 1fr;
     }
   }
 }
 @layer responsive {
-  @media (max-width:760px) {
+  @media (max-width: 760px) {
     .catalog-row {
       min-height: 250px;
     }

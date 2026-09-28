@@ -1,4 +1,8 @@
 @layer components {
-  .empty-state { margin: 1em 0; }
-  .empty-state[role="status"] { text-align: center; }
+  .empty-state {
+    margin: 1em 0;
+  }
+  .empty-state[role='status'] {
+    text-align: center;
+  }
 }

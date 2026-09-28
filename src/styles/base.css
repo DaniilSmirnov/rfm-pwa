@@ -37,12 +37,12 @@
 }
 @layer base {
   :root {
-    font-family: Avenir,Helvetica,Arial,sans-serif;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
     color: var(--text);
     background: var(--page-bg);
-    --page: min(920px,100%);
-    --font-body: Avenir,Helvetica,Arial,sans-serif;
-    --font-heading: 'RF Dewi Expanded Italic',Arial,sans-serif;
+    --page: min(920px, 100%);
+    --font-body: Avenir, Helvetica, Arial, sans-serif;
+    --font-heading: 'RF Dewi Expanded Italic', Arial, sans-serif;
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -64,15 +64,15 @@
     --ios-safe-top-floor: 0px;
     --ios-safe-bottom-floor: 0px;
     --ios-safe-side-floor: 0px;
-    --safe-top: max(env(safe-area-inset-top,0px),var(--ios-safe-top-floor));
-    --safe-bottom: max(env(safe-area-inset-bottom,0px),var(--ios-safe-bottom-floor));
-    --safe-left: max(env(safe-area-inset-left,0px),var(--ios-safe-side-floor));
-    --safe-right: max(env(safe-area-inset-right,0px),var(--ios-safe-side-floor));
+    --safe-top: max(env(safe-area-inset-top, 0px), var(--ios-safe-top-floor));
+    --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--ios-safe-bottom-floor));
+    --safe-left: max(env(safe-area-inset-left, 0px), var(--ios-safe-side-floor));
+    --safe-right: max(env(safe-area-inset-right, 0px), var(--ios-safe-side-floor));
     color-scheme: light;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] {
+  :root[data-theme='dark'] {
     --page-bg: #111318;
     --surface: #171a1f;
     --surface-raised: #1d2127;
@@ -124,7 +124,8 @@
   }
 }
 @layer base {
-  button,input {
+  button,
+  input {
     font: inherit;
   }
 }
@@ -134,7 +135,10 @@
   }
 }
 @layer base {
-  h1,h2,h3,p {
+  h1,
+  h2,
+  h3,
+  p {
     margin-top: 0;
   }
 }
@@ -154,49 +158,57 @@
   }
 }
 @layer base {
-  body[data-active-tab="today"] .legacy-more,body[data-active-tab="today"] .legacy-map,body[data-active-tab="map"] .legacy-more,body[data-active-tab="more"] .legacy-map {
+  body[data-active-tab='today'] .legacy-more,
+  body[data-active-tab='today'] .legacy-map,
+  body[data-active-tab='map'] .legacy-more,
+  body[data-active-tab='more'] .legacy-map {
     display: none !important;
   }
 }
 @layer base {
-  body[data-active-tab="map"] .react-tab-content {
+  body[data-active-tab='map'] .react-tab-content {
     display: none;
   }
 }
 @layer base {
-  body[data-active-tab="today"] main {
+  body[data-active-tab='today'] main {
     display: none;
   }
 }
 @layer base {
-  body[data-active-tab="today"] .legacy-more,body[data-active-tab="today"] .legacy-map,body[data-active-tab="map"] .legacy-more,body[data-active-tab="more"] .legacy-map {
+  body[data-active-tab='today'] .legacy-more,
+  body[data-active-tab='today'] .legacy-map,
+  body[data-active-tab='map'] .legacy-more,
+  body[data-active-tab='more'] .legacy-map {
     display: none !important;
   }
 }
 @layer base {
-  body[data-active-tab="map"] .react-tab-content,body[data-active-tab="more"] .today-screen,body[data-active-tab="more"] .today-empty {
+  body[data-active-tab='map'] .react-tab-content,
+  body[data-active-tab='more'] .today-screen,
+  body[data-active-tab='more'] .today-empty {
     display: none;
   }
 }
 @layer base {
-  body[data-active-tab="today"] main {
+  body[data-active-tab='today'] main {
     display: none;
   }
 }
 @layer base {
-  body:not([data-active-tab="more"]) .app-footer {
+  body:not([data-active-tab='more']) .app-footer {
     display: none;
   }
 }
 @layer base {
-  html[data-ios="true"][data-standalone="true"] {
+  html[data-ios='true'][data-standalone='true'] {
     --ios-safe-top-floor: 59px;
     --ios-safe-bottom-floor: 34px;
   }
 }
 @layer responsive {
-  @media (orientation:landscape) {
-    html[data-ios="true"][data-standalone="true"] {
+  @media (orientation: landscape) {
+    html[data-ios='true'][data-standalone='true'] {
       --ios-safe-top-floor: 0px;
       --ios-safe-bottom-floor: 21px;
       --ios-safe-side-floor: 47px;
@@ -204,14 +216,14 @@
   }
 }
 @layer responsive {
-  @supports (padding-top:constant(safe-area-inset-top)) {
-    html[data-ios="true"] .topbar {
+  @supports (padding-top: constant(safe-area-inset-top)) {
+    html[data-ios='true'] .topbar {
       padding-top: calc(var(--space-3) + constant(safe-area-inset-top));
     }
   }
 }
 @layer theme {
-  :root[data-theme="dark"] {
+  :root[data-theme='dark'] {
     --line: #2b2f36;
     --muted: #9aa0a9;
     --black: #f5f7fa;
@@ -220,7 +232,8 @@
   }
 }
 @layer theme {
-  :root[data-theme="dark"],:root[data-theme="dark"] body {
+  :root[data-theme='dark'],
+  :root[data-theme='dark'] body {
     background: #111318;
     color: #f5f7fa;
   }
@@ -228,12 +241,12 @@
 @layer responsive {
   @media (display-mode: standalone) {
     body {
-      padding-bottom: max(0px,calc(var(--safe-bottom) - 14px));
+      padding-bottom: max(0px, calc(var(--safe-bottom) - 14px));
     }
   }
 }
 @layer base {
-  html[data-pwa-installed="true"] .pwa-install-prompt {
+  html[data-pwa-installed='true'] .pwa-install-prompt {
     display: none !important;
   }
 }
@@ -243,41 +256,43 @@
   }
 }
 @layer base {
-  body:not([data-active-tab="today"]) .pwa-install-prompt {
+  body:not([data-active-tab='today']) .pwa-install-prompt {
     display: none !important;
   }
 }
 @layer base {
-  body[data-active-tab="more"][data-more-screen="menu"] main>#settingsSection {
+  body[data-active-tab='more'][data-more-screen='menu'] main > #settingsSection {
     display: none !important;
   }
 }
 @layer base {
-  body[data-active-tab="more"][data-more-screen="settings"] main>.legacy-more:not(#settingsSection) {
+  body[data-active-tab='more'][data-more-screen='settings']
+    main
+    > .legacy-more:not(#settingsSection) {
     display: none !important;
   }
 }
 @layer base {
-  body[data-active-tab="more"][data-more-screen="settings"] #settingsSection {
+  body[data-active-tab='more'][data-more-screen='settings'] #settingsSection {
     display: block !important;
     margin: var(--space-3);
     padding-bottom: 18px;
   }
 }
 @layer base {
-  body[data-active-tab="more"] .react-tab-content {
+  body[data-active-tab='more'] .react-tab-content {
     padding-bottom: 0;
   }
 }
 @layer base {
-  body[data-safety-gate="true"] #mapSection {
+  body[data-safety-gate='true'] #mapSection {
     filter: blur(9px);
     pointer-events: none;
     user-select: none;
   }
 }
 @layer base {
-  body[data-safety-gate="true"] {
+  body[data-safety-gate='true'] {
     overflow: hidden;
     overscroll-behavior: none;
   }

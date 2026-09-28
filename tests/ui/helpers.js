@@ -1,73 +1,156 @@
-export const raceFixture={
-  id:101,
-  name:'Rally Test Sortavala',
-  category_race:'Rally',
-  stage_race:'Этап 1',
-  status_race:'Скоро',
-  dates:'26.09.2026',
-  date_race:'26.09.2026',
-  city_race:'Республика Карелия',
-  city_race_details:'Сортавала',
-  total_distance:'120 км',
-  combat_km:'82 км',
-  days_race:'2',
-  image:'hero.jpg',
-  mapsimg:'map.jpg',
-  safety_leaflet:'safety.jpg',
-  overlap_schedule:null,
-  lists:[],
-  results:[],
-  coordinates:[
-    {id:1,name:'Смотровая точка',coordinates:'61.702000, 30.691000',color:'#f00'},
-    {id:2,name:'Парковка зрителей',coordinates:'61.710000, 30.700000',color:'#0f0'}
+export const raceFixture = {
+  id: 101,
+  name: 'Rally Test Sortavala',
+  category_race: 'Rally',
+  stage_race: 'Этап 1',
+  status_race: 'Скоро',
+  dates: '26.09.2026',
+  date_race: '26.09.2026',
+  city_race: 'Республика Карелия',
+  city_race_details: 'Сортавала',
+  total_distance: '120 км',
+  combat_km: '82 км',
+  days_race: '2',
+  image: 'hero.jpg',
+  mapsimg: 'map.jpg',
+  safety_leaflet: 'safety.jpg',
+  overlap_schedule: null,
+  lists: [],
+  results: [],
+  coordinates: [
+    { id: 1, name: 'Смотровая точка', coordinates: '61.702000, 30.691000', color: '#f00' },
+    { id: 2, name: 'Парковка зрителей', coordinates: '61.710000, 30.700000', color: '#0f0' },
   ],
-  schedule:[
+  schedule: [
     {
-      id:1,
-      date:'26.09.2026',
-      location:'СУ 1 Сортавала',
-      coordinates:'61.705000, 30.695000',
-      events:[
-        {time:'10:00',text:'Закрытие дороги'},
-        {time:'12:00',text:'Открытие дороги'}
-      ]
-    }
+      id: 1,
+      date: '26.09.2026',
+      location: 'СУ 1 Сортавала',
+      coordinates: '61.705000, 30.695000',
+      events: [
+        { time: '10:00', text: 'Закрытие дороги' },
+        { time: '12:00', text: 'Открытие дороги' },
+      ],
+    },
   ],
-  how_it_was:'<p>История этапа <strong>жирно</strong><script>window.__xss=1</script><a href="javascript:window.__xss=2">опасная ссылка</a></p>',
-  iframe_maps:null
+  how_it_was:
+    '<p>История этапа <strong>жирно</strong><script>window.__xss=1</script><a href="javascript:window.__xss=2">опасная ссылка</a></p>',
+  iframe_maps: null,
 };
 
-export const secondRace={
+export const secondRace = {
   ...raceFixture,
-  id:202,
-  name:'Rally Far Future',
-  dates:'20.12.2026',
-  date_race:'20.12.2026',
-  city_race:'Пермский край',
-  city_race_details:'Пермь',
-  image:null,
-  mapsimg:null,
-  safety_leaflet:null,
-  coordinates:[{id:3,name:'Future point',coordinates:'58.010000, 56.250000'}],
-  schedule:[]
+  id: 202,
+  name: 'Rally Far Future',
+  dates: '20.12.2026',
+  date_race: '20.12.2026',
+  city_race: 'Пермский край',
+  city_race_details: 'Пермь',
+  image: null,
+  mapsimg: null,
+  safety_leaflet: null,
+  coordinates: [{ id: 3, name: 'Future point', coordinates: '58.010000, 56.250000' }],
+  schedule: [],
 };
 
-export const asmgResultsFixture={
-  eventId:'55',tournamentTitle:'ЧР',eventResults:[{
-    specialStage:{id:'ss-2',name:'СУ 2 · Пуйккола',distance:'20.93'},
-    results:[
-      {id:'r1',time:890000,speed:120.3,crew:{id:'2273',number:5,car:'Skoda Fabia Rally2 Evo',pilot:{firstName:'Руслан',lastName:'Гожев'},navigator:{firstName:'Денис',lastName:'Коломиец'}},discipline:{name:'Абсолют'},formattedTime:'00:14:50:0',formattedFromLeader:'00:00:00:0',formattedTimeFromPrevious:'00:00:00:0'},
-      {id:'r2',time:895000,speed:119.3,crew:{id:'2275',number:4,car:'Skoda Fabia RS Rally2',pilot:{firstName:'Денис',lastName:'Ростилов'},navigator:{firstName:'Василий',lastName:'Слобожанинов'}},discipline:{name:'Абсолют'},formattedTime:'00:14:55:0',formattedFromLeader:'00:00:05:0',formattedTimeFromPrevious:'00:00:05:0'},
-      {id:'r3',time:900000,speed:118.5,crew:{id:'2274',number:1,car:'Skoda Fabia Rally2 Evo',pilot:{firstName:'Клим',lastName:'Гаврилов'},navigator:{firstName:'Кирилл',lastName:'Еникеев'}},discipline:{name:'Абсолют'},formattedTime:'00:15:00:0',formattedFromLeader:'00:00:10:0',formattedTimeFromPrevious:'00:00:05:0'},
-      {id:'r4',time:930000,speed:114.7,crew:{id:'2332',number:40,car:'Toyota GR Yaris Rally2',pilot:{firstName:'Андрей',lastName:'Жигунов'},navigator:{firstName:'Алексей',lastName:'Аксаков'}},discipline:{name:'Абсолют'},formattedTime:'00:15:30:0',formattedFromLeader:'00:00:40:0',formattedTimeFromPrevious:'00:00:30:0'},
-      {id:'r5',time:940000,speed:113.5,crew:{id:'2401',number:51,car:'Renault Clio Rally5',pilot:{firstName:'Иван',lastName:'Сидоров'},navigator:{firstName:'Павел',lastName:'Петров'}},discipline:{name:'R5'},formattedTime:'00:15:40:0',formattedFromLeader:'00:00:50:0',formattedTimeFromPrevious:'00:00:10:0'}
-    ]
-  }]
+export const asmgResultsFixture = {
+  eventId: '55',
+  tournamentTitle: 'ЧР',
+  eventResults: [
+    {
+      specialStage: { id: 'ss-2', name: 'СУ 2 · Пуйккола', distance: '20.93' },
+      results: [
+        {
+          id: 'r1',
+          time: 890000,
+          speed: 120.3,
+          crew: {
+            id: '2273',
+            number: 5,
+            car: 'Skoda Fabia Rally2 Evo',
+            pilot: { firstName: 'Руслан', lastName: 'Гожев' },
+            navigator: { firstName: 'Денис', lastName: 'Коломиец' },
+          },
+          discipline: { name: 'Абсолют' },
+          formattedTime: '00:14:50:0',
+          formattedFromLeader: '00:00:00:0',
+          formattedTimeFromPrevious: '00:00:00:0',
+        },
+        {
+          id: 'r2',
+          time: 895000,
+          speed: 119.3,
+          crew: {
+            id: '2275',
+            number: 4,
+            car: 'Skoda Fabia RS Rally2',
+            pilot: { firstName: 'Денис', lastName: 'Ростилов' },
+            navigator: { firstName: 'Василий', lastName: 'Слобожанинов' },
+          },
+          discipline: { name: 'Абсолют' },
+          formattedTime: '00:14:55:0',
+          formattedFromLeader: '00:00:05:0',
+          formattedTimeFromPrevious: '00:00:05:0',
+        },
+        {
+          id: 'r3',
+          time: 900000,
+          speed: 118.5,
+          crew: {
+            id: '2274',
+            number: 1,
+            car: 'Skoda Fabia Rally2 Evo',
+            pilot: { firstName: 'Клим', lastName: 'Гаврилов' },
+            navigator: { firstName: 'Кирилл', lastName: 'Еникеев' },
+          },
+          discipline: { name: 'Абсолют' },
+          formattedTime: '00:15:00:0',
+          formattedFromLeader: '00:00:10:0',
+          formattedTimeFromPrevious: '00:00:05:0',
+        },
+        {
+          id: 'r4',
+          time: 930000,
+          speed: 114.7,
+          crew: {
+            id: '2332',
+            number: 40,
+            car: 'Toyota GR Yaris Rally2',
+            pilot: { firstName: 'Андрей', lastName: 'Жигунов' },
+            navigator: { firstName: 'Алексей', lastName: 'Аксаков' },
+          },
+          discipline: { name: 'Абсолют' },
+          formattedTime: '00:15:30:0',
+          formattedFromLeader: '00:00:40:0',
+          formattedTimeFromPrevious: '00:00:30:0',
+        },
+        {
+          id: 'r5',
+          time: 940000,
+          speed: 113.5,
+          crew: {
+            id: '2401',
+            number: 51,
+            car: 'Renault Clio Rally5',
+            pilot: { firstName: 'Иван', lastName: 'Сидоров' },
+            navigator: { firstName: 'Павел', lastName: 'Петров' },
+          },
+          discipline: { name: 'R5' },
+          formattedTime: '00:15:40:0',
+          formattedFromLeader: '00:00:50:0',
+          formattedTimeFromPrevious: '00:00:10:0',
+        },
+      ],
+    },
+  ],
 };
 
-const onePixelPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
+const onePixelPng = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64',
+);
 
-const maplibreStub=String.raw`
+const maplibreStub = String.raw`
 export function supported(){return true;}
 export function addProtocol(){}
 export function setWorkerUrl(url){window.__maplibreWorkerUrl=url;}
@@ -119,7 +202,7 @@ export class Popup{
 }
 `;
 
-const pmtilesStub=String.raw`
+const pmtilesStub = String.raw`
 window.pmtiles={
   PMTiles:class{
     constructor(url){this.url=url;}
@@ -130,149 +213,351 @@ window.pmtiles={
 };
 `;
 
-export async function installAppMocks(page,options={}){
+export async function installAppMocks(page, options = {}) {
   const {
-    healthStatus=200,
-    catalogStatus=200,
-    catalog=[raceFixture,secondRace],
-    race=raceFixture,
-    online=true
-  }=options;
-  const push=options.push;
+    healthStatus = 200,
+    catalogStatus = 200,
+    catalog = [raceFixture, secondRace],
+    race = raceFixture,
+    online = true,
+  } = options;
+  const push = options.push;
 
-  await page.addInitScript(({pmtilesFailure})=>{window.__pmtilesFail=Boolean(pmtilesFailure);},{pmtilesFailure:options.pmtilesFailure});
-
-  await page.addInitScript(({online,push})=>{
-    const RealDate=Date;
-    const fixedNow=new RealDate('2026-09-24T06:00:00.000Z').getTime();
-    class FixedDate extends RealDate{
-      constructor(...args){super(...(args.length?args:[fixedNow]));}
-      static now(){return fixedNow;}
-    }
-    window.Date=FixedDate;
-    window.__rfmTestOnline=online;
-    try{Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>window.__rfmTestOnline});}catch{}
-    const clipboard={writeText:async text=>{window.__copied=text;}};
-    try{Object.defineProperty(navigator,'clipboard',{configurable:true,value:clipboard});}
-    catch{try{navigator.clipboard.writeText=clipboard.writeText;}catch{}}
-    const geolocation={
-      getCurrentPosition(ok){ok({coords:{latitude:61.7,longitude:30.69,accuracy:5}});},
-      watchPosition(ok){queueMicrotask(()=>ok({coords:{latitude:61.7,longitude:30.69,accuracy:5}}));return 1;},
-      clearWatch(){}
-    };
-    try{Object.defineProperty(navigator,'geolocation',{configurable:true,value:geolocation});}
-    catch{try{navigator.geolocation.getCurrentPosition=geolocation.getCurrentPosition;navigator.geolocation.watchPosition=geolocation.watchPosition;navigator.geolocation.clearWatch=geolocation.clearWatch;}catch{}}
-    let subscribed=Boolean(push?.existingSubscription);
-    const subscription={
-      endpoint:push?.subscription?.endpoint||'https://push.example.test/subscription/123',
-      toJSON:()=>push?.subscription||{endpoint:subscription.endpoint,keys:{p256dh:'test-key',auth:'test-auth'}},
-      unsubscribe:async()=>{subscribed=false;return true;}
-    };
-    const swRegistration={
-      waiting:null,
-      installing:null,
-      backgroundFetch:null,
-      periodicSync:null,
-      pushManager:{
-        getSubscription:async()=>subscribed?subscription:null,
-        subscribe:async()=>{subscribed=true;return subscription;}
-      },
-      update:async()=>{},
-      addEventListener(){}
-    };
-    if(push){
-      Object.defineProperty(window,'PushManager',{configurable:true,value:class PushManager{}});
-      Object.defineProperty(window,'Notification',{configurable:true,value:{permission:push.permission||'default',requestPermission:async()=>push.requestPermission||'granted'}});
-    }
-    const serviceWorker={
-      controller:null,
-      ready:Promise.resolve(swRegistration),
-      register:async()=>swRegistration,
-      addEventListener(){}
-    };
-    try{Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:serviceWorker});}catch{}
-  },{online,push});
-
-  await page.route('**/vendor/maplibre-gl/**',async route=>{
-    const url=route.request().url();
-    if(url.endsWith('maplibre-gl.mjs')) return route.fulfill({status:200,contentType:'application/javascript',body:maplibreStub});
-    if(url.endsWith('.css')) return route.fulfill({status:200,contentType:'text/css',body:''});
-    return route.fulfill({status:200,contentType:'application/javascript',body:'export default {};'});
-  });
-  await page.route('**/vendor/pmtiles/pmtiles.js',route=>
-    route.fulfill({status:200,contentType:'application/javascript',body:pmtilesStub})
+  await page.addInitScript(
+    ({ pmtilesFailure }) => {
+      window.__pmtilesFail = Boolean(pmtilesFailure);
+    },
+    { pmtilesFailure: options.pmtilesFailure },
   );
 
-  await page.route('**/rfm/icon.png*',route=>route.fulfill({status:200,contentType:'image/png',body:onePixelPng}));
-  await page.route('**/api/rallyfans/public/**',route=>route.fulfill({status:200,contentType:'image/png',body:onePixelPng}));
-  await page.route(/\/api\/asmg\/race\/\d+\/results$/,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({...asmgResultsFixture,eventId:route.request().url().match(/race\/(\d+)\/results/)?.[1]||asmgResultsFixture.eventId})}));
+  await page.addInitScript(
+    ({ online, push }) => {
+      const RealDate = Date;
+      const fixedNow = new RealDate('2026-09-24T06:00:00.000Z').getTime();
+      class FixedDate extends RealDate {
+        constructor(...args) {
+          super(...(args.length ? args : [fixedNow]));
+        }
+        static now() {
+          return fixedNow;
+        }
+      }
+      window.Date = FixedDate;
+      window.__rfmTestOnline = online;
+      try {
+        Object.defineProperty(navigator, 'onLine', {
+          configurable: true,
+          get: () => window.__rfmTestOnline,
+        });
+      } catch {}
+      const clipboard = {
+        writeText: async text => {
+          window.__copied = text;
+        },
+      };
+      try {
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: clipboard });
+      } catch {
+        try {
+          navigator.clipboard.writeText = clipboard.writeText;
+        } catch {}
+      }
+      const geolocation = {
+        getCurrentPosition(ok) {
+          ok({ coords: { latitude: 61.7, longitude: 30.69, accuracy: 5 } });
+        },
+        watchPosition(ok) {
+          queueMicrotask(() => ok({ coords: { latitude: 61.7, longitude: 30.69, accuracy: 5 } }));
+          return 1;
+        },
+        clearWatch() {},
+      };
+      try {
+        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: geolocation });
+      } catch {
+        try {
+          navigator.geolocation.getCurrentPosition = geolocation.getCurrentPosition;
+          navigator.geolocation.watchPosition = geolocation.watchPosition;
+          navigator.geolocation.clearWatch = geolocation.clearWatch;
+        } catch {}
+      }
+      let subscribed = Boolean(push?.existingSubscription);
+      const subscription = {
+        endpoint: push?.subscription?.endpoint || 'https://push.example.test/subscription/123',
+        toJSON: () =>
+          push?.subscription || {
+            endpoint: subscription.endpoint,
+            keys: { p256dh: 'test-key', auth: 'test-auth' },
+          },
+        unsubscribe: async () => {
+          subscribed = false;
+          return true;
+        },
+      };
+      const swRegistration = {
+        waiting: null,
+        installing: null,
+        backgroundFetch: null,
+        periodicSync: null,
+        pushManager: {
+          getSubscription: async () => (subscribed ? subscription : null),
+          subscribe: async () => {
+            subscribed = true;
+            return subscription;
+          },
+        },
+        update: async () => {},
+        addEventListener() {},
+      };
+      if (push) {
+        Object.defineProperty(window, 'PushManager', {
+          configurable: true,
+          value: class PushManager {},
+        });
+        Object.defineProperty(window, 'Notification', {
+          configurable: true,
+          value: {
+            permission: push.permission || 'default',
+            requestPermission: async () => push.requestPermission || 'granted',
+          },
+        });
+      }
+      const serviceWorker = {
+        controller: null,
+        ready: Promise.resolve(swRegistration),
+        register: async () => swRegistration,
+        addEventListener() {},
+      };
+      try {
+        Object.defineProperty(navigator, 'serviceWorker', {
+          configurable: true,
+          value: serviceWorker,
+        });
+      } catch {}
+    },
+    { online, push },
+  );
 
-  await page.route('**/api/health',route=>route.fulfill({
-    status:healthStatus,
-    contentType:'application/json',
-    body:JSON.stringify(healthStatus===200?{ok:true,version:'0.6.0'}:{ok:false,error:'down'})
-  }));
+  await page.route('**/vendor/maplibre-gl/**', async route => {
+    const url = route.request().url();
+    if (url.endsWith('maplibre-gl.mjs'))
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/javascript',
+        body: maplibreStub,
+      });
+    if (url.endsWith('.css'))
+      return route.fulfill({ status: 200, contentType: 'text/css', body: '' });
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/javascript',
+      body: 'export default {};',
+    });
+  });
+  await page.route('**/vendor/pmtiles/pmtiles.js', route =>
+    route.fulfill({ status: 200, contentType: 'application/javascript', body: pmtilesStub }),
+  );
 
-  await page.route('**/api/rallyfans/race',route=>route.fulfill({
-    status:catalogStatus,
-    contentType:'application/json',
-    body:catalogStatus===200?JSON.stringify(catalog):JSON.stringify({error:'catalog down'})
-  }));
+  await page.route('**/rfm/icon.png*', route =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: onePixelPng }),
+  );
+  await page.route('**/api/rallyfans/public/**', route =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: onePixelPng }),
+  );
+  await page.route(/\/api\/asmg\/race\/\d+\/results$/, route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...asmgResultsFixture,
+        eventId:
+          route
+            .request()
+            .url()
+            .match(/race\/(\d+)\/results/)?.[1] || asmgResultsFixture.eventId,
+      }),
+    }),
+  );
 
-  await page.route(/\/api\/rallyfans\/race\/\d+$/,route=>route.fulfill({
-    status:200,contentType:'application/json',body:JSON.stringify(race)
-  }));
+  await page.route('**/api/health', route =>
+    route.fulfill({
+      status: healthStatus,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        healthStatus === 200 ? { ok: true, version: '0.6.0' } : { ok: false, error: 'down' },
+      ),
+    }),
+  );
 
-  await page.route('**/api/push/config',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,enabled:false,publicKey:null,storage:false})}));
-  await page.route('**/api/push/schedule',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,stored:0})}));
-  await page.route('**/api/yandex/constructor*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,features:[],sourceFeatureCount:0})}));
-  await page.route('**/api/wallet/**',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({ok:false,error:'disabled'})}));
+  await page.route('**/api/rallyfans/race', route =>
+    route.fulfill({
+      status: catalogStatus,
+      contentType: 'application/json',
+      body:
+        catalogStatus === 200 ? JSON.stringify(catalog) : JSON.stringify({ error: 'catalog down' }),
+    }),
+  );
+
+  await page.route(/\/api\/rallyfans\/race\/\d+$/, route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(race),
+    }),
+  );
+
+  await page.route('**/api/push/config', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, enabled: false, publicKey: null, storage: false }),
+    }),
+  );
+  await page.route('**/api/push/schedule', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, stored: 0 }),
+    }),
+  );
+  await page.route('**/api/yandex/constructor*', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, features: [], sourceFeatureCount: 0 }),
+    }),
+  );
+  await page.route('**/api/wallet/**', route =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: false, error: 'disabled' }),
+    }),
+  );
 }
 
-export async function openApp(page,options={}){
-  await installAppMocks(page,options);
+export async function openApp(page, options = {}) {
+  await installAppMocks(page, options);
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForFunction(()=>document.querySelector('#catalogStatus')?.textContent?.includes('гонок') || document.querySelector('#catalogStatus')?.textContent?.includes('недоступен') || document.querySelector('#catalogStatus')?.textContent?.includes('Офлайн'));
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#catalogStatus')?.textContent?.includes('гонок') ||
+      document.querySelector('#catalogStatus')?.textContent?.includes('недоступен') ||
+      document.querySelector('#catalogStatus')?.textContent?.includes('Офлайн'),
+  );
 }
 
-export async function openMapWithAcceptedSafety(page){
-  await page.getByRole('button',{name:'Карта'}).click();
-  const gate=page.locator('.safety-gate');
-  if(!await gate.isVisible())return;
-  await gate.locator('.safety-gate-content').evaluate(node=>{
-    node.scrollTop=node.scrollHeight;
+export async function openMapWithAcceptedSafety(page) {
+  await page.getByRole('button', { name: 'Карта' }).click();
+  const gate = page.locator('.safety-gate');
+  if (!(await gate.isVisible())) return;
+  await gate.locator('.safety-gate-content').evaluate(node => {
+    node.scrollTop = node.scrollHeight;
     node.dispatchEvent(new Event('scroll'));
   });
-  await page.waitForFunction(()=>{
-    const button=document.querySelector('.safety-accept');
-    return Boolean(button&&!button.disabled);
-  },null,{timeout:10000});
+  await page.waitForFunction(
+    () => {
+      const button = document.querySelector('.safety-accept');
+      return Boolean(button && !button.disabled);
+    },
+    null,
+    { timeout: 10000 },
+  );
   await gate.locator('.safety-accept').click();
-  await gate.waitFor({state:'hidden'});
+  await gate.waitFor({ state: 'hidden' });
 }
 
-export async function seedFixtureRace(page){
-  await page.getByRole('button',{name:'Ещё'}).click();
-  await page.evaluate(async ({race,results})=>{
-    const request=indexedDB.open('rallyfans-offline',3);
-    request.onupgradeneeded=()=>{
-      const db=request.result;
-      if(!db.objectStoreNames.contains('packages'))db.createObjectStore('packages',{keyPath:'id'});
-      if(!db.objectStoreNames.contains('maptiles')){const store=db.createObjectStore('maptiles',{keyPath:'key'});store.createIndex('raceId','raceId',{unique:false});}
-      if(!db.objectStoreNames.contains('crewSubscriptions')){const store=db.createObjectStore('crewSubscriptions',{keyPath:'key'});store.createIndex('asmgRaceId','asmgRaceId',{unique:false});}
-    };
-    const db=await new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
-    const features=(race.coordinates||[]).map(point=>{
-      const [lat,lon]=String(point.coordinates||'').split(',').map(Number);
-      return {type:'Feature',properties:{kind:'race-point',name:point.name},geometry:{type:'Point',coordinates:[lon,lat]}};
-    }).filter(feature=>feature.geometry.coordinates.every(Number.isFinite));
-    features.push({type:'Feature',properties:{kind:'race-route',name:'SS 1'},geometry:{type:'LineString',coordinates:[[30.690,61.700],[30.700,61.705]]}});
-    const pkg={id:`race-${race.id}`,raceId:race.id,asmgRaceId:55,name:race.name,source:`api.rallyfansmap.ru/race/${race.id}`,savedAt:new Date().toISOString(),size:JSON.stringify(race).length,original:race,geojson:{type:'FeatureCollection',features},crewResults:{eventId:String(race.id),tournamentTitle:results.tournamentTitle,updatedAt:new Date().toISOString(),eventResults:results.eventResults},assetNames:[],summary:{category:race.category_race||'',stage:race.stage_race||'',status:race.status_race||'',dates:race.date_race||race.dates||'',city:race.city_race_details||race.city_race||'',totalDistance:race.total_distance||'',combatKm:race.combat_km||'',days:race.days_race||''},yandexMapEmbed:null};
-    await new Promise((resolve,reject)=>{const tx=db.transaction('packages','readwrite');tx.objectStore('packages').put(pkg);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
-    db.close();
-    window.dispatchEvent(new Event('rfm:refresh-local-data'));
-  },{race:raceFixture,results:asmgResultsFixture});
-  await page.locator('.race-page').waitFor({state:'visible'});
-  await page.waitForFunction(()=>Boolean(document.querySelector('#crewResultsOpen')&&!document.querySelector('#crewResultsOpen').hidden));
+export async function seedFixtureRace(page) {
+  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.evaluate(
+    async ({ race, results }) => {
+      const request = indexedDB.open('rallyfans-offline', 3);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('packages'))
+          db.createObjectStore('packages', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('maptiles')) {
+          const store = db.createObjectStore('maptiles', { keyPath: 'key' });
+          store.createIndex('raceId', 'raceId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('crewSubscriptions')) {
+          const store = db.createObjectStore('crewSubscriptions', { keyPath: 'key' });
+          store.createIndex('asmgRaceId', 'asmgRaceId', { unique: false });
+        }
+      };
+      const db = await new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const features = (race.coordinates || [])
+        .map(point => {
+          const [lat, lon] = String(point.coordinates || '')
+            .split(',')
+            .map(Number);
+          return {
+            type: 'Feature',
+            properties: { kind: 'race-point', name: point.name },
+            geometry: { type: 'Point', coordinates: [lon, lat] },
+          };
+        })
+        .filter(feature => feature.geometry.coordinates.every(Number.isFinite));
+      features.push({
+        type: 'Feature',
+        properties: { kind: 'race-route', name: 'SS 1' },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [30.69, 61.7],
+            [30.7, 61.705],
+          ],
+        },
+      });
+      const pkg = {
+        id: `race-${race.id}`,
+        raceId: race.id,
+        asmgRaceId: 55,
+        name: race.name,
+        source: `api.rallyfansmap.ru/race/${race.id}`,
+        savedAt: new Date().toISOString(),
+        size: JSON.stringify(race).length,
+        original: race,
+        geojson: { type: 'FeatureCollection', features },
+        crewResults: {
+          eventId: String(race.id),
+          tournamentTitle: results.tournamentTitle,
+          updatedAt: new Date().toISOString(),
+          eventResults: results.eventResults,
+        },
+        assetNames: [],
+        summary: {
+          category: race.category_race || '',
+          stage: race.stage_race || '',
+          status: race.status_race || '',
+          dates: race.date_race || race.dates || '',
+          city: race.city_race_details || race.city_race || '',
+          totalDistance: race.total_distance || '',
+          combatKm: race.combat_km || '',
+          days: race.days_race || '',
+        },
+        yandexMapEmbed: null,
+      };
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('packages', 'readwrite');
+        tx.objectStore('packages').put(pkg);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+      window.dispatchEvent(new Event('rfm:refresh-local-data'));
+    },
+    { race: raceFixture, results: asmgResultsFixture },
+  );
+  await page.locator('.race-page').waitFor({ state: 'visible' });
+  await page.waitForFunction(() =>
+    Boolean(
+      document.querySelector('#crewResultsOpen') &&
+        !document.querySelector('#crewResultsOpen').hidden,
+    ),
+  );
 }

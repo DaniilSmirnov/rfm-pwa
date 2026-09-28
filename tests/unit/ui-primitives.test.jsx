@@ -27,7 +27,11 @@ describe('shared UI primitives', () => {
     expect(button.disabled).toBe(true);
     expect(button.getAttribute('aria-busy')).toBe('true');
 
-    rerender(<Button type="submit" disabled className="button danger">Delete</Button>);
+    rerender(
+      <Button type="submit" disabled className="button danger">
+        Delete
+      </Button>,
+    );
     button = screen.getByRole('button', { name: 'Delete' });
     expect(button.type).toBe('submit');
     expect(button.disabled).toBe(true);
@@ -36,7 +40,11 @@ describe('shared UI primitives', () => {
 
   it('preserves additional button props and invokes its handler', () => {
     const onClick = vi.fn();
-    render(<Button data-action="apply" onClick={onClick}>Apply</Button>);
+    render(
+      <Button data-action="apply" onClick={onClick}>
+        Apply
+      </Button>,
+    );
     const button = screen.getByRole('button', { name: 'Apply' });
     fireEvent.click(button);
     expect(button.dataset.action).toBe('apply');
@@ -44,21 +52,40 @@ describe('shared UI primitives', () => {
   });
 
   it('renders action groups, badges, and panels with chosen semantics', () => {
-    render(<>
-      <ActionGroup className="point-buttons" aria-label="Point actions"><span>Action</span></ActionGroup>
-      <Badge variant="offline" data-testid="status">Offline</Badge>
-      <Panel as="article" className="compact" aria-label="Saved race">Pack</Panel>
-    </>);
-    expect(screen.getByRole('group', { name: 'Point actions' }).className).toBe('actions point-buttons');
+    render(
+      <>
+        <ActionGroup className="point-buttons" aria-label="Point actions">
+          <span>Action</span>
+        </ActionGroup>
+        <Badge variant="offline" data-testid="status">
+          Offline
+        </Badge>
+        <Panel as="article" className="compact" aria-label="Saved race">
+          Pack
+        </Panel>
+      </>,
+    );
+    expect(screen.getByRole('group', { name: 'Point actions' }).className).toBe(
+      'actions point-buttons',
+    );
     expect(screen.getByTestId('status').className).toBe('badge offline');
-    expect(screen.getByRole('article', { name: 'Saved race' }).className).toBe('rfm-section compact');
+    expect(screen.getByRole('article', { name: 'Saved race' }).className).toBe(
+      'rfm-section compact',
+    );
   });
 
   it('supports configurable empty states and section heading slots', () => {
-    render(<>
-      <EmptyState as="div" role="status" className="small">No races</EmptyState>
-      <SectionHeader className="saved-head"><h2>Saved</h2><Button>Refresh</Button></SectionHeader>
-    </>);
+    render(
+      <>
+        <EmptyState as="div" role="status" className="small">
+          No races
+        </EmptyState>
+        <SectionHeader className="saved-head">
+          <h2>Saved</h2>
+          <Button>Refresh</Button>
+        </SectionHeader>
+      </>,
+    );
     expect(screen.getByRole('status').className).toBe('empty-state muted small');
     expect(screen.getByRole('heading', { name: 'Saved' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Refresh' })).toBeTruthy();
@@ -67,7 +94,9 @@ describe('shared UI primitives', () => {
   it('keeps search input attributes, value changes, and refs', () => {
     const ref = React.createRef();
     const onChange = vi.fn();
-    render(<SearchField ref={ref} aria-label="Search rallies" value="Karelia" onChange={onChange} />);
+    render(
+      <SearchField ref={ref} aria-label="Search rallies" value="Karelia" onChange={onChange} />,
+    );
     const input = screen.getByRole('searchbox', { name: 'Search rallies' });
     expect(input.type).toBe('search');
     expect(input.value).toBe('Karelia');
@@ -79,9 +108,18 @@ describe('shared UI primitives', () => {
   it('keeps select attributes, options, value changes, and refs', () => {
     const ref = React.createRef();
     const onChange = vi.fn();
-    render(<SelectField ref={ref} aria-label="Stage" className="stage-filter" value="ss1" onChange={onChange}>
-      <option value="ss1">SS1</option><option value="ss2">SS2</option>
-    </SelectField>);
+    render(
+      <SelectField
+        ref={ref}
+        aria-label="Stage"
+        className="stage-filter"
+        value="ss1"
+        onChange={onChange}
+      >
+        <option value="ss1">SS1</option>
+        <option value="ss2">SS2</option>
+      </SelectField>,
+    );
     const select = screen.getByRole('combobox', { name: 'Stage' });
     expect(select.className).toBe('select-field stage-filter');
     expect(select.value).toBe('ss1');
@@ -91,7 +129,11 @@ describe('shared UI primitives', () => {
   });
 
   it('preserves details behavior and renders a React SVG icon', () => {
-    render(<CollapsibleSection summary={<span>Details</span>} data-testid="details"><p>Content</p></CollapsibleSection>);
+    render(
+      <CollapsibleSection summary={<span>Details</span>} data-testid="details">
+        <p>Content</p>
+      </CollapsibleSection>,
+    );
     const details = screen.getByTestId('details');
     details.open = true;
     expect(details.open).toBe(true);

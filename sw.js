@@ -1,322 +1,449 @@
-const CACHE='rfm-companion-v__APP_VERSION_CACHE__-__APP_CODENAME_SLUG__';
-const ASSET_CACHE='rfm-race-assets-v1';
-const PERIODIC_CACHE='rfm-periodic-data-v1';
-const SHELL=/*__BUILD_ASSETS__*/[];
-async function precacheFresh(){
-  const cache=await caches.open(CACHE);
-  await Promise.all(SHELL.map(async url=>{
-    const response=await fetch(new Request(url,{cache:'reload'}));
-    if(!response.ok) throw new Error(`Precache ${url}: ${response.status}`);
-    await cache.put(url,response);
-  }));
+const CACHE = 'rfm-companion-v__APP_VERSION_CACHE__-__APP_CODENAME_SLUG__';
+const ASSET_CACHE = 'rfm-race-assets-v1';
+const PERIODIC_CACHE = 'rfm-periodic-data-v1';
+const SHELL = /*__BUILD_ASSETS__*/ [];
+async function precacheFresh() {
+  const cache = await caches.open(CACHE);
+  await Promise.all(
+    SHELL.map(async url => {
+      const response = await fetch(new Request(url, { cache: 'reload' }));
+      if (!response.ok) throw new Error(`Precache ${url}: ${response.status}`);
+      await cache.put(url, response);
+    }),
+  );
 
   // Vite filenames are content-hashed. If the same release version is rebuilt,
   // remove only obsolete generated chunks while preserving runtime-cached files.
-  const expected=new Set(SHELL);
-  const cached=await cache.keys();
-  await Promise.all(cached.filter(request=>{
-    const url=new URL(request.url);
-    return url.origin===self.location.origin
-      && url.pathname.startsWith('/assets/')
-      && !expected.has(url.pathname);
-  }).map(request=>cache.delete(request)));
+  const expected = new Set(SHELL);
+  const cached = await cache.keys();
+  await Promise.all(
+    cached
+      .filter(request => {
+        const url = new URL(request.url);
+        return (
+          url.origin === self.location.origin &&
+          url.pathname.startsWith('/assets/') &&
+          !expected.has(url.pathname)
+        );
+      })
+      .map(request => cache.delete(request)),
+  );
 }
 
-self.addEventListener('install', event=>{
-  event.waitUntil(precacheFresh().then(()=>self.skipWaiting()));
+self.addEventListener('install', event => {
+  event.waitUntil(precacheFresh().then(() => self.skipWaiting()));
 });
 
-self.addEventListener('activate', event=>{
-  event.waitUntil((async()=>{
-    const keys=await caches.keys();
-    await Promise.all(keys.filter(k=>k.startsWith('rfm-companion-')&&k!==CACHE).map(k=>caches.delete(k)));
-    await self.clients.claim();
-  })());
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter(k => k.startsWith('rfm-companion-') && k !== CACHE).map(k => caches.delete(k)),
+      );
+      await self.clients.claim();
+    })(),
+  );
 });
 
-self.addEventListener('message', event=>{
-  if(event.data?.type==='SKIP_WAITING') self.skipWaiting();
-  if(event.data?.type==='REFRESH_RALLY_PACKS') event.waitUntil(refreshPeriodicRaceData());
-  if(event.data?.type==='REFRESH_CREW_RESULTS') event.waitUntil(refreshSubscribedCrewResults());
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data?.type === 'REFRESH_RALLY_PACKS') event.waitUntil(refreshPeriodicRaceData());
+  if (event.data?.type === 'REFRESH_CREW_RESULTS') event.waitUntil(refreshSubscribedCrewResults());
 });
 
-async function fetchWithTimeout(input,timeoutMs=1200){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),timeoutMs);
-  try{
-    const request=input instanceof Request
-      ? new Request(input,{cache:'no-store',signal:controller.signal})
-      : new Request(new URL(String(input),self.location.origin),{cache:'no-store',signal:controller.signal});
+async function fetchWithTimeout(input, timeoutMs = 1200) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const request =
+      input instanceof Request
+        ? new Request(input, { cache: 'no-store', signal: controller.signal })
+        : new Request(new URL(String(input), self.location.origin), {
+            cache: 'no-store',
+            signal: controller.signal,
+          });
     return await fetch(request);
-  }finally{
+  } finally {
     clearTimeout(timer);
   }
 }
 
-async function refreshNavigation(request){
-  const cache=await caches.open(CACHE);
-  const response=await fetchWithTimeout(request);
-  if(response.ok) await cache.put(request,response.clone());
+async function refreshNavigation(request) {
+  const cache = await caches.open(CACHE);
+  const response = await fetchWithTimeout(request);
+  if (response.ok) await cache.put(request, response.clone());
   return response;
 }
 
-async function cachedNavigation(request,fallback='/index.html'){
-  const cache=await caches.open(CACHE);
-  return (await cache.match(request))
-    || (fallback ? await cache.match(fallback) : null);
+async function cachedNavigation(request, fallback = '/index.html') {
+  const cache = await caches.open(CACHE);
+  return (await cache.match(request)) || (fallback ? await cache.match(fallback) : null);
 }
 
-self.addEventListener('fetch', event=>{
-  if(event.request.method!=='GET') return;
-  const url=new URL(event.request.url);
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
 
-  if(url.origin!==location.origin) return;
+  if (url.origin !== location.origin) return;
 
-  if(url.pathname.startsWith('/api/rallyfans/public/')){
-    event.respondWith(caches.open(ASSET_CACHE).then(async cache=>(await cache.match(event.request))||fetchWithTimeout(event.request,12000).then(response=>{
-      if(response.ok) cache.put(event.request,response.clone());
-      return response;
-    })));
+  if (url.pathname.startsWith('/api/rallyfans/public/')) {
+    event.respondWith(
+      caches.open(ASSET_CACHE).then(
+        async cache =>
+          (await cache.match(event.request)) ||
+          fetchWithTimeout(event.request, 12000).then(response => {
+            if (response.ok) cache.put(event.request, response.clone());
+            return response;
+          }),
+      ),
+    );
     return;
   }
-  if(url.pathname==='/api/rallyfans/race' || url.pathname.startsWith('/api/rallyfans/race/')){
-    event.respondWith((async()=>{
-      const cache=await caches.open(PERIODIC_CACHE);
-      try{
-        const response=await fetchWithTimeout(event.request,8000);
-        if(response.ok) await cache.put(event.request,response.clone());
-        return response;
-      }catch{
-        return (await cache.match(event.request)) || Response.error();
-      }
-    })());
+  if (url.pathname === '/api/rallyfans/race' || url.pathname.startsWith('/api/rallyfans/race/')) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(PERIODIC_CACHE);
+        try {
+          const response = await fetchWithTimeout(event.request, 8000);
+          if (response.ok) await cache.put(event.request, response.clone());
+          return response;
+        } catch {
+          return (await cache.match(event.request)) || Response.error();
+        }
+      })(),
+    );
     return;
   }
-  if(/^\/api\/asmg\/race\/\d+\/results$/.test(url.pathname)){
-    event.respondWith((async()=>{
-      const cache=await caches.open(PERIODIC_CACHE);
-      try{
-        const response=await fetchWithTimeout(event.request,10000);
-        if(response.ok) await cache.put(event.request,response.clone());
-        return response;
-      }catch{return (await cache.match(event.request))||Response.error();}
-    })());
+  if (/^\/api\/asmg\/race\/\d+\/results$/.test(url.pathname)) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(PERIODIC_CACHE);
+        try {
+          const response = await fetchWithTimeout(event.request, 10000);
+          if (response.ok) await cache.put(event.request, response.clone());
+          return response;
+        } catch {
+          return (await cache.match(event.request)) || Response.error();
+        }
+      })(),
+    );
     return;
   }
-  if(url.pathname.startsWith('/api/')) return;
+  if (url.pathname.startsWith('/api/')) return;
 
   // Navigation is local-first: an installed PWA must open immediately even when
   // Android reports a network that is connected but cannot actually reach the server.
-  if(event.request.mode==='navigate' || url.pathname==='/' || url.pathname==='/index.html'){
-    const refresh=refreshNavigation(event.request).catch(()=>null);
-    event.waitUntil(refresh.then(()=>undefined));
-    event.respondWith((async()=>{
-      const cached=await cachedNavigation(event.request);
-      if(cached) return cached;
-      return (await refresh) || Response.error();
-    })());
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html') {
+    const refresh = refreshNavigation(event.request).catch(() => null);
+    event.waitUntil(refresh.then(() => undefined));
+    event.respondWith(
+      (async () => {
+        const cached = await cachedNavigation(event.request);
+        if (cached) return cached;
+        return (await refresh) || Response.error();
+      })(),
+    );
     return;
   }
 
   // sw.js is fetched by the browser update algorithm, but never serve a cached copy if requested manually.
-  if(url.pathname==='/sw.js'){
-    event.respondWith(fetch(new Request(event.request,{cache:'no-store'})));
+  if (url.pathname === '/sw.js') {
+    event.respondWith(fetch(new Request(event.request, { cache: 'no-store' })));
     return;
   }
 
-  event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{
-    if(response.ok) caches.open(CACHE).then(c=>c.put(event.request,response.clone()));
-    return response;
-  }).catch(()=>caches.match('/index.html'))));
+  event.respondWith(
+    caches.match(event.request).then(
+      cached =>
+        cached ||
+        fetch(event.request)
+          .then(response => {
+            if (response.ok) caches.open(CACHE).then(c => c.put(event.request, response.clone()));
+            return response;
+          })
+          .catch(() => caches.match('/index.html')),
+    ),
+  );
 });
 
-
 self.addEventListener('push', event => {
-  event.waitUntil((async()=>{
-    let payload={};
-    try { payload=event.data?.json?.() || {}; } catch {}
+  event.waitUntil(
+    (async () => {
+      let payload = {};
+      try {
+        payload = event.data?.json?.() || {};
+      } catch {}
 
-    if(!payload.title){
-      try{
-        const subscription=await self.registration.pushManager.getSubscription();
-        if(subscription?.endpoint){
-          const response=await fetchWithTimeout(new Request(new URL('/api/push/pending',self.location.origin),{
-            method:'POST',
-            headers:{'content-type':'application/json'},
-            body:JSON.stringify({endpoint:subscription.endpoint})
-          }),5000);
-          const data=await response.json();
-          if(response.ok && data?.pending) payload=data.pending;
-        }
-      }catch{}
-    }
+      if (!payload.title) {
+        try {
+          const subscription = await self.registration.pushManager.getSubscription();
+          if (subscription?.endpoint) {
+            const response = await fetchWithTimeout(
+              new Request(new URL('/api/push/pending', self.location.origin), {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ endpoint: subscription.endpoint }),
+              }),
+              5000,
+            );
+            const data = await response.json();
+            if (response.ok && data?.pending) payload = data.pending;
+          }
+        } catch {}
+      }
 
-    await self.registration.showNotification(payload.title || 'Rally Fans Map', {
-      body: payload.body || 'Есть обновление по RallyFans. Открой приложение, чтобы проверить данные.',
-      icon: '/icon.svg',
-      tag: payload.tag || 'rfm-update',
-      renotify: true,
-      data: { url: payload.url || '/' }
-    });
-  })());
+      await self.registration.showNotification(payload.title || 'Rally Fans Map', {
+        body:
+          payload.body ||
+          'Есть обновление по RallyFans. Открой приложение, чтобы проверить данные.',
+        icon: '/icon.svg',
+        tag: payload.tag || 'rfm-update',
+        renotify: true,
+        data: { url: payload.url || '/' },
+      });
+    })(),
+  );
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const target = event.notification?.data?.url || '/';
-  event.waitUntil((async()=>{
-    const clientsList = await self.clients.matchAll({ type:'window', includeUncontrolled:true });
-    for (const client of clientsList) {
-      if ('navigate' in client) {
-        try { await client.navigate(target); } catch {}
+  event.waitUntil(
+    (async () => {
+      const clientsList = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      for (const client of clientsList) {
+        if ('navigate' in client) {
+          try {
+            await client.navigate(target);
+          } catch {}
+        }
+        if ('focus' in client) return client.focus();
       }
-      if ('focus' in client) return client.focus();
-    }
-    return self.clients.openWindow ? self.clients.openWindow(target) : undefined;
-  })());
+      return self.clients.openWindow ? self.clients.openWindow(target) : undefined;
+    })(),
+  );
 });
 
-
-async function savedRaceIds(){
-  return new Promise(resolve=>{
-    try{
-      const req=indexedDB.open('rallyfans-offline',3);
-      req.onerror=()=>resolve([]);
-      req.onupgradeneeded=()=>{
-        const db=req.result;
-        if(!db.objectStoreNames.contains('packages'))db.createObjectStore('packages',{keyPath:'id'});
-        if(!db.objectStoreNames.contains('maptiles')){
-          const tiles=db.createObjectStore('maptiles',{keyPath:'key'});
-          tiles.createIndex('raceId','raceId',{unique:false});
+async function savedRaceIds() {
+  return new Promise(resolve => {
+    try {
+      const req = indexedDB.open('rallyfans-offline', 3);
+      req.onerror = () => resolve([]);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('packages'))
+          db.createObjectStore('packages', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('maptiles')) {
+          const tiles = db.createObjectStore('maptiles', { keyPath: 'key' });
+          tiles.createIndex('raceId', 'raceId', { unique: false });
         }
-        if(!db.objectStoreNames.contains('crewSubscriptions')){
-          const subscriptions=db.createObjectStore('crewSubscriptions',{keyPath:'key'});
-          subscriptions.createIndex('asmgRaceId','asmgRaceId',{unique:false});
+        if (!db.objectStoreNames.contains('crewSubscriptions')) {
+          const subscriptions = db.createObjectStore('crewSubscriptions', { keyPath: 'key' });
+          subscriptions.createIndex('asmgRaceId', 'asmgRaceId', { unique: false });
         }
       };
-      req.onsuccess=()=>{
-        const db=req.result;
-        db.onversionchange=()=>db.close();
-        if(!db.objectStoreNames.contains('packages')){ db.close();resolve([]); return; }
-        const tx=db.transaction('packages','readonly');
-        const all=tx.objectStore('packages').getAll();
-        all.onerror=()=>{db.close();resolve([]);};
-        all.onsuccess=()=>{const ids=(all.result||[]).map(p=>p?.raceId).filter(v=>v!=null);db.close();resolve(ids);};
+      req.onsuccess = () => {
+        const db = req.result;
+        db.onversionchange = () => db.close();
+        if (!db.objectStoreNames.contains('packages')) {
+          db.close();
+          resolve([]);
+          return;
+        }
+        const tx = db.transaction('packages', 'readonly');
+        const all = tx.objectStore('packages').getAll();
+        all.onerror = () => {
+          db.close();
+          resolve([]);
+        };
+        all.onsuccess = () => {
+          const ids = (all.result || []).map(p => p?.raceId).filter(v => v != null);
+          db.close();
+          resolve(ids);
+        };
       };
-    }catch{ resolve([]); }
+    } catch {
+      resolve([]);
+    }
   });
 }
 
-async function subscribedAsmgRaceIds(){
-  return new Promise(resolve=>{
-    try{
-      const req=indexedDB.open('rallyfans-offline',3);
-      req.onerror=()=>resolve([]);
-      req.onsuccess=()=>{
-        const db=req.result;
-        db.onversionchange=()=>db.close();
-        if(!db.objectStoreNames.contains('crewSubscriptions')){db.close();resolve([]);return;}
-        const tx=db.transaction('crewSubscriptions','readonly');
-        const all=tx.objectStore('crewSubscriptions').getAll();
-        all.onerror=()=>{db.close();resolve([]);};
-        all.onsuccess=()=>{const ids=(all.result||[]).map(s=>s?.asmgRaceId).filter(v=>/^\d+$/.test(String(v??'')));db.close();resolve(ids);};
+async function subscribedAsmgRaceIds() {
+  return new Promise(resolve => {
+    try {
+      const req = indexedDB.open('rallyfans-offline', 3);
+      req.onerror = () => resolve([]);
+      req.onsuccess = () => {
+        const db = req.result;
+        db.onversionchange = () => db.close();
+        if (!db.objectStoreNames.contains('crewSubscriptions')) {
+          db.close();
+          resolve([]);
+          return;
+        }
+        const tx = db.transaction('crewSubscriptions', 'readonly');
+        const all = tx.objectStore('crewSubscriptions').getAll();
+        all.onerror = () => {
+          db.close();
+          resolve([]);
+        };
+        all.onsuccess = () => {
+          const ids = (all.result || [])
+            .map(s => s?.asmgRaceId)
+            .filter(v => /^\d+$/.test(String(v ?? '')));
+          db.close();
+          resolve(ids);
+        };
       };
-    }catch{resolve([]);}
+    } catch {
+      resolve([]);
+    }
   });
 }
 
-function raceAssetNames(race){
-  const names=new Set();
-  const add=value=>{if(typeof value==='string'&&value.trim())names.add(value.trim());};
-  ['image','overlap_schedule','safety_leaflet','mapsimg','list_crews','list_crews2','list_crews3','list_crews4','list_crews5','results_race','results_race2','results_race3','results_race4','results_race5'].forEach(k=>add(race?.[k]));
-  const list=value=>Array.isArray(value)?value:(value&&typeof value==='object'?Object.values(value):[]);
-  list(race?.lists).forEach(x=>add(x?.image));
-  list(race?.results).forEach(x=>add(x?.image));
-  list(race?.coordinates).forEach(x=>add(x?.image));
+function raceAssetNames(race) {
+  const names = new Set();
+  const add = value => {
+    if (typeof value === 'string' && value.trim()) names.add(value.trim());
+  };
+  [
+    'image',
+    'overlap_schedule',
+    'safety_leaflet',
+    'mapsimg',
+    'list_crews',
+    'list_crews2',
+    'list_crews3',
+    'list_crews4',
+    'list_crews5',
+    'results_race',
+    'results_race2',
+    'results_race3',
+    'results_race4',
+    'results_race5',
+  ].forEach(k => add(race?.[k]));
+  const list = value =>
+    Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
+  list(race?.lists).forEach(x => add(x?.image));
+  list(race?.results).forEach(x => add(x?.image));
+  list(race?.coordinates).forEach(x => add(x?.image));
   return [...names];
 }
 
-async function prefetchRaceAssets(race){
-  const cache=await caches.open(ASSET_CACHE);
-  await Promise.all(raceAssetNames(race).map(async name=>{
-    const url=`/api/rallyfans/public/${encodeURIComponent(name)}`;
-    if(await cache.match(url)) return;
-    try{
-      const response=await fetchWithTimeout(url,12000);
-      if(response.ok) await cache.put(url,response);
-    }catch{}
-  }));
+async function prefetchRaceAssets(race) {
+  const cache = await caches.open(ASSET_CACHE);
+  await Promise.all(
+    raceAssetNames(race).map(async name => {
+      const url = `/api/rallyfans/public/${encodeURIComponent(name)}`;
+      if (await cache.match(url)) return;
+      try {
+        const response = await fetchWithTimeout(url, 12000);
+        if (response.ok) await cache.put(url, response);
+      } catch {}
+    }),
+  );
 }
 
-async function refreshSubscribedCrewResults(notify=true){
-  const cache=await caches.open(PERIODIC_CACHE);
-  const ids=await subscribedAsmgRaceIds();
-  await Promise.all([...new Set(ids)].map(async id=>{
-    const url=`/api/asmg/race/${encodeURIComponent(id)}/results`;
-    try{
-      const response=await fetchWithTimeout(url,10000);
-      if(response.ok) await cache.put(url,response.clone());
-    }catch{}
-  }));
-  if(notify){
-    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    for(const client of windows)client.postMessage({type:'RFM_PERIODIC_UPDATE',scope:'crew-results'});
+async function refreshSubscribedCrewResults(notify = true) {
+  const cache = await caches.open(PERIODIC_CACHE);
+  const ids = await subscribedAsmgRaceIds();
+  await Promise.all(
+    [...new Set(ids)].map(async id => {
+      const url = `/api/asmg/race/${encodeURIComponent(id)}/results`;
+      try {
+        const response = await fetchWithTimeout(url, 10000);
+        if (response.ok) await cache.put(url, response.clone());
+      } catch {}
+    }),
+  );
+  if (notify) {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows)
+      client.postMessage({ type: 'RFM_PERIODIC_UPDATE', scope: 'crew-results' });
   }
 }
 
-async function refreshPeriodicRaceData(){
-  const cache=await caches.open(PERIODIC_CACHE);
-  try{
-    const catalog=await fetchWithTimeout('/api/rallyfans/race',8000);
-    if(catalog.ok) await cache.put('/api/rallyfans/race',catalog);
-  }catch{}
-  const ids=await savedRaceIds();
-  await Promise.all([...new Set(ids)].map(async id=>{
-    const url=`/api/rallyfans/race/${encodeURIComponent(id)}`;
-    try{
-      const response=await fetchWithTimeout(url,8000);
-      if(!response.ok) return;
-      await cache.put(url,response.clone());
-      const race=await response.json();
-      await prefetchRaceAssets(race);
-    }catch{}
-  }));
+async function refreshPeriodicRaceData() {
+  const cache = await caches.open(PERIODIC_CACHE);
+  try {
+    const catalog = await fetchWithTimeout('/api/rallyfans/race', 8000);
+    if (catalog.ok) await cache.put('/api/rallyfans/race', catalog);
+  } catch {}
+  const ids = await savedRaceIds();
+  await Promise.all(
+    [...new Set(ids)].map(async id => {
+      const url = `/api/rallyfans/race/${encodeURIComponent(id)}`;
+      try {
+        const response = await fetchWithTimeout(url, 8000);
+        if (!response.ok) return;
+        await cache.put(url, response.clone());
+        const race = await response.json();
+        await prefetchRaceAssets(race);
+      } catch {}
+    }),
+  );
   await refreshSubscribedCrewResults(false);
-  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-  for(const client of windows) client.postMessage({type:'RFM_PERIODIC_UPDATE'});
+  const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  for (const client of windows) client.postMessage({ type: 'RFM_PERIODIC_UPDATE' });
 }
 
-self.addEventListener('periodicsync',event=>{
-  if(event.tag==='rfm-refresh-races') event.waitUntil(refreshPeriodicRaceData());
-  if(event.tag==='rfm-refresh-crew-results') event.waitUntil(refreshSubscribedCrewResults());
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'rfm-refresh-races') event.waitUntil(refreshPeriodicRaceData());
+  if (event.tag === 'rfm-refresh-crew-results') event.waitUntil(refreshSubscribedCrewResults());
 });
 
-self.addEventListener('backgroundfetchsuccess',event=>{
-  event.waitUntil((async()=>{
-    const cache=await caches.open(ASSET_CACHE);
-    const records=await event.registration.matchAll();
-    await Promise.all(records.map(async record=>{
-      const response=await record.responseReady;
-      if(response?.ok) await cache.put(record.request,response);
-    }));
-    try{ await event.updateUI({title:'Rally Fans Map · офлайн-материалы готовы'}); }catch{}
-    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    for(const client of windows) client.postMessage({type:'RFM_BACKGROUND_FETCH',status:'success',id:event.registration.id});
-  })());
+self.addEventListener('backgroundfetchsuccess', event => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(ASSET_CACHE);
+      const records = await event.registration.matchAll();
+      await Promise.all(
+        records.map(async record => {
+          const response = await record.responseReady;
+          if (response?.ok) await cache.put(record.request, response);
+        }),
+      );
+      try {
+        await event.updateUI({ title: 'Rally Fans Map · офлайн-материалы готовы' });
+      } catch {}
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of windows)
+        client.postMessage({
+          type: 'RFM_BACKGROUND_FETCH',
+          status: 'success',
+          id: event.registration.id,
+        });
+    })(),
+  );
 });
 
-self.addEventListener('backgroundfetchfail',event=>{
-  event.waitUntil((async()=>{
-    try{ await event.updateUI({title:'Rally Fans Map · не удалось скачать материалы'}); }catch{}
-    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    for(const client of windows) client.postMessage({type:'RFM_BACKGROUND_FETCH',status:'failure',id:event.registration.id});
-  })());
+self.addEventListener('backgroundfetchfail', event => {
+  event.waitUntil(
+    (async () => {
+      try {
+        await event.updateUI({ title: 'Rally Fans Map · не удалось скачать материалы' });
+      } catch {}
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of windows)
+        client.postMessage({
+          type: 'RFM_BACKGROUND_FETCH',
+          status: 'failure',
+          id: event.registration.id,
+        });
+    })(),
+  );
 });
 
-self.addEventListener('backgroundfetchclick',event=>{
-  event.waitUntil((async()=>{
-    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    if(windows[0]) return windows[0].focus();
-    return self.clients.openWindow ? self.clients.openWindow('/') : undefined;
-  })());
+self.addEventListener('backgroundfetchclick', event => {
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      if (windows[0]) return windows[0].focus();
+      return self.clients.openWindow ? self.clients.openWindow('/') : undefined;
+    })(),
+  );
 });

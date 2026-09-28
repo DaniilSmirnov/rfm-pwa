@@ -5,10 +5,15 @@
     align-items: center;
     gap: var(--space-3);
   }
-  .section-head .block-title { margin-bottom: 6px; }
+  .section-head .block-title {
+    margin-bottom: 6px;
+  }
 }
 @layer responsive {
-  @media (max-width:760px) {
-    .section-head { align-items: flex-start; flex-direction: column; }
+  @media (max-width: 760px) {
+    .section-head {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 }

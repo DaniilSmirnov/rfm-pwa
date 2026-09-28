@@ -11,9 +11,9 @@ describe('basemap popup component', () => {
         kind: 'highway',
         is_bridge: true,
         population: 1200,
-        empty: ''
+        empty: '',
       },
-      layer: { 'source-layer': 'transportation' }
+      layer: { 'source-layer': 'transportation' },
     };
     const markup = renderToStaticMarkup(React.createElement(BasemapPopup, { feature }));
 
@@ -28,7 +28,7 @@ describe('basemap popup component', () => {
   it('includes administrative level only for boundary source layers', () => {
     const data = getBasemapPopupData({
       properties: { kind_detail: '4' },
-      layer: { 'source-layer': 'boundary' }
+      layer: { 'source-layer': 'boundary' },
     });
 
     expect(data.fields).toContainEqual(['Admin level', '4']);

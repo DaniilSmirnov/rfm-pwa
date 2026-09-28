@@ -8,34 +8,60 @@ const portArg = process.argv.find((arg, index) => process.argv[index - 1] === '-
 const root = resolve(rootArg);
 const port = Number(portArg);
 const mime = new Map([
-  ['.css', 'text/css; charset=utf-8'], ['.html', 'text/html; charset=utf-8'],
-  ['.js', 'text/javascript; charset=utf-8'], ['.mjs', 'text/javascript; charset=utf-8'],
-  ['.json', 'application/json; charset=utf-8'], ['.webmanifest', 'application/manifest+json; charset=utf-8'],
-  ['.svg', 'image/svg+xml'], ['.png', 'image/png'], ['.webp', 'image/webp'],
-  ['.woff2', 'font/woff2'], ['.ttf', 'font/ttf'], ['.pbf', 'application/x-protobuf'],
+  ['.css', 'text/css; charset=utf-8'],
+  ['.html', 'text/html; charset=utf-8'],
+  ['.js', 'text/javascript; charset=utf-8'],
+  ['.mjs', 'text/javascript; charset=utf-8'],
+  ['.json', 'application/json; charset=utf-8'],
+  ['.webmanifest', 'application/manifest+json; charset=utf-8'],
+  ['.svg', 'image/svg+xml'],
+  ['.png', 'image/png'],
+  ['.webp', 'image/webp'],
+  ['.woff2', 'font/woff2'],
+  ['.ttf', 'font/ttf'],
+  ['.pbf', 'application/x-protobuf'],
 ]);
 
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url || '/', 'http://127.0.0.1');
     if (url.pathname === '/migration-test/migration-harness.html') {
-      const html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Migration harness</title></head><body><main id="app">migration harness</main></body></html>';
-      response.writeHead(200, {'content-type':'text/html; charset=utf-8','cache-control':'no-store'}).end(html);
+      const html =
+        '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Migration harness</title></head><body><main id="app">migration harness</main></body></html>';
+      response
+        .writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+        .end(html);
       return;
     }
     let pathname;
-    try { pathname = decodeURIComponent(url.pathname); }
-    catch { response.writeHead(400).end('Bad request'); return; }
+    try {
+      pathname = decodeURIComponent(url.pathname);
+    } catch {
+      response.writeHead(400).end('Bad request');
+      return;
+    }
     const target = resolve(root, `.${pathname}`);
-    if (target !== root && !target.startsWith(root + sep)) { response.writeHead(403).end('Forbidden'); return; }
+    if (target !== root && !target.startsWith(root + sep)) {
+      response.writeHead(403).end('Forbidden');
+      return;
+    }
     let file = target;
     let info;
-    try { info = await stat(file); }
-    catch {
-      if (pathname === '/') { file = resolve(root, 'index.html'); info = await stat(file); }
-      else { response.writeHead(404).end('Not found'); return; }
+    try {
+      info = await stat(file);
+    } catch {
+      if (pathname === '/') {
+        file = resolve(root, 'index.html');
+        info = await stat(file);
+      } else {
+        response.writeHead(404).end('Not found');
+        return;
+      }
     }
-    if (info.isDirectory()) { file = resolve(file, 'index.html'); info = await stat(file); }
+    if (info.isDirectory()) {
+      file = resolve(file, 'index.html');
+      info = await stat(file);
+    }
     const headers = {
       'content-type': mime.get(extname(file)) || 'application/octet-stream',
       'content-length': info.size,

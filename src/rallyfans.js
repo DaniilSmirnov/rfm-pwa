@@ -31,9 +31,9 @@ export function raceToGeoJson(race) {
         id: point.id,
         name: point.name || 'Точка',
         color: point.color || null,
-        image: point.image || null
+        image: point.image || null,
       },
-      geometry: { type: 'Point', coordinates }
+      geometry: { type: 'Point', coordinates },
     });
   }
   for (const item of asArray(race.schedule)) {
@@ -46,9 +46,9 @@ export function raceToGeoJson(race) {
         id: item.id,
         name: item.location || 'Событие',
         date: item.date || '',
-        events: asArray(item.events)
+        events: asArray(item.events),
       },
-      geometry: { type: 'Point', coordinates }
+      geometry: { type: 'Point', coordinates },
     });
   }
   return { type: 'FeatureCollection', features };
@@ -56,8 +56,25 @@ export function raceToGeoJson(race) {
 
 export function collectRaceAssetNames(race) {
   const names = new Set();
-  const add = value => { if (typeof value === 'string' && value.trim()) names.add(value.trim()); };
-  ['image','overlap_schedule','safety_leaflet','mapsimg','list_crews','list_crews2','list_crews3','list_crews4','list_crews5','results_race','results_race2','results_race3','results_race4','results_race5'].forEach(k => add(race?.[k]));
+  const add = value => {
+    if (typeof value === 'string' && value.trim()) names.add(value.trim());
+  };
+  [
+    'image',
+    'overlap_schedule',
+    'safety_leaflet',
+    'mapsimg',
+    'list_crews',
+    'list_crews2',
+    'list_crews3',
+    'list_crews4',
+    'list_crews5',
+    'results_race',
+    'results_race2',
+    'results_race3',
+    'results_race4',
+    'results_race5',
+  ].forEach(k => add(race?.[k]));
   asArray(race?.lists).forEach(x => add(x?.image));
   asArray(race?.results).forEach(x => add(x?.image));
   asArray(race?.coordinates).forEach(x => add(x?.image));
@@ -85,9 +102,9 @@ export function raceDetailToPackage(race) {
       city: race.city_race_details || race.city_race || '',
       totalDistance: race.total_distance || '',
       combatKm: race.combat_km || '',
-      days: race.days_race || ''
+      days: race.days_race || '',
     },
-    yandexMapEmbed: race.iframe_maps || null
+    yandexMapEmbed: race.iframe_maps || null,
   };
 }
 
@@ -104,7 +121,11 @@ export async function fetchRaceCatalog() {
 }
 
 export async function fetchRace(id) {
-  const r = await fetchWithTimeout(`${API_BASE}/race/${encodeURIComponent(id)}`, { cache: 'no-store' }, 7000);
+  const r = await fetchWithTimeout(
+    `${API_BASE}/race/${encodeURIComponent(id)}`,
+    { cache: 'no-store' },
+    7000,
+  );
   if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
   return r.json();
 }
@@ -113,48 +134,55 @@ export function assetUrl(name) {
   return `${API_BASE}/public/${encodeURIComponent(name)}`;
 }
 
-async function tryBackgroundFetchAssets(pkg,onProgress){
-  if(!('serviceWorker' in navigator)) return null;
-  const reg=await navigator.serviceWorker.ready;
-  if(!reg.backgroundFetch?.fetch) return null;
-  const names=pkg.assetNames||[];
-  if(!names.length) return {cached:0,total:0,background:false};
-  const urls=names.map(assetUrl);
-  const id=`rfm-assets-${String(pkg.raceId??pkg.id).replace(/[^a-z0-9_-]+/gi,'-')}-${Date.now()}`;
-  try{
-    const task=await reg.backgroundFetch.fetch(id,urls,{
-      title:`Rally Fans Map · ${pkg.name||'гонка'}`,
-      icons:[{src:'/icon.svg',sizes:'any',type:'image/svg+xml'}]
+async function tryBackgroundFetchAssets(pkg, onProgress) {
+  if (!('serviceWorker' in navigator)) return null;
+  const reg = await navigator.serviceWorker.ready;
+  if (!reg.backgroundFetch?.fetch) return null;
+  const names = pkg.assetNames || [];
+  if (!names.length) return { cached: 0, total: 0, background: false };
+  const urls = names.map(assetUrl);
+  const id = `rfm-assets-${String(pkg.raceId ?? pkg.id).replace(/[^a-z0-9_-]+/gi, '-')}-${Date.now()}`;
+  try {
+    const task = await reg.backgroundFetch.fetch(id, urls, {
+      title: `Rally Fans Map · ${pkg.name || 'гонка'}`,
+      icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
     });
-    task.addEventListener?.('progress',()=>{
-      const total=Number(task.downloadTotal)||0;
-      const done=Number(task.downloaded)||0;
-      const ratio=total>0?Math.min(1,done/total):0;
-      onProgress(Math.round(ratio*names.length),names.length,{background:true,downloaded:done,downloadTotal:total});
+    task.addEventListener?.('progress', () => {
+      const total = Number(task.downloadTotal) || 0;
+      const done = Number(task.downloaded) || 0;
+      const ratio = total > 0 ? Math.min(1, done / total) : 0;
+      onProgress(Math.round(ratio * names.length), names.length, {
+        background: true,
+        downloaded: done,
+        downloadTotal: total,
+      });
     });
-    return {cached:0,total:names.length,background:true,id};
-  }catch(e){
-    console.warn('Background Fetch unavailable for race assets, using foreground fallback',e);
+    return { cached: 0, total: names.length, background: true, id };
+  } catch (e) {
+    console.warn('Background Fetch unavailable for race assets, using foreground fallback', e);
     return null;
   }
 }
 
 export async function cacheRaceAssets(pkg, onProgress = () => {}) {
   if (!('caches' in window)) return { cached: 0, total: 0 };
-  const bg=await tryBackgroundFetchAssets(pkg,onProgress);
-  if(bg) return bg;
+  const bg = await tryBackgroundFetchAssets(pkg, onProgress);
+  if (bg) return bg;
   const cache = await caches.open('rfm-race-assets-v1');
   let cached = 0;
   const names = pkg.assetNames || [];
   for (let i = 0; i < names.length; i++) {
     const url = assetUrl(names[i]);
     try {
-      const r = await fetchWithTimeout(url,{},12000);
-      if (r.ok) { await cache.put(url, r.clone()); cached++; }
+      const r = await fetchWithTimeout(url, {}, 12000);
+      if (r.ok) {
+        await cache.put(url, r.clone());
+        cached++;
+      }
     } catch {}
-    onProgress(i + 1, names.length,{background:false});
+    onProgress(i + 1, names.length, { background: false });
   }
-  return { cached, total: names.length, background:false };
+  return { cached, total: names.length, background: false };
 }
 
 export async function enrichPackageWithYandex(pkg) {
@@ -166,10 +194,10 @@ export async function enrichPackageWithYandex(pkg) {
   // snapshot: remove the previous Yandex-derived features first, otherwise
   // moved/removed points remain forever and repeated refreshes create duplicates.
   const baseGeoJson = {
-    type:'FeatureCollection',
-    features:(pkg?.geojson?.features || []).filter(
-      feature => feature?.properties?.source !== 'yandex-constructor'
-    )
+    type: 'FeatureCollection',
+    features: (pkg?.geojson?.features || []).filter(
+      feature => feature?.properties?.source !== 'yandex-constructor',
+    ),
   };
   pkg.geojson = mergeGeoJson(baseGeoJson, yandexGeoJson);
   pkg.yandexImport = {

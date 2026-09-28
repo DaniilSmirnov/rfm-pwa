@@ -1,6 +1,7 @@
 /*Component styles: TodayView.*/
 @layer views {
-  .today-screen,.today-empty {
+  .today-screen,
+  .today-empty {
     padding: 18px var(--space-3) var(--space-2);
   }
 }
@@ -16,11 +17,15 @@
 @layer views {
   .today-hero h2 {
     margin: 7px 0 6px;
-    font: italic 700 24px/1.12 'RF Dewi Expanded Italic',Arial,sans-serif;
+    font:
+      italic 700 24px/1.12 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
   }
 }
 @layer views {
-  .today-card,.today-empty {
+  .today-card,
+  .today-empty {
     margin: 0 0 14px;
     padding: 18px;
     border: 1px solid var(--line);
@@ -59,8 +64,9 @@
     display: flex;
     justify-content: center;
     gap: 2px;
-    padding: var(--space-2) max(var(--space-3),var(--safe-right)) calc(var(--space-2) + var(--safe-bottom)) max(var(--space-3),var(--safe-left));
-    background: rgba(255,255,255,.96);
+    padding: var(--space-2) max(var(--space-3), var(--safe-right))
+      calc(var(--space-2) + var(--safe-bottom)) max(var(--space-3), var(--safe-left));
+    background: rgba(255, 255, 255, 0.96);
     border-top: 1px solid #e5e5e5;
   }
 }
@@ -95,7 +101,8 @@
   }
 }
 @layer views {
-  .today-screen,.today-empty {
+  .today-screen,
+  .today-empty {
     padding: 18px var(--space-3) var(--space-2);
   }
 }
@@ -111,7 +118,10 @@
 @layer views {
   .today-hero h2 {
     margin: 7px 0 6px;
-    font: italic 700 24px/1.12 'RF Dewi Expanded Italic',Arial,sans-serif;
+    font:
+      italic 700 24px/1.12 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
   }
 }
 @layer views {
@@ -122,7 +132,8 @@
   }
 }
 @layer views {
-  .today-card,.today-empty {
+  .today-card,
+  .today-empty {
     margin: 0 0 14px;
     padding: 18px;
     border: 1px solid var(--line);
@@ -208,8 +219,9 @@
     display: flex;
     justify-content: center;
     gap: 2px;
-    padding: var(--space-2) max(var(--space-3),var(--safe-right)) calc(var(--space-2) + var(--safe-bottom)) max(var(--space-3),var(--safe-left));
-    background: rgba(255,255,255,.96);
+    padding: var(--space-2) max(var(--space-3), var(--safe-right))
+      calc(var(--space-2) + var(--safe-bottom)) max(var(--space-3), var(--safe-left));
+    background: rgba(255, 255, 255, 0.96);
     border-top: 1px solid #e5e5e5;
     backdrop-filter: blur(14px);
   }
@@ -246,36 +258,37 @@
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .today-card,:root[data-theme="dark"] .today-empty {
+  :root[data-theme='dark'] .today-card,
+  :root[data-theme='dark'] .today-empty {
     background: #171a1f;
     border-color: #30353d;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .today-stage {
+  :root[data-theme='dark'] .today-stage {
     background: #1d2127;
     border-color: #30353d;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .today-stage span {
+  :root[data-theme='dark'] .today-stage span {
     color: #aeb5be;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .bottom-tabbar {
-    background: rgba(18,20,24,.96);
+  :root[data-theme='dark'] .bottom-tabbar {
+    background: rgba(18, 20, 24, 0.96);
     border-color: #30353d;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .bottom-tabbar button.active {
+  :root[data-theme='dark'] .bottom-tabbar button.active {
     background: #f2f4f6;
     color: #14171b;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .podium-group li {
+  :root[data-theme='dark'] .podium-group li {
     border-color: #30353d;
   }
 }
@@ -308,13 +321,16 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.72));
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.72));
   }
 }
 @layer views {
   .today-race-copy h2 {
     margin: 7px 0 6px;
-    font: italic 700 24px/1.12 'RF Dewi Expanded Italic',Arial,sans-serif;
+    font:
+      italic 700 24px/1.12 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
   }
 }
 @layer views {
@@ -325,13 +341,14 @@
   }
 }
 @layer views {
-  .today-race-card>.button {
+  .today-race-card > .button {
     align-self: flex-start;
     border-color: #fff;
   }
 }
 @layer views {
-  .today-screen,.today-empty {
+  .today-screen,
+  .today-empty {
     padding-bottom: calc(var(--space-5) + var(--safe-bottom));
   }
 }

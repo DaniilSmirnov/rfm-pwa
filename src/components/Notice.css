@@ -13,7 +13,9 @@
   }
 }
 @layer components {
-  .notice strong { font-size: 14px; }
+  .notice strong {
+    font-size: 14px;
+  }
 }
 @layer components {
   .notice--warning {
@@ -30,14 +32,14 @@
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .notice--warning {
+  :root[data-theme='dark'] .notice--warning {
     --notice-border: #66552f;
     --notice-background: #30291b;
     --notice-color: #f4ddb0;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .notice--inverse {
+  :root[data-theme='dark'] .notice--inverse {
     --notice-background: #f5f7fa;
     --notice-color: #111318;
   }

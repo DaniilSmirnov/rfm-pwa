@@ -1,66 +1,79 @@
 import { test, expect } from '@playwright/test';
 import { openApp, openMapWithAcceptedSafety, seedFixtureRace } from './helpers.js';
 
-test.describe('basic UI contracts',()=>{
-  test('main controls have accessible names',async({page})=>{
+test.describe('basic UI contracts', () => {
+  test('main controls have accessible names', async ({ page }) => {
     await openApp(page);
-    const installPrompt=page.getByRole('region',{name:'Установка PWA'});
+    const installPrompt = page.getByRole('region', { name: 'Установка PWA' });
     await expect(installPrompt.getByRole('button')).toBeVisible();
-    await page.getByRole('button',{name:'Ещё'}).click();
-    await expect(page.getByRole('button',{name:/Мои гонки/})).toBeVisible();
-    await expect(page.getByRole('button',{name:/Настройки и диагностика/})).toBeVisible();
-    await page.getByRole('button',{name:/Мои гонки/}).click();
+    await page.getByRole('button', { name: 'Ещё' }).click();
+    await expect(page.getByRole('button', { name: /Мои гонки/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Настройки и диагностика/ })).toBeVisible();
+    await page.getByRole('button', { name: /Мои гонки/ }).click();
     await expect(page.getByPlaceholder('Карелия, Псков…')).toBeVisible();
-    await expect(page.getByRole('region',{name:'Установка PWA'})).toBeHidden();
-    await expect(page.getByRole('button',{name:'Удалить все офлайн-данные'})).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Установка PWA' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Удалить все офлайн-данные' })).toBeVisible();
   });
 
-  test('search fields expose placeholders',async({page})=>{
+  test('search fields expose placeholders', async ({ page }) => {
     await openApp(page);
-    await expect(page.getByPlaceholder('Карелия, Псков…')).toHaveAttribute('placeholder',/Карелия/);
-    await expect(page.getByPlaceholder('Найти сохранённую гонку…')).toHaveAttribute('placeholder',/сохранённую гонку/);
+    await expect(page.getByPlaceholder('Карелия, Псков…')).toHaveAttribute(
+      'placeholder',
+      /Карелия/,
+    );
+    await expect(page.getByPlaceholder('Найти сохранённую гонку…')).toHaveAttribute(
+      'placeholder',
+      /сохранённую гонку/,
+    );
   });
 
-  test('image modal starts hidden',async({page})=>{
+  test('image modal starts hidden', async ({ page }) => {
     await openApp(page);
     await expect(page.locator('#imageModal')).toBeHidden();
   });
 
-  test('point actions start hidden before point selection',async({page})=>{
+  test('point actions start hidden before point selection', async ({ page }) => {
     await openApp(page);
     await expect(page.locator('#pointActions')).toBeHidden();
   });
 
-  test('race details start hidden before download',async({page})=>{
+  test('race details start hidden before download', async ({ page }) => {
     await openApp(page);
     await expect(page.locator('#raceDetails')).toBeHidden();
   });
 
-  test('downloaded race exposes both top and map offline controls',async({page})=>{
+  test('downloaded race exposes both top and map offline controls', async ({ page }) => {
     await openApp(page);
     await seedFixtureRace(page);
     await expect(page.locator('#downloadMapBtnTop')).toBeEnabled();
     await expect(page.locator('#downloadMapBtn')).toBeEnabled();
   });
 
-  test('selected point exposes all navigation actions',async({page})=>{
+  test('selected point exposes all navigation actions', async ({ page }) => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
-    for(const id of ['googleMapsBtn','yandexMapsBtn','mapsMeBtn','sharePointBtn','copyCoordsBtn','favoritePointBtn']){
-      await expect(page.locator('#'+id)).toBeVisible();
+    for (const id of [
+      'googleMapsBtn',
+      'yandexMapsBtn',
+      'mapsMeBtn',
+      'sharePointBtn',
+      'copyCoordsBtn',
+      'favoritePointBtn',
+    ]) {
+      await expect(page.locator('#' + id)).toBeVisible();
     }
   });
 
-  test('spectator compass section is present for selected point',async({page})=>{
+  test('spectator compass section is present for selected point', async ({ page }) => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
-    const compass=page.locator('#spectatorCompass');
+    const compass = page.locator('#spectatorCompass');
     await expect(compass).toBeVisible();
     await compass.locator('summary').click();
     await expect(page.locator('#compassEnableBtn')).toBeVisible();

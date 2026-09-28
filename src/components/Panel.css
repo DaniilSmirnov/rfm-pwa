@@ -8,5 +8,8 @@
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .rfm-section { background: #171a1f; color: #f5f7fa; }
+  :root[data-theme='dark'] .rfm-section {
+    background: #171a1f;
+    color: #f5f7fa;
+  }
 }

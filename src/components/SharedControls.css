@@ -1,8 +1,11 @@
 /*Component styles: SharedControls.*/
 @layer components {
   .brand-small {
-    font: 700 11px/1.2 'RF Dewi Expanded Bold',Arial,sans-serif;
-    letter-spacing: .06em;
+    font:
+      700 11px/1.2 'RF Dewi Expanded Bold',
+      Arial,
+      sans-serif;
+    letter-spacing: 0.06em;
   }
 }
 @layer components {
@@ -36,15 +39,18 @@
     max-width: 680px;
     font-size: 14px;
     line-height: 1.45;
-    letter-spacing: .02em;
+    letter-spacing: 0.02em;
   }
 }
 
 @layer components {
   .block-title {
     color: #000;
-    font: italic 700 20px/1.1 'RF Dewi Expanded Italic',Arial,sans-serif;
-    letter-spacing: .4px;
+    font:
+      italic 700 20px/1.1 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
+    letter-spacing: 0.4px;
     text-transform: uppercase;
     margin-bottom: 18px;
   }
@@ -60,11 +66,13 @@
 @layer components {
   .slide-hint {
     color: #a3a3a3;
-    font: 700 10px/1 'RF Dewi Expanded',Arial,sans-serif;
-    letter-spacing: .8px;
+    font:
+      700 10px/1 'RF Dewi Expanded',
+      Arial,
+      sans-serif;
+    letter-spacing: 0.8px;
   }
 }
-
 
 @layer components {
   .muted {
@@ -80,25 +88,14 @@
 }
 @layer components {
   .eyebrow {
-    font: 700 11px/1.2 'RF Dewi Expanded Bold',Arial,sans-serif;
-    letter-spacing: .06em;
+    font:
+      700 11px/1.2 'RF Dewi Expanded Bold',
+      Arial,
+      sans-serif;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @layer components {
   .grid.two {
@@ -173,7 +170,7 @@
   }
 }
 @layer components {
-  .event-list>div {
+  .event-list > div {
     display: grid;
     grid-template-columns: 48px 1fr;
     gap: var(--space-2);
@@ -200,7 +197,7 @@
     transform: translateX(-50%);
     z-index: 9999;
     border-radius: var(--radius-xs);
-    box-shadow: 0 12px 34px rgba(0,0,0,.32);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
     font-weight: 700;
     max-width: calc(100% - 28px);
     text-align: center;
@@ -223,8 +220,9 @@
   }
 }
 @layer responsive {
-  @media (min-width:760px) {
-    .rfm-section,.intro-panel {
+  @media (min-width: 760px) {
+    .rfm-section,
+    .intro-panel {
       padding-left: var(--space-5);
       padding-right: var(--space-5);
     }
@@ -232,13 +230,12 @@
 }
 
 @layer responsive {
-  @media (max-width:760px) {
+  @media (max-width: 760px) {
     .grid.two {
       grid-template-columns: 1fr;
     }
   }
 }
-
 
 @layer components {
   .row-arrow {
@@ -248,15 +245,6 @@
   }
 }
 
-
-
-
-
-
-
-
-
-
 @layer components {
   .points-panel {
     margin-top: var(--space-4);
@@ -264,48 +252,42 @@
 }
 
 @layer theme {
-  :root[data-theme="dark"] .intro-panel {
+  :root[data-theme='dark'] .intro-panel {
     background: #171a1f;
     color: #f5f7fa;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .intro-panel p,:root[data-theme="dark"] .muted {
+  :root[data-theme='dark'] .intro-panel p,
+  :root[data-theme='dark'] .muted {
     color: #9aa0a9;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .block-title {
+  :root[data-theme='dark'] .block-title {
     color: #f5f7fa;
   }
 }
 
-
-
-
-
-
-
-
-
-
 @layer theme {
-  :root[data-theme="dark"] .full-width-line {
+  :root[data-theme='dark'] .full-width-line {
     border-color: #2b2f36;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .full-width-line {
+  :root[data-theme='dark'] .full-width-line {
     background: #2b2f36;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .gray-label,:root[data-theme="dark"] .coordinates-line {
+  :root[data-theme='dark'] .gray-label,
+  :root[data-theme='dark'] .coordinates-line {
     color: #9aa0a9;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .rfm-icon,:root[data-theme="dark"] .row-arrow {
+  :root[data-theme='dark'] .rfm-icon,
+  :root[data-theme='dark'] .row-arrow {
     filter: invert(1);
   }
 }

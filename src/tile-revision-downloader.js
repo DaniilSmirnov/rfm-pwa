@@ -2,7 +2,8 @@ const DEFAULT_RETRIES = 1;
 
 export const normalizeTileData = value => {
   if (value instanceof ArrayBuffer) return value;
-  if (ArrayBuffer.isView(value)) return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+  if (ArrayBuffer.isView(value))
+    return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
   return value;
 };
 
@@ -45,7 +46,12 @@ export async function downloadTileRevision({
   maxZoom,
 }) {
   if (!Array.isArray(tiles) || !tiles.length) throw new Error('Tile plan is empty');
-  if (!storageId || typeof getTile !== 'function' || typeof fetchTile !== 'function' || typeof saveTile !== 'function') {
+  if (
+    !storageId ||
+    typeof getTile !== 'function' ||
+    typeof fetchTile !== 'function' ||
+    typeof saveTile !== 'function'
+  ) {
     throw new TypeError('Tile revision downloader is missing required dependencies');
   }
 
@@ -56,13 +62,15 @@ export async function downloadTileRevision({
   let reused = 0;
   const errors = [];
   const queue = [...tiles];
-  let lastProgressAt=-Infinity;
+  let lastProgressAt = -Infinity;
 
   async function worker() {
     while (queue.length) {
       const tile = queue.shift();
       try {
-        const existing = resume ? normalizeTileData((await getTile(storageId, tile.z, tile.x, tile.y))?.data) : null;
+        const existing = resume
+          ? normalizeTileData((await getTile(storageId, tile.z, tile.x, tile.y))?.data)
+          : null;
         if (existing?.byteLength) {
           reused++;
           saved++;
@@ -80,27 +88,34 @@ export async function downloadTileRevision({
         errors.push({ tile, error });
       }
       done++;
-      const now=globalThis.performance?.now?.()??Date.now();
-      if(done===tiles.length || now-lastProgressAt>=progressIntervalMs){
-        lastProgressAt=now;
+      const now = globalThis.performance?.now?.() ?? Date.now();
+      if (done === tiles.length || now - lastProgressAt >= progressIntervalMs) {
+        lastProgressAt = now;
         onProgress({ done, total: tiles.length, saved, bytes, failed, reused, maxZoom });
       }
     }
   }
 
   try {
-    await Promise.all(Array.from({ length: Math.min(Math.max(1, concurrency), queue.length) }, () => worker()));
+    await Promise.all(
+      Array.from({ length: Math.min(Math.max(1, concurrency), queue.length) }, () => worker()),
+    );
     if (failed) {
       const first = errors[0]?.error;
-      const error = new Error(`Failed to download ${failed} of ${tiles.length} tiles${first?.message ? `: ${first.message}` : ''}`);
+      const error = new Error(
+        `Failed to download ${failed} of ${tiles.length} tiles${first?.message ? `: ${first.message}` : ''}`,
+      );
       error.stats = { done, total: tiles.length, saved, bytes, failed, reused, maxZoom };
       throw error;
     }
     return { done, total: tiles.length, saved, bytes, failed, reused, maxZoom };
   } catch (error) {
     if (cleanupOnFailure) {
-      try { await deleteRevision?.(storageId); }
-      catch (cleanupError) { console.warn('Could not remove failed tile revision', cleanupError); }
+      try {
+        await deleteRevision?.(storageId);
+      } catch (cleanupError) {
+        console.warn('Could not remove failed tile revision', cleanupError);
+      }
     }
     throw error;
   }
