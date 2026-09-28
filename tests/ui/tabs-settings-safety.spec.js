@@ -64,6 +64,20 @@ test.describe('Today tab and settings flows',()=>{
     expect(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('rfm:safety-accepted:v1:')))).toBe(true);
   });
 
+  test('blocks touch scrolling the map behind the safety memo',async({page})=>{
+    await openApp(page);
+    await seedFixtureRace(page);
+    await page.getByRole('button',{name:'Карта'}).click();
+    await expect(page.getByRole('dialog',{name:'Безопасность'})).toBeVisible();
+
+    const prevented=await page.locator('#mapSection').evaluate(node=>{
+      const event=new Event('touchmove',{bubbles:true,cancelable:true});
+      node.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+    expect(prevented).toBe(true);
+  });
+
   test('renders the safety leaflet as React content with separate illustrations',async({page})=>{
     await openApp(page);
     await seedFixtureRace(page);
