@@ -45,6 +45,18 @@ describe('architecture guardrails',()=>{
     expect(()=>read('tests/pwa/fixtures/migration-harness.html')).toThrow();
   });
 
+  it('enforces shared React button and per-component coverage primitives',()=>{
+    const jsxFiles=['components','views','modals'].flatMap(folder=>
+      readdirSync(`src/${folder}`).filter(name=>name.endsWith('.jsx')).map(name=>`src/${folder}/${name}`)
+    );
+    const nativeButtonFiles=jsxFiles.filter(file=>file!=='src/components/Button.jsx'&&/<button\b/.test(read(file)));
+    expect(nativeButtonFiles).toEqual([]);
+    const config=read('vitest.config.js');
+    expect(config).toContain("perFile: true");
+    expect(config).toContain('lines: 70');
+    expect(JSON.parse(read('package.json')).scripts['test:unit']).toContain('--coverage');
+  });
+
   it('keeps component styles split and declares shared cascade layers',()=>{
     const cssFiles=['src/styles/base.css',...['components','views','modals'].flatMap(folder=>
       readdirSync(`src/${folder}`).filter(name=>name.endsWith('.css')).map(name=>`src/${folder}/${name}`)
@@ -54,6 +66,7 @@ describe('architecture guardrails',()=>{
     expect(cssFiles).toContain('src/views/SettingsView.css');
     expect(cssFiles).toContain('src/modals/SafetyGate.css');
     expect(read('src/components/CrewResults.jsx')).toContain("import './CrewResults.css'");
+    expect(read('src/components/BasemapPopup.jsx')).toContain("import './BasemapPopup.css'");
     expect(read('src/views/SettingsView.jsx')).toContain("import './SettingsView.css'");
     expect(read('src/modals/SafetyGate.jsx')).toContain("import './SafetyGate.css'");
     expect(css).toContain('@layer base, components, views, modals, theme, responsive');

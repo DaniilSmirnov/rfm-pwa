@@ -1,8 +1,12 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { flushSync } from 'react-dom';
 import { geometryBounds } from './normalize.js';
 import { baseStyle } from './map/style.js';
 import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
 import { TerrainModeControl } from './map/terrain-control.js';
 import { installRouteDirections } from './map/route-direction.js';
+import BasemapPopup from './components/BasemapPopup.jsx';
 
 let activeMap = null;
 let activeRaceLabelMarkers = [];
@@ -19,8 +23,6 @@ function clearAllLabels() {
   clearMarkers(activeRaceLabelMarkers);
   clearMarkers(activeRouteDirectionMarkers);
 }
-
-function esc(s='') { return String(s).replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function expandBounds(bounds, userPos) {
   if (!bounds) return null;
@@ -69,51 +71,14 @@ function featureName(props={}) {
   return String(props['name:ru'] || props.name_ru || props.name || props.title || props.caption || '').trim();
 }
 
-function readableBasemapValue(value){
-  if(value===true || value==='true') return 'да';
-  if(value===false || value==='false') return 'нет';
-  return String(value);
-}
-
-function basemapPopupHtml(feature){
-  const props=feature?.properties||{};
-  const title=featureName(props) || props.ref || props.shield_text || props.addr_housenumber || 'Объект карты';
-  const fields=[
-    ['Тип',props.kind],
-    ['Подтип',props.kind_detail],
-    ['Номер / ref',props.ref],
-    ['Щит',props.shield_text],
-    ['Дорожная сеть',props.network],
-    ['Односторонняя',props.oneway],
-    ['Сервис',props.service],
-    ['Съезд',props.is_link],
-    ['Мост',props.is_bridge ?? props.bridge],
-    ['Тоннель',props.is_tunnel ?? props.tunnel],
-    ['Население',props.population],
-    ['Ранг населения',props.population_rank],
-    ['Столица',props.capital],
-    ['Wikidata',props.wikidata],
-    ['Кухня',props.cuisine],
-    ['Религия',props.religion],
-    ['Спорт',props.sport],
-    ['IATA',props.iata],
-    ['Водохранилище',props.reservoir],
-    ['Пересыхающий',props.intermittent],
-    ['Щёлочная вода',props.alkaline],
-    ['Уровень',props.layer],
-    ['Спорная граница',props.disputed],
-    ['Admin level',props.kind_detail && feature?.layer?.['source-layer']?.includes?.('bound') ? props.kind_detail : null],
-    ['Номер дома',props.addr_housenumber],
-    ['min_zoom',props.min_zoom],
-    ['sort_rank',props.sort_rank]
-  ].filter(([,value])=>value!==undefined && value!==null && String(value)!=='');
-  const layer=feature?.layer?.['source-layer'] || feature?.sourceLayer || '';
-  return `<div class="basemap-popup-card"><strong class="basemap-popup-title">${esc(title)}</strong>${layer?`<div class="basemap-popup-layer">${esc(layer)}</div>`:''}${fields.map(([label,value])=>`<div class="basemap-popup-row"><span>${esc(label)}</span><b>${esc(readableBasemapValue(value))}</b></div>`).join('')}</div>`;
-}
-
 function installBasemapInspector(map, offlineMap){
   if(!offlineMap?.ready || !window.maplibregl?.Popup) return;
-  const popup=new window.maplibregl.Popup({closeButton:true,closeOnClick:true,maxWidth:'330px',className:'basemap-popup'});
+  let popup=null;
+  const closePopup=()=>{
+    popup?.remove();
+    popup=null;
+  };
+  map.on('remove',closePopup);
   map.on('click',e=>{
     try{
       if(map.getLayer('rfm-points') && map.queryRenderedFeatures(e.point,{layers:['rfm-points']}).length) return;
@@ -125,7 +90,21 @@ function installBasemapInspector(map, offlineMap){
       const score=feature=>interesting.reduce((n,key)=>n+(feature?.properties?.[key]!==undefined && feature?.properties?.[key]!==''?1:0),0);
       const feature=[...features].sort((a,b)=>score(b)-score(a))[0];
       if(!feature || score(feature)===0) return;
-      popup.setLngLat(e.lngLat).setHTML(basemapPopupHtml(feature)).addTo(map);
+      closePopup();
+      const content=document.createElement('div');
+      const root=createRoot(content);
+      flushSync(()=>root.render(React.createElement(BasemapPopup,{feature})));
+      let mounted=true;
+      const unmount=()=>{
+        if(!mounted) return;
+        mounted=false;
+        root.unmount();
+      };
+      popup=new window.maplibregl.Popup({closeButton:true,closeOnClick:true,maxWidth:'330px',className:'basemap-popup'})
+        .on('close',unmount)
+        .setLngLat(e.lngLat)
+        .setDOMContent(content)
+        .addTo(map);
     }catch(error){
       console.warn('basemap feature inspector failed',error);
     }
@@ -175,7 +154,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options={}) {
   if (!maplibregl) throw new Error('MapLibre is unavailable');
   if (activeMap) { try { activeMap.remove(); } catch {} activeMap=null; }
   clearAllLabels();
-  container.innerHTML='';
+  container.replaceChildren();
   const terrainMode=options.terrainMode==='3d'?'3d':'hillshade';
   const camera=options.cameraState || null;
   const map = new maplibregl.Map({

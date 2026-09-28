@@ -1,0 +1,12 @@
+@layer components {
+  .rfm-section {
+    background: #fff;
+    padding: 20px var(--space-4);
+    margin: 0 var(--space-3) var(--space-4);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--line);
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .rfm-section { background: #171a1f; color: #f5f7fa; }
+}

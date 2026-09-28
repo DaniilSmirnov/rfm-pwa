@@ -1,5 +1,7 @@
 import './ScheduleList.css';
 import React, { useState } from 'react';
+import Button from './Button.jsx';
+import EmptyState from './EmptyState.jsx';
 import { stageIdentity } from '../app/schedule.js';
 import { subscribedStageKeys, setStageSubscribed, walletStageKeys, setWalletStageAdded } from '../app/preferences.js';
 import { isIOSDevice } from '../app/pwa.js';
@@ -12,7 +14,7 @@ const WALLET_STAGE_FEATURE_ENABLED=false;
 export default function ScheduleList({pkg,schedule=asArray(pkg?.original?.schedule),selectedStageKey=null,onStageSelect}){
   const [busyKey,setBusyKey]=useState('');
   const [revision,setRevision]=useState(0);
-  if(!schedule.length) return <div className="schedule-list"><p className="muted">Расписание отсутствует.</p></div>;
+  if(!schedule.length) return <div className="schedule-list"><EmptyState>Расписание отсутствует.</EmptyState></div>;
   const subscribed=subscribedStageKeys(pkg);
   const walletAdded=walletStageKeys(pkg);
   const showWallet=WALLET_STAGE_FEATURE_ENABLED&&isIOSDevice();
@@ -62,12 +64,12 @@ export default function ScheduleList({pkg,schedule=asArray(pkg?.original?.schedu
         {item.date&&<div className="date-header">{item.date}</div>}
         <div className="schedule-location-row"><div className="location">{item.location||'Событие'}</div>
           {stage&&<div className="stage-actions">
-            <button className={`button compact stage-push-toggle ${isSubscribed?'subscribed':''}`} data-stage-key={stage.key} type="button" aria-label={isSubscribed?'Выключить уведомления':'Включить уведомления'} disabled={busyKey===stage.key} onClick={event=>{event.stopPropagation();void togglePush(item,stage);}}>
+            <Button className={`button compact stage-push-toggle ${isSubscribed?'subscribed':''}`} data-stage-key={stage.key} type="button" aria-label={isSubscribed?'Выключить уведомления':'Включить уведомления'} disabled={busyKey===stage.key} onClick={event=>{event.stopPropagation();void togglePush(item,stage);}}>
               <span aria-hidden="true">🔔</span><span>{isSubscribed?'Включены':'Уведомлять'}</span>
-            </button>
-            {showWallet&&<button className={`button compact stage-wallet-toggle ${isInWallet?'subscribed':''}`} data-wallet-stage-key={stage.key} type="button" aria-label={`Добавить ${stage.name} в Apple Wallet`} disabled={busyKey===stage.key} onClick={event=>{event.stopPropagation();void toggleWallet(item,stage);}}>
+            </Button>
+            {showWallet&&<Button className={`button compact stage-wallet-toggle ${isInWallet?'subscribed':''}`} data-wallet-stage-key={stage.key} type="button" aria-label={`Добавить ${stage.name} в Apple Wallet`} disabled={busyKey===stage.key} onClick={event=>{event.stopPropagation();void toggleWallet(item,stage);}}>
               <img className="rfm-icon" src="/assets/wallet.svg" alt=""/><span>{isInWallet?'Wallet ✓':'Wallet'}</span>
-            </button>}
+            </Button>}
           </div>}
         </div>
         {item.coordinates&&<div className="coordinates-line">{item.coordinates}</div>}

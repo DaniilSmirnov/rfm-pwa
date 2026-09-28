@@ -1,6 +1,7 @@
 import '../components/SharedControls.css';
 import '../components/AppShell.css';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import Button from '../components/Button.jsx';
 import { CalendarDays, CircleEllipsis, Map } from 'lucide-react';
 import { useRfmApp, formatBytes } from '../hooks/useRfmApp.js';
 import { resizeActiveMap } from '../map.js';
@@ -123,7 +124,7 @@ export default function App(){
       pointListContent={<PointList app={app}/>} favoritesContent={<FavoritesList app={app}/>} scheduleContent={pkg&&<ScheduleList pkg={pkg}/>} mediaContent={<RaceMedia pkg={pkg}/>}/>
     <BootDiagnostics open={diagnosticsOpen} onClose={()=>setDiagnosticsOpen(false)}/>
     <AppFooter/>
-    <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></button>)}</nav>
+    <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><Button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></Button>)}</nav>
 
     <CrewResults pkg={pkg&&(!raceHasFinished(pkg,clock)||pkg.crewResults?.eventResults?.length)?pkg:null} open={crewResultsOpen} onOpen={openCrewResults} onClose={()=>setCrewResultsOpen(false)}/>
 

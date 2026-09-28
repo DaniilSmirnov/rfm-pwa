@@ -1,4 +1,5 @@
 import React from 'react';
+import Button from '../components/Button.jsx';
 import { assetUrl } from '../rallyfans.js';
 import OfflineMapActions from '../components/OfflineMapActions.jsx';
 import './RaceDetails.css';
@@ -21,7 +22,7 @@ export default function RaceDetails({app,schedule,media}){
         <strong>{changes.map(item=>item.label||item.key).join(' · ')}</strong>
         <p className="muted small">{pkg.pendingUpdate?'Есть изменения материалов. Старый офлайн-пакет остаётся активным.':'Все необходимые данные были скачаны, поэтому изменения уже применены.'}</p>
       </section>}
-      <div className="race-actions-line"><button className="button" disabled={!pkg?.yandexMapEmbed} onClick={app.importYandex}>{pkg?.yandexImport?.featureCount?`Yandex: ${pkg.yandexImport.featureCount} объектов ✓`:'Импорт из Yandex'}</button></div>
+      <div className="race-actions-line"><Button className="button" disabled={!pkg?.yandexMapEmbed} onClick={app.importYandex}>{pkg?.yandexImport?.featureCount?`Yandex: ${pkg.yandexImport.featureCount} объектов ✓`:'Импорт из Yandex'}</Button></div>
       <OfflineMapActions app={app} top/>
       <div className="full-width-line"/><div className="block-title">РАСПИСАНИЕ</div>
       <div id="scheduleList" className="schedule-list">{schedule}</div><div id="raceMedia">{media}</div>

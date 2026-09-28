@@ -30,7 +30,11 @@ describe('React ownership boundaries',()=>{
   it('removes legacy imperative renderers from the active source tree',()=>{
     expect(()=>source('../../src/app/terrain-controls.js')).toThrow();
     expect(()=>source('../../src/app/rally-pack-update-ui.js')).toThrow();
-    expect(source('../../src/map.js')).not.toContain('renderFallback');
+    const map = source('../../src/map.js');
+    expect(map).not.toContain('renderFallback');
+    expect(map).not.toMatch(/return\s+[`'\"]\s*</);
+    expect(map).not.toContain('.setHTML(');
+    expect(source('../../src/map/terrain-control.js')).not.toContain('innerHTML');
   });
 
   it('publishes compass heading changes without rerendering the application shell',()=>{
