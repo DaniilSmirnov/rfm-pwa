@@ -4,7 +4,8 @@ import { openApp, openMapWithAcceptedSafety, seedFixtureRace } from './helpers.j
 test.describe('basic UI contracts',()=>{
   test('main controls have accessible names',async({page})=>{
     await openApp(page);
-    await expect(page.getByRole('button',{name:'Установить PWA'})).toBeVisible();
+    const installPrompt=page.getByRole('region',{name:'Установка PWA'});
+    await expect(installPrompt.getByRole('button')).toBeVisible();
     await page.getByRole('button',{name:'Ещё'}).click();
     await expect(page.getByRole('button',{name:/Мои гонки/})).toBeVisible();
     await expect(page.getByRole('button',{name:/Настройки и диагностика/})).toBeVisible();

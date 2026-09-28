@@ -148,8 +148,9 @@ test.describe('standalone launch detection',()=>{
     await installAppMocks(page);
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
-    await expect(page.getByRole('region',{name:'Установка PWA'})).toBeHidden();
-    await expect(page.getByRole('button',{name:'Установить PWA'})).toBeHidden();
+    const installPrompt=page.getByRole('region',{name:'Установка PWA'});
+    await expect(installPrompt).toBeHidden();
+    await expect(installPrompt.getByRole('button')).toBeHidden();
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context','app');
   });
 

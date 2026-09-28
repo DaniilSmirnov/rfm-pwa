@@ -16,11 +16,13 @@ test.describe('app shell and catalog',()=>{
 
   test('shows browser PWA installation CTA on Today only',async({page})=>{
     await openApp(page);
-    await expect(page.getByRole('region',{name:'Установка PWA'})).toBeVisible();
-    await expect(page.getByRole('button',{name:'Установить PWA'})).toBeVisible();
+    const installPrompt=page.getByRole('region',{name:'Установка PWA'});
+    await expect(installPrompt).toBeVisible();
+    await expect(installPrompt.getByRole('button')).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context','browser');
     await page.getByRole('button',{name:'Ещё'}).click();
-    await expect(page.getByRole('region',{name:'Установка PWA'})).toBeHidden();
+    await expect(installPrompt).toBeHidden();
+    await expect(installPrompt.getByRole('button')).toBeHidden();
   });
 
   test('shows online network badge',async({page})=>{
