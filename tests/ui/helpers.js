@@ -138,10 +138,11 @@ export async function installAppMocks(page,options={}){
     race=raceFixture,
     online=true
   }=options;
+  const push=options.push;
 
   await page.addInitScript(({pmtilesFailure})=>{window.__pmtilesFail=Boolean(pmtilesFailure);},{pmtilesFailure:options.pmtilesFailure});
 
-  await page.addInitScript(({online})=>{
+  await page.addInitScript(({online,push})=>{
     const RealDate=Date;
     const fixedNow=new RealDate('2026-09-24T06:00:00.000Z').getTime();
     class FixedDate extends RealDate{
@@ -161,15 +162,28 @@ export async function installAppMocks(page,options={}){
     };
     try{Object.defineProperty(navigator,'geolocation',{configurable:true,value:geolocation});}
     catch{try{navigator.geolocation.getCurrentPosition=geolocation.getCurrentPosition;navigator.geolocation.watchPosition=geolocation.watchPosition;navigator.geolocation.clearWatch=geolocation.clearWatch;}catch{}}
+    let subscribed=Boolean(push?.existingSubscription);
+    const subscription={
+      endpoint:push?.subscription?.endpoint||'https://push.example.test/subscription/123',
+      toJSON:()=>push?.subscription||{endpoint:subscription.endpoint,keys:{p256dh:'test-key',auth:'test-auth'}},
+      unsubscribe:async()=>{subscribed=false;return true;}
+    };
     const swRegistration={
       waiting:null,
       installing:null,
       backgroundFetch:null,
       periodicSync:null,
-      pushManager:{getSubscription:async()=>null},
+      pushManager:{
+        getSubscription:async()=>subscribed?subscription:null,
+        subscribe:async()=>{subscribed=true;return subscription;}
+      },
       update:async()=>{},
       addEventListener(){}
     };
+    if(push){
+      Object.defineProperty(window,'PushManager',{configurable:true,value:class PushManager{}});
+      Object.defineProperty(window,'Notification',{configurable:true,value:{permission:push.permission||'default',requestPermission:async()=>push.requestPermission||'granted'}});
+    }
     const serviceWorker={
       controller:null,
       ready:Promise.resolve(swRegistration),
@@ -177,7 +191,7 @@ export async function installAppMocks(page,options={}){
       addEventListener(){}
     };
     try{Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:serviceWorker});}catch{}
-  },{online});
+  },{online,push});
 
   await page.route('**/vendor/maplibre-gl/**',async route=>{
     const url=route.request().url();
@@ -259,6 +273,6 @@ export async function seedFixtureRace(page){
     db.close();
     window.dispatchEvent(new Event('rfm:refresh-local-data'));
   },{race:raceFixture,results:asmgResultsFixture});
-  await page.locator('#raceDetails').waitFor({state:'visible'});
+  await page.locator('.race-page').waitFor({state:'visible'});
   await page.waitForFunction(()=>Boolean(document.querySelector('#crewResultsOpen')&&!document.querySelector('#crewResultsOpen').hidden));
 }

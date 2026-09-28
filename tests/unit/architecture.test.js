@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { RFM_FONTS } from '../../src/worker/proxies.js';
 import { inspectOfflineRevisionSamples } from '../../src/app/offline-diagnostics.js';
 
@@ -8,11 +8,11 @@ const lines=path=>read(path).split(/\r?\n/).length;
 
 describe('architecture guardrails',()=>{
   it('keeps React entrypoint minimal',()=>expect(lines('src/main.jsx')).toBeLessThan(40));
-  it('keeps React app composition below 500 lines',()=>expect(lines('src/react/App.jsx')).toBeLessThan(500));
-  it('keeps React application hook below 480 lines',()=>expect(lines('src/react/useRfmApp.js')).toBeLessThan(480));
+  it('keeps React app composition below 500 lines',()=>expect(lines('src/views/App.jsx')).toBeLessThan(500));
+  it('keeps React application hook below 480 lines',()=>expect(lines('src/hooks/useRfmApp.js')).toBeLessThan(480));
   it('keeps offline storage controls in a dedicated hook',()=>{
-    expect(lines('src/react/useOfflineStorageControls.js')).toBeLessThan(140);
-    expect(read('src/react/useRfmApp.js')).toContain('useOfflineStorageControls');
+    expect(lines('src/hooks/useOfflineStorageControls.js')).toBeLessThan(140);
+    expect(read('src/hooks/useRfmApp.js')).toContain('useOfflineStorageControls');
   });
   it('keeps offline diagnostics bounded to representative tile samples',()=>{
     expect(lines('src/app/offline-diagnostics.js')).toBeLessThan(100);
@@ -26,6 +26,38 @@ describe('architecture guardrails',()=>{
   it('keeps schedule timezone logic out of React entrypoint',()=>expect(read('src/main.jsx')).not.toContain('RACE_REGION_TIMEZONES'));
   it('keeps sanitizer out of React entrypoint',()=>expect(read('src/main.jsx')).not.toContain('SAFE_RICH_HTML_TAGS'));
   it('removes the legacy imperative app entrypoint',()=>expect(()=>read('src/app.js')).toThrow());
+  it('mounts the application through React without legacy interface nodes in index.html',()=>{
+    const html=read('index.html');
+    expect(html).toContain('id="reactRoot"');
+    expect(html).not.toContain('id="catalogSection"');
+    expect(html).not.toContain('id="mapSection"');
+    expect(html).not.toContain('id="scheduleList"');
+    expect(read('src/main.jsx')).toContain('createRoot');
+  });
+
+  it('organizes app UI into components, views, modals and hooks',()=>{
+    expect(()=>read('src/react/App.jsx')).toThrow();
+    expect(read('src/views/App.jsx')).toContain("from '../hooks/useRfmApp.js'");
+    expect(read('src/modals/SafetyGate.jsx')).toContain('role="dialog"');
+    expect(read('src/components/SafetyMemo.jsx')).toContain('import \'./SafetyMemo.css\'');
+    expect(read('index.html')).not.toContain('/src/styles.css');
+    expect(read('index.html')).not.toContain('id="catalogSection"');
+    expect(()=>read('tests/pwa/fixtures/migration-harness.html')).toThrow();
+  });
+
+  it('keeps component styles split and declares shared cascade layers',()=>{
+    const cssFiles=['src/styles/base.css',...['components','views','modals'].flatMap(folder=>
+      readdirSync(`src/${folder}`).filter(name=>name.endsWith('.css')).map(name=>`src/${folder}/${name}`)
+    )];
+    const css=cssFiles.map(read).join('\n');
+    expect(cssFiles).toContain('src/components/CrewResults.css');
+    expect(cssFiles).toContain('src/views/SettingsView.css');
+    expect(cssFiles).toContain('src/modals/SafetyGate.css');
+    expect(read('src/components/CrewResults.jsx')).toContain("import './CrewResults.css'");
+    expect(read('src/views/SettingsView.jsx')).toContain("import './SettingsView.css'");
+    expect(read('src/modals/SafetyGate.jsx')).toContain("import './SafetyGate.css'");
+    expect(css).toContain('@layer base, components, views, modals, theme, responsive');
+  });
 
   it('uses Vite for the client production bundle',()=>{
     const pkg=JSON.parse(read('package.json'));
@@ -71,7 +103,7 @@ describe('architecture guardrails',()=>{
   });
 
   it('keeps runtime font URLs aligned with the Cloudflare Worker allowlist',()=>{
-    const css=read('src/styles.css');
+    const css=read('src/styles/base.css');
     const fonts=[...css.matchAll(/url\('\/rfm\/fonts\/([^']+)'\)/g)].map(match=>match[1]).sort();
     expect(fonts).toEqual([...RFM_FONTS].sort());
   });
@@ -89,7 +121,7 @@ describe('architecture guardrails',()=>{
   });
 
   it('keeps MapLibre worker and PMTiles as same-origin vendor assets during the Vite migration',()=>{
-    const app=read('src/react/useRfmApp.js');
+    const app=read('src/hooks/useRfmApp.js');
     const config=read('vite.config.js');
     const build=read('scripts/build.mjs');
     expect(app).toContain("import('/vendor/maplibre-gl/maplibre-gl.mjs')");
@@ -116,7 +148,7 @@ describe('architecture guardrails',()=>{
   });
 
   it('updates offline map revisions through a staged metadata commit',()=>{
-    const hook=read('src/react/useOfflineStorageControls.js');
+    const hook=read('src/hooks/useOfflineStorageControls.js');
     const revision=read('src/app/offline-revision.js');
     expect(hook).toContain('replaceOfflineRevision');
     expect(hook).toContain('previousMap:currentPackage.offlineMap||null');

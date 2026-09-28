@@ -109,6 +109,26 @@ test.describe('production service worker lifecycle',()=>{
     await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
   });
 
+  test('preserves the selected theme after an offline cold start',async({page,context})=>{
+    await page.goto('/');
+    await waitForWorker(page);
+    await openSettings(page);
+    await page.getByRole('button',{name:'☾ Тёмная'}).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+
+    await page.close();
+    await context.setOffline(true);
+    const reopened=await context.newPage();
+    await reopened.goto('/',{waitUntil:'domcontentloaded'});
+
+    await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(reopened.locator('html')).toHaveAttribute('data-theme','dark');
+    await openSettings(reopened);
+    await expect(reopened.getByRole('button',{name:'☾ Тёмная'})).toHaveAttribute('aria-pressed','true');
+    await expect(reopened.locator('.settings-screen')).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+    await expect(reopened.locator('body')).toHaveCSS('background-color','rgb(17, 19, 24)');
+  });
+
   test('refreshes followed ASMG results in the background and serves the cached standings offline',async({page,context})=>{
     await page.goto('/');
     await waitForWorker(page);

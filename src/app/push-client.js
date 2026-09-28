@@ -1,10 +1,10 @@
 import { getAllPackages } from '../db.js';
 import { buildRaceReminders } from './schedule.js';
 import { subscribedStageKeys } from './preferences.js';
-import { isIOSDevice, isStandalonePwa, syncInstallUi, requestPwaInstall } from './pwa.js';
+import { isIOSDevice, isStandalonePwa, requestPwaInstall } from './pwa.js';
 import { fetchWithTimeout } from './net.js';
 
-const $=id=>document.getElementById(id);
+let pushStatus={text:'Уведомления ещё не настроены.',className:''};
 
 export function base64UrlToUint8Array(value) {
   const padding='='.repeat((4-value.length%4)%4);
@@ -22,9 +22,11 @@ export function pushSupported() {
 }
 
 export function setPushStatus(text, cls='') {
-  const el=$('pushStatus');
-  if(el){ el.textContent=text; el.className=`muted small ${cls}`; }
+  pushStatus={text,className:cls};
+  window.dispatchEvent(new CustomEvent('rfm:push-status',{detail:pushStatus}));
 }
+
+export function getPushStatus(){return pushStatus;}
 
 export async function getPushSubscription() {
   if(!pushSupported()) return null;
@@ -32,38 +34,26 @@ export async function getPushSubscription() {
   return reg.pushManager.getSubscription();
 }
 
-export async function refreshPushUi() {
-  const enable=$('pushEnableBtn');
-  const test=$('pushTestBtn');
-  if(!enable || !test) return;
+export async function refreshPushUi({updateStatus=true}={}) {
   if(!pushSupported()){
-    enable.disabled=true;
-    test.hidden=true;
-    setPushStatus('Push-уведомления не поддерживаются этим браузером.');
-    return;
+    if(updateStatus)setPushStatus('Push-уведомления не поддерживаются этим браузером.');
+    return {supported:false,requiresInstall:false,active:false,testVisible:false,label:'Включить уведомления'};
   }
   if(isIOSDevice() && !isStandalonePwa()){
-    enable.disabled=false;
-    enable.textContent='Сначала установить PWA';
-    enable.classList.remove('downloaded');
-    test.hidden=true;
-    setPushStatus('Сейчас приложение открыто в браузере. Установи PWA на экран «Домой», затем включи уведомления.');
-    return;
+    if(updateStatus)setPushStatus('Сейчас приложение открыто в браузере. Установи PWA на экран «Домой», затем включи уведомления.');
+    return {supported:true,requiresInstall:true,active:false,testVisible:false,label:'Сначала установить PWA'};
   }
   const sub=await getPushSubscription().catch(()=>null);
   if(sub){
-    enable.textContent='Выключить уведомления';
-    enable.classList.add('downloaded');
-    test.hidden=false;
-    setPushStatus('Устройство подписано на уведомления.');
+    if(updateStatus)setPushStatus('Устройство подписано на уведомления.');
+    return {supported:true,requiresInstall:false,active:true,testVisible:true,label:'Выключить уведомления'};
   } else {
-    enable.textContent='Включить уведомления';
-    enable.classList.remove('downloaded');
-    test.hidden=true;
     const p=Notification.permission;
-    setPushStatus(p==='denied'
+    const status=p==='denied'
       ? 'Уведомления запрещены в настройках браузера/системы.'
-      : 'Уведомления ещё не включены.');
+      : 'Уведомления ещё не включены.';
+    if(updateStatus)setPushStatus(status);
+    return {supported:true,requiresInstall:false,active:false,testVisible:false,label:'Включить уведомления'};
   }
 }
 
@@ -100,13 +90,12 @@ export async function scheduleAllSavedReminders(){
 
 export async function enablePushNotifications() {
   if(isIOSDevice() && !isStandalonePwa()){
-    syncInstallUi();
     await requestPwaInstall();
     return refreshPushUi();
   }
   if(!pushSupported()) return refreshPushUi();
-  const btn=$('pushEnableBtn');
-  btn.disabled=true;
+  let refreshAfterAction=true;
+  let statusAfterRefresh='';
   try {
     const reg=await navigator.serviceWorker.ready;
     const existing=await reg.pushManager.getSubscription();
@@ -119,7 +108,7 @@ export async function enablePushNotifications() {
         headers:{'content-type':'application/json'},
         body:JSON.stringify({endpoint})
       },5000).catch(()=>{});
-      setPushStatus('Уведомления выключены.');
+      statusAfterRefresh='Уведомления выключены.';
       return;
     }
 
@@ -154,16 +143,17 @@ export async function enablePushNotifications() {
       setPushStatus('Уведомления включены. KV-хранилище ещё не подключено: доступен тестовый push.');
     }
   } catch(e) {
+    refreshAfterAction=false;
     setPushStatus(`Push: ${e.message}`,'geo-error');
   } finally {
-    btn.disabled=false;
-    await refreshPushUi();
+    if(refreshAfterAction){
+      await refreshPushUi();
+      if(statusAfterRefresh) setPushStatus(statusAfterRefresh);
+    }
   }
 }
 
 export async function sendTestPush() {
-  const btn=$('pushTestBtn');
-  btn.disabled=true;
   try {
     const subscription=await getPushSubscription();
     if(!subscription) throw new Error('Нет активной push-подписки');
@@ -178,16 +168,5 @@ export async function sendTestPush() {
     setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть PWA.','geo-ok');
   } catch(e) {
     setPushStatus(`Тестовый push: ${e.message}`,'geo-error');
-  } finally {
-    btn.disabled=false;
   }
-}
-
-
-let setupDone=false;
-export function setupPushUi(){
-  if(setupDone) return;
-  setupDone=true;
-  $('pushEnableBtn')?.addEventListener('click',enablePushNotifications);
-  $('pushTestBtn')?.addEventListener('click',sendTestPush);
 }

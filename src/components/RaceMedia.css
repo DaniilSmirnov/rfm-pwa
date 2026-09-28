@@ -1,0 +1,78 @@
+/*Component styles: RaceMedia.*/
+@layer components {
+  .race-material {
+    margin-top: 0;
+  }
+}
+@layer components {
+  .media-strip {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 2px 0 var(--space-2);
+    scrollbar-width: thin;
+  }
+}
+@layer components {
+  .media-card {
+    flex: 0 0 min(86vw,430px);
+    padding: 0;
+    border: 0;
+    background: #f1f1f1;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: zoom-in;
+    scroll-snap-align: start;
+  }
+}
+@layer components {
+  .media-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 580px;
+    object-fit: contain;
+    background: #f2f2f2;
+  }
+}
+@layer components {
+  .how-it-was {
+    color: #333;
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+}
+@layer components {
+  .how-it-was img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+@layer components {
+  .how-it-was iframe {
+    max-width: 100%;
+    border-radius: var(--radius-sm);
+  }
+}
+@layer components {
+  .race-material {
+    margin-top: 0;
+  }
+}
+@layer components {
+  .race-material+.race-material {
+    margin-top: 0;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .media-card,:root[data-theme="dark"] .media-card img {
+    background: #22262c;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .how-it-was {
+    color: #d8dce2;
+  }
+}

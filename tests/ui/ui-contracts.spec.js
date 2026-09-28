@@ -4,20 +4,20 @@ import { openApp, openMapWithAcceptedSafety, seedFixtureRace } from './helpers.j
 test.describe('basic UI contracts',()=>{
   test('main controls have accessible names',async({page})=>{
     await openApp(page);
-    await expect(page.getByRole('button',{name:/Установить PWA/})).toBeVisible();
+    await expect(page.getByRole('button',{name:'Установить PWA'})).toBeVisible();
     await page.getByRole('button',{name:'Ещё'}).click();
     await expect(page.getByRole('button',{name:/Мои гонки/})).toBeVisible();
     await expect(page.getByRole('button',{name:/Настройки и диагностика/})).toBeVisible();
     await page.getByRole('button',{name:/Мои гонки/}).click();
-    await expect(page.locator('#catalogSearch')).toBeVisible();
-    await expect(page.locator('#pwaInstallPrompt')).toBeHidden();
+    await expect(page.getByPlaceholder('Карелия, Псков…')).toBeVisible();
+    await expect(page.getByRole('region',{name:'Установка PWA'})).toBeHidden();
     await expect(page.getByRole('button',{name:'Удалить все офлайн-данные'})).toBeVisible();
   });
 
   test('search fields expose placeholders',async({page})=>{
     await openApp(page);
-    await expect(page.locator('#catalogSearch')).toHaveAttribute('placeholder',/Карелия/);
-    await expect(page.locator('#packageSearch')).toHaveAttribute('placeholder',/сохранённую гонку/);
+    await expect(page.getByPlaceholder('Карелия, Псков…')).toHaveAttribute('placeholder',/Карелия/);
+    await expect(page.getByPlaceholder('Найти сохранённую гонку…')).toHaveAttribute('placeholder',/сохранённую гонку/);
   });
 
   test('image modal starts hidden',async({page})=>{

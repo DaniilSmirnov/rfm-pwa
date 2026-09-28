@@ -18,6 +18,11 @@ const mime = new Map([
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url || '/', 'http://127.0.0.1');
+    if (url.pathname === '/migration-test/migration-harness.html') {
+      const html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Migration harness</title></head><body><main id="app">migration harness</main></body></html>';
+      response.writeHead(200, {'content-type':'text/html; charset=utf-8','cache-control':'no-store'}).end(html);
+      return;
+    }
     let pathname;
     try { pathname = decodeURIComponent(url.pathname); }
     catch { response.writeHead(400).end('Bad request'); return; }

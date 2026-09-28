@@ -38,6 +38,14 @@ test.describe('Today tab and settings flows',()=>{
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content','#f5f5f5');
   });
 
+  test('keeps safety rules out of settings',async({page})=>{
+    await openApp(page);
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
+    await expect(page.getByRole('button',{name:'Открыть правила безопасности'})).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Открыть диагностику приложения'})).toBeVisible();
+  });
+
   test('gates and blurs the map until the safety rules have been accepted',async({page})=>{
     await openApp(page);
     await seedFixtureRace(page);
