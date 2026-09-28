@@ -1,6 +1,6 @@
 # RallyFans Companion
 
-Cloudflare Pages build based on v0.3.4.3.
+Cloudflare Pages Progressive Web App. The release version is maintained in `package.json`; the codename is in `version.json`.
 
 ## What changed
 
@@ -17,7 +17,7 @@ Build the production artifact with:
 npm run build
 ```
 
-The build requires Node.js 20.19 or newer. Vite is deliberately introduced before React so build/deploy, Service Worker upgrades and offline compatibility can be validated independently of the UI migration.
+The build requires Node.js 20.19 or newer. The client UI is built with React and Vite.
 
 Deploy only the generated `dist/` directory to Cloudflare Pages. The client is bundled by Vite into hashed JS/CSS assets. MapLibre/PMTiles remain same-origin vendor assets for now, while the Pages Worker entrypoint and `src/worker/*` stay outside the client bundle. The post-build step generates the Service Worker app-shell precache from the actual `dist/` output and validates that tests, source client modules, GitHub metadata, README files, samples and other development tooling do not leak into production.
 
@@ -140,7 +140,15 @@ Offline vector tiles are rendered semantically by default instead of as generic 
 
 ## Architecture and tests
 
-The browser entrypoint is intentionally kept as orchestration rather than a home for every feature. Domain logic lives under `src/app/`:
+The browser entrypoint (`src/main.jsx`) mounts the React application. UI code is organized by responsibility:
+
+- `src/components/` — reusable interface components, each with its own stylesheet where component-specific styles are needed.
+- `src/views/` — page-level compositions such as the map, race details and application layout.
+- `src/modals/` — modal and full-screen dialog components.
+- `src/hooks/` — React hooks for application state and browser capabilities.
+- `src/styles/` — shared base styles and design tokens.
+
+Domain and browser-integration logic lives under `src/app/`:
 
 - `catalog-dates.js` — race date selection/window rules.
 - `schedule.js` — stage parsing, race timezones and reminder generation.
@@ -149,7 +157,7 @@ The browser entrypoint is intentionally kept as orchestration rather than a home
 - `local-points.js` — favourites and saved-car persistence.
 - `export.js` — offline GPX/export helpers.
 - `sanitize.js` — allow-list sanitization for upstream rich HTML.
-- `pwa.js` — installed-vs-browser launch and install UI.
+- `pwa.js` — installed-vs-browser launch and PWA install behavior.
 - `runtime.js` — Service Worker updates, persistent storage and periodic sync.
 - `push-client.js` and `wallet-client.js` — browser-side integrations.
 
@@ -192,6 +200,12 @@ Run the production Service Worker lifecycle suite:
 
 ```bash
 npm run test:pwa
+```
+
+Run the React migration regression suite:
+
+```bash
+npm run test:migration
 ```
 
 The release version lives in `package.json`, and the codename lives in `version.json`. `npm run build` injects both into the generated shell, manifest, Service Worker cache namespace and health endpoint.
