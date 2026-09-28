@@ -2,6 +2,7 @@ import React from 'react';
 import Button from '../components/Button.jsx';
 import { assetUrl } from '../rallyfans.js';
 import OfflineMapActions from '../components/OfflineMapActions.jsx';
+import Notice from '../components/Notice.jsx';
 import './RaceDetails.css';
 
 export default function RaceDetails({app,schedule,media}){
@@ -17,11 +18,11 @@ export default function RaceDetails({app,schedule,media}){
     </div>
     <div className="race-content">
       <div id="raceStats" className="race-stats">{stats.map(([label,value])=><div key={label}><strong>{value}</strong><span>{label}</span></div>)}</div>
-      {Boolean(changes.length)&&<section className="rally-pack-update-panel">
+      {Boolean(changes.length)&&<Notice className="rally-pack-update-panel">
         <div id="rallyPackUpdateTitle" className="block-title">{pkg.pendingUpdate?'ЕСТЬ ОБНОВЛЕНИЕ RALLY PACK':'RALLY PACK ОБНОВЛЁН В ФОНЕ'}</div>
         <strong>{changes.map(item=>item.label||item.key).join(' · ')}</strong>
         <p className="muted small">{pkg.pendingUpdate?'Есть изменения материалов. Старый офлайн-пакет остаётся активным.':'Все необходимые данные были скачаны, поэтому изменения уже применены.'}</p>
-      </section>}
+      </Notice>}
       <div className="race-actions-line"><Button className="button" disabled={!pkg?.yandexMapEmbed} onClick={app.importYandex}>{pkg?.yandexImport?.featureCount?`Yandex: ${pkg.yandexImport.featureCount} объектов ✓`:'Импорт из Yandex'}</Button></div>
       <OfflineMapActions app={app} top/>
       <div className="full-width-line"/><div className="block-title">РАСПИСАНИЕ</div>

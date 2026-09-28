@@ -199,15 +199,12 @@
     bottom: var(--safe-bottom);
     transform: translateX(-50%);
     z-index: 9999;
-    background: #000;
-    color: #fff;
     border-radius: var(--radius-xs);
-    padding: 10px var(--space-4);
     box-shadow: 0 12px 34px rgba(0,0,0,.32);
-    font-size: 13px;
     font-weight: 700;
     max-width: calc(100% - 28px);
     text-align: center;
+    margin: 0;
   }
 }
 @layer components {
@@ -305,12 +302,6 @@
 @layer theme {
   :root[data-theme="dark"] .gray-label,:root[data-theme="dark"] .coordinates-line {
     color: #9aa0a9;
-  }
-}
-@layer theme {
-  :root[data-theme="dark"] .update-banner {
-    background: #f5f7fa;
-    color: #111318;
   }
 }
 @layer theme {

@@ -4,6 +4,7 @@ import CatalogSection from '../components/CatalogSection.jsx';
 import SavedOfflineSection from '../components/SavedOfflineSection.jsx';
 import RaceDetails from './RaceDetails.jsx';
 import MapView from './MapView.jsx';
+import Notice from '../components/Notice.jsx';
 
 export default function AppLayout({
   app,selectedRoute,onLogoClick,pointElevation,pointStageDistance,catalogContent,packagesContent,
@@ -22,6 +23,6 @@ export default function AppLayout({
         pointStageDistance={pointStageDistance} mapContent={mapContent} pointsContent={pointListContent}
         favoritesContent={favoritesContent}/>
     </main>
-    {updateMessage&&<div className="update-banner" role="status">{updateMessage}</div>}
+    {updateMessage&&<Notice as="div" variant="inverse" className="update-banner" role="status">{updateMessage}</Notice>}
   </>;
 }

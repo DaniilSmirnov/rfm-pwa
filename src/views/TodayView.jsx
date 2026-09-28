@@ -6,6 +6,7 @@ import { todaySummary } from '../app/today-summary.js';
 import { distanceFromTodayDays, nextUpcomingRace } from '../app/catalog-dates.js';
 import TodayLeaders from '../components/TodayLeaders.jsx';
 import ScheduleList from '../components/ScheduleList.jsx';
+import Notice from '../components/Notice.jsx';
 import { raceHasFinished } from '../app/today-summary.js';
 
 function packageRaceId(pkg){return Number(pkg?.raceId||pkg?.original?.id||pkg?.original?.raceId||pkg?.id);}
@@ -28,10 +29,10 @@ export default function TodayView({app,onMap,onResults}){
   const previousPackage=target&&app.packages.find(item=>
     packageRaceId(item)!==Number(target.id)&&raceHasFinished(item,now)
   );
-  const storageRecommendation=previousPackage&&<aside className="today-storage-recommendation" aria-label="Рекомендация по хранилищу">
+  const storageRecommendation=previousPackage&&<Notice variant="warning" className="today-storage-recommendation" aria-label="Рекомендация по хранилищу">
     <strong>Освободи место</strong>
     <span>У тебя скачан предыдущий Rally Pack «{previousPackage.name}». Если он больше не нужен офлайн, удали его, чтобы освободить место.</span>
-  </aside>;
+  </Notice>;
   const summary=todaySummary(todayPackage,now);
   if(!todayPackage&&target){
     const date=target.dates||target.date_race||'';
