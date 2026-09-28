@@ -50,6 +50,7 @@ test.describe('saved race user flows', () => {
   });
 
   test('opens and closes image modal', async ({ page }) => {
+    await openMap(page);
     await page.getByText('КАРТА ОРГАНИЗАТОРА').click();
     const media = page.locator('[data-media-name]').first();
     await media.click();

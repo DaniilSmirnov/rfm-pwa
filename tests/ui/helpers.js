@@ -554,7 +554,7 @@ export async function seedFixtureRace(page) {
     },
     { race: raceFixture, results: asmgResultsFixture },
   );
-  await openMapWithAcceptedSafety(page);
+  await page.getByRole('button', { name: 'Карта', exact: true }).click();
   await page.locator('.race-page').waitFor({ state: 'visible' });
   await page.waitForFunction(() =>
     Boolean(
