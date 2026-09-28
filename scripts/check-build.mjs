@@ -35,8 +35,8 @@ for(const path of ['tests','.github','package.json','README.md','samples','.vite
   assert(!(await exists(resolve(dist,path))),`Development artifact leaked into dist: ${path}`);
 }
 
-const srcEntries=await readdir(resolve(dist,'src'));
-assert(srcEntries.length===1 && srcEntries[0]==='worker','dist/src must contain only Cloudflare Worker modules');
+const srcEntries=(await readdir(resolve(dist,'src'))).sort();
+assert(srcEntries.join(',')==='bootstrap.js,worker','dist/src must contain only the boot script and Cloudflare Worker modules');
 
 const files=await walk(dist);
 const clientJs=files.filter(path=>/^assets\/.*\.js$/.test(path));

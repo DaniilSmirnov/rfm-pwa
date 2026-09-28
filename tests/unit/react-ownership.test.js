@@ -2,8 +2,8 @@ import {readFileSync} from 'node:fs';
 import {describe,expect,it,vi} from 'vitest';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import FallbackMap from '../../src/react/FallbackMap.jsx';
-import {getCompassHeading,publishCompassHeading,subscribeCompassHeading} from '../../src/react/compass-heading.js';
+import FallbackMap from '../../src/components/FallbackMap.jsx';
+import {getCompassHeading,publishCompassHeading,subscribeCompassHeading} from '../../src/hooks/compass-heading.js';
 
 const source=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
@@ -11,7 +11,7 @@ describe('React ownership boundaries',()=>{
   it('keeps install and update UI in React instead of service modules',()=>{
     const pwa=source('../../src/app/pwa.js');
     const runtime=source('../../src/app/runtime.js');
-    const layout=source('../../src/react/AppLayout.jsx');
+    const layout=source('../../src/views/AppLayout.jsx');
     expect(pwa).not.toMatch(/getElementById|innerHTML|textContent/);
     expect(runtime).not.toMatch(/getElementById|innerHTML|textContent/);
     expect(layout).not.toMatch(/id=["'](?:crewResults|updateBanner|updateText)["']/);

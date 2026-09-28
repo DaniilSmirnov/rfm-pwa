@@ -1,0 +1,213 @@
+/* Modal styles: CrewResultsModal. */
+@layer modals {
+  .crew-results-section>:not(.crew-results-dialog) {
+    display: none;
+  }
+}
+@layer modals {
+  .crew-results-toolbar {
+    display: flex;
+    gap: var(--space-2);
+    margin: var(--space-3) 0;
+    align-items: center;
+  }
+}
+@layer modals {
+  .crew-results-toolbar .search {
+    max-width: none;
+  }
+}
+@layer modals {
+  .crew-results-dialog {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+    border: 0;
+    background: #fff;
+    color: #111;
+    overflow: hidden;
+  }
+}
+@layer modals {
+  .crew-results-dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
+}
+@layer modals {
+  .crew-results-dialog::backdrop {
+    background: rgba(0,0,0,.62);
+  }
+}
+@layer modals {
+  .crew-results-dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex: 0 0 auto;
+  }
+}
+@layer modals {
+  .crew-results-dialog-head h2 {
+    margin: 0;
+    font-size: 20px;
+  }
+}
+@layer modals {
+  .crew-results-dialog-head p {
+    margin: 5px 0 0;
+  }
+}
+@layer modals {
+  .crew-results-close {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    font-size: 28px;
+    line-height: 1;
+  }
+}
+@layer modals {
+  .crew-results-toolbar {
+    flex: 0 0 auto;
+  }
+}
+@layer modals {
+  .crew-results-table-wrap {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+    border: 1px solid #e4e6e8;
+    border-radius: var(--radius-sm);
+    overscroll-behavior: contain;
+  }
+}
+@layer modals {
+  .crew-results-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+  }
+}
+@layer modals {
+  .crew-results-table th,.crew-results-table td {
+    padding: 11px var(--space-3);
+    border-bottom: 1px solid #e8e9eb;
+    vertical-align: middle;
+  }
+}
+@layer modals {
+  .crew-results-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #f3f4f5;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+}
+@layer modals {
+  .crew-results-table td small {
+    display: block;
+    margin-top: 3px;
+    color: #777;
+    font-size: 11px;
+  }
+}
+@layer modals {
+  .crew-results-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+@layer modals {
+  .crew-results-table tbody tr[data-crew-row]:nth-child(-n+3) .crew-results-place {
+    font-weight: 800;
+  }
+}
+@layer modals {
+  .crew-results-place {
+    width: 54px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+}
+@layer modals {
+  .crew-results-name {
+    min-width: 200px;
+  }
+}
+@layer modals {
+  .crew-results-name strong {
+    display: block;
+  }
+}
+@layer modals {
+  .crew-results-time {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
+@layer modals {
+  .crew-results-empty,.crew-results-more {
+    text-align: center;
+    color: #777;
+  }
+}
+@layer modals {
+  .crew-results-more {
+    font-size: 12px;
+  }
+}
+@layer responsive {
+    @media (max-width:560px) {
+    .crew-results-toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    }
+}
+@layer responsive {
+    @media (max-width:560px) {
+    .crew-results-dialog {
+      padding: max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+    }
+    }
+}
+@layer responsive {
+    @media (max-width:560px) {
+    .crew-results-dialog-head h2 {
+      font-size: 18px;
+    }
+    }
+}
+@layer theme {
+  :root[data-theme="dark"] .crew-results-dialog {
+    background: #111418;
+    color: #f5f7fa;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .crew-results-table-wrap,:root[data-theme="dark"] .crew-results-table th,:root[data-theme="dark"] .crew-results-table td {
+    border-color: #30353d;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .crew-results-table th {
+    background: #1d2127;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .crew-results-table td small,:root[data-theme="dark"] .crew-results-empty,:root[data-theme="dark"] .crew-results-more {
+    color: #9aa0a9;
+  }
+}

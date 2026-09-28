@@ -1,0 +1,185 @@
+/*Component styles: RaceDetails.*/
+@layer views {
+  .race-page {
+    margin: 0 0 18px;
+    background: #fff;
+  }
+}
+@layer views {
+  .race-hero {
+    height: 460px;
+    position: relative;
+    isolation: isolate;
+    background: #d4d4d4 center/cover no-repeat;
+    color: #fff;
+    padding: 22px var(--space-4) 58px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+}
+@layer views {
+  .race-hero-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.18) 35%,rgba(0,0,0,.74));
+  }
+}
+@layer views {
+  .race-hero-top,.race-hero-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+@layer views {
+  .race-category {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+}
+@layer views {
+  .race-hero-bottom h2 {
+    margin: 0;
+    color: #fff;
+    font: italic 800 clamp(32px,8vw,48px)/1 'RF Dewi Expanded Italic',Arial,sans-serif;
+  }
+}
+@layer views {
+  .race-hero-bottom p {
+    margin: 0;
+    color: rgba(255,255,255,.7);
+    font: italic 600 18px/1.2 'RF Dewi Expanded Italic',Arial,sans-serif;
+  }
+}
+@layer views {
+  .race-image-hidden {
+    display: none;
+  }
+}
+@layer views {
+  .race-content {
+    position: relative;
+    z-index: 2;
+    margin-top: -24px;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    background: #fff;
+    padding: 20px var(--space-4) 32px;
+  }
+}
+@layer views {
+  .race-stats {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+}
+@layer views {
+  .race-stats>div {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    flex: 1;
+    background: #f0f0f0;
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    text-align: center;
+    min-height: 82px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+}
+@layer views {
+  .race-stats strong {
+    font: 600 26px/1 'RF Dewi Expanded Semibold',Arial,sans-serif;
+  }
+}
+@layer views {
+  .race-stats span {
+    font-size: 13px;
+    font-weight: 500;
+  }
+}
+@layer views {
+  .race-actions-line {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin: 14px 0;
+  }
+}
+@layer responsive {
+  @media (min-width:760px) {
+    .race-content {
+      padding-left: 28px;
+      padding-right: 28px;
+    }
+  }
+}
+@layer responsive {
+  @media (min-width:760px) {
+    .race-hero {
+      padding-left: 28px;
+      padding-right: 28px;
+    }
+  }
+}
+@layer responsive {
+  @media (max-width:760px) {
+    .race-stats {
+      gap: 6px;
+    }
+  }
+}
+@layer responsive {
+  @media (max-width:760px) {
+    .race-stats>div {
+      padding: 9px;
+    }
+  }
+}
+@layer responsive {
+  @media (max-width:760px) {
+    .race-stats strong {
+      font-size: 22px;
+    }
+  }
+}
+@layer responsive {
+  @media (max-width:760px) {
+    .race-stats span {
+      font-size: 11px;
+    }
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .race-page,:root[data-theme="dark"] .race-content {
+    background: #171a1f;
+    color: #f5f7fa;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .race-stats>div {
+    background: #23272e;
+  }
+}
+@layer views {
+  .rally-pack-update-panel {
+    margin: var(--space-4) 0;
+    padding: 14px var(--space-4);
+    border: 1px solid var(--line,#d8d8d8);
+    border-radius: 14px;
+  }
+}
+@layer views {
+  .rally-pack-update-panel strong {
+    display: block;
+    margin-top: 6px;
+  }
+}

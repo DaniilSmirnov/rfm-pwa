@@ -38,6 +38,7 @@ async function stagePublicFiles(){
   await cp(resolve(root,'_worker.js'),resolve(publicDir,'_worker.js'));
   await mkdir(resolve(publicDir,'src'),{recursive:true});
   await cp(resolve(root,'src/worker'),resolve(publicDir,'src/worker'),{recursive:true});
+  await cp(resolve(root,'src/bootstrap.js'),resolve(publicDir,'src/bootstrap.js'));
 
   await mkdir(resolve(publicDir,'vendor/maplibre-gl'),{recursive:true});
   await cp(resolve(root,'node_modules/maplibre-gl/dist'),resolve(publicDir,'vendor/maplibre-gl'),{recursive:true});

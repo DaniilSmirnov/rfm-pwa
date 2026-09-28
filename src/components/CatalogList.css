@@ -1,0 +1,118 @@
+/*Component styles: Catalog.*/
+@layer views {
+  .catalog-list {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+  }
+}
+@layer views {
+  .catalog-row {
+    position: relative;
+    isolation: isolate;
+    min-height: 232px;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    border: 1px solid #e6e7e9;
+    background: #111 var(--race-bg) center/cover no-repeat;
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    color: #fff;
+  }
+}
+@layer views {
+  .catalog-shade {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.72));
+  }
+}
+@layer views {
+  .catalog-copy {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+@layer views {
+  .catalog-tags {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+}
+@layer views {
+  .catalog-tags span {
+    display: flex;
+    height: 32px;
+    padding: 7px 10px;
+    align-items: center;
+    border: 1px solid #fff;
+    border-radius: var(--radius-md);
+    color: #fff;
+    font-size: 12px;
+  }
+}
+@layer views {
+  .catalog-date {
+    align-self: center;
+    width: 100%;
+    text-align: center;
+    margin: auto 0 18px;
+    font-size: 15px;
+  }
+}
+@layer views {
+  .catalog-copy strong {
+    align-self: center;
+    text-align: center;
+    width: 100%;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+}
+@layer views {
+  .catalog-copy>span:last-child {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+}
+@layer views {
+  .catalog-row>.button {
+    margin-top: var(--space-3);
+    background: #000;
+    border-color: #000;
+    color: #fff;
+  }
+}
+@layer views {
+  .catalog-row>.button.downloaded {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+  }
+}
+@layer responsive {
+  @media (max-width:760px) {
+    .catalog-list {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+@layer responsive {
+  @media (max-width:760px) {
+    .catalog-row {
+      min-height: 250px;
+    }
+  }
+}
