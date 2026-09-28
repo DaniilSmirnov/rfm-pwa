@@ -346,3 +346,25 @@
     border-radius: 10px;
   }
 }
+@layer views {
+  .today-storage-recommendation {
+    display: grid;
+    gap: 5px;
+    margin: 0 0 14px;
+    padding: 14px 16px;
+    border: 1px solid #f0d08a;
+    border-radius: 16px;
+    background: #fff7e5;
+    color: #493713;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .today-storage-recommendation strong { font-size: 14px; }
+}
+@layer theme {
+  :root[data-theme="dark"] .today-storage-recommendation {
+    border-color: #66552f;
+    background: #30291b;
+    color: #f4ddb0;
+  }
+}
