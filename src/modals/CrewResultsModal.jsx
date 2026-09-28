@@ -10,6 +10,7 @@ export default function CrewResultsModal({open,onClose,data,views,activeView,cla
     if(open&&!node.open){node.showModal();requestAnimationFrame(()=>searchRef.current?.focus());}
     else if(!open&&node.open)node.close();
   },[open]);
+  return (
     <dialog ref={dialog} className="crew-results-dialog" aria-labelledby="crewResultsDialogTitle" onClose={onClose}>
       <header className="crew-results-dialog-head"><div><h2 id="crewResultsDialogTitle">Результаты экипажей</h2><p className="muted small">Выбери класс, чтобы увидеть весь его состав.</p></div><button className="button crew-results-close" type="button" aria-label="Закрыть результаты" onClick={()=>dialog.current?.close()}>×</button></header>
       <div className="crew-results-toolbar"><label className="sr-only" htmlFor="crewResultsStage">Спецучасток</label><select id="crewResultsStage" className="crew-results-stage" value={activeView?.key||''} onChange={event=>{onStageChange(event.target.value);onClassChange('');}}>{views.map(view=><option key={view.key} value={view.key}>{view.name}</option>)}</select><label className="sr-only" htmlFor="crewResultsDialogClass">Класс</label><select id="crewResultsDialogClass" className="crew-results-stage" value={className} onChange={event=>onClassChange(event.target.value)}><option value="">Все классы</option>{classes.map(name=><option key={name} value={name}>{name}</option>)}</select><input ref={searchRef} id="crewResultsSearch" className="search" placeholder="Поиск по экипажу, номеру или машине…" aria-label="Поиск экипажа" value={query} onChange={event=>onQueryChange(event.target.value)}/></div>
@@ -24,4 +25,5 @@ export default function CrewResultsModal({open,onClose,data,views,activeView,cla
         }):<tr><td colSpan="5" className="crew-results-empty">Экипажи по этому запросу не найдены.</td></tr>}
       </tbody></table></div>
     </dialog>
+  );
 }
