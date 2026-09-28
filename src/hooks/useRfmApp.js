@@ -51,6 +51,7 @@ import { useOfflineStorageControls } from './useOfflineStorageControls.js';
 import { createConnectivityMonitor } from '../app/network-status.js';
 import { useGeoCompass } from './useGeoCompass.js';
 import { useCatalog } from './useCatalog.js';
+import { useRaceRetention } from './useRaceRetention.js';
 
 let bootstrapPromise = null;
 let mapLibrePromise = null;
@@ -251,6 +252,14 @@ export function useRfmApp() {
   const offlineStorage = useOfflineStorageControls({
     currentPackage,
     setCurrentPackage,
+    refreshPackages,
+  });
+
+  const raceRetention = useRaceRetention({
+    packages,
+    currentPackage,
+    setCurrentPackage,
+    setSelectedPoint,
     refreshPackages,
   });
 
@@ -566,6 +575,7 @@ export function useRfmApp() {
     visibleCatalog,
     downloadedIds,
     raceProgress,
+    ...raceRetention,
     loadCatalog,
     downloadRace,
     packages,

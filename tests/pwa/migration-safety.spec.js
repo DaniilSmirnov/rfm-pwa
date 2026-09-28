@@ -239,8 +239,9 @@ test.describe('PWA migration safety', () => {
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
     await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
-    await openTab(reopened, 'Ещё');
+    await openTab(reopened, 'Гонки');
     await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
+    await openTab(reopened, 'Карта');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
     await openTab(reopened, 'Карта');
     await expect(reopened.locator('#pointList')).toContainText('Offline spectator point');
@@ -263,8 +264,8 @@ test.describe('PWA migration safety', () => {
     reopened.on('request', request => requests.push(request.url()));
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await openTab(reopened, 'Ещё');
-    await reopened.locator('#packageList .package-row').first().click();
+    await openTab(reopened, 'Гонки');
+    await reopened.locator('#packageList .downloaded-race-open').first().click();
     await openTab(reopened, 'Карта');
 
     await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
@@ -292,8 +293,8 @@ test.describe('PWA migration safety', () => {
 
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
-    await openTab(reopened, 'Ещё');
-    await reopened.locator('#packageList .package-row').first().click();
+    await openTab(reopened, 'Гонки');
+    await reopened.locator('#packageList .downloaded-race-open').first().click();
     await openTab(reopened, 'Карта');
 
     await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
@@ -317,7 +318,9 @@ test.describe('PWA migration safety', () => {
 
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
-    await openTab(reopened, 'Ещё');
+    await openTab(reopened, 'Гонки');
+    await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
+    await openTab(reopened, 'Карта');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
 
     const hero = reopened.locator('#raceDetails .race-hero');
@@ -435,12 +438,13 @@ test.describe('PWA migration safety', () => {
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await openTab(reopened, 'Ещё');
+    await openTab(reopened, 'Гонки');
     await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
     reopened.once('dialog', dialog => dialog.accept());
     await reopened.locator('#clearBtn').click();
 
-    await expect(reopened.locator('#packageList')).toContainText('Пока ничего не скачано');
+    await openTab(reopened, 'Гонки');
+    await expect(reopened.locator('#packageList')).toContainText('Скачанных гонок пока нет');
     await expect(reopened.locator('#raceDetails')).toBeHidden();
 
     const state = await reopened.evaluate(async () => {

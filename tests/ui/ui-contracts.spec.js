@@ -7,23 +7,24 @@ test.describe('basic UI contracts', () => {
     const installPrompt = page.getByRole('region', { name: 'Установка PWA' });
     await expect(installPrompt.getByRole('button')).toBeVisible();
     await page.getByRole('button', { name: 'Ещё' }).click();
-    await expect(page.getByRole('button', { name: /Мои гонки/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Настройки и диагностика/ })).toBeVisible();
-    await page.getByRole('button', { name: /Мои гонки/ }).click();
-    await expect(page.getByPlaceholder('Карелия, Псков…')).toBeVisible();
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await expect(page.getByPlaceholder('Название гонки или этап…')).toBeVisible();
+    await expect(page.getByLabel('Найти скачанную гонку')).toBeVisible();
     await expect(page.getByRole('region', { name: 'Установка PWA' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Удалить все офлайн-данные' })).toBeVisible();
+    await expect(page.getByLabel('Удалять автоматически по завершению гонки')).not.toBeChecked();
   });
 
   test('search fields expose placeholders', async ({ page }) => {
     await openApp(page);
-    await expect(page.getByPlaceholder('Карелия, Псков…')).toHaveAttribute(
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await expect(page.getByPlaceholder('Название гонки или этап…')).toHaveAttribute(
       'placeholder',
-      /Карелия/,
+      /гонки или этап/,
     );
-    await expect(page.getByPlaceholder('Найти сохранённую гонку…')).toHaveAttribute(
+    await expect(page.getByPlaceholder('Название или этап…')).toHaveAttribute(
       'placeholder',
-      /сохранённую гонку/,
+      /Название или этап/,
     );
   });
 

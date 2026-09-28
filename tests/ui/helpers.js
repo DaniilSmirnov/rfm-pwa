@@ -440,12 +440,14 @@ export async function openApp(page, options = {}) {
   await installAppMocks(page, options);
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
+  await page.getByRole('button', { name: 'Гонки' }).click();
   await page.waitForFunction(
     () =>
       document.querySelector('#catalogStatus')?.textContent?.includes('гонок') ||
       document.querySelector('#catalogStatus')?.textContent?.includes('недоступен') ||
       document.querySelector('#catalogStatus')?.textContent?.includes('Офлайн'),
   );
+  await page.getByRole('button', { name: 'Сегодня' }).click();
 }
 
 export async function openMapWithAcceptedSafety(page) {
@@ -469,7 +471,6 @@ export async function openMapWithAcceptedSafety(page) {
 }
 
 export async function seedFixtureRace(page) {
-  await page.getByRole('button', { name: 'Ещё' }).click();
   await page.evaluate(
     async ({ race, results }) => {
       const request = indexedDB.open('rallyfans-offline', 3);
@@ -553,6 +554,7 @@ export async function seedFixtureRace(page) {
     },
     { race: raceFixture, results: asmgResultsFixture },
   );
+  await page.getByRole('button', { name: 'Карта' }).click();
   await page.locator('.race-page').waitFor({ state: 'visible' });
   await page.waitForFunction(() =>
     Boolean(

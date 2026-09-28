@@ -14,7 +14,7 @@ export default function RaceDetails({ app, schedule, media }) {
   ].filter(([, value]) => value);
   const changes = pkg?.pendingUpdate?.changes || pkg?.lastSmartUpdate?.changes || [];
   return (
-    <section id="raceDetails" className="race-page legacy-more" hidden={!pkg}>
+    <section id="raceDetails" className="race-page legacy-map" hidden={!pkg}>
       <div
         className="race-hero"
         style={{

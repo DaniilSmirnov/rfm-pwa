@@ -44,13 +44,13 @@ test('places More controls at the top and leaves the complete footer clear of th
   const footer = page.locator('.app-footer');
   const menu = page.locator('.more-menu');
   const header = await getBounds(page, '.topbar');
-  await expect(menu.getByRole('button', { name: 'Мои гонки' })).toBeVisible();
   await expect(menu.getByRole('button', { name: /Настройки и диагностика/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Гонки' })).toBeVisible();
   expect((await getBounds(page, '.more-menu')).top).toBeGreaterThanOrEqual(header.bottom);
   expect((await getBounds(page, '.more-menu')).top).toBeLessThan(page.viewportSize().height);
   await expect(footer).toBeVisible();
   expect((await getBounds(page, '.more-menu')).bottom).toBeLessThanOrEqual(
-    (await getBounds(page, 'main')).top,
+    (await getBounds(page, '.app-footer')).top,
   );
 
   await page.getByRole('button', { name: /Настройки и диагностика/ }).click();

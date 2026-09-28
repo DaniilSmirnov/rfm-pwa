@@ -16,7 +16,8 @@ export default function CatalogSection({ app, children }) {
         </div>
         <SearchField
           id="catalogSearch"
-          placeholder="Карелия, Псков…"
+          aria-label="Найти гонку или этап"
+          placeholder="Название гонки или этап…"
           value={app.catalogQuery}
           onChange={event => app.setCatalogQuery(event.target.value)}
         />

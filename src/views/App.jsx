@@ -2,8 +2,8 @@ import '../components/SharedControls.css';
 import '../components/AppShell.css';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Button from '../components/Button.jsx';
-import { CalendarDays, CircleEllipsis, Map } from 'lucide-react';
-import { useRfmApp, formatBytes } from '../hooks/useRfmApp.js';
+import { CalendarDays, CircleEllipsis, Flag, Map } from 'lucide-react';
+import { useRfmApp } from '../hooks/useRfmApp.js';
 import { resizeActiveMap } from '../map.js';
 import { syncWalletPassesForPackage } from '../app/wallet-client.js';
 import { pointElevationText } from '../app/elevation-ui.js';
@@ -14,8 +14,6 @@ import SettingsView from './SettingsView.jsx';
 import PwaInstallPrompt from '../components/PwaInstallPrompt.jsx';
 import AppLayout from './AppLayout.jsx';
 import AppFooter from '../components/AppFooter.jsx';
-import CatalogList from '../components/CatalogList.jsx';
-import SavedPackagesList from '../components/SavedPackagesList.jsx';
 import PointList from '../components/PointList.jsx';
 import FavoritesList from '../components/FavoritesList.jsx';
 import RallyMap from '../components/RallyMap.jsx';
@@ -26,10 +24,12 @@ import CrewResults from '../components/CrewResults.jsx';
 import BootDiagnostics from '../modals/BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { raceHasFinished } from '../app/today-summary.js';
+import RacesView from './RacesView.jsx';
 
 const tabs = [
   { key: 'today', label: 'Сегодня', Icon: CalendarDays },
   { key: 'map', label: 'Карта', Icon: Map },
+  { key: 'races', label: 'Гонки', Icon: Flag },
   { key: 'more', label: 'Ещё', Icon: CircleEllipsis },
 ];
 function readTab() {
@@ -178,6 +178,14 @@ export default function App() {
   const screenContent =
     tab === 'today' ? (
       <TodayView app={app} onMap={() => activate('map')} onResults={openCrewResults} />
+    ) : tab === 'races' ? (
+      <RacesView
+        app={app}
+        onOpenRace={async id => {
+          await app.selectPackage(id);
+          activate('map');
+        }}
+      />
     ) : tab === 'more' ? (
       moreScreen === 'settings' ? (
         <SettingsView
@@ -202,18 +210,6 @@ export default function App() {
         screenContent={screenContent}
         updateMessage={updateMessage}
         mapContent={<RallyMap app={app} onRouteClick={setSelectedRoute} />}
-        catalogContent={<CatalogList app={app} />}
-        packagesContent={<SavedPackagesList app={app} />}
-        statsContent={
-          <>
-            <strong>{app.storageStats.count} гонок</strong>
-            <span className="muted">
-              JSON: {formatBytes(app.storageStats.jsonBytes)} · карты:{' '}
-              {formatBytes(app.storageStats.mapBytes)} ({app.storageStats.mapCount} тайлов) ·
-              persistent: {app.storageStats.persisted ? 'да' : 'нет'}
-            </span>
-          </>
-        }
         pointListContent={<PointList app={app} />}
         favoritesContent={<FavoritesList app={app} />}
         scheduleContent={pkg && <ScheduleList pkg={pkg} />}

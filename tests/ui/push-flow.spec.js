@@ -42,9 +42,11 @@ async function openPushApp(
   );
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
+  await page.getByRole('button', { name: 'Гонки' }).click();
   await page.waitForFunction(() =>
     document.querySelector('#catalogStatus')?.textContent?.includes('гонок'),
   );
+  await page.getByRole('button', { name: 'Сегодня' }).click();
   await page.getByRole('button', { name: 'Ещё' }).click();
   await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
 }

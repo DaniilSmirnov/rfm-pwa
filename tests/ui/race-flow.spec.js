@@ -59,8 +59,16 @@ test.describe('saved race user flows', () => {
   });
 
   test('renders saved package row', async ({ page }) => {
+    await page.getByRole('button', { name: 'Гонки' }).click();
     await expect(page.locator('#packageList')).toContainText(raceFixture.name);
-    await expect(page.locator('#storageStats')).toContainText('1 гонок');
+    await expect(page.locator('#packageList')).not.toContainText('тайлов');
+    await expect(page.locator('#packageList')).not.toContainText('JSON');
+    await expect(
+      page.locator('#packageList').getByRole('button', { name: 'Обновить' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('#packageList').getByRole('button', { name: 'Удалить' }),
+    ).toBeVisible();
   });
 
   test('shows saved race artwork and Rally Pack refresh on Today tab', async ({ page }) => {
@@ -85,10 +93,41 @@ test.describe('saved race user flows', () => {
   });
 
   test('filters saved package list', async ({ page }) => {
-    await page.getByPlaceholder('Найти сохранённую гонку…').fill('Sortavala');
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await page.getByPlaceholder('Название или этап…').fill('Sortavala');
     await expect(page.locator('#packageList')).toContainText(raceFixture.name);
-    await page.getByPlaceholder('Найти сохранённую гонку…').fill('missing');
-    await expect(page.locator('#packageList')).toContainText('Ничего не найдено');
+    await page.getByPlaceholder('Название или этап…').fill('missing');
+    await expect(page.locator('#packageList')).toContainText('По этому запросу гонок не найдено');
+  });
+
+  test('automatically removes a completed race only after the preference is enabled', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await expect(page.getByLabel('Удалять автоматически по завершению гонки')).not.toBeChecked();
+    await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open('rallyfans-offline');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('packages', 'readwrite');
+        const store = tx.objectStore('packages');
+        const get = store.get('race-101');
+        get.onsuccess = () => {
+          get.result.original.status_race = 'Завершена';
+          get.result.summary.status = 'Завершена';
+          store.put(get.result);
+        };
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+      window.dispatchEvent(new Event('rfm:refresh-local-data'));
+    });
+    await page.getByLabel('Удалять автоматически по завершению гонки').check();
+    await expect(page.locator('#packageList')).toContainText('Скачанных гонок пока нет');
   });
 
   test('exports a valid GeoJSON file', async ({ page }) => {
@@ -242,10 +281,11 @@ test.describe('saved race user flows', () => {
     await openMap(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('[data-nav="favorite"]').click();
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Гонки' }).click();
     page.once('dialog', dialog => dialog.accept());
     await page.locator('#clearBtn').click();
-    await expect(page.locator('#packageList')).toContainText('Пока ничего не скачано');
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await expect(page.locator('#packageList')).toContainText('Скачанных гонок пока нет');
     await expect(page.locator('.race-page')).toBeHidden();
   });
 });
