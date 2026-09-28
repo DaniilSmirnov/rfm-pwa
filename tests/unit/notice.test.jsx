@@ -7,10 +7,10 @@ import Notice from '../../src/components/Notice.jsx';
 afterEach(cleanup);
 
 describe('Notice', () => {
-  it('renders an informational aside by default', () => {
+  it('renders a neutral div by default without imposing landmark semantics', () => {
     render(<Notice data-testid="notice">Updates are ready</Notice>);
     const notice = screen.getByTestId('notice');
-    expect(notice.tagName).toBe('ASIDE');
+    expect(notice.tagName).toBe('DIV');
     expect(notice.className).toBe('notice notice--info');
     expect(notice.textContent).toBe('Updates are ready');
   });

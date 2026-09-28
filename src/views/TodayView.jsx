@@ -29,7 +29,7 @@ export default function TodayView({app,onMap,onResults}){
   const previousPackage=target&&app.packages.find(item=>
     packageRaceId(item)!==Number(target.id)&&raceHasFinished(item,now)
   );
-  const storageRecommendation=previousPackage&&<Notice variant="warning" className="today-storage-recommendation" aria-label="Рекомендация по хранилищу">
+  const storageRecommendation=previousPackage&&<Notice as="aside" variant="warning" className="today-storage-recommendation" aria-label="Рекомендация по хранилищу">
     <strong>Освободи место</strong>
     <span>У тебя скачан предыдущий Rally Pack «{previousPackage.name}». Если он больше не нужен офлайн, удали его, чтобы освободить место.</span>
   </Notice>;

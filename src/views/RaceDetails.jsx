@@ -18,7 +18,7 @@ export default function RaceDetails({app,schedule,media}){
     </div>
     <div className="race-content">
       <div id="raceStats" className="race-stats">{stats.map(([label,value])=><div key={label}><strong>{value}</strong><span>{label}</span></div>)}</div>
-      {Boolean(changes.length)&&<Notice className="rally-pack-update-panel">
+      {Boolean(changes.length)&&<Notice as="section" className="rally-pack-update-panel">
         <div id="rallyPackUpdateTitle" className="block-title">{pkg.pendingUpdate?'ЕСТЬ ОБНОВЛЕНИЕ RALLY PACK':'RALLY PACK ОБНОВЛЁН В ФОНЕ'}</div>
         <strong>{changes.map(item=>item.label||item.key).join(' · ')}</strong>
         <p className="muted small">{pkg.pendingUpdate?'Есть изменения материалов. Старый офлайн-пакет остаётся активным.':'Все необходимые данные были скачаны, поэтому изменения уже применены.'}</p>
