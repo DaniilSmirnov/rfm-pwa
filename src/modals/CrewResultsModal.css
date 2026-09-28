@@ -1,10 +1,5 @@
 /* Modal styles: CrewResultsModal. */
 @layer modals {
-  .crew-results-section>:not(.crew-results-dialog) {
-    display: none;
-  }
-}
-@layer modals {
   .crew-results-toolbar {
     display: flex;
     gap: var(--space-2);
