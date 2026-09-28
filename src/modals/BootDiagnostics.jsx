@@ -1,5 +1,7 @@
 import './BootDiagnostics.css';
 import React, { useEffect, useState } from 'react';
+import ActionGroup from '../components/ActionGroup.jsx';
+import Button from '../components/Button.jsx';
 import { bootSnapshot, collectStorageDiagnostics, markBoot } from '../app/boot-diagnostics.js';
 
 function describeDetail(detail){
@@ -40,10 +42,10 @@ export default function BootDiagnostics({open,onClose}){
   };
 
   return <div id="bootDiagnosticsModal" className="boot-diagnostics-modal" role="dialog" aria-modal="true" aria-labelledby="bootDiagnosticsTitle" onClick={event=>{if(event.target===event.currentTarget)onClose();}}>
-    <div className="boot-diagnostics-card"><div className="boot-diagnostics-head"><div><div className="eyebrow">СЛУЖЕБНЫЙ ЭКРАН</div><h2 id="bootDiagnosticsTitle">Boot diagnostics</h2></div><button id="bootDiagnosticsClose" className="button compact" type="button" onClick={onClose}>Закрыть</button></div>
+    <div className="boot-diagnostics-card"><div className="boot-diagnostics-head"><div><div className="eyebrow">СЛУЖЕБНЫЙ ЭКРАН</div><h2 id="bootDiagnosticsTitle">Boot diagnostics</h2></div><Button id="bootDiagnosticsClose" className="button compact" type="button" onClick={onClose}>Закрыть</Button></div>
       <div id="bootDiagnosticsList" className="boot-diagnostics-list">{snapshot.marks.length?snapshot.marks.map((entry,index)=>{const previous=index?snapshot.marks[index-1].ms:0;return <div className="boot-diagnostic-row" key={`${entry.name}-${index}`}><span>{entry.name}</span><strong>{entry.ms} ms</strong><em>+{entry.ms-previous} ms</em>{entry.detail!=null&&<small>{describeDetail(entry.detail)}</small>}</div>;}):<p className="muted">Пока нет отметок.</p>}</div>
       <pre id="bootDiagnosticsMeta" className="boot-diagnostics-meta">{[`online: ${snapshot.meta.online}`,`display: ${snapshot.meta.displayMode}`,`navigation: ${snapshot.meta.navigationType}`,`SW controlled: ${snapshot.meta.serviceWorkerControlled}`,`DOMContentLoaded: ${snapshot.meta.domContentLoadedMs} ms`,`load: ${snapshot.meta.loadEventMs} ms`,snapshot.meta.userAgent,snapshot.storage?`\nЛокальные данные:\n${JSON.stringify(snapshot.storage,null,2)}`:storageError?`\nОшибка диагностики: ${storageError}`:'\nЛокальные данные: нажми «Проверить хранилище».'].join('\n')}</pre>
-      <div className="actions"><button id="bootDiagnosticsRefreshPackages" className="button" type="button" onClick={()=>window.dispatchEvent(new Event('rfm:refresh-local-data'))}>Перечитать сохранённые данные</button><button id="bootDiagnosticsRefresh" className="button" type="button" disabled={busy} onClick={()=>void refreshStorage()}>{busy?'Проверяю…':'Проверить хранилище'}</button><button id="bootDiagnosticsCopy" className="button" type="button" onClick={()=>void copy()}>{copied?'Скопировано':'Скопировать диагностику'}</button><button id="bootDiagnosticsExport" className="button" type="button" onClick={exportReport}>Скачать отчёт</button></div>
+      <ActionGroup><Button id="bootDiagnosticsRefreshPackages" className="button" type="button" onClick={()=>window.dispatchEvent(new Event('rfm:refresh-local-data'))}>Перечитать сохранённые данные</Button><Button id="bootDiagnosticsRefresh" className="button" type="button" disabled={busy} onClick={()=>void refreshStorage()}>{busy?'Проверяю…':'Проверить хранилище'}</Button><Button id="bootDiagnosticsCopy" className="button" type="button" onClick={()=>void copy()}>{copied?'Скопировано':'Скопировать диагностику'}</Button><Button id="bootDiagnosticsExport" className="button" type="button" onClick={exportReport}>Скачать отчёт</Button></ActionGroup>
     </div>
   </div>;
 }

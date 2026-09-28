@@ -1,5 +1,6 @@
 import './SettingsView.css';
 import React, { useEffect, useState } from 'react';
+import Button from '../components/Button.jsx';
 import { loadThemePreference, resolveTheme, saveThemePreference } from '../app/preferences.js';
 import PushSettings from '../components/PushSettings.jsx';
 
@@ -19,18 +20,18 @@ export default function SettingsView({app,onBack,onDiagnostics}){
     saveThemePreference(value);
   };
   return <section id="settingsSection" className="settings-screen">
-    <header className="settings-screen-head"><button className="button compact" onClick={onBack}>← Ещё</button><h2>Настройки и диагностика</h2></header>
+    <header className="settings-screen-head"><Button className="button compact" onClick={onBack}>← Ещё</Button><h2>Настройки и диагностика</h2></header>
     <p className="muted small">Настройки приложения и диагностика.</p>
     <fieldset className="settings-group">
       <legend>Тема оформления</legend>
       <div className="theme-switch" role="group" aria-label="Тема оформления">
-        <button className={`theme-option${theme==='light'?' selected':''}`} type="button" aria-pressed={theme==='light'} onClick={()=>changeTheme('light')}>☀ Светлая</button>
-        <button className={`theme-option${theme==='dark'?' selected':''}`} type="button" aria-pressed={theme==='dark'} onClick={()=>changeTheme('dark')}>☾ Тёмная</button>
+        <Button className={`theme-option${theme==='light'?' selected':''}`} type="button" aria-pressed={theme==='light'} onClick={()=>changeTheme('light')}>☀ Светлая</Button>
+        <Button className={`theme-option${theme==='dark'?' selected':''}`} type="button" aria-pressed={theme==='dark'} onClick={()=>changeTheme('dark')}>☾ Тёмная</Button>
       </div>
       <p className="muted small">Выбор сохраняется на этом устройстве.</p>
     </fieldset>
     <PushSettings/>
     <div className="settings-diagnostics"><strong>Состояние карты</strong><p className="muted small">{app.mapDiag||'Диагностика карты появится, когда откроешь карту.'}</p></div>
-    <button className="button" type="button" onClick={onDiagnostics}>Открыть диагностику приложения</button>
+    <Button className="button" type="button" onClick={onDiagnostics}>Открыть диагностику приложения</Button>
   </section>;
 }

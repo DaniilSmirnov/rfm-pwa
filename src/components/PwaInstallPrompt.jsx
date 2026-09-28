@@ -1,5 +1,6 @@
 import './PwaInstallPrompt.css';
 import React, { useEffect, useState } from 'react';
+import Button from './Button.jsx';
 import { getPwaInstallSnapshot, requestPwaInstall, subscribePwaInstall } from '../app/pwa.js';
 export default function PwaInstallPrompt({active = true}) {
   const [snapshot, setSnapshot] = useState(getPwaInstallSnapshot);
@@ -34,6 +35,6 @@ export default function PwaInstallPrompt({active = true}) {
       <p>{instructions.text}</p>
       {instructions.steps.length > 0 && <ol className="pwa-install-steps">{instructions.steps.map(step => <li key={step}>{step}</li>)}</ol>}
     </div>
-    <button className="button primary" type="button" onClick={activate}>{instructions.action}</button>
+    <Button className="button primary" type="button" onClick={activate}>{instructions.action}</Button>
     </section>;
 }

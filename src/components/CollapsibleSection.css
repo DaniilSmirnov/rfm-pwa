@@ -1,0 +1,23 @@
+@layer components {
+  .collapsible-section { border-top: 1px solid #ebebeb; margin: 0; padding: 0; }
+  .collapsible-section > summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 18px 0;
+  }
+  .collapsible-section > summary::-webkit-details-marker { display: none; }
+  .collapsible-section > summary .block-title { margin: 0; flex: 1; }
+  .summary-meta { color: #a3a3a3; font-size: 12px; font-weight: 700; }
+  .summary-chevron { font-size: 22px; line-height: 1; color: #a3a3a3; transition: transform .18s ease; }
+  .collapsible-section[open] .summary-chevron { transform: rotate(180deg); }
+  .collapsible-body { padding: 0 0 20px; }
+  .points-panel .collapsible-body { padding-bottom: var(--space-1); }
+}
+@layer theme {
+  :root[data-theme="dark"] .collapsible-section { border-color: #2b2f36; }
+  :root[data-theme="dark"] .summary-meta,
+  :root[data-theme="dark"] .summary-chevron { color: #9aa0a9; }
+}

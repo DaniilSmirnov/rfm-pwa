@@ -1,5 +1,6 @@
 import './SafetyGate.css';
 import React, { useEffect, useRef, useState } from 'react';
+import Button from '../components/Button.jsx';
 import SafetyMemo from '../components/SafetyMemo.jsx';
 
 export default function SafetyGate({onAccept,onClose,fullScreen=false}){
@@ -44,12 +45,12 @@ export default function SafetyGate({onAccept,onClose,fullScreen=false}){
   },[]);
 
   return <section className={`safety-gate${fullScreen?' safety-gate-fullscreen':''}`} role="dialog" aria-modal="true" aria-labelledby="safetyGateTitle">
-    {fullScreen&&<button className="button compact safety-close" type="button" aria-label="Закрыть правила безопасности" onClick={onClose}>Закрыть</button>}
+    {fullScreen&&<Button className="button compact safety-close" type="button" aria-label="Закрыть правила безопасности" onClick={onClose}>Закрыть</Button>}
     <div className="safety-gate-content" ref={content} tabIndex={0} aria-label="Памятка по безопасности">
       <SafetyMemo/>
     </div>
-    {!fullScreen&&<button className="button primary safety-accept" type="button" disabled={!readToEnd} onClick={onAccept}>
+    {!fullScreen&&<Button className="button primary safety-accept" type="button" disabled={!readToEnd} onClick={onAccept}>
       {readToEnd?'Прочитал(а), открыть карту':'Прокрути памятку до конца'}
-    </button>}
+    </Button>}
   </section>;
 }

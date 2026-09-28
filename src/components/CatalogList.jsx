@@ -1,10 +1,12 @@
 import React from 'react';
+import Button from './Button.jsx';
+import EmptyState from './EmptyState.jsx';
 import { assetUrl } from '../rallyfans.js';
 import './CatalogList.css';
 
 export default function CatalogList({app}){
   if(!app.visibleCatalog.length){
-    return <p className="muted">{app.catalogQuery.trim()?'Ничего не найдено.':'Нет гонок в пределах недели. Используй поиск.'}</p>;
+    return <EmptyState>{app.catalogQuery.trim()?'Ничего не найдено.':'Нет гонок в пределах недели. Используй поиск.'}</EmptyState>;
   }
   return <>{[...app.visibleCatalog].reverse().map(r=>{
     const saved=app.downloadedIds.has(Number(r.id));
@@ -17,9 +19,9 @@ export default function CatalogList({app}){
         <strong>{r.name||`Ралли #${r.id}`}</strong>
         <span>{[r.city_race_details,r.city_race].filter(Boolean).join(' · ')}</span>
       </div>
-      <button className={`button ${saved?'downloaded':'primary'}`} data-race-id={Number(r.id)} onClick={()=>app.downloadRace(Number(r.id))}>
+      <Button className={`button ${saved?'downloaded':'primary'}`} data-race-id={Number(r.id)} onClick={()=>app.downloadRace(Number(r.id))}>
         {progress||(saved?'Обновить Rally Pack':'Скачать Rally Pack')}
-      </button>
+      </Button>
     </article>;
   })}</>;
 }

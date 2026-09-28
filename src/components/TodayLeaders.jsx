@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Button from './Button.jsx';
 import { crewName, crewResultClasses, filterCrewResultsByClass, overallCrewResults } from '../app/crew-results.js';
 
 export default function TodayLeaders({pkg,onResults}){
@@ -25,6 +26,6 @@ export default function TodayLeaders({pkg,onResults}){
         <span>{leader.crew?.car} · {leader.formattedTime}</span>
       </article>;
     }):<p className="muted">Результаты пока не загружены или нет финишировавших экипажей.</p>}
-    {onResults&&<button className="button compact" type="button" onClick={onResults}>Все результаты</button>}
+    {onResults&&<Button className="button compact" type="button" onClick={onResults}>Все результаты</Button>}
   </section>;
 }
