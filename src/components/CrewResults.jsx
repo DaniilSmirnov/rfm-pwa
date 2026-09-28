@@ -80,5 +80,13 @@ export default function CrewResults({pkg,open=false,onOpen,onClose}){
 
   if(!pkg)return null;
   const selectedClassResults=filterCrewResultsByClass(activeView?.results,className);
-  return <CrewResultsModal open={open} onClose={onClose} data={data} views={views} activeView={activeView} className={className} onClassChange={setClassName} onStageChange={setStageKey} classes={classes} query={query} onQueryChange={setQuery} visible={visible} selectedClassResults={selectedClassResults} subscriptions={subscriptions} onToggleSubscription={toggleSubscription} resultLabel={resultLabel} subscriptionKey={subscriptionKey}/>;
+  return <>
+    <section className="crew-results-section" hidden aria-labelledby="crewResultsTitle">
+      <div className="section-head"><div><div id="crewResultsTitle" className="block-title">РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ</div><p className="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p></div><button className="button primary" id="crewResultsOpen" type="button" hidden={!data} onClick={onOpen}>Открыть результаты</button></div>
+      {data&&<div className="crew-results-class-filter" id="crewResultsClassFilter"><label htmlFor="crewResultsClass">Класс</label><select id="crewResultsClass" className="crew-results-stage" value={className} onChange={event=>setClassName(event.target.value)}><option value="">Все классы</option>{classes.map(name=><option key={name} value={name}>{name}</option>)}</select></div>}
+      <form className="crew-results-controls" onSubmit={event=>{event.preventDefault();void loadResults(raceId);}}><label htmlFor="asmgRaceId">Номер гонки на АСМГ</label><div className="crew-results-load"><input id="asmgRaceId" inputMode="numeric" pattern="[0-9]*" value={raceId} onChange={event=>setRaceId(event.target.value)} aria-label="Номер гонки на АСМГ"/><button className="button compact primary" type="submit" disabled={busy}>{busy?'Загрузка…':data?'Обновить':'Загрузить результаты'}</button></div></form>
+      <p className="muted small crew-results-status" aria-live="polite">{status}</p>
+    </section>
+    <CrewResultsModal open={open} onClose={onClose} data={data} views={views} activeView={activeView} className={className} onClassChange={setClassName} onStageChange={setStageKey} classes={classes} query={query} onQueryChange={setQuery} visible={visible} selectedClassResults={selectedClassResults} subscriptions={subscriptions} onToggleSubscription={toggleSubscription} resultLabel={resultLabel} subscriptionKey={subscriptionKey}/>
+  </>;
 }
