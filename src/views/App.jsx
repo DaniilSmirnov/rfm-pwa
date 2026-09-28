@@ -118,7 +118,7 @@ export default function App(){
 
   return <>
     <AppLayout app={app} selectedRoute={selectedRoute} onLogoClick={handleLogoClick} pointElevation={pointElevation} pointStageDistance={pointStageDistance}
-      installControl={<PwaInstallPrompt compact active={tab==='today'}/>} installPrompt={<PwaInstallPrompt active={tab==='today'}/>} screenContent={screenContent} updateMessage={updateMessage}
+      installPrompt={<PwaInstallPrompt active={tab==='today'}/>} screenContent={screenContent} updateMessage={updateMessage}
       mapContent={<RallyMap app={app} onRouteClick={setSelectedRoute}/>} catalogContent={<CatalogList app={app}/>} packagesContent={<SavedPackagesList app={app}/>} statsContent={<><strong>{app.storageStats.count} гонок</strong><span className="muted">JSON: {formatBytes(app.storageStats.jsonBytes)} · карты: {formatBytes(app.storageStats.mapBytes)} ({app.storageStats.mapCount} тайлов) · persistent: {app.storageStats.persisted?'да':'нет'}</span></>}
       pointListContent={<PointList app={app}/>} favoritesContent={<FavoritesList app={app}/>} scheduleContent={pkg&&<ScheduleList pkg={pkg}/>} mediaContent={<RaceMedia pkg={pkg}/>}/>
     <BootDiagnostics open={diagnosticsOpen} onClose={()=>setDiagnosticsOpen(false)}/>

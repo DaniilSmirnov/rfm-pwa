@@ -8,23 +8,20 @@ async function getBounds(page,selector){
   });
 }
 
-test('keeps the brand centered in the header independently of the status badge',async({page})=>{
+test('aligns the brand left and network status right without a PWA install button',async({page})=>{
   await openApp(page);
 
   const header=await getBounds(page,'.topbar');
   const brand=await getBounds(page,'.header-brand');
-  const actions=await page.locator('.top-actions').evaluate(element=>{
-    const rect=element.getBoundingClientRect();
-    return {left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom};
-  });
-  const headerCenter=(header.left+header.right)/2;
-  const brandCenter=(brand.left+brand.right)/2;
+  const actions=await getBounds(page,'.top-actions');
 
   expect(header.height).toBeGreaterThan(0);
-  expect(Math.abs(brandCenter-headerCenter)).toBeLessThanOrEqual(1);
-  const overlapsHorizontally=brand.left<actions.right&&brand.right>actions.left;
-  const overlapsVertically=brand.top<actions.bottom&&brand.bottom>actions.top;
-  expect(overlapsHorizontally&&overlapsVertically).toBe(false);
+  expect(brand.left).toBeLessThan(header.left+header.width/2);
+  expect(brand.right).toBeLessThanOrEqual(actions.left);
+  expect(actions.left).toBeGreaterThan(header.left+header.width/2);
+  await expect(page.getByRole('button',{name:'Установить PWA'})).toHaveCount(0);
+  await expect(page.locator('.top-actions button')).toHaveCount(0);
+  await expect(page.locator('#networkBadge')).toBeVisible();
 });
 
 test('places More controls at the top and leaves the complete footer clear of the fixed tab bar',async({page})=>{

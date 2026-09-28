@@ -1,12 +1,9 @@
 import './PwaInstallPrompt.css';
 import React, { useEffect, useState } from 'react';
 import { getPwaInstallSnapshot, requestPwaInstall, subscribePwaInstall } from '../app/pwa.js';
-export default function PwaInstallPrompt({
-  compact = false,
-  active = true
-}) {
+export default function PwaInstallPrompt({active = true}) {
   const [snapshot, setSnapshot] = useState(getPwaInstallSnapshot);
-  const [expanded, setExpanded] = useState(!compact);
+  const [expanded, setExpanded] = useState(true);
   const [helpRequested, setHelpRequested] = useState(false);
   useEffect(() => subscribePwaInstall(setSnapshot), []);
   useEffect(() => {
@@ -30,7 +27,6 @@ export default function PwaInstallPrompt({
     setExpanded(value => !value);
   };
   const instructions = snapshot.instructions;
-  if (compact) return <button className="button compact" type="button" hidden={!visible || !active} onClick={activate}>Установить PWA</button>;
   return <section className="pwa-install-prompt" role="region" aria-label="Установка PWA" hidden={!visible || !(active || helpRequested) || !expanded} aria-live="polite">
     <div className="pwa-install-copy">
       <div className="eyebrow">УСТАНОВКА PWA</div>

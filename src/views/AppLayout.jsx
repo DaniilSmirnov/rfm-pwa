@@ -8,10 +8,10 @@ import MapView from './MapView.jsx';
 export default function AppLayout({
   app,selectedRoute,onLogoClick,pointElevation,pointStageDistance,catalogContent,packagesContent,
   statsContent,pointListContent,favoritesContent,scheduleContent,mediaContent,mapContent,
-  installControl,installPrompt,screenContent,updateMessage
+  installPrompt,screenContent,updateMessage
 }){
   return <>
-    <AppHeader online={app.online} installControl={installControl} onLogoClick={onLogoClick}/>
+    <AppHeader online={app.online} onLogoClick={onLogoClick}/>
     {installPrompt}
     <div className="react-tab-content">{screenContent}</div>
     <main>
