@@ -4,6 +4,7 @@
     position: sticky;
     top: 0;
     z-index: 50;
+    isolation: isolate;
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -15,7 +16,7 @@
     padding-right: max(var(--space-4),calc(var(--space-4) + var(--safe-right)));
     padding-bottom: var(--space-3);
     padding-left: max(var(--space-4),calc(var(--space-4) + var(--safe-left)));
-    background: rgba(0,0,0,.92);
+    background: #000;
     color: #fff;
   }
 }
@@ -203,7 +204,7 @@
 }
 @layer theme {
   :root[data-theme="dark"] .topbar {
-    background: rgba(11,13,16,.94);
+    background: #0b0d10;
     color: #fff;
   }
 }
