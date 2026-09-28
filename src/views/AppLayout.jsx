@@ -1,6 +1,5 @@
 import React from 'react';
 import AppHeader from '../components/AppHeader.jsx';
-import AppFooter from '../components/AppFooter.jsx';
 import CatalogSection from '../components/CatalogSection.jsx';
 import SavedOfflineSection from '../components/SavedOfflineSection.jsx';
 import RaceDetails from './RaceDetails.jsx';
@@ -23,6 +22,5 @@ export default function AppLayout({
         favoritesContent={favoritesContent}/>
     </main>
     {updateMessage&&<div className="update-banner" role="status">{updateMessage}</div>}
-    <AppFooter/>
   </>;
 }

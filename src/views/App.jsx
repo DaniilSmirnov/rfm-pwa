@@ -12,6 +12,7 @@ import SafetyGate from '../modals/SafetyGate.jsx';
 import SettingsView from './SettingsView.jsx';
 import PwaInstallPrompt from '../components/PwaInstallPrompt.jsx';
 import AppLayout from './AppLayout.jsx';
+import AppFooter from '../components/AppFooter.jsx';
 import CatalogList from '../components/CatalogList.jsx';
 import SavedPackagesList from '../components/SavedPackagesList.jsx';
 import PointList from '../components/PointList.jsx';
@@ -120,6 +121,7 @@ export default function App(){
       pointListContent={<PointList app={app}/>} favoritesContent={<FavoritesList app={app}/>} scheduleContent={pkg&&<ScheduleList pkg={pkg}/>} mediaContent={<RaceMedia pkg={pkg}/>}/>
     <BootDiagnostics open={diagnosticsOpen} onClose={()=>setDiagnosticsOpen(false)}/>
     <div className="react-tab-content">{tab==='today'&&<TodayView app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsView app={app} onBack={closeSettings} onDiagnostics={()=>setDiagnosticsOpen(true)}/>:<MoreMenu onSettings={openSettings}/>)}</div>
+    <AppFooter/>
     <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></button>)}</nav>
 
     <CrewResults pkg={pkg&&(!raceHasFinished(pkg,clock)||pkg.crewResults?.eventResults?.length)?pkg:null} open={crewResultsOpen} onOpen={openCrewResults} onClose={()=>setCrewResultsOpen(false)}/>

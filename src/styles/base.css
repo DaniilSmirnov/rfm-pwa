@@ -189,11 +189,6 @@
   }
 }
 @layer base {
-  body[data-active-tab="more"] .app-footer {
-    padding-bottom: calc(88px + var(--safe-bottom));
-  }
-}
-@layer base {
   html[data-ios="true"][data-standalone="true"] {
     --ios-safe-top-floor: 59px;
     --ios-safe-bottom-floor: 34px;
