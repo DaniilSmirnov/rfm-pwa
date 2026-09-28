@@ -279,6 +279,6 @@
 @layer base {
   body[data-safety-gate="true"] {
     overflow: hidden;
-    touch-action: pan-y;
+    overscroll-behavior: none;
   }
 }
