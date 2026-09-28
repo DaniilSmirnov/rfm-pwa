@@ -10,8 +10,8 @@ The tracked scenarios are the main success path plus one important boundary for 
 | Catalog | 4 / 5 | 80% | `tests/ui/app-shell.spec.js`, `tests/ui/offline-errors.spec.js`, `tests/ui/tabs-settings-safety.spec.js` |
 | Saved packages and import | 6 / 7 | 86% | `tests/ui/race-flow.spec.js`, `tests/ui/offline-errors.spec.js`, `tests/ui/ui-contracts.spec.js` |
 | Race details, schedule, media, crew results | 7 / 9 | 78% | `tests/ui/race-flow.spec.js`, `tests/ui/crew-results.spec.js` |
-| Map, points, favorites, location and export | 8 / 10 | 80% | `tests/ui/race-flow.spec.js`, `tests/ui/ui-contracts.spec.js`, `tests/pwa/migration-safety.spec.js` |
-| Offline map, terrain and persistence | 7 / 10 | 70% | `tests/unit/offline-map-revision.test.js`, `tests/unit/terrain-controls.test.js`, `tests/pwa/migration-safety.spec.js` |
+| Map, points, favorites, location and export | 8 / 10 | 80% | `tests/ui/race-flow.spec.js`, `tests/ui/ui-contracts.spec.js`, `tests/unit/react-ownership.test.js`, `tests/pwa/migration-safety.spec.js` |
+| Offline map, terrain and persistence | 7 / 10 | 70% | `tests/unit/offline-map-revision.test.js`, `tests/unit/terrain-revision.test.js`, `tests/pwa/migration-safety.spec.js` |
 | Elevation at points and route profiles | 5 / 7 | 71% | `tests/unit/elevation.test.js`, `tests/unit/elevation-ui.test.js`, `tests/ui/race-flow.spec.js` |
 | Settings, themes and safety gate | 5 / 6 | 83% | `tests/unit/preferences.test.js`, `tests/ui/tabs-settings-safety.spec.js`, `tests/pwa/service-worker.spec.js` |
 | Push controls and subscription states | 3 / 4 | 75% | `tests/unit/push-client.test.js`, `tests/ui/legacy-push-diagnostics.spec.js` |

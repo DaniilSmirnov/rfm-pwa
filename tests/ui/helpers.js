@@ -273,6 +273,6 @@ export async function seedFixtureRace(page){
     db.close();
     window.dispatchEvent(new Event('rfm:refresh-local-data'));
   },{race:raceFixture,results:asmgResultsFixture});
-  await page.locator('#raceDetails').waitFor({state:'visible'});
+  await page.locator('.race-page').waitFor({state:'visible'});
   await page.waitForFunction(()=>Boolean(document.querySelector('#crewResultsOpen')&&!document.querySelector('#crewResultsOpen').hidden));
 }

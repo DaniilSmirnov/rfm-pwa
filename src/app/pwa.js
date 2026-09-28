@@ -1,6 +1,6 @@
 let deferredPrompt=null;
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const listeners=new Set();
+let removeInstallListeners=null;
 
 export function isIOSDevice(){
   return /iPad|iPhone|iPod/i.test(navigator.userAgent)
@@ -15,18 +15,19 @@ export function pwaLaunchContext() {
   const installedLaunch=Boolean(displayMode || iosStandalone || androidAppReferrer);
   return {installedLaunch,displayMode,iosStandalone,androidAppReferrer,browserMode:!installedLaunch};
 }
-export function isStandalonePwa(){ return pwaLaunchContext().installedLaunch; }
 
-export function installInstructions(){
+export function isStandalonePwa(){return pwaLaunchContext().installedLaunch;}
+
+export function installInstructions({promptAvailable=Boolean(deferredPrompt)}={}){
   if(isIOSDevice()) return {
     title:'Установи Rally Fans Map Offline на экран «Домой»',
     text:'Сейчас приложение открыто как обычная вкладка браузера. На iPhone/iPad часть PWA-возможностей доступна только после установки и запуска с домашнего экрана.',
     steps:['Нажми «Поделиться» в браузере.','Выбери «На экран Домой» / «Add to Home Screen».','Нажми «Добавить», затем открой Rally Fans Map Offline с новой иконки.'],
     action:'Показать инструкцию'
   };
-  if(deferredPrompt) return {
+  if(promptAvailable) return {
     title:'Установи Rally Fans Map Offline',
-    text:'Сейчас приложение открыто в браузере. Установи PWA, чтобы запускать его отдельно и надежнее использовать офлайн-режим и уведомления.',
+    text:'Сейчас приложение открыто в браузере. Установи PWA, чтобы запускать его отдельно и надёжнее использовать офлайн-режим и уведомления.',
     steps:[],action:'Установить приложение'
   };
   return {
@@ -37,38 +38,64 @@ export function installInstructions(){
   };
 }
 
-export function syncInstallUi(){
-  const topButton=$('installBtn'),prompt=$('pwaInstallPrompt'),action=$('pwaInstallAction');
-  const title=$('pwaInstallTitle'),text=$('pwaInstallText'),steps=$('pwaInstallSteps');
-  const ctx=pwaLaunchContext();
-  document.documentElement.dataset.pwaInstalled=ctx.installedLaunch?'true':'false';
-  document.documentElement.dataset.pwaContext=ctx.installedLaunch?'app':'browser';
-  if(ctx.installedLaunch){if(topButton)topButton.hidden=true;if(prompt)prompt.hidden=true;return;}
-  const copy=installInstructions();
-  if(topButton){topButton.hidden=false;topButton.setAttribute('aria-hidden','false');topButton.textContent='Установить PWA';}
-  if(prompt)prompt.hidden=false;if(title)title.textContent=copy.title;if(text)text.textContent=copy.text;if(action)action.textContent=copy.action;
-  if(steps){steps.innerHTML=copy.steps.map(step=>`<li>${esc(step)}</li>`).join('');steps.hidden=!copy.steps.length;}
+export function getPwaInstallSnapshot(){
+  const context=pwaLaunchContext();
+  const promptAvailable=Boolean(deferredPrompt);
+  return {...context,promptAvailable,instructions:installInstructions({promptAvailable})};
 }
 
-export async function requestPwaInstall(){
-  if(isStandalonePwa()){syncInstallUi();return;}
-  if(deferredPrompt){
-    const promptEvent=deferredPrompt;deferredPrompt=null;promptEvent.prompt();
-    await promptEvent.userChoice.catch(()=>null);syncInstallUi();return;
+function publishInstallState(){
+  const snapshot=getPwaInstallSnapshot();
+  for(const listener of listeners) listener(snapshot);
+}
+
+export function subscribePwaInstall(listener){
+  listeners.add(listener);
+  listener(getPwaInstallSnapshot());
+  if(!removeInstallListeners){
+    const onBeforeInstallPrompt=event=>{
+      event.preventDefault();
+      if(isStandalonePwa()) return;
+      deferredPrompt=event;
+      publishInstallState();
+    };
+    const onInstalled=()=>{deferredPrompt=null;publishInstallState();};
+    const onVisibility=()=>{if(document.visibilityState==='visible')publishInstallState();};
+    const mediaQueries=['standalone','fullscreen','minimal-ui'].map(mode=>window.matchMedia?.(`(display-mode: ${mode})`)).filter(Boolean);
+    window.addEventListener('beforeinstallprompt',onBeforeInstallPrompt);
+    window.addEventListener('appinstalled',onInstalled);
+    window.addEventListener('pageshow',publishInstallState);
+    window.addEventListener('rfm:pwa-install-help',publishInstallState);
+    document.addEventListener('visibilitychange',onVisibility);
+    for(const media of mediaQueries) media.addEventListener?.('change',publishInstallState);
+    removeInstallListeners=()=>{
+      window.removeEventListener('beforeinstallprompt',onBeforeInstallPrompt);
+      window.removeEventListener('appinstalled',onInstalled);
+      window.removeEventListener('pageshow',publishInstallState);
+      window.removeEventListener('rfm:pwa-install-help',publishInstallState);
+      document.removeEventListener('visibilitychange',onVisibility);
+      for(const media of mediaQueries) media.removeEventListener?.('change',publishInstallState);
+      removeInstallListeners=null;
+    };
   }
-  const prompt=$('pwaInstallPrompt'),steps=$('pwaInstallSteps');
-  if(prompt){prompt.hidden=false;prompt.scrollIntoView({behavior:'smooth',block:'start'});}
-  if(steps)steps.hidden=false;
+  return ()=>{
+    listeners.delete(listener);
+    if(!listeners.size) removeInstallListeners?.();
+  };
 }
 
-let setupDone=false;
-export function setupPwaInstall(){
-  if(setupDone)return; setupDone=true; syncInstallUi();
-  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();if(isStandalonePwa()){deferredPrompt=null;syncInstallUi();return;}deferredPrompt=e;syncInstallUi();});
-  window.addEventListener('appinstalled',()=>{deferredPrompt=null;syncInstallUi();});
-  for(const mode of ['standalone','fullscreen','minimal-ui']) window.matchMedia?.(`(display-mode: ${mode})`).addEventListener?.('change',syncInstallUi);
-  window.addEventListener('pageshow',syncInstallUi);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncInstallUi();});
-  $('installBtn')?.addEventListener('click',requestPwaInstall);
-  $('pwaInstallAction')?.addEventListener('click',requestPwaInstall);
+export async function requestPwaInstall({onInstructions}={}){
+  if(isStandalonePwa()) return {installed:true,prompted:false};
+  if(!deferredPrompt){
+    onInstructions?.();
+    window.dispatchEvent(new Event('rfm:pwa-install-help'));
+    return {installed:false,prompted:false,instructions:true};
+  }
+  const promptEvent=deferredPrompt;
+  deferredPrompt=null;
+  publishInstallState();
+  promptEvent.prompt();
+  const choice=await promptEvent.userChoice.catch(()=>null);
+  publishInstallState();
+  return {installed:isStandalonePwa(),prompted:true,choice};
 }

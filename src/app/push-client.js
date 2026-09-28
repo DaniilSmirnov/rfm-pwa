@@ -1,7 +1,7 @@
 import { getAllPackages } from '../db.js';
 import { buildRaceReminders } from './schedule.js';
 import { subscribedStageKeys } from './preferences.js';
-import { isIOSDevice, isStandalonePwa, syncInstallUi, requestPwaInstall } from './pwa.js';
+import { isIOSDevice, isStandalonePwa, requestPwaInstall } from './pwa.js';
 import { fetchWithTimeout } from './net.js';
 
 let pushStatus={text:'Уведомления ещё не настроены.',className:''};
@@ -90,7 +90,6 @@ export async function scheduleAllSavedReminders(){
 
 export async function enablePushNotifications() {
   if(isIOSDevice() && !isStandalonePwa()){
-    syncInstallUi();
     await requestPwaInstall();
     return refreshPushUi();
   }

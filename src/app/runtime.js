@@ -1,5 +1,3 @@
-const $=id=>document.getElementById(id);
-
 export async function ensurePersistentStorage(){
   if(!navigator.storage) return {supported:false,persisted:false};
   try{
@@ -50,14 +48,12 @@ export async function setupPeriodicBackgroundSync(reg){
   }
 }
 
-export async function setupServiceWorkerUpdates({onDiagnostic}={}){
+export async function setupServiceWorkerUpdates({onDiagnostic,onUpdate}={}){
   if(!('serviceWorker' in navigator)) return null;
-  const banner=$('updateBanner');
-  const updateText=$('updateText');
   let reloading=false;
   const showUpdate=(text='Обновляю приложение…')=>{
-    if(updateText) updateText.textContent=text;
-    if(banner) banner.hidden=false;
+    onUpdate?.(text);
+    window.dispatchEvent(new CustomEvent('rfm:service-worker-update',{detail:{message:text}}));
   };
 
   navigator.serviceWorker.addEventListener('message',event=>{

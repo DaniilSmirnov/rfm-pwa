@@ -16,11 +16,11 @@ test.describe('app shell and catalog',()=>{
 
   test('shows browser PWA installation CTA on Today only',async({page})=>{
     await openApp(page);
-    await expect(page.locator('#pwaInstallPrompt')).toBeVisible();
-    await expect(page.locator('#installBtn')).toBeVisible();
+    await expect(page.getByRole('region',{name:'Установка PWA'})).toBeVisible();
+    await expect(page.getByRole('button',{name:'Установить PWA'})).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context','browser');
     await page.getByRole('button',{name:'Ещё'}).click();
-    await expect(page.locator('#pwaInstallPrompt')).toBeHidden();
+    await expect(page.getByRole('region',{name:'Установка PWA'})).toBeHidden();
   });
 
   test('shows online network badge',async({page})=>{
@@ -39,7 +39,7 @@ test.describe('app shell and catalog',()=>{
   test('catalog search reveals races outside week window',async({page})=>{
     await openApp(page);
     await page.getByRole('button',{name:'Ещё'}).click();
-    await page.locator('#catalogSearch').fill('Пермь');
+    await page.getByPlaceholder('Карелия, Псков…').fill('Пермь');
     await expect(page.locator('#catalogList')).toContainText(secondRace.name);
     await expect(page.locator('#catalogList')).toContainText('Пермь');
   });
@@ -47,7 +47,7 @@ test.describe('app shell and catalog',()=>{
   test('catalog search can find by race name',async({page})=>{
     await openApp(page);
     await page.getByRole('button',{name:'Ещё'}).click();
-    await page.locator('#catalogSearch').fill('Far Future');
+    await page.getByPlaceholder('Карелия, Псков…').fill('Far Future');
     await expect(page.locator('.catalog-row')).toHaveCount(1);
     await expect(page.locator('.catalog-row')).toContainText(secondRace.name);
   });
@@ -55,7 +55,7 @@ test.describe('app shell and catalog',()=>{
   test('catalog search shows empty state',async({page})=>{
     await openApp(page);
     await page.getByRole('button',{name:'Ещё'}).click();
-    await page.locator('#catalogSearch').fill('does-not-exist');
+    await page.getByPlaceholder('Карелия, Псков…').fill('does-not-exist');
     await expect(page.locator('#catalogList')).toContainText('Ничего не найдено');
   });
 

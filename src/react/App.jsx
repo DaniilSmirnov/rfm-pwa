@@ -1,5 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CircleEllipsis, Map } from 'lucide-react';
 import { useRfmApp, ensureMapLibre, formatBytes } from './useRfmApp.js';
 import { renderMap, resizeActiveMap, updateLiveUserPosition } from '../map.js';
@@ -25,11 +24,7 @@ import CrewResults from './CrewResults.jsx';
 import BootDiagnostics from './BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { raceHasFinished } from '../app/today-summary.js';
-
-function Portal({id,children}){
-  const node=document.getElementById(id);
-  return node?createPortal(children,node):null;
-}
+import FallbackMap from './FallbackMap.jsx';
 
 function Catalog({app}){
   if(!app.visibleCatalog.length){
@@ -109,35 +104,49 @@ function Favorites({app}){
 }
 
 function MapLifecycle({app,onRouteClick}){
+  const containerRef=useRef(null);
+  const [engine,setEngine]=useState('loading');
+  const [engineError,setEngineError]=useState('');
+  const pkg=app.currentPackage;
+  const geojson=useMemo(()=>{
+    const car=app.carPoint;
+    return car?{...pkg?.geojson,features:[...(pkg?.geojson?.features||[]),{type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[car.lon,car.lat]}}]}:pkg?.geojson;
+  },[pkg?.geojson,app.carPoint?.savedAt]);
   useEffect(()=>{
-    const pkg=app.currentPackage;
-    const container=document.getElementById('map');
-    if(!container){return;}
-    if(!pkg){app.setMapDiag('');return;}
     let cancelled=false;
-    ensureMapLibre().then(()=>{
-      if(cancelled)return;
-      const om=pkg.offlineMap?.ready?{...pkg.offlineMap,raceId:(pkg.offlineMap.storageId||pkg.id)}:null;
-      const terrain=pkg.terrain?.ready?pkg.terrain:null;
-      const car=app.carPoint;
-      const geojson=car?{...pkg.geojson,features:[...(pkg.geojson?.features||[]),{
-        type:'Feature',properties:{kind:'local-car',name:'🚗 Машина'},geometry:{type:'Point',coordinates:[car.lon,car.lat]}
-      }]}:pkg.geojson;
-      app.setMapDiag(`MapLibre ✓ · WebGL ✓${om?` · локальная подложка ${om.tileCount||0} тайлов`:''}`);
-      renderMap(container,geojson,app.userPos,app.showPoint,{
-        offlineMap:om,terrain,routePackage:pkg,
-        onRouteClick,
-        onMapError:message=>{reportClientError(new Error(message),'map');app.setMapDiag(`Ошибка карты: ${message}`);}
-      });
-    }).catch(error=>app.setMapDiag(`Карта недоступна: ${error.message}`));
+    if(!pkg){setEngine('empty');setEngineError('');app.setMapDiag('');return undefined;}
+    setEngine('loading');
+    ensureMapLibre().then(()=>{if(!cancelled)setEngine('maplibre');}).catch(error=>{if(!cancelled){setEngine('fallback');setEngineError(error.message);app.setMapDiag(`Карта: SVG режим · ${error.message}`);}});
     return()=>{cancelled=true;};
-  },[app.currentPackage?.id,app.currentPackage?.offlineMap?.storageId,app.currentPackage?.terrain?.storageId,app.carPoint?.savedAt,onRouteClick]);
+  },[pkg?.id]);
+
+  useEffect(()=>{
+    const container=containerRef.current;
+    if(!container||engine!=='maplibre'||!pkg)return undefined;
+    const offlineMap=pkg.offlineMap?.ready?{...pkg.offlineMap,raceId:(pkg.offlineMap.storageId||pkg.id)}:null;
+    const terrain=pkg.terrain?.ready?pkg.terrain:null;
+    app.setMapDiag(`MapLibre ✓ · WebGL ✓${offlineMap?` · локальная подложка ${offlineMap.tileCount||0} тайлов`:''}`);
+    try{renderMap(container,geojson,app.userPos,app.showPoint,{offlineMap,terrain,routePackage:pkg,onRouteClick,onMapError:message=>{reportClientError(new Error(message),'map');app.setMapDiag(`Ошибка карты: ${message}`);}});}
+    catch(error){setEngine('fallback');setEngineError(error.message);app.setMapDiag(`Карта: SVG режим · ${error.message}`);}
+    return()=>{resizeActiveMap();};
+  },[engine,pkg?.id,pkg?.offlineMap?.storageId,pkg?.terrain?.storageId,geojson,onRouteClick]);
 
   useEffect(()=>{
     if(app.userPos) updateLiveUserPosition(app.userPos,{center:Boolean(app.userPos.__center)});
   },[app.userPos]);
-  return null;
+  if(!pkg)return <div className="empty">Выбери сохранённую гонку</div>;
+  if(engine==='fallback')return <><p className="muted small">Интерактивная карта недоступна: {engineError}. Показана схема гонки.</p><FallbackMap geojson={geojson} userPos={app.userPos} onPointClick={app.showPoint}/></>;
+  if(engine==='loading')return <div className="empty" role="status">Загружаю карту…</div>;
+  return <div ref={containerRef} className="map-engine" aria-label="Карта ралли"/>;
 }
+const StableMapLifecycle=memo(MapLifecycle,(before,after)=>
+  before.onRouteClick===after.onRouteClick
+  &&before.app.currentPackage===after.app.currentPackage
+  &&before.app.userPos===after.app.userPos
+  &&before.app.carPoint?.savedAt===after.app.carPoint?.savedAt
+  &&before.app.showPoint===after.app.showPoint
+  &&before.app.setMapDiag===after.app.setMapDiag
+);
 
 const tabs=[
   {key:'today',label:'Сегодня',Icon:CalendarDays},
@@ -145,7 +154,7 @@ const tabs=[
   {key:'more',label:'Ещё',Icon:CircleEllipsis}
 ];
 function readTab(){return new URLSearchParams(location.search).get('tab')||'today';}
-function MoreTab({onSettings}){const go=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});return <section className="more-menu"><button className="more-menu-row" onClick={()=>go('catalogSection')}><strong>Мои гонки</strong><span>Каталог и сохранённые Rally Pack</span></button><button className="more-menu-row" onClick={onSettings}><strong>Настройки и диагностика</strong><span>Правила безопасности и состояние приложения</span></button></section>;}
+function MoreTab({onSettings}){const go=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});return <section className="more-menu"><button className="more-menu-row" onClick={()=>go('catalogSection')}><strong>Мои гонки</strong><span>Каталог и сохранённые Rally Pack</span></button><button className="more-menu-row" onClick={onSettings}><strong>Настройки и диагностика</strong><span>Настройки приложения и состояние диагностики</span></button></section>;}
 
 export default function App(){
   const app=useRfmApp();
@@ -161,6 +170,7 @@ export default function App(){
   const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
   const [safetyAccepted,setSafetyAccepted]=useState(()=>hasSafetyConsent(pkg));
   const [clock,setClock]=useState(()=>new Date());
+  const [updateMessage,setUpdateMessage]=useState('');
   const scrollPositions=useRef({});
   const activeScrollKey=tab==='more'?`more:${moreScreen}`:tab;
   const restoreScrollKey=useRef(activeScrollKey);
@@ -173,6 +183,12 @@ export default function App(){
   },[pkg?.id,pkg?.original?.safety_leaflet]);
 
   useEffect(()=>{const timer=setInterval(()=>setClock(new Date()),30000);return()=>clearInterval(timer);},[]);
+
+  useEffect(()=>{
+    const onUpdate=event=>setUpdateMessage(event.detail?.message||'Обновляю приложение…');
+    window.addEventListener('rfm:service-worker-update',onUpdate);
+    return()=>window.removeEventListener('rfm:service-worker-update',onUpdate);
+  },[]);
 
   useEffect(()=>{
     const update=()=>{const next=new URLSearchParams(location.search).get('tab')||'today';scrollPositions.current[activeScrollKey]=window.scrollY;setMoreScreen('menu');setTab(next);restoreScrollKey.current=next;};
@@ -224,14 +240,14 @@ export default function App(){
 
   return <>
     <AppLayout app={app} selectedRoute={selectedRoute} onLogoClick={handleLogoClick} pointElevation={pointElevation} pointStageDistance={pointStageDistance}
-      catalogContent={<Catalog app={app}/>} packagesContent={<SavedPackages app={app}/>} statsContent={<><strong>{app.storageStats.count} гонок</strong><span className="muted">JSON: {formatBytes(app.storageStats.jsonBytes)} · карты: {formatBytes(app.storageStats.mapBytes)} ({app.storageStats.mapCount} тайлов) · persistent: {app.storageStats.persisted?'да':'нет'}</span></>}
+      installControl={<PwaInstallPrompt compact active={tab==='today'}/>} installPrompt={<PwaInstallPrompt active={tab==='today'}/>} updateMessage={updateMessage}
+      mapContent={<StableMapLifecycle app={app} onRouteClick={setSelectedRoute}/>} catalogContent={<Catalog app={app}/>} packagesContent={<SavedPackages app={app}/>} statsContent={<><strong>{app.storageStats.count} гонок</strong><span className="muted">JSON: {formatBytes(app.storageStats.jsonBytes)} · карты: {formatBytes(app.storageStats.mapBytes)} ({app.storageStats.mapCount} тайлов) · persistent: {app.storageStats.persisted?'да':'нет'}</span></>}
       pointListContent={<PointList app={app}/>} favoritesContent={<Favorites app={app}/>} scheduleContent={pkg&&<ScheduleList pkg={pkg}/>} mediaContent={<RaceMedia pkg={pkg}/>}/>
     <BootDiagnostics open={diagnosticsOpen} onClose={()=>setDiagnosticsOpen(false)}/>
-    <div className="react-tab-content"><PwaInstallPrompt/>{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={()=>setDiagnosticsOpen(true)}/>:<MoreTab onSettings={openSettings}/>)}</div>
+    <div className="react-tab-content">{tab==='today'&&<TodayTab app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsTab app={app} onBack={closeSettings} onDiagnostics={()=>setDiagnosticsOpen(true)}/>:<MoreTab onSettings={openSettings}/>)}</div>
     <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></button>)}</nav>
-    <MapLifecycle app={app} onRouteClick={setSelectedRoute}/>
 
-    <Portal id="crewResults"><CrewResults pkg={pkg&&(!raceHasFinished(pkg,clock)||pkg.crewResults?.eventResults?.length)?pkg:null} open={crewResultsOpen} onOpen={openCrewResults} onClose={()=>setCrewResultsOpen(false)}/></Portal>
+    <CrewResults pkg={pkg&&(!raceHasFinished(pkg,clock)||pkg.crewResults?.eventResults?.length)?pkg:null} open={crewResultsOpen} onOpen={openCrewResults} onClose={()=>setCrewResultsOpen(false)}/>
 
     {requiresSafety&&<SafetyGate pkg={pkg} onAccept={acceptSafety}/>}
   </>;

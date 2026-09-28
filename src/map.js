@@ -320,77 +320,15 @@ export function updateLiveUserPosition(position, {center=false} = {}) {
   }
 }
 
-function niceCoord(v){ return Math.abs(v) >= 100 ? v.toFixed(2) : v.toFixed(3); }
-
-function renderFallback(container, fc, userPos = null, onPointClick = null) {
-  if (activeMap) { try { activeMap.remove(); } catch {} activeMap=null; }
-  clearAllLabels();
-  let bounds = geometryBounds(fc);
-  bounds = expandBounds(bounds,userPos);
-  if (!bounds) {
-    container.innerHTML = '<div class="empty">В этом пакете не найдено геометрии.<br>Данные всё равно сохранены офлайн.</div>';
-    return;
-  }
-  const W=1000,H=620,P=58;
-  const dx = Math.max(bounds.maxLon-bounds.minLon, 0.0001);
-  const dy = Math.max(bounds.maxLat-bounds.minLat, 0.0001);
-  const project = ([lon,lat]) => [P + (lon-bounds.minLon)/dx*(W-P*2), H-P-(lat-bounds.minLat)/dy*(H-P*2)];
-  const pathLine = coords => coords.map((c,i)=>`${i?'L':'M'}${project(c).map(n=>n.toFixed(2)).join(' ')}`).join(' ');
-  let shapes='', points='';
-  for (const f of fc.features || []) {
-    const g=f.geometry||{}; const props=f.properties||{}; const label=esc(props.name || props.title || 'Точка');
-    const isYandex=String(props.kind||'').startsWith('yandex-');
-    const stroke=props.color || (isYandex ? '#ffd21e' : '#e63b2e');
-    if (g.type==='LineString') shapes += `<path d="${pathLine(g.coordinates)}" fill="none" stroke="${esc(stroke)}" stroke-width="${isYandex?5:6}" stroke-linecap="round" stroke-linejoin="round"><title>${label}</title></path>`;
-    if (g.type==='MultiLineString') for (const line of g.coordinates) shapes += `<path d="${pathLine(line)}" fill="none" stroke="${esc(stroke)}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><title>${label}</title></path>`;
-    if (g.type==='Polygon') for (const ring of g.coordinates || []) shapes += `<path d="${pathLine(ring)} Z" fill="${esc(stroke)}" fill-opacity=".12" stroke="${esc(stroke)}" stroke-width="3"><title>${label}</title></path>`;
-    if (g.type==='MultiPolygon') for (const poly of g.coordinates || []) for (const ring of poly || []) shapes += `<path d="${pathLine(ring)} Z" fill="${esc(stroke)}" fill-opacity=".12" stroke="${esc(stroke)}" stroke-width="3"><title>${label}</title></path>`;
-    if (g.type==='Point') {
-      const [x,y]=project(g.coordinates); const fill=isYandex ? '#ffd21e' : '#f3f5f7';
-      points += `<g class="map-point" tabindex="0" role="button" data-lat="${g.coordinates[1]}" data-lon="${g.coordinates[0]}" data-name="${label}" aria-label="${label}"><circle cx="${x}" cy="${y}" r="${isYandex?8:9}" fill="${fill}" stroke="#111318" stroke-width="4"><title>${label}</title></circle></g>`;
-    }
-  }
-  let user='';
-  if (userPos && Number.isFinite(userPos.longitude) && Number.isFinite(userPos.latitude)) {
-    const [x,y]=project([userPos.longitude,userPos.latitude]);
-    user = `<g><circle cx="${x}" cy="${y}" r="18" fill="#4da3ff" opacity=".25"/><circle cx="${x}" cy="${y}" r="8" fill="#4da3ff" stroke="#fff" stroke-width="3"><title>Моё положение</title></circle></g>`;
-  }
-  const grid=[];
-  for(let i=0;i<=4;i++){
-    const x=P+(W-P*2)*(i/4); const lon=bounds.minLon+dx*(i/4);
-    grid.push(`<path d="M${x} ${P}V${H-P}" stroke="#1c222b" stroke-width="2"/><text x="${x+4}" y="${H-16}" fill="#6f7a89" font-size="13">${niceCoord(lon)}°</text>`);
-    const y=P+(H-P*2)*(i/4); const lat=bounds.maxLat-dy*(i/4);
-    grid.push(`<path d="M${P} ${y}H${W-P}" stroke="#1c222b" stroke-width="2"/><text x="10" y="${y-5}" fill="#6f7a89" font-size="13">${niceCoord(lat)}°</text>`);
-  }
-  container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Offline rally map"><rect width="100%" height="100%" fill="#0f1217"/>${grid.join('')}${shapes}${points}${user}</svg>`;
-  if (onPointClick) {
-    const activate = el => onPointClick({lat:Number(el.dataset.lat), lon:Number(el.dataset.lon), name:el.dataset.name || 'Точка'});
-    container.querySelectorAll('.map-point[data-lat][data-lon]').forEach(el => {
-      el.addEventListener('click', () => activate(el));
-      el.addEventListener('keydown', e => { if (e.key==='Enter' || e.key===' ') { e.preventDefault(); activate(el); } });
-    });
-  }
-}
-
 export function renderMap(container, fc, userPos = null, onPointClick = null, options={}) {
+  if (!window.maplibregl) throw new Error('MapLibre is unavailable');
   try {
-    if (window.maplibregl) return renderMapLibre(container,fc,userPos,onPointClick,options);
-  } catch (e) {
-    console.error('MapLibre render failed',e);
-    options.onMapError?.(e?.message || String(e));
-    if (options.offlineMap?.ready) {
-      if (activeMap) { try { activeMap.remove(); } catch {} activeMap=null; }
-      container.innerHTML = `<div class="empty map-engine-error"><strong>Не удалось запустить интерактивную карту.</strong><br><span>${esc(e?.message || String(e))}</span></div>`;
-      return null;
-    }
+    return renderMapLibre(container,fc,userPos,onPointClick,options);
+  } catch (error) {
+    options.onMapError?.(error?.message || String(error));
+    throw error;
   }
-  if (options.offlineMap?.ready) {
-    container.innerHTML = '<div class="empty map-engine-error"><strong>MapLibre не загрузился.</strong><br>Офлайн-тайлы сохранены, но движок карты недоступен.</div>';
-    return null;
-  }
-  return renderFallback(container,fc,userPos,onPointClick);
 }
-
 
 export function selectStageOnMap(stage,{fit=false}={}){
   if(!activeMap || !stage?.geometry) return false;

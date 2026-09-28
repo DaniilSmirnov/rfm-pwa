@@ -12,6 +12,6 @@ test('switches between offline-first main tabs',async({page})=>{
   await expect(page.getByRole('button',{name:'Мои гонки'})).toBeVisible();
   await expect(page.getByRole('button',{name:'Все результаты'})).toHaveCount(0);
   await expect(page.locator('.react-tab-content')).toHaveCSS('padding-bottom','0px');
-  await expect(page.locator('#crewResults>.crew-results-section>.section-head')).toBeHidden();
+  await expect(page.locator('.crew-results-section>.section-head')).toBeHidden();
   await expect(page.locator('body')).toHaveAttribute('data-active-tab','more');
 });

@@ -1,16 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { savePackage, getAllPackages, deleteAllPackages, getPackage, clearMapTiles, getMapStorageStats } from '../db.js';
 import { normalizePackage } from '../normalize.js';
-import { checkApiHealth, fetchRaceCatalog, fetchRace, raceDetailToPackage, cacheRaceAssets, enrichPackageWithYandex } from '../rallyfans.js';
-import { normalizePoint, yandexWebFallback, coordinateText } from '../navigation.js';
+import { fetchRace, raceDetailToPackage, cacheRaceAssets, enrichPackageWithYandex } from '../rallyfans.js';
+import { yandexWebFallback, coordinateText } from '../navigation.js';
 import { buildDownloadPlan, downloadOfflineMap, discardOfflineMapRevision } from '../offline-map.js';
 import { buildTerrainDownloadPlan } from '../terrain-offline.js';
 import { safeFileName, geoJsonToGpx } from '../app/export.js';
-import { distanceMeters, bearingDegrees, compassDirection } from '../app/geo.js';
 import { getPushSubscription, refreshPushUi, scheduleRaceReminders, scheduleAllSavedReminders } from '../app/push-client.js';
-import { FAVORITES_KEY, favoritesForPackage, isFavoritePoint, setFavoritePoint, loadCarPoint, saveCarPoint, deleteCarPoint } from '../app/local-points.js';
+import { FAVORITES_KEY, favoritesForPackage, isFavoritePoint, setFavoritePoint } from '../app/local-points.js';
 import { ensurePersistentStorage, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync, setupServiceWorkerUpdates } from '../app/runtime.js';
-import { setupPwaInstall } from '../app/pwa.js';
 import { downloadRallyPack } from '../app/rally-pack.js';
 import { rallyPackProgressText } from '../app/rally-pack-ui.js';
 import { processCachedRallyPackUpdates } from '../app/rally-pack-update.js';
@@ -20,6 +18,8 @@ import { markBoot } from '../app/boot-diagnostics.js';
 import { formatBytes } from '../app/format.js';
 import { useOfflineStorageControls } from './useOfflineStorageControls.js';
 import { createConnectivityMonitor } from '../app/network-status.js';
+import { useGeoCompass } from './useGeoCompass.js';
+import { useCatalog } from './useCatalog.js';
 
 let bootstrapPromise=null;
 let mapLibrePromise=null;
@@ -46,7 +46,6 @@ function bootstrapRuntime(){
   if(bootstrapPromise) return bootstrapPromise;
   markBoot('runtime-bootstrap-start',{online:navigator.onLine});
   setupErrorTelemetry();
-  setupPwaInstall();
   bootstrapPromise=(async()=>{
     const sw=await setupServiceWorkerUpdates({onDiagnostic:(name,detail)=>markBoot(name,detail)});
     markBoot('service-worker-ready',{registered:Boolean(sw)});
@@ -96,38 +95,23 @@ function chooseVisiblePackages(packages,query){
   return near?[near]:(packages[0]?[packages[0]]:[]);
 }
 
-function chooseCatalog(catalog,query){
-  const q=String(query||'').trim().toLowerCase();
-  if(q) return catalog.filter(r=>[
-    r.name,r.city_race,r.city_race_details,r.category_race,r.stage_race,r.dates,r.date_race
-  ].some(v=>String(v||'').toLowerCase().includes(q)));
-  const candidate=pickDefaultRace(catalog.filter(raceWithinWeek));
-  return candidate?[candidate]:[];
-}
-
 export function useRfmApp(){
   const [online,setOnline]=useState(()=>navigator.onLine);
-  const [catalog,setCatalog]=useState([]);
-  const [catalogStatus,setCatalogStatus]=useState('Загружаю…');
-  const [catalogQuery,setCatalogQuery]=useState('');
   const [packages,setPackages]=useState([]);
   const [packageQuery,setPackageQuery]=useState('');
   const [storageStats,setStorageStats]=useState({count:0,jsonBytes:0,mapBytes:0,mapCount:0,persisted:false});
   const [currentPackage,setCurrentPackage]=useState(null);
   const [selectedPoint,setSelectedPoint]=useState(null);
   const [favoritesRevision,setFavoritesRevision]=useState(0);
-  const [carPoint,setCarPointState]=useState(()=>loadCarPoint());
-  const [userPos,setUserPos]=useState(null);
-  const [geoStatus,setGeoStatus]=useState('Геопозиция ещё не запрашивалась.');
-  const [geoClass,setGeoClass]=useState('');
   const [navStatus,setNavStatus]=useState('');
   const [raceProgress,setRaceProgress]=useState({});
   const [mapDiag,setMapDiag]=useState('');
-  const [compassHeading,setCompassHeading]=useState(null);
-  const [compassEnabled,setCompassEnabled]=useState(false);
   const swRef=useRef(null);
-  const geoWatchRef=useRef(null);
   const connectivityRef=useRef(Boolean(navigator.onLine));
+  const catalogState=useCatalog(connectivityRef);
+  const {catalog,catalogStatus,catalogQuery,setCatalogQuery,visibleCatalog,loadCatalog,clearCatalog,setCatalogStatus}=catalogState;
+  const geoCompass=useGeoCompass({selectedPoint,setSelectedPoint,setNavStatus});
+  const {carPoint,saveCar,removeCar,userPos,requestLocation,geoStatus,geoClass,compassEnabled,enableCompass}=geoCompass;
 
   const refreshPackages=useCallback(async(preferredId=null)=>{
     const started=performance.now();
@@ -169,27 +153,6 @@ export function useRfmApp(){
     }
   },[offlineStorage.clearMapError]);
 
-  const loadCatalog=useCallback(async()=>{
-    if(!connectivityRef.current){
-      setCatalogStatus('Офлайн: доступны уже скачанные гонки.');
-      setCatalog([]);
-      markBoot('catalog-refresh-skipped',{reason:'offline'});
-      return;
-    }
-    setCatalogStatus('Проверяю serverless proxy…');
-    try{
-      await checkApiHealth();
-      setCatalogStatus('Загружаю список из api.rallyfansmap.ru…');
-      const rows=await fetchRaceCatalog();
-      setCatalog(rows);
-      setCatalogStatus(`${rows.length} гонок · обновление сохранённых данных через Rally Pack`);
-      markBoot('catalog-refresh-finished',{count:rows.length});
-    }catch(error){
-      setCatalogStatus(`API недоступен: ${error.message}`);
-      markBoot('catalog-refresh-failed',{message:String(error?.message||error)});
-    }
-  },[]);
-
   useEffect(()=>{
     let alive=true;
     bootstrapRuntime().then(sw=>{if(alive) swRef.current=sw;});
@@ -202,8 +165,7 @@ export function useRfmApp(){
         loadCatalog();
         requestRallyPackBackgroundRefresh(swRef.current);
       }else{
-        setCatalogStatus('Офлайн: доступны уже скачанные гонки.');
-        setCatalog([]);
+        clearCatalog();
       }
     }});
     connectivityRef.current=connectivity.online;
@@ -223,13 +185,11 @@ export function useRfmApp(){
       connectivity.stop();
       window.removeEventListener('rfm:periodic-update',onPeriodic);
       window.removeEventListener('rfm:background-fetch',onBackground);
-      if(geoWatchRef.current!=null) navigator.geolocation?.clearWatch?.(geoWatchRef.current);
     };
   },[]);
 
 
   const visiblePackages=useMemo(()=>chooseVisiblePackages(packages,packageQuery),[packages,packageQuery]);
-  const visibleCatalog=useMemo(()=>chooseCatalog(catalog,catalogQuery),[catalog,catalogQuery]);
   const downloadedIds=useMemo(()=>new Set(packages.filter(x=>x.raceId!=null).map(x=>Number(x.raceId))),[packages]);
   const favorites=useMemo(()=>currentPackage?favoritesForPackage(currentPackage.id):[],[currentPackage?.id,favoritesRevision]);
 
@@ -279,88 +239,6 @@ export function useRfmApp(){
     setNavStatus(ok?(navigator.share?'Открыто системное меню «Поделиться».':'Точка скопирована.'):'Не удалось поделиться точкой.');
     return ok;
   },[]);
-
-  const saveCar=useCallback(()=>{
-    if(!navigator.geolocation){setGeoStatus('Геолокация не поддерживается.');return;}
-    setGeoStatus('Определяю координаты машины…');
-    navigator.geolocation.getCurrentPosition(pos=>{
-      const coords=pos.coords;
-      setUserPos(coords);
-      const saved=saveCarPoint({lat:coords.latitude,lon:coords.longitude,name:'Машина'});
-      setCarPointState(saved);
-      setGeoStatus(`Геопозиция включена · точность ±${Math.round(coords.accuracy||0)} м`);
-      setGeoClass('geo-ok');
-    },error=>{
-      setGeoStatus(`Не удалось сохранить машину: ${error.message}`);
-      setGeoClass('geo-error');
-    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
-  },[]);
-
-  const removeCar=useCallback(()=>{
-    deleteCarPoint();
-    setCarPointState(null);
-    if(['Машина','🚗 Машина'].includes(selectedPoint?.name)) setSelectedPoint(null);
-  },[selectedPoint]);
-
-  const requestLocation=useCallback(()=>{
-    if(!navigator.geolocation){setGeoStatus('Геолокация не поддерживается этим браузером.');return;}
-    if(geoWatchRef.current!=null&&userPos){
-      setGeoStatus(`Геопозиция включена · точность ±${Math.round(userPos.accuracy||0)} м`);
-      setGeoClass('geo-ok');
-      return;
-    }
-    setGeoStatus('Запрашиваю доступ к геопозиции…');
-    let first=true;
-    geoWatchRef.current=navigator.geolocation.watchPosition(pos=>{
-      setUserPos({...pos.coords,__center:first});
-      setGeoStatus(`Геопозиция включена · точность ±${Math.round(pos.coords.accuracy||0)} м`);
-      setGeoClass('geo-ok');
-      first=false;
-    },error=>{
-      geoWatchRef.current=null;
-      setGeoStatus(error.code===1?'Доступ к геопозиции запрещён. Разреши его в настройках сайта.':`Геолокация недоступна: ${error.message}`);
-      setGeoClass('geo-error');
-    },{enableHighAccuracy:true,timeout:15000,maximumAge:3000});
-  },[userPos]);
-
-  useEffect(()=>{
-    if(!compassEnabled) return;
-    const handler=event=>{
-      let heading=null;
-      if(Number.isFinite(event.webkitCompassHeading)) heading=event.webkitCompassHeading;
-      else if(Number.isFinite(event.alpha)) heading=(360-event.alpha)%360;
-      if(Number.isFinite(heading)) setCompassHeading(heading);
-    };
-    window.addEventListener('deviceorientationabsolute',handler,true);
-    window.addEventListener('deviceorientation',handler,true);
-    return()=>{
-      window.removeEventListener('deviceorientationabsolute',handler,true);
-      window.removeEventListener('deviceorientation',handler,true);
-    };
-  },[compassEnabled]);
-
-  const enableCompass=useCallback(async()=>{
-    try{
-      if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
-        const permission=await DeviceOrientationEvent.requestPermission();
-        if(permission!=='granted') throw new Error('доступ к датчику не разрешён');
-      }
-      setCompassEnabled(true);
-      if(!userPos) requestLocation();
-    }catch(error){setNavStatus(`Компас недоступен: ${error.message}`);}
-  },[requestLocation,userPos]);
-
-  const compass=useMemo(()=>{
-    if(!selectedPoint||!userPos) return null;
-    try{
-      const target=normalizePoint(selectedPoint);
-      const here={lat:Number(userPos.latitude),lon:Number(userPos.longitude)};
-      const bearing=bearingDegrees(here,target);
-      const distance=distanceMeters(here,target);
-      const relative=Number.isFinite(compassHeading)?((bearing-compassHeading)+360)%360:bearing;
-      return {bearing,distance,relative,direction:compassDirection(bearing)};
-    }catch{return null;}
-  },[selectedPoint,userPos,compassHeading]);
 
   const importYandex=useCallback(async()=>{
     if(!currentPackage) return;
@@ -432,7 +310,7 @@ export function useRfmApp(){
     importFiles,clearAll,
     selectedPoint,showPoint,setSelectedPoint,favorites,toggleFavorite,favoritesRevision,
     carPoint,saveCar,removeCar,userPos,requestLocation,geoStatus,geoClass,
-    navStatus,setNavStatus,sharePoint,compass,compassEnabled,enableCompass,
+    navStatus,setNavStatus,sharePoint,compassEnabled,enableCompass,
     mapUi,terrainUi,mapSubtitle,mapDiag,setMapDiag,...offlineStorage,
     importYandex,exportGeoJson,exportGpx
   };

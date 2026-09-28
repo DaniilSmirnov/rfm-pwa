@@ -19,7 +19,7 @@ export default function SettingsTab({app,onBack,onDiagnostics}){
   };
   return <section id="settingsSection" className="settings-screen">
     <header className="settings-screen-head"><button className="button compact" onClick={onBack}>← Ещё</button><h2>Настройки и диагностика</h2></header>
-    <p className="muted small">Диагностика, правила безопасности и настройки приложения.</p>
+    <p className="muted small">Настройки приложения и диагностика.</p>
     <fieldset className="settings-group">
       <legend>Тема оформления</legend>
       <div className="theme-switch" role="group" aria-label="Тема оформления">

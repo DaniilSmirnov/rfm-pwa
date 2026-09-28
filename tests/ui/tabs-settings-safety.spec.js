@@ -16,6 +16,7 @@ test.describe('Today tab and settings flows',()=>{
     await expect(page.getByRole('heading',{name:'Настройки и диагностика'})).toBeVisible();
     await expect(page.locator('#settingsSection')).toBeVisible();
     await expect(page.getByRole('button',{name:'Открыть диагностику приложения'})).toBeVisible();
+    await expect(page.getByRole('button',{name:'Открыть правила безопасности'})).toHaveCount(0);
     await expect(page.locator('#catalogSection')).toBeHidden();
   });
 
