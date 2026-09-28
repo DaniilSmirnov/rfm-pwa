@@ -1,0 +1,284 @@
+@layer base, components, views, modals, theme, responsive;
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  [hidden] {
+    display: none !important;
+  }
+}
+@font-face {
+  font-family: 'RF Dewi Expanded';
+  src: url('/rfm/fonts/RFDewiExpanded-Black.cd06241e.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'RF Dewi Expanded Italic';
+  src: url('/rfm/fonts/RFDewiExpanded-BoldItalic.67413952.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'RF Dewi Expanded Bold';
+  src: url('/rfm/fonts/RFDewiExpanded-Bold.ba737abf.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'RF Dewi Expanded Semibold';
+  src: url('/rfm/fonts/RFDewiExpanded-Semibold.eb002abf.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@layer base {
+  :root {
+    font-family: Avenir,Helvetica,Arial,sans-serif;
+    color: var(--text);
+    background: var(--page-bg);
+    --page: min(920px,100%);
+    --font-body: Avenir,Helvetica,Arial,sans-serif;
+    --font-heading: 'RF Dewi Expanded Italic',Arial,sans-serif;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --page-bg: #f5f5f5;
+    --surface: #fff;
+    --surface-raised: #fff;
+    --text: #000;
+    --line: #ebebeb;
+    --muted: #a3a3a3;
+    --black: #000;
+    --radius: var(--radius-xl);
+    --ios-safe-top-floor: 0px;
+    --ios-safe-bottom-floor: 0px;
+    --ios-safe-side-floor: 0px;
+    --safe-top: max(env(safe-area-inset-top,0px),var(--ios-safe-top-floor));
+    --safe-bottom: max(env(safe-area-inset-bottom,0px),var(--ios-safe-bottom-floor));
+    --safe-left: max(env(safe-area-inset-left,0px),var(--ios-safe-side-floor));
+    --safe-right: max(env(safe-area-inset-right,0px),var(--ios-safe-side-floor));
+    color-scheme: light;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] {
+    --page-bg: #111318;
+    --surface: #171a1f;
+    --surface-raised: #1d2127;
+    --text: #f5f7fa;
+    --line: #2b2f36;
+    --muted: #9aa0a9;
+    --black: #f5f7fa;
+    color: var(--text);
+    background: var(--page-bg);
+    color-scheme: dark;
+  }
+}
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+}
+@layer base {
+  [hidden] {
+    display: none !important;
+  }
+}
+@layer base {
+  html {
+    background: var(--page-bg);
+    min-height: 100%;
+    min-height: -webkit-fill-available;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+@layer base {
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    color: var(--text);
+    font-family: var(--font-body);
+  }
+}
+@layer base {
+  body.modal-open {
+    overflow: hidden;
+  }
+}
+@layer base {
+  button,input {
+    font: inherit;
+  }
+}
+@layer base {
+  button {
+    touch-action: manipulation;
+  }
+}
+@layer base {
+  h1,h2,h3,p {
+    margin-top: 0;
+  }
+}
+@layer base {
+  a {
+    color: inherit;
+  }
+}
+@layer base {
+  main {
+    width: var(--page);
+    max-width: 100%;
+    min-width: 0;
+    margin: 0 auto;
+    padding-bottom: calc(56px + var(--safe-bottom));
+    overflow-x: clip;
+  }
+}
+@layer base {
+  body[data-active-tab="today"] .legacy-more,body[data-active-tab="today"] .legacy-map,body[data-active-tab="map"] .legacy-more,body[data-active-tab="more"] .legacy-map {
+    display: none !important;
+  }
+}
+@layer base {
+  body[data-active-tab="map"] .react-tab-content {
+    display: none;
+  }
+}
+@layer base {
+  body[data-active-tab="today"] main {
+    display: none;
+  }
+}
+@layer base {
+  body[data-active-tab="today"] .legacy-more,body[data-active-tab="today"] .legacy-map,body[data-active-tab="map"] .legacy-more,body[data-active-tab="more"] .legacy-map {
+    display: none !important;
+  }
+}
+@layer base {
+  body[data-active-tab="map"] .react-tab-content,body[data-active-tab="more"] .today-screen,body[data-active-tab="more"] .today-empty {
+    display: none;
+  }
+}
+@layer base {
+  body[data-active-tab="today"] main {
+    display: none;
+  }
+}
+@layer base {
+  body:not([data-active-tab="more"]) .app-footer {
+    display: none;
+  }
+}
+@layer base {
+  html[data-ios="true"][data-standalone="true"] {
+    --ios-safe-top-floor: 59px;
+    --ios-safe-bottom-floor: 34px;
+  }
+}
+@layer responsive {
+  @media (orientation:landscape) {
+    html[data-ios="true"][data-standalone="true"] {
+      --ios-safe-top-floor: 0px;
+      --ios-safe-bottom-floor: 21px;
+      --ios-safe-side-floor: 47px;
+    }
+  }
+}
+@layer responsive {
+  @supports (padding-top:constant(safe-area-inset-top)) {
+    html[data-ios="true"] .topbar {
+      padding-top: calc(var(--space-3) + constant(safe-area-inset-top));
+    }
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] {
+    --line: #2b2f36;
+    --muted: #9aa0a9;
+    --black: #f5f7fa;
+    color: #f5f7fa;
+    background: #111318;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"],:root[data-theme="dark"] body {
+    background: #111318;
+    color: #f5f7fa;
+  }
+}
+@layer responsive {
+  @media (display-mode: standalone) {
+    body {
+      padding-bottom: max(0px,calc(var(--safe-bottom) - 14px));
+    }
+  }
+}
+@layer base {
+  html[data-pwa-installed="true"] .pwa-install-prompt {
+    display: none !important;
+  }
+}
+@layer base {
+  main {
+    padding-bottom: calc(92px + var(--safe-bottom));
+  }
+}
+@layer base {
+  body:not([data-active-tab="today"]) .pwa-install-prompt {
+    display: none !important;
+  }
+}
+@layer base {
+  body[data-active-tab="more"][data-more-screen="menu"] main>#settingsSection {
+    display: none !important;
+  }
+}
+@layer base {
+  body[data-active-tab="more"][data-more-screen="settings"] main>.legacy-more:not(#settingsSection) {
+    display: none !important;
+  }
+}
+@layer base {
+  body[data-active-tab="more"][data-more-screen="settings"] #settingsSection {
+    display: block !important;
+    margin: var(--space-3);
+    padding-bottom: 18px;
+  }
+}
+@layer base {
+  body[data-active-tab="more"] .react-tab-content {
+    padding-bottom: 0;
+  }
+}
+@layer base {
+  body[data-safety-gate="true"] #mapSection {
+    filter: blur(9px);
+    pointer-events: none;
+    user-select: none;
+  }
+}
+@layer base {
+  body[data-safety-gate="true"] {
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+}

@@ -1,5 +1,32 @@
 const STAGE_PUSH_PREFS_KEY='rfm-stage-push-subscriptions-v1';
 const WALLET_STAGE_PREFS_KEY='rfm-wallet-stage-passes-v1';
+export const THEME_PREF_KEY='rfm-theme-v1';
+
+export function loadThemePreference(storage=null){
+  try{
+    const theme=(storage??globalThis.localStorage)?.getItem(THEME_PREF_KEY);
+    return theme==='light'||theme==='dark' ? theme : null;
+  }catch{
+    return null;
+  }
+}
+
+export function resolveTheme(preference,systemDark=false){
+  return preference==='light'||preference==='dark' ? preference : systemDark?'dark':'light';
+}
+
+export function applyTheme(theme,root=globalThis.document?.documentElement){
+  if(theme!=='light'&&theme!=='dark') return;
+  root?.setAttribute('data-theme',theme);
+  const meta=globalThis.document?.querySelector('meta[name="theme-color"]');
+  meta?.setAttribute('content',theme==='dark'?'#111318':'#f5f5f5');
+}
+
+export function saveThemePreference(theme,storage=null,root=globalThis.document?.documentElement){
+  if(theme!=='light'&&theme!=='dark') return;
+  try{(storage??globalThis.localStorage)?.setItem(THEME_PREF_KEY,theme);}catch{}
+  applyTheme(theme,root);
+}
 
 export function loadStagePushPrefs(){
   try{

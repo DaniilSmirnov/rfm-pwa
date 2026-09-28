@@ -35,8 +35,8 @@ for(const path of ['tests','.github','package.json','README.md','samples','.vite
   assert(!(await exists(resolve(dist,path))),`Development artifact leaked into dist: ${path}`);
 }
 
-const srcEntries=await readdir(resolve(dist,'src'));
-assert(srcEntries.length===1 && srcEntries[0]==='worker','dist/src must contain only Cloudflare Worker modules');
+const srcEntries=(await readdir(resolve(dist,'src'))).sort();
+assert(srcEntries.join(',')==='bootstrap.js,worker','dist/src must contain only the boot script and Cloudflare Worker modules');
 
 const files=await walk(dist);
 const clientJs=files.filter(path=>/^assets\/.*\.js$/.test(path));
@@ -48,6 +48,9 @@ const index=await readFile(resolve(dist,'index.html'),'utf8');
 const sw=await readFile(resolve(dist,'sw.js'),'utf8');
 const manifest=await readFile(resolve(dist,'manifest.webmanifest'),'utf8');
 const worker=await readFile(resolve(dist,'_worker.js'),'utf8');
+const pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));
+const release=JSON.parse(await readFile(resolve(dist,'version.json'),'utf8'));
+assert(release.version===pkg.version,`dist/version.json version ${release.version} does not match package.json ${pkg.version}`);
 
 assert(/src="\/assets\/[^"]+\.js"/.test(index),'index.html does not reference a Vite JS asset');
 assert(!index.includes('/src/app.js'),'index.html still references the unbundled client entrypoint');

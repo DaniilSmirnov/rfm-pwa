@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { base64UrlToUint8Array, pushSupported, getPushSubscription, refreshPushUi } from '../../src/app/push-client.js';
+import { base64UrlToUint8Array, pushSupported, getPushSubscription, getPushStatus, refreshPushUi } from '../../src/app/push-client.js';
 
 function setGlobal(name,value){
   Object.defineProperty(window,name,{configurable:true,writable:true,value});
@@ -35,23 +35,21 @@ describe('push client helpers',()=>{
     expect(await getPushSubscription()).toBe(subscription);
   });
 
-  it('disables push UI when unsupported',async()=>{
+  it('returns an unsupported state for React to render',async()=>{
     setNavigator('serviceWorker',undefined);
     setGlobal('PushManager',undefined);
     setGlobal('Notification',undefined);
-    await refreshPushUi();
-    expect(document.querySelector('#pushEnableBtn').disabled).toBe(true);
-    expect(document.querySelector('#pushTestBtn').hidden).toBe(true);
-    expect(document.querySelector('#pushStatus').textContent).toContain('не поддерживаются');
+    const state=await refreshPushUi();
+    expect(state).toMatchObject({supported:false,testVisible:false});
+    expect(getPushStatus().text).toContain('не поддерживаются');
   });
 
-  it('shows enabled state for an existing subscription',async()=>{
+  it('returns an enabled subscription state for React to render',async()=>{
     setGlobal('PushManager',class {});
     setGlobal('Notification',{permission:'granted'});
     setNavigator('serviceWorker',{ready:Promise.resolve({pushManager:{getSubscription:async()=>({endpoint:'https://push.test'})}})});
-    await refreshPushUi();
-    expect(document.querySelector('#pushEnableBtn').textContent).toBe('Выключить уведомления');
-    expect(document.querySelector('#pushEnableBtn').classList.contains('downloaded')).toBe(true);
-    expect(document.querySelector('#pushTestBtn').hidden).toBe(false);
+    const state=await refreshPushUi();
+    expect(state).toMatchObject({supported:true,active:true,testVisible:true,label:'Выключить уведомления'});
+    expect(getPushStatus().text).toContain('Устройство подписано');
   });
 });

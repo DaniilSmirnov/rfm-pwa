@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { subscribedStageKeys, setStageSubscribed, walletStageKeys, setWalletStageAdded } from '../../src/app/preferences.js';
+import { subscribedStageKeys, setStageSubscribed, walletStageKeys, setWalletStageAdded, loadThemePreference, resolveTheme, saveThemePreference } from '../../src/app/preferences.js';
 
 beforeEach(()=>localStorage.clear());
 const pkg={id:'race-1',raceId:1};
@@ -39,5 +39,22 @@ describe('preferences',()=>{
   it('keeps Wallet stages per race',()=>{
     setWalletStageAdded({raceId:1},'су-1');setWalletStageAdded({raceId:2},'су-2');
     expect([...walletStageKeys({raceId:2})]).toEqual(['су-2']);
+  });
+  it('follows system theme until a user preference is saved',()=>{
+    expect(resolveTheme(loadThemePreference(),true)).toBe('dark');
+    expect(resolveTheme(loadThemePreference(),false)).toBe('light');
+  });
+  it('persists and applies an explicit theme',()=>{
+    const root=document.documentElement;
+    const meta=document.createElement('meta');meta.name='theme-color';document.head.append(meta);
+    saveThemePreference('dark',localStorage,root);
+    expect(loadThemePreference()).toBe('dark');
+    expect(root.dataset.theme).toBe('dark');
+    expect(meta.content).toBe('#111318');
+    meta.remove();
+  });
+  it('ignores unknown stored theme values',()=>{
+    localStorage.setItem('rfm-theme-v1','sepia');
+    expect(loadThemePreference()).toBeNull();
   });
 });

@@ -1,0 +1,253 @@
+/*Component styles: AppShell.*/
+@layer views {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding-top: calc(var(--space-3) + var(--safe-top));
+    padding-right: max(var(--space-4),calc(var(--space-4) + var(--safe-right)));
+    padding-bottom: var(--space-3);
+    padding-left: max(var(--space-4),calc(var(--space-4) + var(--safe-left)));
+    background: rgba(0,0,0,.92);
+    color: #fff;
+  }
+}
+@layer views {
+  .topbar h1 {
+    margin: 0;
+    font: italic 700 18px/1 'RF Dewi Expanded Italic',Arial,sans-serif;
+    letter-spacing: .04em;
+  }
+}
+@layer views {
+  .app-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-5) max(var(--space-4),calc((100vw - 920px)/2 + var(--space-4)),var(--safe-right)) var(--safe-bottom) max(var(--space-4),calc((100vw - 920px)/2 + var(--space-4)),var(--safe-left));
+    color: #8e8e8e;
+    font-size: 12px;
+    background: #fff;
+    border-top: 1px solid #ebebeb;
+  }
+}
+@layer responsive {
+  @media (max-width:760px) {
+    .app-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+}
+@layer views {
+  #reactRoot {
+    width: var(--page);
+    max-width: 100%;
+    margin: 0 auto;
+  }
+}
+@layer views {
+  .more-menu {
+    padding: 18px var(--space-3) var(--space-2);
+  }
+}
+@layer views {
+  .more-menu-row {
+    margin: 0 0 14px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: #fff;
+  }
+}
+@layer views {
+  .more-menu-row {
+    display: grid;
+    width: 100%;
+    gap: 5px;
+    margin: var(--space-2) 0 0;
+    padding: 13px;
+    border: 1px solid #e4e4e4;
+    border-radius: 13px;
+    background: #fafafa;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+}
+@layer views {
+  .more-menu-row span {
+    color: #777;
+    font-size: 13px;
+  }
+}
+@layer views {
+  .more-menu {
+    display: grid;
+    gap: 10px;
+  }
+}
+@layer views {
+  .more-menu-row strong {
+    font: 700 16px/1.1 'RF Dewi Expanded Bold',Arial,sans-serif;
+  }
+}
+@layer views {
+  #reactShell {
+    width: var(--page);
+    max-width: 100%;
+    margin: 0 auto;
+  }
+}
+@layer views {
+  .more-menu {
+    padding: 18px var(--space-3) var(--space-2);
+  }
+}
+@layer views {
+  .more-menu {
+    display: grid;
+    gap: 10px;
+  }
+}
+@layer views {
+  .more-menu-row {
+    display: grid;
+    gap: 5px;
+    padding: 17px 18px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: #fff;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+}
+@layer views {
+  .more-menu-row strong {
+    font: 700 16px/1.1 'RF Dewi Expanded Bold',Arial,sans-serif;
+  }
+}
+@layer views {
+  .more-menu-row span {
+    color: #777;
+    font-size: 13px;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .more-menu-row {
+    background: #171a1f;
+    border-color: #30353d;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .more-menu-row span {
+    color: #aeb5be;
+  }
+}
+@layer views {
+  .header-brand {
+    display: flex;
+    grid-column: 1;
+    justify-self: start;
+    align-items: center;
+    gap: 10px;
+  }
+}
+@layer views {
+  .top-actions {
+    grid-column: 2;
+    justify-self: end;
+  }
+}
+@layer views {
+  .header-logo {
+    width: 42px;
+    height: 42px;
+    display: block;
+    flex: 0 0 auto;
+    border-radius: 10px;
+  }
+}
+@layer responsive {
+  @media (max-width:560px) {
+    .topbar {
+      grid-template-columns: minmax(0,1fr) auto;
+    }
+
+    .header-brand,.top-actions {
+      align-self: center;
+    }
+
+    .header-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+    }
+  }
+}
+@layer responsive {
+  @media (max-width:560px) {
+    .header-brand {
+      gap: var(--space-2);
+    }
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .topbar {
+    background: rgba(11,13,16,.94);
+    color: #fff;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .app-footer {
+    background: #171a1f;
+    color: #f5f7fa;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .app-footer {
+    color: #9aa0a9;
+    border-top-color: #2b2f36;
+  }
+}
+@layer views {
+  .header-logo {
+    cursor: pointer;
+  }
+}
+@layer views {
+  #reactRoot,#reactShell {
+    padding-bottom: calc(96px + var(--safe-bottom));
+  }
+}
+@layer views {
+  .more-menu {
+    padding-bottom: calc(var(--space-5) + var(--safe-bottom));
+  }
+}
+
+@layer views {
+  body:not([data-active-tab="more"]) .app-footer {
+    display: none;
+  }
+  body[data-active-tab="more"] .react-tab-content {
+    padding-bottom: 0;
+  }
+  body[data-active-tab="map"] .react-tab-content,
+  body[data-active-tab="more"] .today-screen,
+  body[data-active-tab="more"] .today-empty {
+    display: none;
+  }
+  body[data-active-tab="today"] main {
+    display: none;
+  }
+}

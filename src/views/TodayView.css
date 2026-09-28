@@ -1,0 +1,348 @@
+/*Component styles: TodayView.*/
+@layer views {
+  .today-screen,.today-empty {
+    padding: 18px var(--space-3) var(--space-2);
+  }
+}
+@layer views {
+  .today-hero {
+    margin: 0 0 14px;
+    padding: 22px 18px;
+    border-radius: var(--radius-xl);
+    background: #111;
+    color: #fff;
+  }
+}
+@layer views {
+  .today-hero h2 {
+    margin: 7px 0 6px;
+    font: italic 700 24px/1.12 'RF Dewi Expanded Italic',Arial,sans-serif;
+  }
+}
+@layer views {
+  .today-card,.today-empty {
+    margin: 0 0 14px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: #fff;
+  }
+}
+@layer views {
+  .today-stage {
+    display: grid;
+    width: 100%;
+    gap: 5px;
+    margin: var(--space-2) 0 0;
+    padding: 13px;
+    border: 1px solid #e4e4e4;
+    border-radius: 13px;
+    background: #fafafa;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+}
+@layer views {
+  .today-stage span {
+    color: #777;
+    font-size: 13px;
+  }
+}
+@layer views {
+  .bottom-tabbar {
+    position: fixed;
+    z-index: 80;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--space-2) max(var(--space-3),var(--safe-right)) calc(var(--space-2) + var(--safe-bottom)) max(var(--space-3),var(--safe-left));
+    background: rgba(255,255,255,.96);
+    border-top: 1px solid #e5e5e5;
+  }
+}
+@layer views {
+  .bottom-tabbar button {
+    display: grid;
+    place-items: center;
+    gap: 3px;
+    min-width: 88px;
+    padding: 5px 14px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: #777;
+    cursor: pointer;
+  }
+}
+@layer views {
+  .bottom-tabbar button.active {
+    background: #111;
+    color: #fff;
+  }
+}
+@layer views {
+  .bottom-tabbar button span {
+    font-size: 20px;
+  }
+}
+@layer views {
+  .bottom-tabbar button b {
+    font-size: 11px;
+  }
+}
+@layer views {
+  .today-screen,.today-empty {
+    padding: 18px var(--space-3) var(--space-2);
+  }
+}
+@layer views {
+  .today-hero {
+    margin: 0 0 14px;
+    padding: 22px 18px;
+    border-radius: var(--radius-xl);
+    background: #111;
+    color: #fff;
+  }
+}
+@layer views {
+  .today-hero h2 {
+    margin: 7px 0 6px;
+    font: italic 700 24px/1.12 'RF Dewi Expanded Italic',Arial,sans-serif;
+  }
+}
+@layer views {
+  .today-hero p {
+    margin: 0;
+    color: #d9d9d9;
+    font-size: 13px;
+  }
+}
+@layer views {
+  .today-card,.today-empty {
+    margin: 0 0 14px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: #fff;
+  }
+}
+@layer views {
+  .today-stage {
+    display: grid;
+    width: 100%;
+    gap: 5px;
+    margin: var(--space-2) 0 0;
+    padding: 13px;
+    border: 1px solid #e4e4e4;
+    border-radius: 13px;
+    background: #fafafa;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+}
+@layer views {
+  .today-stage span {
+    color: #777;
+    font-size: 13px;
+  }
+}
+@layer views {
+  .today-map-button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+@layer views {
+  .podium-group {
+    margin: 14px 0;
+  }
+}
+@layer views {
+  .podium-group ol {
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: podium;
+  }
+}
+@layer views {
+  .podium-group li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 9px 0;
+    border-bottom: 1px solid #ececec;
+    counter-increment: podium;
+  }
+}
+@layer views {
+  .podium-group li::before {
+    content: counter(podium);
+    font-weight: 800;
+    margin-right: var(--space-2);
+  }
+}
+@layer views {
+  .podium-group li span {
+    margin-right: auto;
+  }
+}
+@layer views {
+  .podium-group li b {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+  }
+}
+@layer views {
+  .bottom-tabbar {
+    position: fixed;
+    z-index: 80;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--space-2) max(var(--space-3),var(--safe-right)) calc(var(--space-2) + var(--safe-bottom)) max(var(--space-3),var(--safe-left));
+    background: rgba(255,255,255,.96);
+    border-top: 1px solid #e5e5e5;
+    backdrop-filter: blur(14px);
+  }
+}
+@layer views {
+  .bottom-tabbar button {
+    display: grid;
+    place-items: center;
+    gap: 3px;
+    min-width: 88px;
+    padding: 5px 14px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: #777;
+    cursor: pointer;
+  }
+}
+@layer views {
+  .bottom-tabbar button span {
+    font-size: 20px;
+    line-height: 1;
+  }
+}
+@layer views {
+  .bottom-tabbar button b {
+    font-size: 11px;
+  }
+}
+@layer views {
+  .bottom-tabbar button.active {
+    background: #111;
+    color: #fff;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .today-card,:root[data-theme="dark"] .today-empty {
+    background: #171a1f;
+    border-color: #30353d;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .today-stage {
+    background: #1d2127;
+    border-color: #30353d;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .today-stage span {
+    color: #aeb5be;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .bottom-tabbar {
+    background: rgba(18,20,24,.96);
+    border-color: #30353d;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .bottom-tabbar button.active {
+    background: #f2f4f6;
+    color: #14171b;
+  }
+}
+@layer theme {
+  :root[data-theme="dark"] .podium-group li {
+    border-color: #30353d;
+  }
+}
+@layer views {
+  .bottom-tabbar button svg {
+    display: block;
+  }
+}
+@layer views {
+  .today-race-card {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    min-height: 220px;
+    overflow: hidden;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 22px;
+    margin: 0 0 14px;
+    padding: 18px;
+    border: 1px solid #e6e7e9;
+    border-radius: 20px;
+    background: #111 var(--race-bg) center/cover no-repeat;
+    color: #fff;
+  }
+}
+@layer views {
+  .today-race-shade {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.72));
+  }
+}
+@layer views {
+  .today-race-copy h2 {
+    margin: 7px 0 6px;
+    font: italic 700 24px/1.12 'RF Dewi Expanded Italic',Arial,sans-serif;
+  }
+}
+@layer views {
+  .today-race-copy p {
+    margin: 0;
+    color: #e4e4e4;
+    font-size: 13px;
+  }
+}
+@layer views {
+  .today-race-card>.button {
+    align-self: flex-start;
+    border-color: #fff;
+  }
+}
+@layer views {
+  .today-screen,.today-empty {
+    padding-bottom: calc(var(--space-5) + var(--safe-bottom));
+  }
+}
+@layer views {
+  .today-overlap img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 72vh;
+    object-fit: contain;
+    margin: var(--space-3) auto 0;
+    border-radius: 10px;
+  }
+}

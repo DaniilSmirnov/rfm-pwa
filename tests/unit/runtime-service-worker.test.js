@@ -4,10 +4,6 @@ import { setupServiceWorkerUpdates } from '../../src/app/runtime.js';
 
 const originalServiceWorkerDescriptor=Object.getOwnPropertyDescriptor(navigator,'serviceWorker');
 
-function installDom(){
-  document.body.innerHTML='<div id="updateBanner" hidden><span id="updateText"></span></div>';
-}
-
 function installServiceWorker({waiting=null,controller={}}={}){
   const swListeners=new Map();
   const registrationListeners=new Map();
@@ -34,7 +30,7 @@ function installServiceWorker({waiting=null,controller={}}={}){
 
 beforeEach(()=>{
   vi.useFakeTimers();
-  installDom();
+  document.body.innerHTML='';
 });
 
 afterEach(()=>{
@@ -47,21 +43,22 @@ afterEach(()=>{
 });
 
 describe('service worker update runtime',()=>{
-  it('activates an already waiting worker and shows the update banner',async()=>{
+  it('activates an already waiting worker and emits a React-consumable update event',async()=>{
     const waiting={postMessage:vi.fn()};
     const {serviceWorker}=installServiceWorker({waiting});
+    const listener=vi.fn();window.addEventListener('rfm:service-worker-update',listener,{once:true});
 
     const registration=await setupServiceWorkerUpdates();
 
     expect(registration).toBeTruthy();
     expect(serviceWorker.register).toHaveBeenCalledWith('/sw.js',{updateViaCache:'none'});
     expect(waiting.postMessage).toHaveBeenCalledWith({type:'SKIP_WAITING'});
-    expect(document.getElementById('updateBanner').hidden).toBe(false);
-    expect(document.getElementById('updateText').textContent).toContain('Обновляю приложение');
+    expect(listener.mock.calls[0][0].detail.message).toContain('Обновляю приложение');
   });
 
   it('asks a newly installed update to skip waiting when the page is already controlled',async()=>{
     const env=installServiceWorker({controller:{}});
+    const listener=vi.fn();window.addEventListener('rfm:service-worker-update',listener,{once:true});
     await setupServiceWorkerUpdates();
 
     env.registration.installing=env.installing;
@@ -70,7 +67,7 @@ describe('service worker update runtime',()=>{
     env.workerListeners.get('statechange')?.();
 
     expect(env.installing.postMessage).toHaveBeenCalledWith({type:'SKIP_WAITING'});
-    expect(document.getElementById('updateBanner').hidden).toBe(false);
+    expect(listener).toHaveBeenCalledOnce();
   });
 
   it('bridges periodic update messages from the worker into an application event',async()=>{

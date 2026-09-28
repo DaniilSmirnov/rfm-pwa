@@ -270,14 +270,20 @@ test.describe('PWA migration safety',()=>{
     await openTab(reopened,'Ещё');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
 
-    const hero=await reopened.locator('#raceImage').evaluate(img=>({
-      hidden:img.hidden,
-      complete:img.complete,
-      naturalWidth:img.naturalWidth
-    }));
-    expect(hero.hidden).toBe(false);
-    expect(hero.complete).toBe(true);
-    expect(hero.naturalWidth).toBeGreaterThan(0);
+    const hero=reopened.locator('#raceDetails .race-hero');
+    const heroImageUrl=await hero.evaluate(element=>{
+      const value=getComputedStyle(element).backgroundImage;
+      return value.match(/^url\(["']?(.*?)["']?\)$/)?.[1]||'';
+    });
+    expect(heroImageUrl).toContain('/api/rallyfans/public/hero.svg');
+    const heroImage=await reopened.evaluate(async url=>{
+      const image=new Image();
+      image.src=url;
+      await image.decode();
+      return {complete:image.complete,naturalWidth:image.naturalWidth};
+    },heroImageUrl);
+    expect(heroImage.complete).toBe(true);
+    expect(heroImage.naturalWidth).toBeGreaterThan(0);
 
     const organizer=reopened.locator('#raceMedia details').filter({hasText:'КАРТА ОРГАНИЗАТОРА'});
     await organizer.locator('summary').click();

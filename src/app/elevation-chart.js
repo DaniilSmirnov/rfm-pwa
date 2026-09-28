@@ -15,9 +15,9 @@ export function elevationGridLevels(min,max){
   return levels;
 }
 
-export function profileSvg(profile){
+export function profileChartGeometry(profile){
   const pts=profile.points||[];
-  if(pts.length<2) return '';
+  if(pts.length<2) return null;
   const levels=elevationGridLevels(profile.min,profile.max);
   const gridMin=levels[0] ?? profile.min;
   const gridMax=levels.at(-1) ?? profile.max;
@@ -25,8 +25,9 @@ export function profileSvg(profile){
   const range=Math.max(1,gridMax-gridMin),distance=Math.max(1,profile.distance);
   const x=d=>PL+(W-PL-PR)*(d/distance);
   const y=h=>PT+(H-PT-PB)*(1-(h-gridMin)/range);
-  const path=pts.map((p,i)=>`${i?'L':'M'}${x(p.distance).toFixed(1)} ${y(p.elevation).toFixed(1)}`).join(' ');
-  const grid=levels.map(level=>`<g class="elevation-grid-row"><line x1="${PL}" y1="${y(level).toFixed(1)}" x2="${W-PR}" y2="${y(level).toFixed(1)}"/><text x="${PL-8}" y="${(y(level)+4).toFixed(1)}" text-anchor="end">${Math.round(level)} м</text></g>`).join('');
-  return `<svg class="elevation-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Профиль высот">${grid}<path class="elevation-profile-line" d="${path}" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><text class="elevation-distance-label" x="${W-PR}" y="${H-6}" text-anchor="end">${(profile.distance/1000).toFixed(1)} км</text></svg>`;
+  return {
+    width:W,height:H,left:PL,right:W-PR,distanceLabel:`${(profile.distance/1000).toFixed(1)} км`,
+    points:pts.map(point=>({x:Number(x(point.distance).toFixed(1)),y:Number(y(point.elevation).toFixed(1))})),
+    levels:levels.map(value=>({value,y:Number(y(value).toFixed(1))}))
+  };
 }
-

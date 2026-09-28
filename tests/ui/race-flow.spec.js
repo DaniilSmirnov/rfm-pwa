@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seedFixtureRace, raceFixture } from './helpers.js';
+import { openApp, openMapWithAcceptedSafety, seedFixtureRace, raceFixture } from './helpers.js';
 
 test.describe('saved race user flows',()=>{
   test.beforeEach(async({page})=>{await openApp(page);await seedFixtureRace(page);});
-  const openMap=page=>page.getByRole('button',{name:'Карта'}).click();
+  const openMap=page=>openMapWithAcceptedSafety(page);
 
   test('opens downloaded race details',async({page})=>{
-    await expect(page.locator('#raceTitle')).toHaveText(raceFixture.name);
+    await expect(page.getByRole('heading',{level:2,name:raceFixture.name})).toHaveText(raceFixture.name);
     await expect(page.locator('#raceMeta')).toContainText('Сортавала');
     await expect(page.locator('#raceMeta')).toContainText('26.09.2026');
   });
@@ -73,9 +73,9 @@ test.describe('saved race user flows',()=>{
   });
 
   test('filters saved package list',async({page})=>{
-    await page.locator('#packageSearch').fill('Sortavala');
+    await page.getByPlaceholder('Найти сохранённую гонку…').fill('Sortavala');
     await expect(page.locator('#packageList')).toContainText(raceFixture.name);
-    await page.locator('#packageSearch').fill('missing');
+    await page.getByPlaceholder('Найти сохранённую гонку…').fill('missing');
     await expect(page.locator('#packageList')).toContainText('Ничего не найдено');
   });
 
@@ -122,6 +122,7 @@ test.describe('saved race user flows',()=>{
     await expect(page.locator('#pointActions')).toBeVisible();
     await expect(page.locator('#pointName')).toHaveText('Смотровая точка');
     await expect(page.locator('#pointCoords')).toContainText('61.702000');
+    await expect(page.locator('#pointElevation')).toContainText('рельеф не скачан');
     await expect(page.locator('#pointStageDistance')).toContainText('СУ 1:');
     await expect(page.locator('#pointStageDistance')).toContainText('от старта');
     await expect(page.locator('#pointStageDistance')).toContainText('до финиша');
@@ -207,7 +208,9 @@ test.describe('saved race user flows',()=>{
 
   test('map engine diagnostic reports MapLibre',async({page})=>{
     await openMap(page);
-    await expect(page.locator('#offlineMapDiag')).toContainText('MapLibre ✓');
+    await page.getByRole('button',{name:'Ещё'}).click();
+    await page.getByRole('button',{name:/Настройки и диагностика/}).click();
+    await expect(page.locator('.settings-diagnostics')).toContainText('MapLibre ✓');
   });
 
   test('clear all removes offline race and favorites',async({page})=>{
@@ -218,6 +221,6 @@ test.describe('saved race user flows',()=>{
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('#clearBtn').click();
     await expect(page.locator('#packageList')).toContainText('Пока ничего не скачано');
-    await expect(page.locator('#raceDetails')).toBeHidden();
+    await expect(page.locator('.race-page')).toBeHidden();
   });
 });
