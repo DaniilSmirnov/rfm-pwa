@@ -218,3 +218,20 @@
     padding-bottom: calc(var(--space-5) + var(--safe-bottom));
   }
 }
+
+@layer views {
+  body:not([data-active-tab="more"]) .app-footer {
+    display: none;
+  }
+  body[data-active-tab="more"] .react-tab-content {
+    padding-bottom: 0;
+  }
+  body[data-active-tab="map"] .react-tab-content,
+  body[data-active-tab="more"] .today-screen,
+  body[data-active-tab="more"] .today-empty {
+    display: none;
+  }
+  body[data-active-tab="today"] main {
+    display: none;
+  }
+}
