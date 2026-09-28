@@ -8,11 +8,12 @@ import MapView from './MapView.jsx';
 export default function AppLayout({
   app,selectedRoute,onLogoClick,pointElevation,pointStageDistance,catalogContent,packagesContent,
   statsContent,pointListContent,favoritesContent,scheduleContent,mediaContent,mapContent,
-  installControl,installPrompt,updateMessage
+  installControl,installPrompt,screenContent,updateMessage
 }){
   return <>
     <AppHeader online={app.online} installControl={installControl} onLogoClick={onLogoClick}/>
     {installPrompt}
+    <div className="react-tab-content">{screenContent}</div>
     <main>
       <CatalogSection app={app}>{catalogContent}</CatalogSection>
       <SavedOfflineSection app={app} packages={packagesContent} stats={statsContent}/>

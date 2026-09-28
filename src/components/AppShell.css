@@ -229,7 +229,7 @@
 }
 @layer views {
   #reactRoot,#reactShell {
-    padding-bottom: calc(76px + var(--safe-bottom));
+    padding-bottom: calc(96px + var(--safe-bottom));
   }
 }
 @layer views {

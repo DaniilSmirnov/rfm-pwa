@@ -113,14 +113,15 @@ export default function App(){
   const openSettings=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current='more:settings';setMoreScreen('settings');};
   const closeSettings=()=>{scrollPositions.current[activeScrollKey]=window.scrollY;restoreScrollKey.current='more:menu';setMoreScreen('menu');};
   const openCrewResults=()=>setCrewResultsOpen(true);
+  const screenContent=tab==='today'?<TodayView app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>:
+    tab==='more'?(moreScreen==='settings'?<SettingsView app={app} onBack={closeSettings} onDiagnostics={()=>setDiagnosticsOpen(true)}/>:<MoreMenu onSettings={openSettings}/>):null;
 
   return <>
     <AppLayout app={app} selectedRoute={selectedRoute} onLogoClick={handleLogoClick} pointElevation={pointElevation} pointStageDistance={pointStageDistance}
-      installControl={<PwaInstallPrompt compact active={tab==='today'}/>} installPrompt={<PwaInstallPrompt active={tab==='today'}/>} updateMessage={updateMessage}
+      installControl={<PwaInstallPrompt compact active={tab==='today'}/>} installPrompt={<PwaInstallPrompt active={tab==='today'}/>} screenContent={screenContent} updateMessage={updateMessage}
       mapContent={<RallyMap app={app} onRouteClick={setSelectedRoute}/>} catalogContent={<CatalogList app={app}/>} packagesContent={<SavedPackagesList app={app}/>} statsContent={<><strong>{app.storageStats.count} гонок</strong><span className="muted">JSON: {formatBytes(app.storageStats.jsonBytes)} · карты: {formatBytes(app.storageStats.mapBytes)} ({app.storageStats.mapCount} тайлов) · persistent: {app.storageStats.persisted?'да':'нет'}</span></>}
       pointListContent={<PointList app={app}/>} favoritesContent={<FavoritesList app={app}/>} scheduleContent={pkg&&<ScheduleList pkg={pkg}/>} mediaContent={<RaceMedia pkg={pkg}/>}/>
     <BootDiagnostics open={diagnosticsOpen} onClose={()=>setDiagnosticsOpen(false)}/>
-    <div className="react-tab-content">{tab==='today'&&<TodayView app={app} onMap={()=>activate('map')} onResults={openCrewResults}/>} {tab==='more'&&(moreScreen==='settings'?<SettingsView app={app} onBack={closeSettings} onDiagnostics={()=>setDiagnosticsOpen(true)}/>:<MoreMenu onSettings={openSettings}/>)}</div>
     <AppFooter/>
     <nav className="bottom-tabbar" aria-label="Основная навигация">{tabs.map(({key,label,Icon})=><button key={key} className={tab===key?'active':''} aria-current={tab===key?'page':undefined} onClick={()=>activate(key)}><Icon aria-hidden="true" size={21} strokeWidth={tab===key?2.4:1.8}/><b>{label}</b></button>)}</nav>
 
