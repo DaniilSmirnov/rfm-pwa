@@ -1,7 +1,8 @@
 import './PwaInstallPrompt.css';
 import React, { useEffect, useState } from 'react';
+import Button from './Button.jsx';
 import { getPwaInstallSnapshot, requestPwaInstall, subscribePwaInstall } from '../app/pwa.js';
-export default function PwaInstallPrompt({active = true}) {
+export default function PwaInstallPrompt({ active = true }) {
   const [snapshot, setSnapshot] = useState(getPwaInstallSnapshot);
   const [expanded, setExpanded] = useState(true);
   const [helpRequested, setHelpRequested] = useState(false);
@@ -27,13 +28,29 @@ export default function PwaInstallPrompt({active = true}) {
     setExpanded(value => !value);
   };
   const instructions = snapshot.instructions;
-  return <section className="pwa-install-prompt" role="region" aria-label="Установка PWA" hidden={!visible || !(active || helpRequested) || !expanded} aria-live="polite">
-    <div className="pwa-install-copy">
-      <div className="eyebrow">УСТАНОВКА PWA</div>
-      <strong>{instructions.title}</strong>
-      <p>{instructions.text}</p>
-      {instructions.steps.length > 0 && <ol className="pwa-install-steps">{instructions.steps.map(step => <li key={step}>{step}</li>)}</ol>}
-    </div>
-    <button className="button primary" type="button" onClick={activate}>{instructions.action}</button>
-    </section>;
+  return (
+    <section
+      className="pwa-install-prompt"
+      role="region"
+      aria-label="Установка PWA"
+      hidden={!visible || !(active || helpRequested) || !expanded}
+      aria-live="polite"
+    >
+      <div className="pwa-install-copy">
+        <div className="eyebrow">УСТАНОВКА PWA</div>
+        <strong>{instructions.title}</strong>
+        <p>{instructions.text}</p>
+        {instructions.steps.length > 0 && (
+          <ol className="pwa-install-steps">
+            {instructions.steps.map(step => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        )}
+      </div>
+      <Button className="button primary" type="button" onClick={activate}>
+        {instructions.action}
+      </Button>
+    </section>
+  );
 }

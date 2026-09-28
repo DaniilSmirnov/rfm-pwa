@@ -1,6 +1,6 @@
 /*Component styles: SavedPackages.*/
 @layer views {
-  .compact-grid>.rfm-section {
+  .compact-grid > .rfm-section {
     margin-left: 0;
     margin-right: 0;
   }
@@ -40,19 +40,19 @@
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .package-row small {
+  :root[data-theme='dark'] .package-row small {
     color: #9aa0a9;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .package-row {
+  :root[data-theme='dark'] .package-row {
     background: #1a1e23;
     border-color: #30353d;
     color: #f5f7fa;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .package-row:hover {
+  :root[data-theme='dark'] .package-row:hover {
     background: #22272e;
   }
 }

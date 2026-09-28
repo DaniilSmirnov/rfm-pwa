@@ -1,79 +1,106 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ensurePersistentStorage, requestCrewResultsBackgroundRefresh, requestRallyPackBackgroundRefresh, setupPeriodicBackgroundSync } from '../../src/app/runtime.js';
+import {
+  ensurePersistentStorage,
+  requestCrewResultsBackgroundRefresh,
+  requestRallyPackBackgroundRefresh,
+  setupPeriodicBackgroundSync,
+} from '../../src/app/runtime.js';
 
-const originalStorageDescriptor=Object.getOwnPropertyDescriptor(navigator,'storage');
-const originalPermissionsDescriptor=Object.getOwnPropertyDescriptor(navigator,'permissions');
+const originalStorageDescriptor = Object.getOwnPropertyDescriptor(navigator, 'storage');
+const originalPermissionsDescriptor = Object.getOwnPropertyDescriptor(navigator, 'permissions');
 
-function setNavigator(name,value){
-  Object.defineProperty(navigator,name,{configurable:true,value});
+function setNavigator(name, value) {
+  Object.defineProperty(navigator, name, { configurable: true, value });
 }
 
-afterEach(()=>{
-  if(originalStorageDescriptor) Object.defineProperty(navigator,'storage',originalStorageDescriptor);
+afterEach(() => {
+  if (originalStorageDescriptor)
+    Object.defineProperty(navigator, 'storage', originalStorageDescriptor);
   else delete navigator.storage;
-  if(originalPermissionsDescriptor) Object.defineProperty(navigator,'permissions',originalPermissionsDescriptor);
+  if (originalPermissionsDescriptor)
+    Object.defineProperty(navigator, 'permissions', originalPermissionsDescriptor);
   else delete navigator.permissions;
   vi.restoreAllMocks();
 });
 
-describe('persistent storage runtime',()=>{
-  it('reports unsupported storage',async()=>{
-    setNavigator('storage',undefined);
-    expect(await ensurePersistentStorage()).toEqual({supported:false,persisted:false});
+describe('persistent storage runtime', () => {
+  it('reports unsupported storage', async () => {
+    setNavigator('storage', undefined);
+    expect(await ensurePersistentStorage()).toEqual({ supported: false, persisted: false });
   });
-  it('keeps already persisted storage',async()=>{
-    const persist=vi.fn(async()=>false);
-    setNavigator('storage',{persisted:async()=>true,persist});
-    expect(await ensurePersistentStorage()).toEqual({supported:true,persisted:true});
+  it('keeps already persisted storage', async () => {
+    const persist = vi.fn(async () => false);
+    setNavigator('storage', { persisted: async () => true, persist });
+    expect(await ensurePersistentStorage()).toEqual({ supported: true, persisted: true });
     expect(persist).not.toHaveBeenCalled();
   });
-  it('requests persistence when needed',async()=>{
-    const persist=vi.fn(async()=>true);
-    setNavigator('storage',{persisted:async()=>false,persist});
-    expect(await ensurePersistentStorage()).toEqual({supported:true,persisted:true});
+  it('requests persistence when needed', async () => {
+    const persist = vi.fn(async () => true);
+    setNavigator('storage', { persisted: async () => false, persist });
+    expect(await ensurePersistentStorage()).toEqual({ supported: true, persisted: true });
     expect(persist).toHaveBeenCalledOnce();
   });
-  it('degrades safely when storage API throws',async()=>{
-    setNavigator('storage',{persisted:async()=>{throw new Error('nope')}});
-    expect(await ensurePersistentStorage()).toEqual({supported:true,persisted:false});
+  it('degrades safely when storage API throws', async () => {
+    setNavigator('storage', {
+      persisted: async () => {
+        throw new Error('nope');
+      },
+    });
+    expect(await ensurePersistentStorage()).toEqual({ supported: true, persisted: false });
   });
 });
 
-describe('periodic sync runtime',()=>{
-  it('reports unsupported registration',async()=>expect(await setupPeriodicBackgroundSync({})).toEqual({supported:false}));
-  it('does not register when permission is denied',async()=>{
-    setNavigator('permissions',{query:async()=>({state:'denied'})});
-    const register=vi.fn();
-    expect(await setupPeriodicBackgroundSync({periodicSync:{register}})).toEqual({supported:true,registered:false});
+describe('periodic sync runtime', () => {
+  it('reports unsupported registration', async () =>
+    expect(await setupPeriodicBackgroundSync({})).toEqual({ supported: false }));
+  it('does not register when permission is denied', async () => {
+    setNavigator('permissions', { query: async () => ({ state: 'denied' }) });
+    const register = vi.fn();
+    expect(await setupPeriodicBackgroundSync({ periodicSync: { register } })).toEqual({
+      supported: true,
+      registered: false,
+    });
     expect(register).not.toHaveBeenCalled();
   });
-  it('registers refresh tag when permission is granted',async()=>{
-    setNavigator('permissions',{query:async()=>({state:'granted'})});
-    const register=vi.fn(async()=>{});
-    expect(await setupPeriodicBackgroundSync({periodicSync:{register}})).toEqual({supported:true,registered:true,crewResultsRegistered:true});
-    expect(register).toHaveBeenCalledWith('rfm-refresh-races',{minInterval:12*60*60*1000});
-    expect(register).toHaveBeenCalledWith('rfm-refresh-crew-results',{minInterval:15*60*1000});
+  it('registers refresh tag when permission is granted', async () => {
+    setNavigator('permissions', { query: async () => ({ state: 'granted' }) });
+    const register = vi.fn(async () => {});
+    expect(await setupPeriodicBackgroundSync({ periodicSync: { register } })).toEqual({
+      supported: true,
+      registered: true,
+      crewResultsRegistered: true,
+    });
+    expect(register).toHaveBeenCalledWith('rfm-refresh-races', {
+      minInterval: 12 * 60 * 60 * 1000,
+    });
+    expect(register).toHaveBeenCalledWith('rfm-refresh-crew-results', {
+      minInterval: 15 * 60 * 1000,
+    });
   });
-  it('still attempts registration if permissions query is unavailable',async()=>{
-    setNavigator('permissions',undefined);
-    const register=vi.fn(async()=>{});
-    expect(await setupPeriodicBackgroundSync({periodicSync:{register}})).toEqual({supported:true,registered:true,crewResultsRegistered:true});
+  it('still attempts registration if permissions query is unavailable', async () => {
+    setNavigator('permissions', undefined);
+    const register = vi.fn(async () => {});
+    expect(await setupPeriodicBackgroundSync({ periodicSync: { register } })).toEqual({
+      supported: true,
+      registered: true,
+      crewResultsRegistered: true,
+    });
   });
 });
 
-describe('background Rally Pack refresh runtime',()=>{
-  it('asks the active worker to refresh packs',()=>{
-    const postMessage=vi.fn();
-    expect(requestRallyPackBackgroundRefresh({active:{postMessage}})).toBe(true);
-    expect(postMessage).toHaveBeenCalledWith({type:'REFRESH_RALLY_PACKS'});
+describe('background Rally Pack refresh runtime', () => {
+  it('asks the active worker to refresh packs', () => {
+    const postMessage = vi.fn();
+    expect(requestRallyPackBackgroundRefresh({ active: { postMessage } })).toBe(true);
+    expect(postMessage).toHaveBeenCalledWith({ type: 'REFRESH_RALLY_PACKS' });
   });
-  it('degrades when there is no active worker',()=>{
+  it('degrades when there is no active worker', () => {
     expect(requestRallyPackBackgroundRefresh({})).toBe(false);
   });
-  it('asks the active worker to refresh subscribed crew results',()=>{
-    const postMessage=vi.fn();
-    expect(requestCrewResultsBackgroundRefresh({active:{postMessage}})).toBe(true);
-    expect(postMessage).toHaveBeenCalledWith({type:'REFRESH_CREW_RESULTS'});
+  it('asks the active worker to refresh subscribed crew results', () => {
+    const postMessage = vi.fn();
+    expect(requestCrewResultsBackgroundRefresh({ active: { postMessage } })).toBe(true);
+    expect(postMessage).toHaveBeenCalledWith({ type: 'REFRESH_CREW_RESULTS' });
   });
 });

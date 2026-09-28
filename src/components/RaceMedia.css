@@ -16,7 +16,7 @@
 }
 @layer components {
   .media-card {
-    flex: 0 0 min(86vw,430px);
+    flex: 0 0 min(86vw, 430px);
     padding: 0;
     border: 0;
     background: #f1f1f1;
@@ -62,17 +62,18 @@
   }
 }
 @layer components {
-  .race-material+.race-material {
+  .race-material + .race-material {
     margin-top: 0;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .media-card,:root[data-theme="dark"] .media-card img {
+  :root[data-theme='dark'] .media-card,
+  :root[data-theme='dark'] .media-card img {
     background: #22262c;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .how-it-was {
+  :root[data-theme='dark'] .how-it-was {
     color: #d8dce2;
   }
 }

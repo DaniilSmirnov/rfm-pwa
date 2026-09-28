@@ -4,8 +4,9 @@
     position: fixed;
     inset: 0;
     z-index: 100000;
-    background: rgba(0,0,0,.78);
-    padding: max(20px,var(--safe-top)) max(14px,var(--safe-right)) max(20px,var(--safe-bottom)) max(14px,var(--safe-left));
+    background: rgba(0, 0, 0, 0.78);
+    padding: max(20px, var(--safe-top)) max(14px, var(--safe-right)) max(20px, var(--safe-bottom))
+      max(14px, var(--safe-left));
     overflow: auto;
   }
 }
@@ -16,13 +17,13 @@
 }
 @layer modals {
   .boot-diagnostics-card {
-    width: min(760px,100%);
+    width: min(760px, 100%);
     margin: 0 auto;
     background: #fff;
     color: #111;
     border-radius: 18px;
     padding: 18px;
-    box-shadow: 0 18px 60px rgba(0,0,0,.4);
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.4);
   }
 }
 @layer modals {
@@ -50,7 +51,7 @@
 @layer modals {
   .boot-diagnostic-row {
     display: grid;
-    grid-template-columns: minmax(0,1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: var(--space-2) var(--space-3);
     align-items: center;
     padding: 10px var(--space-3);
@@ -95,37 +96,42 @@
     border-radius: 10px;
     background: #111318;
     color: #dce1e8;
-    font: 12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+    font:
+      12px/1.45 ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      monospace;
   }
 }
 @layer responsive {
-  @media (max-width:560px) {
+  @media (max-width: 560px) {
     .boot-diagnostic-row {
-      grid-template-columns: minmax(0,1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
     }
   }
 }
 @layer responsive {
-  @media (max-width:560px) {
+  @media (max-width: 560px) {
     .boot-diagnostic-row em {
       grid-column: 2;
     }
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .boot-diagnostics-card {
+  :root[data-theme='dark'] .boot-diagnostics-card {
     background: #171a1f;
     color: #f5f7fa;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .boot-diagnostic-row {
+  :root[data-theme='dark'] .boot-diagnostic-row {
     background: #1d2127;
     border-color: #30353d;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .boot-diagnostic-row em,:root[data-theme="dark"] .boot-diagnostic-row small {
+  :root[data-theme='dark'] .boot-diagnostic-row em,
+  :root[data-theme='dark'] .boot-diagnostic-row small {
     color: #9aa0a9;
   }
 }

@@ -1,0 +1,25 @@
+@layer components {
+  .badge {
+    border-radius: var(--radius-xs);
+    padding: 7px 9px;
+    background: #212121;
+    color: #f0f0f0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .badge.online {
+    background: #212121;
+  }
+  .badge.offline {
+    background: #7d1717;
+  }
+}
+@layer theme {
+  :root[data-theme='dark'] .badge,
+  :root[data-theme='dark'] .badge.online {
+    background: #252a31;
+    color: #f5f7fa;
+  }
+}

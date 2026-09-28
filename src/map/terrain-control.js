@@ -1,59 +1,40 @@
-function mountainIcon(){
-  return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 19.5 9 8.5l3 4.8 2.4-3.6 7.1 9.8H2.5Zm3.4-2h11.7l-3.1-4.3-2.6 3.8L9.1 12l-3.2 5.5Z" fill="currentColor"/></svg>';
-}
+import { createRoot } from 'react-dom/client';
+import { flushSync } from 'react-dom';
+import React from 'react';
+import TerrainModeButton from '../components/TerrainModeButton.jsx';
 
 export class TerrainModeControl {
-  constructor({initialMode='hillshade',onModeChange=()=>{}}={}){
-    this.mode=initialMode==='3d'?'3d':'hillshade';
-    this.onModeChange=onModeChange;
-    this.busy=false;
+  constructor({ initialMode = 'hillshade', onModeChange = () => {} } = {}) {
+    this.mode = initialMode === '3d' ? '3d' : 'hillshade';
+    this.onModeChange = onModeChange;
   }
 
-  onAdd(map){
-    this.map=map;
-    const container=document.createElement('div');
-    container.className='maplibregl-ctrl maplibregl-ctrl-group terrain-mode-control';
-
-    const button=document.createElement('button');
-    button.type='button';
-    button.className='terrain-mode-button';
-    button.innerHTML=mountainIcon();
-    button.addEventListener('click',this.handleClick=async()=>{
-      if(this.busy) return;
-      this.busy=true;
-      button.disabled=true;
-      const next=this.mode==='hillshade'?'3d':'hillshade';
-      try{
-        await this.onModeChange(next,map);
-        this.mode=next;
-      }finally{
-        this.busy=false;
-        button.disabled=false;
-        this.syncButton();
-      }
-    });
-
-    container.appendChild(button);
-    this.container=container;
-    this.button=button;
-    this.syncButton();
+  onAdd(map) {
+    this.map = map;
+    const container = document.createElement('div');
+    container.className = 'maplibregl-ctrl maplibregl-ctrl-group terrain-mode-control';
+    const root = createRoot(container);
+    flushSync(() =>
+      root.render(
+        React.createElement(TerrainModeButton, {
+          initialMode: this.mode,
+          onModeChange: this.onModeChange,
+          map,
+        }),
+      ),
+    );
+    this.container = container;
+    this.reactRoot = root;
+    this.button = container.querySelector('button');
     return container;
   }
 
-  syncButton(){
-    if(!this.button) return;
-    const is3d=this.mode==='3d';
-    this.button.title=is3d?'Переключить на тени рельефа':'Переключить на 3D-рельеф';
-    this.button.setAttribute('aria-label',this.button.title);
-    this.button.setAttribute('aria-pressed',String(is3d));
-    this.button.dataset.mode=this.mode;
-  }
-
-  onRemove(){
-    if(this.button&&this.handleClick) this.button.removeEventListener('click',this.handleClick);
+  onRemove() {
+    this.reactRoot?.unmount();
+    this.reactRoot = null;
     this.container?.remove();
-    this.map=null;
-    this.container=null;
-    this.button=null;
+    this.map = null;
+    this.container = null;
+    this.button = null;
   }
 }

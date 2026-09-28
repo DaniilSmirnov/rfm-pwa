@@ -6,27 +6,27 @@ export function normalizePoint(point) {
 }
 
 export function googleMapsDirections(point) {
-  const {lat,lon}=normalizePoint(point);
+  const { lat, lon } = normalizePoint(point);
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lon}`)}&travelmode=driving`;
 }
 
 export function googleMapsPoint(point) {
-  const {lat,lon}=normalizePoint(point);
+  const { lat, lon } = normalizePoint(point);
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lon}`)}`;
 }
 
 export function yandexNavigatorLink(point) {
-  const {lat,lon}=normalizePoint(point);
+  const { lat, lon } = normalizePoint(point);
   return `yandexnavi://build_route_on_map?lat_to=${encodeURIComponent(lat)}&lon_to=${encodeURIComponent(lon)}`;
 }
 
 export function yandexWebFallback(point) {
-  const {lat,lon}=normalizePoint(point);
+  const { lat, lon } = normalizePoint(point);
   return `https://yandex.ru/maps/?pt=${encodeURIComponent(`${lon},${lat}`)}&z=15&l=map`;
 }
 
 export function mapsMeLink(point) {
-  const {lat,lon,name}=normalizePoint(point);
+  const { lat, lon, name } = normalizePoint(point);
   return `mapsme://map?v=1&ll=${encodeURIComponent(`${lat},${lon}`)}&n=${encodeURIComponent(name)}`;
 }
 
@@ -35,19 +35,24 @@ export function mapsMeWebFallback() {
 }
 
 export function coordinateText(point) {
-  const {lat,lon}=normalizePoint(point);
+  const { lat, lon } = normalizePoint(point);
   return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
 }
 
-export function openCustomSchemeWithFallback(primary, fallback, delay=900) {
+export function openCustomSchemeWithFallback(primary, fallback, delay = 900) {
   const startedAt = Date.now();
   let timer;
-  const cancel = () => { if (timer) clearTimeout(timer); timer=null; };
-  const onVisibility = () => { if (document.hidden) cancel(); };
-  document.addEventListener('visibilitychange', onVisibility, {once:true});
+  const cancel = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  };
+  const onVisibility = () => {
+    if (document.hidden) cancel();
+  };
+  document.addEventListener('visibilitychange', onVisibility, { once: true });
   window.location.href = primary;
   timer = setTimeout(() => {
     document.removeEventListener('visibilitychange', onVisibility);
-    if (!document.hidden && Date.now()-startedAt >= delay-100) window.location.href = fallback;
+    if (!document.hidden && Date.now() - startedAt >= delay - 100) window.location.href = fallback;
   }, delay);
 }

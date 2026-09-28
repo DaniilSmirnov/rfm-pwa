@@ -29,7 +29,10 @@
 @layer components {
   .pwa-install-copy strong {
     display: block;
-    font: 700 18px/1.2 'RF Dewi Expanded Bold',Arial,sans-serif;
+    font:
+      700 18px/1.2 'RF Dewi Expanded Bold',
+      Arial,
+      sans-serif;
   }
 }
 @layer components {
@@ -51,12 +54,12 @@
   }
 }
 @layer components {
-  .pwa-install-prompt>.button {
+  .pwa-install-prompt > .button {
     flex: 0 0 auto;
   }
 }
 @layer responsive {
-  @media (max-width:640px) {
+  @media (max-width: 640px) {
     .pwa-install-prompt {
       align-items: stretch;
       flex-direction: column;
@@ -64,21 +67,22 @@
   }
 }
 @layer responsive {
-  @media (max-width:640px) {
-    .pwa-install-prompt>.button {
+  @media (max-width: 640px) {
+    .pwa-install-prompt > .button {
       width: 100%;
     }
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .pwa-install-prompt {
+  :root[data-theme='dark'] .pwa-install-prompt {
     background: #171a1f;
     border-color: #f5f7fa;
     color: #f5f7fa;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .pwa-install-copy p,:root[data-theme="dark"] .pwa-install-steps {
+  :root[data-theme='dark'] .pwa-install-copy p,
+  :root[data-theme='dark'] .pwa-install-steps {
     color: #b7bdc6;
   }
 }

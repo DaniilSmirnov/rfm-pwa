@@ -15,7 +15,7 @@
     color: #f0f0f0;
     font-size: 15px;
     font-weight: 700;
-    letter-spacing: .32px;
+    letter-spacing: 0.32px;
     text-transform: uppercase;
     margin-bottom: var(--space-2);
     text-align: center;
@@ -56,7 +56,7 @@
   }
 }
 @layer responsive {
-  @media (max-width:560px) {
+  @media (max-width: 560px) {
     .schedule-location-row {
       align-items: flex-start;
       flex-direction: column;
@@ -64,14 +64,14 @@
   }
 }
 @layer responsive {
-  @media (max-width:560px) {
+  @media (max-width: 560px) {
     .stage-push-toggle {
       width: 100%;
     }
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .schedule-item {
+  :root[data-theme='dark'] .schedule-item {
     background: #171a1f;
     color: #f5f7fa;
   }
@@ -102,7 +102,7 @@
   }
 }
 @layer responsive {
-  @media (max-width:560px) {
+  @media (max-width: 560px) {
     .stage-actions {
       width: 100%;
       display: grid;
@@ -111,21 +111,21 @@
   }
 }
 @layer responsive {
-  @media (max-width:560px) {
+  @media (max-width: 560px) {
     .stage-actions .button {
       width: 100%;
     }
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .stage-wallet-toggle.subscribed {
+  :root[data-theme='dark'] .stage-wallet-toggle.subscribed {
     background: #f5f7fa;
     color: #111318;
     border-color: #f5f7fa;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .stage-wallet-toggle.subscribed .rfm-icon {
+  :root[data-theme='dark'] .stage-wallet-toggle.subscribed .rfm-icon {
     filter: none;
   }
 }
@@ -135,11 +135,14 @@
     border-radius: 10px;
     padding: 10px;
     margin: -10px;
-    transition: background .15s ease,box-shadow .15s ease;
+    transition:
+      background 0.15s ease,
+      box-shadow 0.15s ease;
   }
 }
 @layer components {
-  .schedule-item[data-stage-row]:hover,.schedule-item[data-stage-row]:focus-visible {
+  .schedule-item[data-stage-row]:hover,
+  .schedule-item[data-stage-row]:focus-visible {
     background: #f6f7f8;
     outline: none;
   }
@@ -151,7 +154,9 @@
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .schedule-item[data-stage-row]:hover,:root[data-theme="dark"] .schedule-item[data-stage-row]:focus-visible,:root[data-theme="dark"] .schedule-item.selected-stage {
+  :root[data-theme='dark'] .schedule-item[data-stage-row]:hover,
+  :root[data-theme='dark'] .schedule-item[data-stage-row]:focus-visible,
+  :root[data-theme='dark'] .schedule-item.selected-stage {
     background: #20242a;
   }
 }

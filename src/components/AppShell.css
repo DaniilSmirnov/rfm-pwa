@@ -4,26 +4,30 @@
     position: sticky;
     top: 0;
     z-index: 50;
+    isolation: isolate;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     display: grid;
-    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--space-3);
     padding-top: calc(var(--space-3) + var(--safe-top));
-    padding-right: max(var(--space-4),calc(var(--space-4) + var(--safe-right)));
+    padding-right: max(var(--space-4), calc(var(--space-4) + var(--safe-right)));
     padding-bottom: var(--space-3);
-    padding-left: max(var(--space-4),calc(var(--space-4) + var(--safe-left)));
-    background: rgba(0,0,0,.92);
+    padding-left: max(var(--space-4), calc(var(--space-4) + var(--safe-left)));
+    background: #000;
     color: #fff;
   }
 }
 @layer views {
   .topbar h1 {
     margin: 0;
-    font: italic 700 18px/1 'RF Dewi Expanded Italic',Arial,sans-serif;
-    letter-spacing: .04em;
+    font:
+      italic 700 18px/1 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
+    letter-spacing: 0.04em;
   }
 }
 @layer views {
@@ -32,7 +36,10 @@
     justify-content: space-between;
     align-items: center;
     gap: var(--space-3);
-    padding: var(--space-5) max(var(--space-4),calc((100vw - 920px)/2 + var(--space-4)),var(--safe-right)) var(--safe-bottom) max(var(--space-4),calc((100vw - 920px)/2 + var(--space-4)),var(--safe-left));
+    padding: var(--space-5)
+      max(var(--space-4), calc((100vw - 920px) / 2 + var(--space-4)), var(--safe-right))
+      var(--safe-bottom)
+      max(var(--space-4), calc((100vw - 920px) / 2 + var(--space-4)), var(--safe-left));
     color: #8e8e8e;
     font-size: 12px;
     background: #fff;
@@ -40,7 +47,7 @@
   }
 }
 @layer responsive {
-  @media (max-width:760px) {
+  @media (max-width: 760px) {
     .app-footer {
       align-items: flex-start;
       flex-direction: column;
@@ -97,7 +104,10 @@
 }
 @layer views {
   .more-menu-row strong {
-    font: 700 16px/1.1 'RF Dewi Expanded Bold',Arial,sans-serif;
+    font:
+      700 16px/1.1 'RF Dewi Expanded Bold',
+      Arial,
+      sans-serif;
   }
 }
 @layer views {
@@ -133,7 +143,10 @@
 }
 @layer views {
   .more-menu-row strong {
-    font: 700 16px/1.1 'RF Dewi Expanded Bold',Arial,sans-serif;
+    font:
+      700 16px/1.1 'RF Dewi Expanded Bold',
+      Arial,
+      sans-serif;
   }
 }
 @layer views {
@@ -143,13 +156,13 @@
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .more-menu-row {
+  :root[data-theme='dark'] .more-menu-row {
     background: #171a1f;
     border-color: #30353d;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .more-menu-row span {
+  :root[data-theme='dark'] .more-menu-row span {
     color: #aeb5be;
   }
 }
@@ -178,12 +191,13 @@
   }
 }
 @layer responsive {
-  @media (max-width:560px) {
+  @media (max-width: 560px) {
     .topbar {
-      grid-template-columns: minmax(0,1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .header-brand,.top-actions {
+    .header-brand,
+    .top-actions {
       align-self: center;
     }
 
@@ -195,26 +209,26 @@
   }
 }
 @layer responsive {
-  @media (max-width:560px) {
+  @media (max-width: 560px) {
     .header-brand {
       gap: var(--space-2);
     }
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .topbar {
-    background: rgba(11,13,16,.94);
+  :root[data-theme='dark'] .topbar {
+    background: #0b0d10;
     color: #fff;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .app-footer {
+  :root[data-theme='dark'] .app-footer {
     background: #171a1f;
     color: #f5f7fa;
   }
 }
 @layer theme {
-  :root[data-theme="dark"] .app-footer {
+  :root[data-theme='dark'] .app-footer {
     color: #9aa0a9;
     border-top-color: #2b2f36;
   }
@@ -225,7 +239,8 @@
   }
 }
 @layer views {
-  #reactRoot,#reactShell {
+  #reactRoot,
+  #reactShell {
     padding-bottom: calc(96px + var(--safe-bottom));
   }
 }
@@ -236,18 +251,18 @@
 }
 
 @layer views {
-  body:not([data-active-tab="more"]) .app-footer {
+  body:not([data-active-tab='more']) .app-footer {
     display: none;
   }
-  body[data-active-tab="more"] .react-tab-content {
+  body[data-active-tab='more'] .react-tab-content {
     padding-bottom: 0;
   }
-  body[data-active-tab="map"] .react-tab-content,
-  body[data-active-tab="more"] .today-screen,
-  body[data-active-tab="more"] .today-empty {
+  body[data-active-tab='map'] .react-tab-content,
+  body[data-active-tab='more'] .today-screen,
+  body[data-active-tab='more'] .today-empty {
     display: none;
   }
-  body[data-active-tab="today"] main {
+  body[data-active-tab='today'] main {
     display: none;
   }
 }

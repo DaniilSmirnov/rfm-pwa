@@ -30,6 +30,8 @@ jobs:
         run: npm run version:check
       - name: Lint JavaScript and JSX
         run: npm run lint
+      - name: Verify code formatting
+        run: npm run format:check
       - name: Build production artifact
         run: npm run build
       - name: Verify deploy artifact allowlist

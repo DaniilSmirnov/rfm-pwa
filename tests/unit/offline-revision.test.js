@@ -22,13 +22,17 @@ describe('offline revision commit', () => {
     const old = { ready: true, storageId: 'old' };
     const staged = { ready: true, storageId: 'staged' };
     const discardRevision = vi.fn(async () => {});
-    await expect(replaceOfflineRevision({
-      packageData: { id: 'race-1', terrain: old },
-      key: 'terrain',
-      download: vi.fn(async () => staged),
-      savePackage: vi.fn(async () => { throw new Error('IDB transaction aborted'); }),
-      discardRevision,
-    })).rejects.toThrow('IDB transaction aborted');
+    await expect(
+      replaceOfflineRevision({
+        packageData: { id: 'race-1', terrain: old },
+        key: 'terrain',
+        download: vi.fn(async () => staged),
+        savePackage: vi.fn(async () => {
+          throw new Error('IDB transaction aborted');
+        }),
+        discardRevision,
+      }),
+    ).rejects.toThrow('IDB transaction aborted');
     expect(discardRevision).toHaveBeenCalledTimes(1);
     expect(discardRevision).toHaveBeenCalledWith(staged, 'race-1');
     expect(old.storageId).toBe('old');
