@@ -1,5 +1,4 @@
 /* Component styles: CrewResults. */
-.crew-results-section>*{display:none}
 @layer components {
   .crew-results-section {
     margin: 22px 0;
