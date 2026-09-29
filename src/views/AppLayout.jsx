@@ -18,10 +18,17 @@ export default function AppLayout({
   installPrompt,
   screenContent,
   updateMessage,
+  onSelectRally,
 }) {
   return (
     <>
-      <AppHeader online={app.online} onLogoClick={onLogoClick} />
+      <AppHeader
+        online={app.online}
+        onLogoClick={onLogoClick}
+        currentPackage={app.currentPackage}
+        packages={app.packages}
+        onSelectRally={onSelectRally}
+      />
       {installPrompt}
       <div className="react-tab-content">{screenContent}</div>
       <main>

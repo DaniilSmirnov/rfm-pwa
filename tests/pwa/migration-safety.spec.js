@@ -24,6 +24,11 @@ async function waitForAppWorker(page) {
 }
 
 async function openTab(page, label) {
+  if (label === 'Гонки') {
+    await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+    await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
+    return;
+  }
   await page.getByRole('button', { name: label, exact: true }).click();
 }
 

@@ -1,11 +1,21 @@
 import './CrewResultsModal.css';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
 import SelectField from '../components/SelectField.jsx';
 
+function gapFromLeader(result, rows) {
+  if (result?.goingOff || result?.goingOffAfterSu) return '—';
+  if (result?.formattedFromLeader) return result.formattedFromLeader;
+  const leader = rows.find(row => !row?.goingOff && !row?.goingOffAfterSu && Number(row?.time) > 0);
+  if (!leader || leader === result) return 'лидер';
+  const difference = Math.max(0, Number(result?.time) - Number(leader.time));
+  return `+${(difference / 1000).toFixed(1)} с`;
+}
+
 export default function CrewResultsModal({
   open,
+  standalone = false,
   onClose,
   data,
   views,
@@ -25,35 +35,57 @@ export default function CrewResultsModal({
 }) {
   const dialog = useRef(null);
   const searchRef = useRef(null);
+  const [expandedCrew, setExpandedCrew] = useState('');
   useEffect(() => {
     const node = dialog.current;
-    if (!node) return;
+    if (!node || standalone) return;
     if (open && !node.open) {
       node.showModal();
       requestAnimationFrame(() => searchRef.current?.focus());
     } else if (!open && node.open) node.close();
-  }, [open]);
-  return (
-    <dialog
-      ref={dialog}
-      className="crew-results-dialog"
-      aria-labelledby="crewResultsDialogTitle"
-      onClose={onClose}
-    >
-      <header className="crew-results-dialog-head">
-        <div>
-          <h2 id="crewResultsDialogTitle">Результаты экипажей</h2>
-          <p className="muted small">Выбери класс, чтобы увидеть весь его состав.</p>
-        </div>
-        <Button
-          className="button crew-results-close"
-          type="button"
-          aria-label="Закрыть результаты"
-          onClick={() => dialog.current?.close()}
-        >
-          ×
-        </Button>
-      </header>
+  }, [open, standalone]);
+
+  const followedIds = useMemo(
+    () => new Set(subscriptions.map(item => String(item.crewId))),
+    [subscriptions],
+  );
+  const rankedRows = useMemo(
+    () =>
+      visible
+        .map((result, index) => ({ result, index }))
+        .sort((left, right) => {
+          const leftId = String(
+            left.result?.crew?.id || left.result?.crew?.number || resultLabel(left.result),
+          );
+          const rightId = String(
+            right.result?.crew?.id || right.result?.crew?.number || resultLabel(right.result),
+          );
+          return (
+            Number(followedIds.has(rightId)) - Number(followedIds.has(leftId)) ||
+            left.index - right.index
+          );
+        }),
+    [visible, followedIds, resultLabel],
+  );
+
+  const content = (
+    <>
+      {!standalone && (
+        <header className="crew-results-dialog-head">
+          <div>
+            <h2 id="crewResultsDialogTitle">Результаты экипажей</h2>
+            <p className="muted small">Выбери класс, чтобы увидеть весь его состав.</p>
+          </div>
+          <Button
+            className="button crew-results-close"
+            type="button"
+            aria-label="Закрыть результаты"
+            onClick={() => dialog.current?.close()}
+          >
+            ×
+          </Button>
+        </header>
+      )}
       <div className="crew-results-toolbar">
         <label className="sr-only" htmlFor="crewResultsStage">
           Спецучасток
@@ -73,7 +105,10 @@ export default function CrewResultsModal({
             </option>
           ))}
         </SelectField>
-        <label className="sr-only" htmlFor="crewResultsDialogClass">
+        <label
+          className="sr-only"
+          htmlFor={standalone ? 'crewResultsDialogClass' : 'crewResultsDialogClass'}
+        >
           Класс
         </label>
         <SelectField
@@ -114,8 +149,8 @@ export default function CrewResultsModal({
             </tr>
           </thead>
           <tbody className="crew-results-body">
-            {visible.length ? (
-              visible.map(result => {
+            {rankedRows.length ? (
+              rankedRows.map(({ result }) => {
                 const crew = result?.crew || {};
                 const id = String(crew.id || crew.number || resultLabel(result));
                 const subscribed = subscriptions.some(
@@ -123,44 +158,93 @@ export default function CrewResultsModal({
                 );
                 const place = selectedClassResults.indexOf(result) + 1;
                 const retired = result.goingOff || result.goingOffAfterSu;
+                const stages = views
+                  .slice(1)
+                  .map(view => ({
+                    view,
+                    result: view.results.find(
+                      item =>
+                        String(item?.crew?.id || item?.crew?.number || resultLabel(item)) === id,
+                    ),
+                  }))
+                  .filter(item => item.result);
                 return (
-                  <tr
-                    data-crew-row
-                    data-search={`${crew.number || ''} ${resultLabel(result)} ${crew.car || ''} ${result?.discipline?.name || ''}`.toLocaleLowerCase(
-                      'ru',
-                    )}
-                    key={id}
-                  >
-                    <td className="crew-results-place">{retired ? '—' : place}</td>
-                    <td className="crew-results-name">
-                      <strong>{resultLabel(result)}</strong>
-                      <small>№ {crew.number || '—'}</small>
-                    </td>
-                    <td>
-                      {crew.car || 'Автомобиль не указан'}
-                      <small>{result?.discipline?.name || 'Зачёт не указан'}</small>
-                    </td>
-                    <td className="crew-results-time">
-                      {retired
-                        ? result.reasonGoingOff || (result.goingOff ? 'Сход' : 'Сход после финиша')
-                        : result.formattedTime || 'Время пока недоступно'}
-                      {result.formattedTimePenalty && (
-                        <small>Штраф {result.formattedTimePenalty}</small>
+                  <React.Fragment key={id}>
+                    <tr
+                      data-crew-row
+                      data-search={`${crew.number || ''} ${resultLabel(result)} ${crew.car || ''} ${result?.discipline?.name || ''}`.toLocaleLowerCase(
+                        'ru',
                       )}
-                    </td>
-                    <td>
-                      <Button
-                        className={`button compact crew-subscribe-button ${subscribed ? 'downloaded' : ''}`}
-                        type="button"
-                        data-subscribe={id}
-                        data-name={resultLabel(result)}
-                        aria-label={`${subscribed ? 'Отписаться от экипажа' : 'Следить за экипажем'}: ${resultLabel(result)}`}
-                        onClick={() => void onToggleSubscription(result)}
-                      >
-                        {subscribed ? 'Отписаться' : 'Подписаться'}
-                      </Button>
-                    </td>
-                  </tr>
+                    >
+                      <td className="crew-results-place">{retired ? '—' : place}</td>
+                      <td className="crew-results-name">
+                        <strong>{resultLabel(result)}</strong>
+                        <small>№ {crew.number || '—'}</small>
+                        <Button
+                          className="button compact crew-details-toggle"
+                          type="button"
+                          aria-expanded={expandedCrew === id}
+                          onClick={() => setExpandedCrew(expandedCrew === id ? '' : id)}
+                        >
+                          {expandedCrew === id ? 'Скрыть СУ' : 'По СУ'}
+                        </Button>
+                      </td>
+                      <td>
+                        {crew.car || 'Автомобиль не указан'}
+                        <small>{result?.discipline?.name || 'Зачёт не указан'}</small>
+                      </td>
+                      <td className="crew-results-time">
+                        {retired
+                          ? result.reasonGoingOff ||
+                            (result.goingOff ? 'Сход' : 'Сход после финиша')
+                          : result.formattedTime || 'Время пока недоступно'}
+                        {result.formattedTimePenalty && (
+                          <small>Штраф {result.formattedTimePenalty}</small>
+                        )}
+                        <small>От лидера: {gapFromLeader(result, selectedClassResults)}</small>
+                      </td>
+                      <td>
+                        <Button
+                          className={`button compact crew-subscribe-button ${subscribed ? 'downloaded' : ''}`}
+                          type="button"
+                          data-subscribe={id}
+                          data-name={resultLabel(result)}
+                          aria-label={`${subscribed ? 'Отписаться от экипажа' : 'Следить за экипажем'}: ${resultLabel(result)}`}
+                          onClick={() => void onToggleSubscription(result)}
+                        >
+                          {subscribed ? 'Отписаться' : 'Подписаться'}
+                        </Button>
+                      </td>
+                    </tr>
+                    {expandedCrew === id && (
+                      <tr className="crew-stage-details" data-crew-details={id}>
+                        <td colSpan="5">
+                          <strong>Результаты по спецучасткам</strong>
+                          {stages.length ? (
+                            <ol>
+                              {stages.map(({ view, result: stageResult }) => (
+                                <li key={view.key}>
+                                  <span>
+                                    {view.name} · место {view.results.indexOf(stageResult) + 1}
+                                  </span>
+                                  <span>
+                                    {stageResult.goingOff || stageResult.goingOffAfterSu
+                                      ? stageResult.reasonGoingOff || 'Сход'
+                                      : stageResult.formattedTime || 'Время пока недоступно'}
+                                    <small>
+                                      От лидера: {gapFromLeader(stageResult, view.results)}
+                                    </small>
+                                  </span>
+                                </li>
+                              ))}
+                            </ol>
+                          ) : (
+                            <p className="muted small">Данные по спецучасткам недоступны.</p>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })
             ) : (
@@ -173,6 +257,26 @@ export default function CrewResultsModal({
           </tbody>
         </table>
       </div>
+      <p className="muted small crew-results-priority-note">
+        Экипажи, за которыми вы следите, показаны первыми. Место в протоколе не меняется.
+      </p>
+    </>
+  );
+
+  if (standalone)
+    return (
+      <section className="crew-results-inline" aria-label="Результаты экипажей">
+        {content}
+      </section>
+    );
+  return (
+    <dialog
+      ref={dialog}
+      className="crew-results-dialog"
+      aria-labelledby="crewResultsDialogTitle"
+      onClose={onClose}
+    >
+      {content}
     </dialog>
   );
 }

@@ -31,7 +31,7 @@ const resultLabel = result =>
     .join(' / ') || `Экипаж № ${result?.crew?.number || '—'}`;
 const subscriptionKey = (raceId, crewId) => `${raceId}:${crewId}`;
 
-export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
+export default function CrewResults({ pkg, open = false, onOpen, onClose, standalone = false }) {
   const asmgRaceId = String(
     pkg?.asmgRaceId ?? pkg?.original?.asmg_id ?? pkg?.original?.asmgId ?? '55',
   );
@@ -181,19 +181,25 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
   const selectedClassResults = filterCrewResultsByClass(activeView?.results, className);
   return (
     <>
-      <section className="crew-results-section" hidden aria-labelledby="crewResultsTitle">
+      <section
+        className="crew-results-section"
+        hidden={!standalone}
+        aria-labelledby="crewResultsTitle"
+      >
         <SectionHeader>
           <div>
             <div id="crewResultsTitle" className="block-title">
-              РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ
+              {standalone ? 'ДАННЫЕ АСМГ' : 'РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ'}
             </div>
-            <p className="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p>
+            {!standalone && (
+              <p className="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p>
+            )}
           </div>
           <Button
             className="button primary"
             id="crewResultsOpen"
             type="button"
-            hidden={!data}
+            hidden={!data || standalone}
             onClick={onOpen}
           >
             Открыть результаты
@@ -246,6 +252,7 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
       </section>
       <CrewResultsModal
         open={open}
+        standalone={standalone}
         onClose={onClose}
         data={data}
         views={views}

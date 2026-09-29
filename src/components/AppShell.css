@@ -65,6 +65,20 @@
   .more-menu {
     padding: 18px var(--space-3) var(--space-2);
   }
+  .results-tab-screen {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 18px 16px calc(28px + var(--safe-bottom));
+  }
+  .results-tab-screen > h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+  }
+  .results-tab-screen > p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
 }
 @layer views {
   .more-menu-row {
@@ -179,6 +193,19 @@
   .top-actions {
     grid-column: 2;
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .current-rally-select select {
+    max-width: min(38vw, 220px);
+    padding: 7px 8px;
+    border: 1px solid #555;
+    border-radius: 9px;
+    background: #161616;
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
   }
 }
 @layer views {
@@ -263,7 +290,7 @@
     display: none;
   }
   body[data-active-tab='today'] main,
-  body[data-active-tab='races'] main,
+  body[data-active-tab='results'] main,
   body[data-active-tab='more'] main {
     display: none;
   }

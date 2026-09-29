@@ -31,6 +31,8 @@ const mocks = vi.hoisted(() => ({
   requestCrewResultsBackgroundRefresh: vi.fn(),
   bootSnapshot: vi.fn(),
   collectStorageDiagnostics: vi.fn(),
+  loadErudaVisibility: vi.fn(),
+  setErudaVisible: vi.fn(),
   markBoot: vi.fn(),
   hasSafetyConsent: vi.fn(),
   saveSafetyConsent: vi.fn(),
@@ -86,6 +88,10 @@ vi.mock('../../src/app/boot-diagnostics.js', () => ({
   collectStorageDiagnostics: mocks.collectStorageDiagnostics,
   markBoot: mocks.markBoot,
 }));
+vi.mock('../../src/app/eruda.js', () => ({
+  loadErudaVisibility: mocks.loadErudaVisibility,
+  setErudaVisible: mocks.setErudaVisible,
+}));
 vi.mock('../../src/app/safety-consent.js', () => ({
   hasSafetyConsent: mocks.hasSafetyConsent,
   saveSafetyConsent: mocks.saveSafetyConsent,
@@ -122,7 +128,13 @@ import AppLayout from '../../src/views/AppLayout.jsx';
 import MapView from '../../src/views/MapView.jsx';
 import RaceDetails from '../../src/views/RaceDetails.jsx';
 import SettingsView from '../../src/views/SettingsView.jsx';
-import TodayView from '../../src/views/TodayView.jsx';
+import TodayView, {
+  countdownLabel,
+  currentScheduledCrew,
+  latestPositionChange,
+  nextProgramItem,
+  nextScheduledCrew,
+} from '../../src/views/TodayView.jsx';
 import App from '../../src/views/App.jsx';
 import BootDiagnostics from '../../src/modals/BootDiagnostics.jsx';
 import CrewResultsModal from '../../src/modals/CrewResultsModal.jsx';
@@ -336,6 +348,8 @@ beforeEach(() => {
     storage: null,
   });
   mocks.collectStorageDiagnostics.mockResolvedValue({});
+  mocks.loadErudaVisibility.mockReturnValue(false);
+  mocks.setErudaVisible.mockResolvedValue(true);
   mocks.hasSafetyConsent.mockReturnValue(true);
 });
 afterEach(() => {
@@ -344,6 +358,34 @@ afterEach(() => {
 });
 
 describe('application components', () => {
+  it('selects the current rally from the shared header', () => {
+    const onSelectRally = vi.fn();
+    render(
+      <AppHeader
+        online
+        onLogoClick={() => {}}
+        currentPackage={{ id: 7, name: 'Карелия' }}
+        packages={[
+          { id: 7, name: 'Карелия' },
+          { id: 8, name: 'Пермь' },
+        ]}
+        onSelectRally={onSelectRally}
+      />,
+    );
+    fireEvent.change(screen.getByRole('combobox', { name: 'Текущая гонка' }), {
+      target: { value: '8' },
+    });
+    expect(onSelectRally).toHaveBeenCalledWith('8');
+  });
+  it('provides race management and settings destinations from More', () => {
+    const onRaces = vi.fn();
+    const onSettings = vi.fn();
+    render(<MoreMenu onRaces={onRaces} onSettings={onSettings} />);
+    fireEvent.click(screen.getByRole('button', { name: /Гонки и Rally Pack/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
+    expect(onRaces).toHaveBeenCalledOnce();
+    expect(onSettings).toHaveBeenCalledOnce();
+  });
   it('renders app chrome, catalog, and install prompt states', async () => {
     render(
       <>
@@ -644,6 +686,168 @@ describe('application components', () => {
     expect(onResults).toHaveBeenCalledOnce();
   });
 
+  it('builds a Today race-day brief from published schedule, saved results, and pack metadata', () => {
+    const packageWithBrief = {
+      ...race,
+      lastSmartUpdate: {
+        appliedAt: '2026-09-29T08:00:00Z',
+        changes: [
+          { key: 'schedule', label: 'Расписание' },
+          { key: 'points', label: 'Точки гонки' },
+        ],
+      },
+      pendingUpdate: null,
+      crewResults: { ...crewData, updatedAt: '2026-09-29T09:00:00Z' },
+      original: {
+        ...race.original,
+        status_race: 'Скоро',
+        schedule: [
+          {
+            date: raceDate(1),
+            location: 'СУ 1 · старт',
+            events: [{ time: '23:59', text: 'Старт экипажа', crewNumber: 12 }],
+          },
+        ],
+      },
+    };
+    const onMap = vi.fn();
+    expect(nextScheduledCrew(packageWithBrief)?.row.crewNumber).toBe(12);
+    const { rerender } = render(
+      <TodayView
+        app={appFixture({
+          currentPackage: packageWithBrief,
+          packages: [packageWithBrief],
+          catalog: [{ id: 7, name: 'Карелия', dates: todayDate }],
+          downloadedIds: new Set([7]),
+          favoriteCrews: [{ number: 12, name: 'Экипаж № 12' }],
+        })}
+        onMap={onMap}
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Состояние ралли' })).toBeTruthy();
+    expect(screen.getByText('По расписанию')).toBeTruthy();
+    expect(screen.queryByText('LIVE')).toBeNull();
+    expect(screen.getByText(/Следующий экипаж/)).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Избранные экипажи' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Изменения Rally Pack' })).toBeTruthy();
+    expect(screen.getByText('Расписание · Точки гонки')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Готовность офлайн' }).textContent).toContain(
+      'ОФЛАЙН',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Показать этап на карте' }));
+    expect(onMap).toHaveBeenCalledOnce();
+
+    const pending = {
+      ...packageWithBrief,
+      pendingUpdate: { changes: [{ key: 'schedule', label: 'Время старта СУ 1' }] },
+    };
+    rerender(
+      <TodayView
+        app={appFixture({
+          currentPackage: pending,
+          packages: [pending],
+          catalog: [{ id: 7, name: 'Карелия', dates: todayDate }],
+          downloadedIds: new Set([7]),
+        })}
+        onMap={onMap}
+      />,
+    );
+    expect(screen.getByText('ЕСТЬ ИЗМЕНЕНИЯ')).toBeTruthy();
+    expect(screen.getByText('Время старта СУ 1')).toBeTruthy();
+  });
+
+  it('surfaces saved followed crews on Today for the selected rally', async () => {
+    const pkg = { ...race, asmgRaceId: '55', crewResults: crewData };
+    mocks.getCrewSubscriptions.mockResolvedValueOnce([
+      { key: '55:crew-1', asmgRaceId: '55', raceId: '7', crewId: 'crew-1', name: 'Экипаж 12' },
+    ]);
+    render(<TodayView app={appFixture({ currentPackage: pkg, packages: [pkg], catalog: [] })} />);
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
+        'Пилот Иван',
+      );
+      expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
+        '1. № 12',
+      );
+      expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
+        'лидер',
+      );
+      expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
+        'СУ 1: 00:01:30:0',
+      );
+    });
+  });
+
+  it('keeps an explicitly live stage visible after its scheduled start time', () => {
+    const pkg = {
+      original: {
+        schedule: [
+          {
+            location: 'СУ 1',
+            date: todayDate,
+            events: [{ time: '10:00', text: 'Старт СУ 1', state: 'live', crewNumber: 12 }],
+          },
+          {
+            location: 'СУ 2',
+            date: todayDate,
+            events: [{ time: '20:00', text: 'Открытие дороги' }],
+          },
+        ],
+      },
+    };
+    const active = nextProgramItem(pkg, new Date('2026-09-29T15:00:00.000Z'));
+    expect(active.event.text).toBe('Старт СУ 1');
+    expect(currentScheduledCrew(pkg).row.crewNumber).toBe(12);
+    expect(countdownLabel(pkg, new Date('2026-09-29T05:00:00.000Z'), 2)).toContain(
+      'До старта 0 дн. 2 ч.',
+    );
+
+    const livePackage = {
+      ...race,
+      original: {
+        ...race.original,
+        schedule: [
+          {
+            location: 'СУ 1',
+            date: todayDate,
+            events: [{ time: '10:00', text: 'Старт СУ 1', state: 'live', crewNumber: 12 }],
+          },
+        ],
+      },
+    };
+    render(
+      <TodayView app={appFixture({ currentPackage: livePackage, packages: [livePackage] })} />,
+    );
+    expect(screen.getByText('Текущий экипаж:')).toBeTruthy();
+  });
+
+  it('summarizes a published crew position change between the latest two stages', () => {
+    const results = [
+      {
+        specialStage: { name: 'СУ 1' },
+        results: [
+          { crew: { id: 'a', number: 1 }, time: 1000 },
+          { crew: { id: 'b', number: 2 }, time: 1100 },
+        ],
+      },
+      {
+        specialStage: { name: 'СУ 2' },
+        results: [
+          { crew: { id: 'b', number: 2 }, time: 500 },
+          { crew: { id: 'a', number: 1 }, time: 1100 },
+        ],
+      },
+    ];
+    expect(latestPositionChange(results)).toEqual({
+      crew: { id: 'b', number: 2 },
+      from: 2,
+      to: 1,
+      stage: 'СУ 2',
+    });
+    expect(latestPositionChange(results.slice(0, 1))).toBeNull();
+  });
+
   it('offers an upcoming catalog race and marks a downloaded race finished yesterday', () => {
     const upcoming = { id: 8, name: 'Следующая гонка', dates: raceDate(1) };
     const { rerender } = render(
@@ -697,6 +901,21 @@ describe('application components', () => {
     await waitFor(() => expect(mocks.syncWalletPassesForPackage).not.toHaveBeenCalled());
   });
 
+  it('selects the numeric package id from the shared rally selector', async () => {
+    const nextPackage = { ...race, id: 8, name: 'Пермь' };
+    const app = appFixture({
+      currentPackage: null,
+      packages: [race, nextPackage],
+      selectPackage: vi.fn(),
+    });
+    mocks.useRfmApp.mockReturnValue(app);
+    render(<App />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Текущая гонка' }), {
+      target: { value: '8' },
+    });
+    await waitFor(() => expect(app.selectPackage).toHaveBeenCalledWith(8));
+  });
+
   it('covers modal visibility, diagnostics actions, safety scroll gate, and results dialog', async () => {
     const onClose = vi.fn();
     const { rerender, container } = render(
@@ -714,6 +933,9 @@ describe('application components', () => {
       </>,
     );
     expect(screen.getByRole('dialog', { name: 'Boot diagnostics' })).toBeTruthy();
+    const erudaToggle = screen.getByRole('checkbox', { name: 'Показывать кнопку Eruda' });
+    fireEvent.click(erudaToggle);
+    await waitFor(() => expect(mocks.setErudaVisible).toHaveBeenCalledWith(true));
     fireEvent.click(screen.getByRole('button', { name: 'Проверить хранилище' }));
     await waitFor(() => expect(mocks.collectStorageDiagnostics).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }));

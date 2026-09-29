@@ -370,3 +370,94 @@
     margin: 0 0 14px;
   }
 }
+@layer views {
+  .today-status-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .today-state-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #f1f2f4;
+    color: #555;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .today-state-badge.live {
+    background: #ffefed;
+    color: #c33225;
+  }
+  .today-state-badge.ready {
+    background: #e9f6ed;
+    color: #26713d;
+  }
+  .today-status-heading .block-title {
+    margin: 0;
+  }
+  .today-race-status > strong {
+    display: block;
+    margin: 2px 0 6px;
+    font-size: 17px;
+  }
+  .today-race-status p,
+  .today-update-summary p,
+  .today-recent-event p,
+  .today-offline-status p {
+    margin: 6px 0;
+  }
+  .today-race-status .today-map-button {
+    width: 100%;
+    margin: 10px 0 0;
+  }
+  .today-next-crew {
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .today-update-summary.pending {
+    border-color: #e7c770;
+    background: #fff9e9;
+  }
+  .today-favorite-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .today-favorite-row:last-child {
+    border-bottom: 0;
+  }
+  .today-favorite-row span {
+    color: var(--muted, #6b7078);
+    text-align: right;
+  }
+}
+@layer theme {
+  :root[data-theme='dark'] .today-state-badge {
+    background: #292e35;
+    color: #d8dde4;
+  }
+  :root[data-theme='dark'] .today-state-badge.live {
+    background: #482c2a;
+    color: #ff9387;
+  }
+  :root[data-theme='dark'] .today-state-badge.ready {
+    background: #203b2b;
+    color: #95d8a8;
+  }
+  :root[data-theme='dark'] .today-update-summary.pending {
+    background: #302a1b;
+    border-color: #6b5621;
+  }
+  :root[data-theme='dark'] .today-next-crew,
+  :root[data-theme='dark'] .today-favorite-row {
+    border-color: #30353d;
+  }
+}

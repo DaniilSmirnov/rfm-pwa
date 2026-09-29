@@ -38,6 +38,8 @@ export function rallyPackDiff(current, fresh) {
   const changes = [];
   if (!same(current?.original?.schedule || [], fresh?.original?.schedule || []))
     changes.push({ key: 'schedule', label: 'Расписание' });
+  if (!same(baseRaceGeoJson(current), baseRaceGeoJson(fresh)))
+    changes.push({ key: 'map', label: 'Карта и зрительские точки' });
   if (!same(current?.original?.coordinates || [], fresh?.original?.coordinates || []))
     changes.push({ key: 'points', label: 'Точки гонки' });
   if (!same(sorted(current?.assetNames), sorted(fresh?.assetNames)))
