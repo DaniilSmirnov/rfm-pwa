@@ -21,6 +21,7 @@ test('switches between offline-first main tabs', async ({ page }) => {
   await expect(page.getByLabel('Удалять автоматически по завершению гонки')).not.toBeChecked();
   await page.getByRole('button', { name: 'Назад в меню «Ещё»' }).click();
   await expect(page.getByRole('button', { name: 'Настройки и диагностика' })).toBeVisible();
+  await expect(page).toHaveURL(/\?tab=more$/);
   await page.getByRole('button', { name: 'Ещё' }).click();
   await expect(page.locator('.react-tab-content')).toHaveCSS('padding-bottom', '0px');
   await expect(page.locator('.crew-results-section>.section-head')).toBeHidden();

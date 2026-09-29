@@ -172,6 +172,12 @@ export default function App() {
     restoreScrollKey.current = 'more:menu';
     setMoreScreen('menu');
   };
+  const returnToMoreMenu = () => {
+    setMoreScreen('menu');
+    const url = new URL(location.href);
+    url.searchParams.set('tab', 'more');
+    history.replaceState({ tab: 'more' }, '', url);
+  };
   const openCrewResults = () => setCrewResultsOpen(true);
   const screenContent =
     tab === 'today' ? (
@@ -198,7 +204,7 @@ export default function App() {
       ) : moreScreen === 'races' ? (
         <RacesView
           app={app}
-          onBack={() => setMoreScreen('menu')}
+          onBack={returnToMoreMenu}
           onOpenRace={async id => {
             await app.selectPackage(id);
             activate('map');
