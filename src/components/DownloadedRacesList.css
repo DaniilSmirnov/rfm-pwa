@@ -1,0 +1,78 @@
+/*Component styles: DownloadedRacesList.*/
+@layer views {
+  .downloaded-races-list {
+    display: grid;
+    gap: var(--space-2);
+  }
+}
+@layer views {
+  .downloaded-race {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+}
+@layer views {
+  .downloaded-race-copy {
+    display: grid;
+    min-width: 0;
+    gap: var(--space-1);
+  }
+}
+@layer views {
+  .downloaded-race-copy strong {
+    overflow-wrap: anywhere;
+  }
+}
+@layer views {
+  .downloaded-race-open {
+    width: fit-content;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+  .downloaded-race-open:hover {
+    text-decoration: underline;
+  }
+}
+@layer views {
+  .downloaded-race-copy span {
+    color: var(--muted);
+    font-size: 13px;
+  }
+}
+@layer views {
+  .downloaded-race-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: var(--space-2);
+  }
+}
+@layer theme {
+  :root[data-theme='dark'] .downloaded-race {
+    background: #171a1f;
+    border-color: #30353d;
+  }
+}
+@layer responsive {
+  @media (max-width: 560px) {
+    .downloaded-race {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .downloaded-race-actions > .button {
+      flex: 1;
+    }
+  }
+}

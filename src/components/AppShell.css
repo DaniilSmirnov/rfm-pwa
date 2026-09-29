@@ -262,7 +262,9 @@
   body[data-active-tab='more'] .today-empty {
     display: none;
   }
-  body[data-active-tab='today'] main {
+  body[data-active-tab='today'] main,
+  body[data-active-tab='races'] main,
+  body[data-active-tab='more'] main {
     display: none;
   }
 }

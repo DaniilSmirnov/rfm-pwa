@@ -105,6 +105,7 @@ import ElevationProfile from '../../src/components/ElevationProfile.jsx';
 import FallbackMap from '../../src/components/FallbackMap.jsx';
 import FavoritesList from '../../src/components/FavoritesList.jsx';
 import MoreMenu from '../../src/components/MoreMenu.jsx';
+import RacesView from '../../src/views/RacesView.jsx';
 import OfflineMapActions from '../../src/components/OfflineMapActions.jsx';
 import PointList from '../../src/components/PointList.jsx';
 import PushSettings from '../../src/components/PushSettings.jsx';
@@ -114,6 +115,7 @@ import RallyMap from '../../src/components/RallyMap.jsx';
 import SafetyMemo from '../../src/components/SafetyMemo.jsx';
 import SavedOfflineSection from '../../src/components/SavedOfflineSection.jsx';
 import SavedPackagesList from '../../src/components/SavedPackagesList.jsx';
+import DownloadedRacesList from '../../src/components/DownloadedRacesList.jsx';
 import ScheduleList from '../../src/components/ScheduleList.jsx';
 import TodayLeaders from '../../src/components/TodayLeaders.jsx';
 import AppLayout from '../../src/views/AppLayout.jsx';
@@ -207,6 +209,7 @@ function appFixture(overrides = {}) {
     geoClass: '',
     compassEnabled: false,
     storageStats: { count: 1, jsonBytes: 12, mapBytes: 22, mapCount: 2, persisted: true },
+    autoDeleteCompletedRaces: false,
     ...Object.fromEntries(
       [
         'setCatalogQuery',
@@ -219,6 +222,8 @@ function appFixture(overrides = {}) {
         'downloadTerrainForRace',
         'deleteTerrain',
         'downloadRace',
+        'deleteRace',
+        'setAutoDeleteCompletedRaces',
         'showPoint',
         'toggleFavorite',
         'selectPackage',
@@ -338,7 +343,7 @@ describe('application components', () => {
     expect(screen.getByText('офлайн')).toBeTruthy();
     expect(screen.getByText(/Companion v/)).toBeTruthy();
     expect(screen.getByText('Карелия')).toBeTruthy();
-    expect(screen.getByRole('searchbox', { name: '' })).toBeTruthy();
+    expect(screen.getByRole('searchbox', { name: 'Найти гонку или этап' })).toBeTruthy();
     expect(screen.getByText('Добавь приложение')).toBeTruthy();
     await waitFor(() => expect(mocks.subscribePwaInstall).toHaveBeenCalled());
   });
@@ -353,6 +358,42 @@ describe('application components', () => {
       />,
     );
     expect(screen.getByRole('button', { name: '42%' })).toBeTruthy();
+  });
+
+  it('renders race management controls and hides Rally Pack internals', async () => {
+    const pkg = {
+      id: 'race-101',
+      raceId: 101,
+      name: 'Sortavala Rally',
+      summary: { dates: '26.09.2026', stage: 'СУ 1' },
+      geojson: { type: 'FeatureCollection', features: [] },
+      assetNames: ['hero.jpg'],
+    };
+    const app = appFixture({ packages: [pkg] });
+    render(<RacesView app={app} />);
+    expect(screen.getByLabelText('Удалять автоматически по завершению гонки').checked).toBe(false);
+    expect(screen.getByText('Sortavala Rally')).toBeTruthy();
+    expect(screen.queryByText(/hero\.jpg|тайлов/i)).toBeNull();
+    expect(screen.getByText('Выбрать JSON или GeoJSON')).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(app.setAutoDeleteCompletedRaces).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Обновить' }));
+    expect(app.downloadRace).toHaveBeenCalledWith(101);
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    expect(app.deleteRace).toHaveBeenCalledWith('race-101');
+  });
+
+  it('keeps a stable downloaded races list container in empty and no-match states', () => {
+    const { rerender } = render(
+      <DownloadedRacesList app={appFixture({ packages: [], packageQuery: '' })} />,
+    );
+    expect(document.querySelector('#packageList')).toBeTruthy();
+    expect(screen.getByText('Скачанных гонок пока нет.')).toBeTruthy();
+    rerender(
+      <DownloadedRacesList app={appFixture({ packages: [race], packageQuery: 'missing' })} />,
+    );
+    expect(document.querySelector('#packageList')).toBeTruthy();
+    expect(screen.getByText('По этому запросу гонок не найдено.')).toBeTruthy();
   });
 
   it('renders point lists, favorites, offline actions, and saved packages', () => {

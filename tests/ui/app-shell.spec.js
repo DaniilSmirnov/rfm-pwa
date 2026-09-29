@@ -36,51 +36,53 @@ test.describe('app shell and catalog', () => {
 
   test('shows only closest race by default', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Гонки' }).click();
     await expect(page.locator('#catalogList')).toContainText(raceFixture.name);
     await expect(page.locator('#catalogList')).not.toContainText(secondRace.name);
   });
 
   test('catalog search reveals races outside week window', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
-    await page.getByPlaceholder('Карелия, Псков…').fill('Пермь');
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await page.getByPlaceholder('Название гонки или этап…').fill('Пермь');
     await expect(page.locator('#catalogList')).toContainText(secondRace.name);
     await expect(page.locator('#catalogList')).toContainText('Пермь');
   });
 
   test('catalog search can find by race name', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
-    await page.getByPlaceholder('Карелия, Псков…').fill('Far Future');
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await page.getByPlaceholder('Название гонки или этап…').fill('Far Future');
     await expect(page.locator('.catalog-row')).toHaveCount(1);
     await expect(page.locator('.catalog-row')).toContainText(secondRace.name);
   });
 
   test('catalog search shows empty state', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
-    await page.getByPlaceholder('Карелия, Псков…').fill('does-not-exist');
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await page.getByPlaceholder('Название гонки или этап…').fill('does-not-exist');
     await expect(page.locator('#catalogList')).toContainText('Ничего не найдено');
   });
 
   test('manual import section is available', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
-    await expect(page.getByText('РУЧНОЙ ИМПОРТ')).toBeVisible();
-    await expect(page.locator('label[for="fileInput"]')).toContainText('Импортировать файл');
+    await page.getByRole('button', { name: 'Гонки' }).click();
+    await expect(page.getByText('Импортировать гонку из файла')).toBeVisible();
+    await expect(page.locator('label[for="racesFileInput"]')).toContainText(
+      'Выбрать JSON или GeoJSON',
+    );
   });
 
   test('offline map controls start disabled without selected package', async ({ page }) => {
     await openApp(page);
+    await page.getByRole('button', { name: 'Карта' }).click();
     await expect(page.locator('#downloadMapBtn')).toBeDisabled();
     await expect(page.locator('#mapSubtitle')).toContainText('Выбери сохранённую гонку');
   });
 
-  test('opens the current catalog from More', async ({ page }) => {
+  test('opens the race catalog in the Races tab', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
-    await page.getByRole('button', { name: /Мои гонки/ }).click();
+    await page.getByRole('button', { name: 'Гонки' }).click();
     await expect(page.locator('#catalogStatus')).toContainText('2 гонок');
     await expect(page.locator('#catalogList')).toContainText(raceFixture.name);
   });

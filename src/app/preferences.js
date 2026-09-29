@@ -1,6 +1,22 @@
 const STAGE_PUSH_PREFS_KEY = 'rfm-stage-push-subscriptions-v1';
 const WALLET_STAGE_PREFS_KEY = 'rfm-wallet-stage-passes-v1';
 export const THEME_PREF_KEY = 'rfm-theme-v1';
+export const AUTO_DELETE_COMPLETED_RACES_KEY = 'rfm-auto-delete-completed-races-v1';
+
+export function loadAutoDeleteCompletedRaces(storage = globalThis.localStorage) {
+  try {
+    return storage?.getItem(AUTO_DELETE_COMPLETED_RACES_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function saveAutoDeleteCompletedRaces(enabled, storage = globalThis.localStorage) {
+  try {
+    storage?.setItem(AUTO_DELETE_COMPLETED_RACES_KEY, enabled ? 'true' : 'false');
+  } catch {}
+  return Boolean(enabled);
+}
 
 export function loadThemePreference(storage = null) {
   try {

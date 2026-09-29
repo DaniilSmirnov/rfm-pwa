@@ -24,7 +24,7 @@ async function waitForAppWorker(page) {
 }
 
 async function openTab(page, label) {
-  await page.getByRole('button', { name: label }).click();
+  await page.getByRole('button', { name: label, exact: true }).click();
 }
 
 async function seedSavedRace(
@@ -239,8 +239,9 @@ test.describe('PWA migration safety', () => {
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
     await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
-    await openTab(reopened, 'Ещё');
+    await openTab(reopened, 'Гонки');
     await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
+    await openTab(reopened, 'Карта');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
     await openTab(reopened, 'Карта');
     await expect(reopened.locator('#pointList')).toContainText('Offline spectator point');
@@ -263,8 +264,8 @@ test.describe('PWA migration safety', () => {
     reopened.on('request', request => requests.push(request.url()));
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await openTab(reopened, 'Ещё');
-    await reopened.locator('#packageList .package-row').first().click();
+    await openTab(reopened, 'Гонки');
+    await reopened.locator('#packageList .downloaded-race-open').first().click();
     await openTab(reopened, 'Карта');
 
     await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
@@ -292,8 +293,8 @@ test.describe('PWA migration safety', () => {
 
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
-    await openTab(reopened, 'Ещё');
-    await reopened.locator('#packageList .package-row').first().click();
+    await openTab(reopened, 'Гонки');
+    await reopened.locator('#packageList .downloaded-race-open').first().click();
     await openTab(reopened, 'Карта');
 
     await expect(reopened.locator('#mapSubtitle')).toContainText('ИСПОЛЬЗУЕТСЯ офлайн-подложка');
@@ -317,7 +318,9 @@ test.describe('PWA migration safety', () => {
 
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
-    await openTab(reopened, 'Ещё');
+    await openTab(reopened, 'Гонки');
+    await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
+    await openTab(reopened, 'Карта');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
 
     const hero = reopened.locator('#raceDetails .race-hero');
@@ -400,15 +403,16 @@ test.describe('PWA migration safety', () => {
     await seedSavedRace(page);
     await page.reload({ waitUntil: 'domcontentloaded' });
 
-    await openTab(page, 'Ещё');
+    await openTab(page, 'Гонки');
+    await page.locator('#packageList .downloaded-race-open').first().click();
     await expect(page.locator('#raceTitle')).toHaveText('Offline Migration Rally');
     await expect(page.locator('#networkBadge')).toHaveText('онлайн');
 
     await context.setOffline(true);
 
     await expect(page.locator('#networkBadge')).toHaveText('офлайн');
-    await expect(page.locator('#raceDetails')).toBeVisible();
     await openTab(page, 'Карта');
+    await expect(page.locator('#raceDetails')).toBeVisible();
     await expect(page.locator('#pointList')).toContainText('Offline spectator point');
     await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
 
@@ -435,12 +439,13 @@ test.describe('PWA migration safety', () => {
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await openTab(reopened, 'Ещё');
+    await openTab(reopened, 'Гонки');
     await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
     reopened.once('dialog', dialog => dialog.accept());
     await reopened.locator('#clearBtn').click();
 
-    await expect(reopened.locator('#packageList')).toContainText('Пока ничего не скачано');
+    await openTab(reopened, 'Гонки');
+    await expect(reopened.locator('#packageList')).toContainText('Скачанных гонок пока нет');
     await expect(reopened.locator('#raceDetails')).toBeHidden();
 
     const state = await reopened.evaluate(async () => {
