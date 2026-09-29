@@ -16,8 +16,10 @@
     padding-right: max(var(--space-4), calc(var(--space-4) + var(--safe-right)));
     padding-bottom: var(--space-3);
     padding-left: max(var(--space-4), calc(var(--space-4) + var(--safe-left)));
-    background: #000;
-    color: #fff;
+    min-height: 68px;
+    background: #fff;
+    color: #17191b;
+    border-bottom: 1px solid #e9eaec;
   }
 }
 @layer views {
@@ -28,6 +30,15 @@
       Arial,
       sans-serif;
     letter-spacing: 0.04em;
+  }
+  .header-wordmark {
+    color: #101214;
+    font:
+      italic 900 15px/1 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
+    letter-spacing: -0.035em;
+    white-space: nowrap;
   }
 }
 @layer views {
@@ -197,15 +208,53 @@
     align-items: center;
     gap: 8px;
   }
-  .current-rally-select select {
-    max-width: min(38vw, 220px);
-    padding: 7px 8px;
-    border: 1px solid #555;
-    border-radius: 9px;
-    background: #161616;
-    color: #fff;
-    font: inherit;
+  .current-rally-select {
+    position: relative;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 9px;
+    width: clamp(190px, 34vw, 285px);
+    min-height: 44px;
+    padding: 5px 10px;
+    border: 1px solid #e4e6e8;
+    border-radius: 12px;
+    background: #f8f9fa;
+    cursor: pointer;
+  }
+  .current-rally-pin {
+    color: #d91f27;
+  }
+  .current-rally-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .current-rally-copy strong,
+  .current-rally-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .current-rally-copy strong {
     font-size: 12px;
+    line-height: 1.2;
+  }
+  .current-rally-copy small {
+    color: #626a70;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+  .current-rally-chevron {
+    color: #30363a;
+  }
+  .current-rally-select select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
   }
 }
 @layer views {
@@ -233,6 +282,20 @@
       height: 38px;
       border-radius: 9px;
     }
+    .header-wordmark {
+      font-size: 11px;
+    }
+    .current-rally-select {
+      width: min(48vw, 220px);
+      gap: 6px;
+      padding-inline: 7px;
+    }
+    .current-rally-copy strong {
+      font-size: 11px;
+    }
+    .current-rally-copy small {
+      font-size: 9px;
+    }
   }
 }
 @layer responsive {
@@ -244,8 +307,20 @@
 }
 @layer theme {
   :root[data-theme='dark'] .topbar {
-    background: #0b0d10;
+    background: #111418;
     color: #fff;
+    border-bottom-color: #2b2f36;
+  }
+  :root[data-theme='dark'] .header-wordmark {
+    color: #fff;
+  }
+  :root[data-theme='dark'] .current-rally-select {
+    background: #1a1e23;
+    border-color: #30353d;
+  }
+  :root[data-theme='dark'] .current-rally-copy small,
+  :root[data-theme='dark'] .current-rally-chevron {
+    color: #b4bbc3;
   }
 }
 @layer theme {

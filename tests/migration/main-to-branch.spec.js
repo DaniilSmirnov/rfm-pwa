@@ -345,7 +345,7 @@ test('migrates installed PWA from current main to branch without losing persiste
 
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#networkBadge')).toHaveText('офлайн');
+  await expect(page.locator('#networkBadge')).toHaveCount(0);
   await page.getByRole('button', { name: 'Ещё' }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');

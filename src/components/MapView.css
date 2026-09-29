@@ -711,23 +711,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .map-header-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex: none;
-    color: #6c7880;
-    font-size: 11px;
-  }
-  .map-header-status i {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #969da2;
-  }
-  .map-header-status i.is-online {
-    background: #29a66a;
-  }
   .map-tools-toggle {
     position: absolute;
     z-index: 6;

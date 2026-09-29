@@ -142,13 +142,6 @@ export default function MapView({
             {app.mapSubtitle}
           </span>
         </div>
-        <div
-          className="map-header-status"
-          aria-label={app.online ? 'Есть интернет' : 'Нет интернета'}
-        >
-          <i className={app.online ? 'is-online' : ''} />
-          {app.online ? 'Онлайн' : 'Офлайн'}
-        </div>
       </header>
       <div className="map" aria-label="offline rally map">
         {mapContent}

@@ -259,7 +259,7 @@ test.describe('PWA migration safety', () => {
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(reopened.locator('#networkBadge')).toHaveCount(0);
     await openTab(reopened, 'Гонки');
     await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
     await openTab(reopened, 'Карта');
@@ -430,11 +430,11 @@ test.describe('PWA migration safety', () => {
     await openTab(page, 'Гонки');
     await page.locator('#packageList .downloaded-race-open').first().click();
     await expect(page.locator('#raceTitle')).toHaveText('Offline Migration Rally');
-    await expect(page.locator('#networkBadge')).toHaveText('онлайн');
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
 
     await context.setOffline(true);
 
-    await expect(page.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
     await openTab(page, 'Карта');
     await expect(page.locator('#raceDetails')).toBeVisible();
     await expect(page.locator('#pointList')).toContainText('Offline spectator point');

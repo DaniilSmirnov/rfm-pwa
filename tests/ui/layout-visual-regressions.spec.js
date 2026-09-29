@@ -15,7 +15,7 @@ async function getBounds(page, selector) {
   });
 }
 
-test('aligns the brand left and network status right without a PWA install button', async ({
+test('aligns the brand left and race selector right without a network label or PWA install button', async ({
   page,
 }) => {
   await openApp(page);
@@ -32,7 +32,8 @@ test('aligns the brand left and network status right without a PWA install butto
   expect(actions.left).toBeGreaterThan(header.left + header.width / 2);
   await expect(page.getByRole('button', { name: 'Установить PWA' })).toHaveCount(0);
   await expect(page.locator('.top-actions button')).toHaveCount(0);
-  await expect(page.locator('#networkBadge')).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Текущая гонка' })).toBeVisible();
+  await expect(page.locator('#networkBadge')).toHaveCount(0);
 });
 
 test('places More controls at the top and leaves the complete footer clear of the fixed tab bar', async ({

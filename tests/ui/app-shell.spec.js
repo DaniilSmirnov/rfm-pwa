@@ -33,10 +33,11 @@ test.describe('app shell and catalog', () => {
     await expect(installPrompt.getByRole('button')).toBeHidden();
   });
 
-  test('shows online network badge', async ({ page }) => {
+  test('shows the race selector instead of a network badge', async ({ page }) => {
     await openApp(page);
-    await expect(page.locator('#networkBadge')).toHaveText('онлайн');
-    await expect(page.locator('#networkBadge')).toHaveClass(/online/);
+    await expect(page.getByRole('combobox', { name: 'Текущая гонка' })).toBeVisible();
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
+    await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
   });
 
   test('shows only closest race by default', async ({ page }) => {
