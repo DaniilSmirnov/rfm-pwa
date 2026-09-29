@@ -134,6 +134,23 @@ const feature = {
   properties: { name: 'Start' },
   geometry: { type: 'Point', coordinates: [30, 61] },
 };
+function raceDate(offsetDays = 0) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  const date = new Date(
+    Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day) + offsetDays),
+  );
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${day}.${month}.${date.getUTCFullYear()}`;
+}
+const todayDate = raceDate();
+
 const race = {
   id: 7,
   raceId: 7,
@@ -150,7 +167,7 @@ const race = {
     how_it_was: '<p>Финиш</p>',
     schedule: [
       {
-        date: '28.09.2026',
+        date: todayDate,
         location: 'СУ 1',
         coordinates: '61, 30',
         events: [{ time: '10:00', text: 'Старт СУ 1' }],
@@ -160,7 +177,7 @@ const race = {
   summary: {
     category: 'Ралли',
     stage: 'Кубок',
-    dates: '28.09.2026',
+    dates: todayDate,
     city: 'Карелия',
     totalDistance: 100,
     combatKm: 60,
@@ -587,7 +604,7 @@ describe('application components', () => {
     expect(document.documentElement.dataset.theme).toBe('dark');
     fireEvent.click(screen.getByRole('button', { name: '← Ещё' }));
     expect(onBack).toHaveBeenCalledOnce();
-    rerender(<TodayView app={appFixture({ catalog: [], packages: [] })} />);
+    rerender(<TodayView app={appFixture({ catalog: [], packages: [], currentPackage: null })} />);
     expect(screen.getByText(/Нет гонки сегодня/)).toBeTruthy();
   });
 
@@ -596,7 +613,13 @@ describe('application components', () => {
       ...race,
       original: {
         ...race.original,
-        schedule: [{ location: 'СУ 2', events: [{ time: '23:59', text: 'Старт' }] }],
+        schedule: [
+          {
+            date: todayDate,
+            location: 'СУ 2',
+            events: [{ time: '23:59', text: 'Старт' }],
+          },
+        ],
       },
     };
     const previous = {
@@ -607,7 +630,7 @@ describe('application components', () => {
       original: { status_race: 'Завершена' },
     };
     const app = appFixture({
-      catalog: [{ id: 7, name: 'Карелия', dates: '28.09.2026', date_race: '28.09.2026' }],
+      catalog: [{ id: 7, name: 'Карелия', dates: todayDate, date_race: todayDate }],
       packages: [today, previous],
       currentPackage: today,
       downloadedIds: new Set([7]),
@@ -622,7 +645,7 @@ describe('application components', () => {
   });
 
   it('offers an upcoming catalog race and marks a downloaded race finished yesterday', () => {
-    const upcoming = { id: 8, name: 'Следующая гонка', dates: '29.09.2026' };
+    const upcoming = { id: 8, name: 'Следующая гонка', dates: raceDate(1) };
     const { rerender } = render(
       <TodayView
         app={appFixture({ catalog: [upcoming], packages: [], currentPackage: null })}
@@ -640,10 +663,10 @@ describe('application components', () => {
       original: {
         ...race.original,
         status_race: 'Завершена',
-        dates: '27.09.2026',
+        dates: raceDate(-1),
         overlap_schedule: ['overlap.jpg'],
       },
-      summary: { ...race.summary, dates: '27.09.2026' },
+      summary: { ...race.summary, dates: raceDate(-1) },
       crewResults: { eventResults: [crewData.eventResults[0]] },
     };
     rerender(
