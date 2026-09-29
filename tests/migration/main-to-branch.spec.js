@@ -338,6 +338,7 @@ test('migrates installed PWA from current main to branch without losing persiste
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');
   await page.getByRole('button', { name: 'Карта' }).click();
+  await page.getByRole('button', { name: 'Инструменты карты' }).click();
   await expect(page.locator('#carPointCard')).toBeVisible();
   await expect(page.locator('#carCoords')).toContainText('61.710000');
 

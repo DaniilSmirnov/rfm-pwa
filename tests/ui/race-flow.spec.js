@@ -7,6 +7,7 @@ test.describe('saved race user flows', () => {
     await seedFixtureRace(page);
   });
   const openMap = page => openMapWithAcceptedSafety(page);
+  const openMapTools = page => page.getByRole('button', { name: 'Инструменты карты' }).click();
 
   test('opens downloaded race details', async ({ page }) => {
     await expect(page.getByRole('heading', { level: 2, name: raceFixture.name })).toHaveText(
@@ -133,6 +134,7 @@ test.describe('saved race user flows', () => {
 
   test('exports a valid GeoJSON file', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     const downloadPromise = page.waitForEvent('download');
     await page.locator('#exportGeoJsonBtn').click();
     const download = await downloadPromise;
@@ -147,6 +149,7 @@ test.describe('saved race user flows', () => {
 
   test('exports a GPX file with rally waypoints', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     const downloadPromise = page.waitForEvent('download');
     await page.locator('#exportGpxBtn').click();
     const download = await downloadPromise;
@@ -162,6 +165,7 @@ test.describe('saved race user flows', () => {
 
   test('renders rally point list', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await expect(page.locator('#pointList')).toContainText('Смотровая точка');
     await expect(page.locator('#pointList')).toContainText('Парковка зрителей');
@@ -169,6 +173,7 @@ test.describe('saved race user flows', () => {
 
   test('opens actions for selected point', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page
       .locator('.point-row')
@@ -176,6 +181,7 @@ test.describe('saved race user flows', () => {
       .locator('.point-row-copy')
       .click();
     await expect(page.locator('#pointActions')).toBeVisible();
+    await page.getByRole('button', { name: 'Показать детали' }).click();
     await expect(page.locator('#pointName')).toHaveText('Смотровая точка');
     await expect(page.locator('#pointCoords')).toContainText('61.702000');
     await expect(page.locator('#pointElevation')).toContainText('рельеф не скачан');
@@ -186,6 +192,7 @@ test.describe('saved race user flows', () => {
 
   test('adds and removes point from favorites', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     const row = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
     await row.locator('[data-nav="favorite"]').click();
@@ -196,10 +203,12 @@ test.describe('saved race user flows', () => {
 
   test('favorite state is reflected in point button', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     const row = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
     const fav = row.locator('[data-nav="favorite"]');
     await fav.click();
+    await page.getByRole('button', { name: 'Показать детали' }).click();
     await expect(
       page
         .locator('.point-row')
@@ -210,6 +219,7 @@ test.describe('saved race user flows', () => {
 
   test('favorite survives page reload', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page
       .locator('.point-row')
@@ -218,11 +228,13 @@ test.describe('saved race user flows', () => {
       .click();
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
+    await openMapTools(page);
     await expect(page.locator('#favoritesList')).toContainText('Смотровая точка');
   });
 
   test('copies point coordinates', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     const row = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
     await row.locator('[data-nav="copy"]').click();
@@ -231,6 +243,7 @@ test.describe('saved race user flows', () => {
 
   test('saves current geolocation as car position', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await expect(page.locator('#carCoords')).toContainText('61.700000');
@@ -239,19 +252,23 @@ test.describe('saved race user flows', () => {
 
   test('saved car position survives page reload', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
+    await openMapTools(page);
     await expect(page.locator('#carPointCard')).toBeVisible();
     await expect(page.locator('#carCoords')).toContainText('61.700000');
   });
 
   test('opens spectator compass for saved car', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.locator('#saveCarBtn').click();
     await page.locator('#carCompassBtn').click();
     await expect(page.locator('#pointActions')).toBeVisible();
+    await page.getByRole('button', { name: 'Показать детали' }).click();
     await expect(page.locator('#pointName')).toHaveText('Машина');
     await expect(page.locator('#spectatorCompass')).toHaveAttribute('open', '');
     await expect(page.locator('#compassDistance')).not.toHaveText('—');
@@ -259,6 +276,7 @@ test.describe('saved race user flows', () => {
 
   test('deletes saved car position', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await page.locator('#carDeleteBtn').click();
@@ -280,6 +298,7 @@ test.describe('saved race user flows', () => {
 
   test('clear all removes offline race and favorites', async ({ page }) => {
     await openMap(page);
+    await openMapTools(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('[data-nav="favorite"]').click();
     await page.getByRole('button', { name: 'Гонки', exact: true }).click();

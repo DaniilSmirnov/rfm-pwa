@@ -47,6 +47,8 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await expect(page.locator('#downloadMapBtnTop')).toBeEnabled();
+    await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await expect(page.locator('#downloadMapBtn')).toBeEnabled();
   });
 
@@ -54,8 +56,10 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
+    await page.getByRole('button', { name: 'Показать детали' }).click();
     for (const id of [
       'googleMapsBtn',
       'yandexMapsBtn',
