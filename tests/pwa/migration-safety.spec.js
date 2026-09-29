@@ -30,6 +30,22 @@ async function openTab(page, label) {
     return;
   }
   await page.getByRole('button', { name: label, exact: true }).click();
+  if (label === 'Карта') {
+    const gate = page.locator('.safety-gate');
+    if (await gate.isVisible()) {
+      await gate.locator('.safety-gate-content').evaluate(node => {
+        node.scrollTop = node.scrollHeight;
+        node.dispatchEvent(new Event('scroll'));
+      });
+      await expect(gate.locator('.safety-accept')).toBeEnabled();
+      await gate.locator('.safety-accept').click();
+      await gate.waitFor({ state: 'hidden' });
+    }
+  }
+}
+
+async function openMapTools(page) {
+  await page.getByRole('button', { name: 'Инструменты карты' }).click();
 }
 
 async function seedSavedRace(
@@ -343,6 +359,8 @@ test.describe('PWA migration safety', () => {
     expect(heroImage.complete).toBe(true);
     expect(heroImage.naturalWidth).toBeGreaterThan(0);
 
+    await openTab(reopened, 'Ещё');
+    await reopened.getByRole('button', { name: 'Документы и материалы' }).click();
     const organizer = reopened
       .locator('#raceMedia details')
       .filter({ hasText: 'КАРТА ОРГАНИЗАТОРА' });
@@ -374,6 +392,7 @@ test.describe('PWA migration safety', () => {
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
     await openTab(reopened, 'Карта');
+    await openMapTools(reopened);
 
     const geoDownloadPromise = reopened.waitForEvent('download');
     await reopened.locator('#exportGeoJsonBtn').click();
@@ -421,6 +440,7 @@ test.describe('PWA migration safety', () => {
     await expect(page.locator('#pointList')).toContainText('Offline spectator point');
     await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
 
+    await openMapTools(page);
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page
       .locator('.point-row')
@@ -428,6 +448,7 @@ test.describe('PWA migration safety', () => {
       .locator('.point-row-copy')
       .click();
     await expect(page.locator('#pointActions')).toBeVisible();
+    await page.getByRole('button', { name: 'Показать детали' }).click();
     await expect(page.locator('#pointCoords')).toContainText('61.700000');
   });
 

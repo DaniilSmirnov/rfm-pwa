@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+import { openMapWithAcceptedSafety } from '../ui/helpers.js';
 
 const branchRelease = {
   ...JSON.parse(readFileSync(new URL('../../version.json', import.meta.url), 'utf8')),
@@ -337,7 +338,7 @@ test('migrates installed PWA from current main to branch without losing persiste
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');
-  await page.getByRole('button', { name: 'Карта' }).click();
+  await openMapWithAcceptedSafety(page);
   await page.getByRole('button', { name: 'Инструменты карты' }).click();
   await expect(page.locator('#carPointCard')).toBeVisible();
   await expect(page.locator('#carCoords')).toContainText('61.710000');
