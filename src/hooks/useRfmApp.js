@@ -47,6 +47,7 @@ import { setupErrorTelemetry } from '../app/telemetry.js';
 import { raceWithinWeek, pickDefaultRace } from '../app/catalog-dates.js';
 import { markBoot } from '../app/boot-diagnostics.js';
 import { formatBytes } from '../app/format.js';
+import { loadSelectedRallyId, saveSelectedRallyId } from '../app/rally-context.js';
 import { useOfflineStorageControls } from './useOfflineStorageControls.js';
 import { createConnectivityMonitor } from '../app/network-status.js';
 import { useGeoCompass } from './useGeoCompass.js';
@@ -236,10 +237,7 @@ export function useRfmApp() {
         mapTiles: maps.count,
         durationMs: Math.round(performance.now() - started),
       });
-      let rememberedId = null;
-      try {
-        rememberedId = localStorage.getItem('rfm.selected-rally-id');
-      } catch {}
+      const rememberedId = loadSelectedRallyId();
       const currentId = preferredId || currentPackage?.id || rememberedId;
       if (currentId) {
         const next = pkgs.find(p => p.id === currentId) || null;
@@ -359,9 +357,7 @@ export function useRfmApp() {
 
   useEffect(() => {
     if (!currentPackage?.id) return;
-    try {
-      localStorage.setItem('rfm.selected-rally-id', String(currentPackage.id));
-    } catch {}
+    saveSelectedRallyId(currentPackage.id);
   }, [currentPackage?.id]);
 
   const importFiles = useCallback(

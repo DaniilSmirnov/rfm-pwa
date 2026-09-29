@@ -1,0 +1,128 @@
+@layer views {
+  .more-section-view {
+    display: grid;
+    gap: var(--space-3, 16px);
+    padding: var(--space-3, 16px) var(--space-3, 16px) calc(96px + var(--safe-bottom, 0px));
+  }
+
+  .more-section-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-3, 16px);
+  }
+
+  .more-section-header h2 {
+    margin: 0;
+    font-size: clamp(1.3rem, 4vw, 1.7rem);
+    letter-spacing: -0.03em;
+  }
+
+  .more-section-kicker {
+    margin: 0 0 5px;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .more-section-content,
+  .more-event-info {
+    display: grid;
+    gap: var(--space-3, 16px);
+    min-width: 0;
+  }
+
+  .more-event-info {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md, 16px);
+    background: var(--card-bg, #fff);
+  }
+
+  .more-event-image {
+    display: block;
+    width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+  }
+
+  .more-event-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
+    margin: 0;
+    padding: 4px 18px;
+  }
+
+  .more-event-facts > div {
+    display: grid;
+    gap: 4px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .more-event-facts dt {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .more-event-facts dd {
+    margin: 0;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+  }
+
+  .more-event-info > .empty-state,
+  .more-event-description {
+    margin: 0;
+    padding: 16px 18px;
+  }
+
+  .more-event-description {
+    border-top: 1px solid var(--line);
+    line-height: 1.55;
+    white-space: pre-line;
+  }
+
+  .more-results-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md, 16px);
+    background: var(--card-bg, #fff);
+  }
+
+  .more-results-link p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+}
+
+@layer theme {
+  :root[data-theme='dark'] .more-event-info,
+  :root[data-theme='dark'] .more-results-link {
+    background: #171a20;
+    border-color: #30353d;
+  }
+}
+
+@layer responsive {
+  @media (max-width: 620px) {
+    .more-section-header {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .more-event-facts {
+      grid-template-columns: 1fr;
+    }
+
+    .more-results-link {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+}

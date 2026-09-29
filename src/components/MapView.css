@@ -5,6 +5,80 @@
   }
 }
 @layer components {
+  .map-stage-statuses,
+  .map-field-notice {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid #e6e7e9;
+    border-radius: var(--radius-sm);
+    background: #fff;
+  }
+  .map-stage-status-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .map-stage-status {
+    display: grid;
+    grid-template-columns: minmax(70px, auto) auto 1fr;
+    align-items: center;
+    gap: 9px;
+    padding: 10px;
+    border-radius: var(--radius-xs);
+    background: #f6f7f8;
+  }
+  .map-stage-pill {
+    width: max-content;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #e9ecef;
+  }
+  .map-stage-pill.is-open {
+    color: #126336;
+    background: #e2f4e8;
+  }
+  .map-stage-pill.is-close {
+    color: #8b241d;
+    background: #fde9e7;
+  }
+  .map-field-notice {
+    display: grid;
+    gap: 5px;
+    border-color: #f1d883;
+    background: #fff9e6;
+    font-size: 13px;
+  }
+  .map-point-photo-link {
+    display: grid;
+    gap: 5px;
+    width: fit-content;
+    color: inherit;
+    font-size: 12px;
+  }
+  .map-point-photo {
+    display: block;
+    width: min(100%, 360px);
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+  }
+  .map-point-access {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 10px;
+    margin: 0;
+    font-size: 13px;
+  }
+  .map-point-access dt {
+    font-weight: 700;
+  }
+  .map-point-access dd {
+    margin: 0;
+  }
+}
+@layer components {
   .map {
     min-height: 520px;
     border-radius: var(--radius-sm);

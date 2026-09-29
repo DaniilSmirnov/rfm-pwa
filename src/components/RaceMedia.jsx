@@ -52,7 +52,7 @@ function MediaSection({ title, images, emptyText = 'Информация поя�
   );
 }
 
-export default function RaceMedia({ pkg }) {
+export default function RaceMedia({ pkg, sections = null }) {
   const [selectedImage, setSelectedImage] = useState('');
   useEffect(() => {
     if (!selectedImage) return undefined;
@@ -101,37 +101,48 @@ export default function RaceMedia({ pkg }) {
   const extra = (pkg.assetNames || []).filter(name => !known.has(name) && name !== 'name-pin.jpg');
   const finished = raceHasFinished(pkg);
   const open = name => setSelectedImage(name);
+  const include = name => !sections || sections.includes(name);
   return (
     <>
-      {race.mapsimg && (
+      {include('map') && race.mapsimg && (
         <MediaSection title="КАРТА ОРГАНИЗАТОРА" images={[race.mapsimg]} onOpen={open} />
       )}
-      <MediaSection
-        title="ПАМЯТКА ПО БЕЗОПАСНОСТИ"
-        images={race.safety_leaflet ? [race.safety_leaflet] : []}
-        onOpen={open}
-      />
-      <MediaSection title="ЗАЯВЛЕННЫЕ ЭКИПАЖИ" images={crews} onOpen={open} />
-      {!finished && <MediaSection title="РЕЗУЛЬТАТЫ" images={results} onOpen={open} />}
-      {extra.length > 0 && <MediaSection title="МАТЕРИАЛЫ ГОНКИ" images={extra} onOpen={open} />}
-      <CollapsibleSection
-        className="race-material"
-        summary={
-          <>
-            <span className="block-title">КАК ЭТО БЫЛО</span>
-            <span className="summary-chevron">⌄</span>
-          </>
-        }
-      >
-        {race.how_it_was ? (
-          <div
-            className="how-it-was"
-            dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(race.how_it_was) }}
-          />
-        ) : (
-          <p className="gray-label">Информация появится позже :)</p>
-        )}
-      </CollapsibleSection>
+      {include('safety') && (
+        <MediaSection
+          title="ПАМЯТКА ПО БЕЗОПАСНОСТИ"
+          images={race.safety_leaflet ? [race.safety_leaflet] : []}
+          onOpen={open}
+        />
+      )}
+      {include('participants') && (
+        <MediaSection title="ЗАЯВЛЕННЫЕ ЭКИПАЖИ" images={crews} onOpen={open} />
+      )}
+      {include('results') && !finished && (
+        <MediaSection title="РЕЗУЛЬТАТЫ" images={results} onOpen={open} />
+      )}
+      {include('documents') && extra.length > 0 && (
+        <MediaSection title="МАТЕРИАЛЫ ГОНКИ" images={extra} onOpen={open} />
+      )}
+      {include('history') && (
+        <CollapsibleSection
+          className="race-material"
+          summary={
+            <>
+              <span className="block-title">КАК ЭТО БЫЛО</span>
+              <span className="summary-chevron">⌄</span>
+            </>
+          }
+        >
+          {race.how_it_was ? (
+            <div
+              className="how-it-was"
+              dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(race.how_it_was) }}
+            />
+          ) : (
+            <p className="gray-label">Информация появится позже :)</p>
+          )}
+        </CollapsibleSection>
+      )}
       <ImageViewerModal image={selectedImage} onClose={() => setSelectedImage('')} />
     </>
   );

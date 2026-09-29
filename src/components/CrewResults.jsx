@@ -189,15 +189,17 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose, standa
         <SectionHeader>
           <div>
             <div id="crewResultsTitle" className="block-title">
-              РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ
+              {standalone ? 'ДАННЫЕ АСМГ' : 'РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ'}
             </div>
-            <p className="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p>
+            {!standalone && (
+              <p className="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p>
+            )}
           </div>
           <Button
             className="button primary"
             id="crewResultsOpen"
             type="button"
-            hidden={!data}
+            hidden={!data || standalone}
             onClick={onOpen}
           >
             Открыть результаты
@@ -250,6 +252,7 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose, standa
       </section>
       <CrewResultsModal
         open={open}
+        standalone={standalone}
         onClose={onClose}
         data={data}
         views={views}

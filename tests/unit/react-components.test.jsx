@@ -122,7 +122,7 @@ import AppLayout from '../../src/views/AppLayout.jsx';
 import MapView from '../../src/views/MapView.jsx';
 import RaceDetails from '../../src/views/RaceDetails.jsx';
 import SettingsView from '../../src/views/SettingsView.jsx';
-import TodayView from '../../src/views/TodayView.jsx';
+import TodayView, { nextScheduledCrew } from '../../src/views/TodayView.jsx';
 import App from '../../src/views/App.jsx';
 import BootDiagnostics from '../../src/modals/BootDiagnostics.jsx';
 import CrewResultsModal from '../../src/modals/CrewResultsModal.jsx';
@@ -672,6 +672,90 @@ describe('application components', () => {
     expect(onResults).toHaveBeenCalledOnce();
   });
 
+  it('builds a Today race-day brief from published schedule, saved results, and pack metadata', () => {
+    const packageWithBrief = {
+      ...race,
+      lastSmartUpdate: {
+        appliedAt: '2026-09-29T08:00:00Z',
+        changes: [
+          { key: 'schedule', label: 'Расписание' },
+          { key: 'points', label: 'Точки гонки' },
+        ],
+      },
+      pendingUpdate: null,
+      crewResults: { ...crewData, updatedAt: '2026-09-29T09:00:00Z' },
+      original: {
+        ...race.original,
+        status_race: 'Скоро',
+        schedule: [
+          {
+            date: raceDate(1),
+            location: 'СУ 1 · старт',
+            events: [{ time: '23:59', text: 'Старт экипажа', crewNumber: 12 }],
+          },
+        ],
+      },
+    };
+    const onMap = vi.fn();
+    expect(nextScheduledCrew(packageWithBrief)?.row.crewNumber).toBe(12);
+    const { rerender } = render(
+      <TodayView
+        app={appFixture({
+          currentPackage: packageWithBrief,
+          packages: [packageWithBrief],
+          catalog: [{ id: 7, name: 'Карелия', dates: todayDate }],
+          downloadedIds: new Set([7]),
+          favoriteCrews: [{ number: 12, name: 'Экипаж № 12' }],
+        })}
+        onMap={onMap}
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Состояние ралли' })).toBeTruthy();
+    expect(screen.getByText('По расписанию')).toBeTruthy();
+    expect(screen.queryByText('LIVE')).toBeNull();
+    expect(screen.getByText(/Следующий экипаж/)).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Избранные экипажи' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Изменения Rally Pack' })).toBeTruthy();
+    expect(screen.getByText('Расписание · Точки гонки')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Готовность офлайн' }).textContent).toContain(
+      'ОФЛАЙН',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Показать этап на карте' }));
+    expect(onMap).toHaveBeenCalledOnce();
+
+    const pending = {
+      ...packageWithBrief,
+      pendingUpdate: { changes: [{ key: 'schedule', label: 'Время старта СУ 1' }] },
+    };
+    rerender(
+      <TodayView
+        app={appFixture({
+          currentPackage: pending,
+          packages: [pending],
+          catalog: [{ id: 7, name: 'Карелия', dates: todayDate }],
+          downloadedIds: new Set([7]),
+        })}
+        onMap={onMap}
+      />,
+    );
+    expect(screen.getByText('ЕСТЬ ИЗМЕНЕНИЯ')).toBeTruthy();
+    expect(screen.getByText('Время старта СУ 1')).toBeTruthy();
+  });
+
+  it('surfaces saved followed crews on Today for the selected rally', async () => {
+    const pkg = { ...race, asmgRaceId: '55', crewResults: crewData };
+    mocks.getCrewSubscriptions.mockResolvedValueOnce([
+      { key: '55:crew-1', asmgRaceId: '55', raceId: '7', crewId: 'crew-1', name: 'Экипаж 12' },
+    ]);
+    render(<TodayView app={appFixture({ currentPackage: pkg, packages: [pkg], catalog: [] })} />);
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
+        'Пилот Иван',
+      );
+    });
+  });
+
   it('offers an upcoming catalog race and marks a downloaded race finished yesterday', () => {
     const upcoming = { id: 8, name: 'Следующая гонка', dates: raceDate(1) };
     const { rerender } = render(
@@ -723,6 +807,21 @@ describe('application components', () => {
     expect(screen.getByRole('dialog', { name: 'Boot diagnostics' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }));
     await waitFor(() => expect(mocks.syncWalletPassesForPackage).not.toHaveBeenCalled());
+  });
+
+  it('selects the numeric package id from the shared rally selector', async () => {
+    const nextPackage = { ...race, id: 8, name: 'Пермь' };
+    const app = appFixture({
+      currentPackage: null,
+      packages: [race, nextPackage],
+      selectPackage: vi.fn(),
+    });
+    mocks.useRfmApp.mockReturnValue(app);
+    render(<App />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Текущая гонка' }), {
+      target: { value: '8' },
+    });
+    await waitFor(() => expect(app.selectPackage).toHaveBeenCalledWith(8));
   });
 
   it('covers modal visibility, diagnostics actions, safety scroll gate, and results dialog', async () => {

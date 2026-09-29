@@ -10,6 +10,8 @@ import {
 } from '../navigation.js';
 import { isFavoritePoint } from '../app/local-points.js';
 import { formatDistance } from '../app/geo.js';
+import { stageMapStatuses, pointFeatureDetails } from '../app/map-details.js';
+import { mapsMeLink } from '../navigation.js';
 import OfflineMapActions from '../components/OfflineMapActions.jsx';
 import Panel from '../components/Panel.jsx';
 import SectionHeader from '../components/SectionHeader.jsx';
@@ -17,6 +19,8 @@ import CollapsibleSection from '../components/CollapsibleSection.jsx';
 import ElevationProfile from '../components/ElevationProfile.jsx';
 import CompassReadout from '../components/CompassReadout.jsx';
 import '../components/MapView.css';
+
+const mapsMeFallbackForPoint = point => `https://maps.me/${point.lat},${point.lon}`;
 
 export default function MapView({
   app,
@@ -30,6 +34,9 @@ export default function MapView({
   const [compassOpen, setCompassOpen] = useState(false);
   const pkg = app.currentPackage;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
+  const stages = pkg ? stageMapStatuses(pkg) : [];
+  const selectedDetails =
+    pkg && app.selectedPoint ? pointFeatureDetails(pkg, app.selectedPoint) : null;
   const openYandex = point =>
     openCustomSchemeWithFallback(yandexNavigatorLink(point), yandexWebFallback(point));
   const copyPoint = async point => {
@@ -111,11 +118,16 @@ export default function MapView({
                 Компас
               </Button>
               <Button
-                id="carGoogleBtn"
+                id="carMapsMeBtn"
                 className="button compact primary"
-                onClick={() => (window.location.href = googleMapsDirections(app.carPoint))}
+                onClick={() =>
+                  openCustomSchemeWithFallback(
+                    mapsMeLink(app.carPoint),
+                    mapsMeFallbackForPoint(app.carPoint),
+                  )
+                }
               >
-                Google Maps
+                MAPS.ME
               </Button>
               <Button
                 id="carYandexBtn"
@@ -123,6 +135,13 @@ export default function MapView({
                 onClick={() => openYandex(app.carPoint)}
               >
                 Yandex
+              </Button>
+              <Button
+                id="carGoogleBtn"
+                className="button compact"
+                onClick={() => (window.location.href = googleMapsDirections(app.carPoint))}
+              >
+                Google Maps
               </Button>
               <Button
                 id="carShareBtn"
@@ -138,6 +157,34 @@ export default function MapView({
           </div>
         )}
       </section>
+      {stages.length > 0 && (
+        <section className="map-stage-statuses" aria-labelledby="mapStageStatusesTitle">
+          <div id="mapStageStatusesTitle" className="block-title">
+            СТАТУСЫ СПЕЦУЧАСТКОВ
+          </div>
+          <div className="map-stage-status-list">
+            {stages.map(stage => (
+              <article className="map-stage-status" key={stage.key}>
+                <strong>{stage.name}</strong>
+                <span className={`map-stage-pill is-${stage.mapStatusKind}`}>
+                  {stage.mapStatus}
+                </span>
+                <span className="muted small">{stage.date || stage.location}</span>
+              </article>
+            ))}
+          </div>
+          <p className="muted small">
+            Статус показан по последнему опубликованному сообщению расписания.
+          </p>
+        </section>
+      )}
+      <div className="map-field-notice" role="note">
+        <strong>Безопасность и офлайн</strong>
+        <span>
+          Оставайся в разрешённых зрительских зонах и следуй указаниям маршалов. Скачай офлайн-карту
+          до выезда; доступность внешнего навигатора и его офлайн-карт зависит от самого приложения.
+        </span>
+      </div>
       <div className="map-export-actions">
         <div>
           <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
@@ -212,6 +259,38 @@ export default function MapView({
               ? `${pointStageDistance.stage.name}: ${formatDistance(pointStageDistance.distance.fromStart)} от старта · ${formatDistance(pointStageDistance.distance.toFinish)} до финиша`
               : ''}
           </span>
+          {selectedDetails?.photo && (
+            <a
+              className="map-point-photo-link"
+              href={selectedDetails.photo}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <img
+                className="map-point-photo"
+                src={selectedDetails.photo}
+                alt={`Фото: ${app.selectedPoint.name}`}
+                loading="lazy"
+              />
+              <span>Открыть фото точки</span>
+            </a>
+          )}
+          {(selectedDetails?.parking || selectedDetails?.walking) && (
+            <dl className="map-point-access">
+              {selectedDetails.parking && (
+                <>
+                  <dt>Парковка</dt>
+                  <dd>{selectedDetails.parking}</dd>
+                </>
+              )}
+              {selectedDetails.walking && (
+                <>
+                  <dt>Пешком</dt>
+                  <dd>{selectedDetails.walking}</dd>
+                </>
+              )}
+            </dl>
+          )}
           <ActionGroup className="point-buttons">
             <Button
               id="favoritePointBtn"
@@ -225,8 +304,8 @@ export default function MapView({
               className="button primary"
               onClick={() =>
                 openCustomSchemeWithFallback(
-                  `mapsme://?ll=${app.selectedPoint.lat},${app.selectedPoint.lon}`,
-                  `https://maps.me/${app.selectedPoint.lat},${app.selectedPoint.lon}`,
+                  mapsMeLink(app.selectedPoint),
+                  mapsMeFallbackForPoint(app.selectedPoint),
                 )
               }
             >

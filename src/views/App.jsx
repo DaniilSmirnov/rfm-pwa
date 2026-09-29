@@ -23,7 +23,9 @@ import RaceMedia from '../components/RaceMedia.jsx';
 import CrewResults from '../components/CrewResults.jsx';
 import BootDiagnostics from '../modals/BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
+import { selectedPackage } from '../app/rally-context.js';
 import RacesView from './RacesView.jsx';
+import MoreSectionView from './MoreSectionView.jsx';
 
 const tabs = [
   { key: 'today', label: 'Сегодня', Icon: CalendarDays },
@@ -210,8 +212,24 @@ export default function App() {
             activate('map');
           }}
         />
+      ) : moreScreen !== 'menu' ? (
+        <MoreSectionView
+          sectionId={moreScreen}
+          app={app}
+          onBack={returnToMoreMenu}
+          onOpenResults={() => activate('results')}
+          onOpenDiagnostics={() => setDiagnosticsOpen(true)}
+        />
       ) : (
-        <MoreMenu onSettings={openSettings} onRaces={() => setMoreScreen('races')} />
+        <MoreMenu
+          app={app}
+          onSettings={openSettings}
+          onRaces={() => setMoreScreen('races')}
+          onOpenSection={setMoreScreen}
+          onNotifications={openSettings}
+          onTheme={openSettings}
+          onDiagnostics={() => setDiagnosticsOpen(true)}
+        />
       )
     ) : null;
 
@@ -226,7 +244,10 @@ export default function App() {
         installPrompt={<PwaInstallPrompt active={tab === 'today'} />}
         screenContent={screenContent}
         updateMessage={updateMessage}
-        onSelectRally={id => app.selectPackage(id)}
+        onSelectRally={id => {
+          const selected = selectedPackage(app.packages, id);
+          if (selected) void app.selectPackage(selected.id);
+        }}
         mapContent={<RallyMap app={app} onRouteClick={setSelectedRoute} />}
         pointListContent={<PointList app={app} />}
         favoritesContent={<FavoritesList app={app} />}

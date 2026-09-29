@@ -13,7 +13,7 @@
   }
 }
 @layer modals {
-  .crew-results-dialog {
+  dialog.crew-results-dialog {
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -30,13 +30,13 @@
   }
 }
 @layer modals {
-  .crew-results-dialog[open] {
+  dialog.crew-results-dialog[open] {
     display: flex;
     flex-direction: column;
   }
 }
 @layer modals {
-  .crew-results-dialog::backdrop {
+  dialog.crew-results-dialog::backdrop {
     background: rgba(0, 0, 0, 0.62);
   }
 }
@@ -176,7 +176,7 @@
 }
 @layer responsive {
   @media (max-width: 560px) {
-    .crew-results-dialog {
+    dialog.crew-results-dialog {
       padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
         max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     }
@@ -190,7 +190,7 @@
   }
 }
 @layer theme {
-  :root[data-theme='dark'] .crew-results-dialog {
+  :root[data-theme='dark'] dialog.crew-results-dialog {
     background: #111418;
     color: #f5f7fa;
   }
@@ -212,5 +212,52 @@
   :root[data-theme='dark'] .crew-results-empty,
   :root[data-theme='dark'] .crew-results-more {
     color: #9aa0a9;
+  }
+}
+
+@layer components {
+  .crew-results-inline {
+    min-width: 0;
+    margin-top: 18px;
+  }
+  .crew-results-inline .crew-results-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 10px 0;
+    background: var(--surface, #fff);
+  }
+  .crew-results-inline .crew-results-table-wrap {
+    max-height: min(65vh, 720px);
+  }
+  .crew-results-inline .crew-results-priority-note {
+    margin: 8px 0 0;
+  }
+  .crew-details-toggle {
+    margin-top: 5px;
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+  .crew-stage-details td {
+    background: rgba(100, 116, 139, 0.07);
+  }
+  .crew-stage-details ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 5px 18px;
+    margin: 8px 0 0;
+    padding-left: 22px;
+  }
+  .crew-stage-details li {
+    padding-right: 10px;
+  }
+  .crew-stage-details li span:last-child {
+    float: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+@layer theme {
+  :root[data-theme='dark'] .crew-results-inline .crew-results-toolbar {
+    background: var(--surface, #111418);
   }
 }
