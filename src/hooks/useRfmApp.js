@@ -236,7 +236,11 @@ export function useRfmApp() {
         mapTiles: maps.count,
         durationMs: Math.round(performance.now() - started),
       });
-      const currentId = preferredId || currentPackage?.id;
+      let rememberedId = null;
+      try {
+        rememberedId = localStorage.getItem('rfm.selected-rally-id');
+      } catch {}
+      const currentId = preferredId || currentPackage?.id || rememberedId;
       if (currentId) {
         const next = pkgs.find(p => p.id === currentId) || null;
         setCurrentPackage(next);
@@ -352,6 +356,13 @@ export function useRfmApp() {
   useEffect(() => {
     if (!currentPackage && visiblePackages[0]) setCurrentPackage(visiblePackages[0]);
   }, [currentPackage, visiblePackages]);
+
+  useEffect(() => {
+    if (!currentPackage?.id) return;
+    try {
+      localStorage.setItem('rfm.selected-rally-id', String(currentPackage.id));
+    } catch {}
+  }, [currentPackage?.id]);
 
   const importFiles = useCallback(
     async files => {

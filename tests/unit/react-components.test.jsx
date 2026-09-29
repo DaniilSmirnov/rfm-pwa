@@ -344,6 +344,15 @@ afterEach(() => {
 });
 
 describe('application components', () => {
+  it('provides race management and settings destinations from More', () => {
+    const onRaces = vi.fn();
+    const onSettings = vi.fn();
+    render(<MoreMenu onRaces={onRaces} onSettings={onSettings} />);
+    fireEvent.click(screen.getByRole('button', { name: /Гонки и Rally Pack/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
+    expect(onRaces).toHaveBeenCalledOnce();
+    expect(onSettings).toHaveBeenCalledOnce();
+  });
   it('renders app chrome, catalog, and install prompt states', async () => {
     render(
       <>

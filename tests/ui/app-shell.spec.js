@@ -7,6 +7,11 @@ const release = {
   ...JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')),
 };
 
+async function openRaceManagement(page) {
+  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
+}
+
 test.describe('app shell and catalog', () => {
   test('renders product identity and version', async ({ page }) => {
     await openApp(page);
@@ -36,14 +41,14 @@ test.describe('app shell and catalog', () => {
 
   test('shows only closest race by default', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogList')).toContainText(raceFixture.name);
     await expect(page.locator('#catalogList')).not.toContainText(secondRace.name);
   });
 
   test('catalog search reveals races outside week window', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await page.getByPlaceholder('Название гонки или этап…').fill('Пермь');
     await expect(page.locator('#catalogList')).toContainText(secondRace.name);
     await expect(page.locator('#catalogList')).toContainText('Пермь');
@@ -51,7 +56,7 @@ test.describe('app shell and catalog', () => {
 
   test('catalog search can find by race name', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await page.getByPlaceholder('Название гонки или этап…').fill('Far Future');
     await expect(page.locator('.catalog-row')).toHaveCount(1);
     await expect(page.locator('.catalog-row')).toContainText(secondRace.name);
@@ -59,14 +64,14 @@ test.describe('app shell and catalog', () => {
 
   test('catalog search shows empty state', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await page.getByPlaceholder('Название гонки или этап…').fill('does-not-exist');
     await expect(page.locator('#catalogList')).toContainText('Ничего не найдено');
   });
 
   test('manual import section is available', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.getByText('Импортировать гонку из файла')).toBeVisible();
     await expect(page.locator('label[for="racesFileInput"]')).toContainText(
       'Выбрать JSON или GeoJSON',
@@ -80,9 +85,9 @@ test.describe('app shell and catalog', () => {
     await expect(page.locator('#mapSubtitle')).toContainText('Выбери сохранённую гонку');
   });
 
-  test('opens the race catalog in the Races tab', async ({ page }) => {
+  test('opens the race catalog from More', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('2 гонок');
     await expect(page.locator('#catalogList')).toContainText(raceFixture.name);
   });

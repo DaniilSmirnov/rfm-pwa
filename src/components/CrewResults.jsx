@@ -31,7 +31,7 @@ const resultLabel = result =>
     .join(' / ') || `Экипаж № ${result?.crew?.number || '—'}`;
 const subscriptionKey = (raceId, crewId) => `${raceId}:${crewId}`;
 
-export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
+export default function CrewResults({ pkg, open = false, onOpen, onClose, standalone = false }) {
   const asmgRaceId = String(
     pkg?.asmgRaceId ?? pkg?.original?.asmg_id ?? pkg?.original?.asmgId ?? '55',
   );
@@ -181,7 +181,11 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
   const selectedClassResults = filterCrewResultsByClass(activeView?.results, className);
   return (
     <>
-      <section className="crew-results-section" hidden aria-labelledby="crewResultsTitle">
+      <section
+        className="crew-results-section"
+        hidden={!standalone}
+        aria-labelledby="crewResultsTitle"
+      >
         <SectionHeader>
           <div>
             <div id="crewResultsTitle" className="block-title">
