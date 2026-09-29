@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import MapView from '../../src/views/MapView.jsx';
 import { getCrewSubscriptions } from '../../src/db.js';
 
@@ -77,6 +77,10 @@ describe('MapView enhancements', () => {
         }}
       />,
     );
+    expect(screen.getByRole('button', { name: 'Инструменты карты' })).toBeTruthy();
+    expect(document.getElementById('mapToolsDrawer').hidden).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Показать детали' }));
     expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
     expect(screen.getByText('700 м')).toBeTruthy();
@@ -137,6 +141,8 @@ describe('MapView enhancements', () => {
     };
     render(<MapView app={app} mapContent={<span>Карта</span>} />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
+
     const followed = await screen.findByRole('region', { name: 'Избранные экипажи' });
     expect(followed.textContent).toContain('2. № 8 · Иванов Иван');
     expect(followed.textContent).toContain('отставание 00:00:10:0');
@@ -184,6 +190,8 @@ describe('MapView enhancements', () => {
         mapContent={<span>Карта</span>}
       />,
     );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Показать детали' }));
 
     expect(await screen.findByRole('region', { name: 'Следующие экипажи на этапе' })).toBeTruthy();
     expect(

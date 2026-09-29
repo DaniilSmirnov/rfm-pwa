@@ -609,3 +609,265 @@
   color: var(--muted, #667085);
   font-size: 0.9rem;
 }
+
+/* Full-screen map composition from the rally design. */
+@layer views {
+  body[data-active-tab='map'] {
+    overflow: hidden;
+  }
+  body[data-active-tab='map'] .topbar {
+    display: none;
+  }
+  body[data-active-tab='map'] main {
+    display: block;
+    position: static;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  body[data-active-tab='map'] #reactRoot,
+  body[data-active-tab='map'] #reactShell {
+    padding: 0;
+  }
+  body[data-active-tab='map'] .bottom-tabbar {
+    z-index: 60;
+  }
+  .map-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    width: 100%;
+    height: 100dvh;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: #e9edf0;
+  }
+  .map-screen > .map {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .map-screen .map-engine,
+  .map-screen .map svg,
+  .map-screen .map .maplibregl-map {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  .map-floating-header {
+    position: absolute;
+    z-index: 5;
+    top: calc(10px + var(--safe-top));
+    left: max(14px, var(--safe-left));
+    right: max(14px, var(--safe-right));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 15px;
+    border: 1px solid rgba(25, 34, 42, 0.08);
+    border-radius: 17px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 4px 18px rgba(24, 38, 48, 0.16);
+    color: #1b252d;
+  }
+  .map-rally-picker {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+  }
+  .map-brand {
+    color: #697780;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+  .map-rally-picker strong,
+  .map-rally-picker select {
+    max-width: min(68vw, 430px);
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 15px;
+    font-weight: 750;
+  }
+  .map-rally-picker select {
+    outline-offset: 3px;
+  }
+  .map-subtitle {
+    overflow: hidden;
+    color: #6c7880;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .map-header-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    color: #6c7880;
+    font-size: 11px;
+  }
+  .map-header-status i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #969da2;
+  }
+  .map-header-status i.is-online {
+    background: #29a66a;
+  }
+  .map-tools-toggle {
+    position: absolute;
+    z-index: 6;
+    top: calc(102px + var(--safe-top));
+    right: max(14px, var(--safe-right));
+    min-height: 40px;
+    padding: 0 13px;
+    border: 1px solid rgba(25, 34, 42, 0.12);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(24, 38, 48, 0.14);
+    color: #27333b;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .map-tools-drawer {
+    position: absolute;
+    z-index: 15;
+    top: calc(151px + var(--safe-top));
+    right: max(12px, var(--safe-right));
+    bottom: calc(78px + var(--safe-bottom));
+    width: min(440px, calc(100vw - 24px));
+    overflow: auto;
+    padding: 16px;
+    border: 1px solid rgba(25, 34, 42, 0.1);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 32px rgba(24, 38, 48, 0.22);
+  }
+  .map-tools-drawer[hidden] {
+    display: none;
+  }
+  .map-tools-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .map-point-sheet {
+    position: absolute;
+    z-index: 10;
+    right: max(12px, var(--safe-right));
+    bottom: calc(78px + var(--safe-bottom));
+    left: max(12px, var(--safe-left));
+    max-height: min(48dvh, 450px);
+    overflow: auto;
+    margin: 0 auto;
+    width: min(620px, calc(100% - 24px));
+    padding: 12px;
+    border: 1px solid rgba(25, 34, 42, 0.1);
+    border-radius: 19px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(24, 38, 48, 0.24);
+  }
+  .map-point-sheet .point-actions-copy {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    gap: 3px 11px;
+  }
+  .map-point-sheet-photo {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    width: 74px;
+    height: 74px;
+    border-radius: 12px;
+    object-fit: cover;
+  }
+  .map-point-sheet-photo-link {
+    grid-column: 1;
+    grid-row: 1 / 4;
+  }
+  .map-point-sheet .eyebrow {
+    grid-column: 2 / 4;
+    color: #76828a;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+  .map-point-sheet #pointName {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 15px;
+  }
+  .map-point-sheet-meta {
+    grid-column: 2;
+    grid-row: 3;
+    color: #6c7880;
+    font-size: 11px;
+  }
+  .map-point-details-toggle {
+    grid-column: 3;
+    grid-row: 2 / 4;
+    min-height: 38px;
+    padding: 0 10px;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .map-point-sheet-details[hidden] {
+    display: none;
+  }
+  .map-point-sheet-details {
+    display: grid;
+    gap: 10px;
+    padding-top: 12px;
+  }
+  .map-point-sheet .point-buttons {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .map-point-sheet .point-buttons .button {
+    min-height: 38px;
+  }
+  .map-point-sheet .map-point-next-crews,
+  .map-point-sheet .map-point-stage-results,
+  .map-point-sheet .map-favorite-etas {
+    padding: 10px;
+    border-radius: 12px;
+    background: #f5f7f8;
+  }
+  @media (max-width: 600px) {
+    .map-point-sheet {
+      bottom: calc(72px + var(--safe-bottom));
+      width: auto;
+      max-height: 38dvh;
+    }
+    .map-tools-toggle {
+      top: calc(102px + var(--safe-top));
+      right: max(14px, var(--safe-right));
+      bottom: auto;
+    }
+    .map-tools-drawer {
+      top: calc(151px + var(--safe-top));
+      bottom: calc(132px + var(--safe-bottom));
+      width: auto;
+    }
+    .map-point-sheet.is-expanded {
+      max-height: 58dvh;
+    }
+  }
+}
