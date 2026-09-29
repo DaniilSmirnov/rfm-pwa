@@ -124,4 +124,22 @@ describe('MoreSectionView', () => {
       screen.getByText('Сначала выбери гонку в шапке, чтобы открыть её разделы.'),
     ).toBeTruthy();
   });
+
+  it('shows an overlap schedule in Documents even when it is the only material', () => {
+    render(
+      <MoreSectionView
+        sectionId="documents"
+        app={{
+          currentPackage: {
+            name: 'Карелия',
+            original: { overlap_schedule: 'overlap.jpg' },
+            assetNames: ['overlap.jpg'],
+          },
+        }}
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('СХЕМА ПЕРЕКРЫТИЯ ТРАССЫ')).toBeTruthy();
+  });
 });

@@ -123,6 +123,13 @@ export default function RaceMedia({ pkg, sections = null }) {
       {include('documents') && extra.length > 0 && (
         <MediaSection title="МАТЕРИАЛЫ ГОНКИ" images={extra} onOpen={open} />
       )}
+      {include('documents') && race.overlap_schedule && (
+        <MediaSection
+          title="СХЕМА ПЕРЕКРЫТИЯ ТРАССЫ"
+          images={[race.overlap_schedule]}
+          onOpen={open}
+        />
+      )}
       {include('history') && (
         <CollapsibleSection
           className="race-material"
