@@ -63,6 +63,7 @@ function hasDocumentMaterials(pkg) {
   ]);
   return Boolean(
     original.mapsimg ||
+      original.overlap_schedule ||
       original.how_it_was ||
       (pkg?.assetNames || []).some(name => name && !known.has(name) && name !== 'name-pin.jpg'),
   );

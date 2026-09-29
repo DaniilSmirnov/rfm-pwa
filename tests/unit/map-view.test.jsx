@@ -3,6 +3,11 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import MapView from '../../src/views/MapView.jsx';
+import { getCrewSubscriptions } from '../../src/db.js';
+
+vi.mock('../../src/db.js', () => ({
+  getCrewSubscriptions: vi.fn().mockResolvedValue([]),
+}));
 
 describe('MapView enhancements', () => {
   it('renders stage status, source-backed point details, safety and offline guidance', () => {
@@ -25,6 +30,8 @@ describe('MapView enhancements', () => {
                 photo: 'https://example.com/photo.jpg',
                 parking: 'у трассы',
                 walking: '700 м',
+                description: 'Вид на прыжок',
+                rating: '4.8 / 5',
               },
               geometry: { type: 'Point', coordinates: [35, 60] },
             },
@@ -73,6 +80,8 @@ describe('MapView enhancements', () => {
     expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
     expect(screen.getByText('700 м')).toBeTruthy();
+    expect(screen.getByText('Вид на прыжок')).toBeTruthy();
+    expect(screen.getByText('Оценка точки: 4.8 / 5')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Фото: Зрительская зона' }).getAttribute('src')).toBe(
       'https://example.com/photo.jpg',
     );
@@ -85,5 +94,100 @@ describe('MapView enhancements', () => {
     expect(navButtons.indexOf('MAPS.ME')).toBeLessThan(navButtons.indexOf('Yandex Navigator'));
     expect(navButtons.indexOf('Yandex Navigator')).toBeLessThan(navButtons.indexOf('Google Maps'));
     expect(navButtons.indexOf('Google Maps')).toBeLessThan(navButtons.indexOf('Поделиться'));
+  });
+
+  it('shows followed crews on Map with overall place, gap and latest stage context', async () => {
+    getCrewSubscriptions.mockResolvedValueOnce([
+      { key: 'race-1:crew-8', raceId: 'race-1', crewId: 'crew-8', number: 8, name: 'Экипаж 8' },
+    ]);
+    const app = {
+      currentPackage: {
+        id: 'race-1',
+        raceId: 'race-1',
+        name: 'Rally',
+        crewResults: {
+          eventResults: [
+            {
+              specialStage: { name: 'СУ 1' },
+              results: [
+                { crew: { id: 'crew-4', number: 4 }, time: 100000 },
+                {
+                  crew: {
+                    id: 'crew-8',
+                    number: 8,
+                    pilot: { lastName: 'Иванов', firstName: 'Иван' },
+                  },
+                  time: 110000,
+                  formattedTime: '00:00:11:0',
+                },
+              ],
+            },
+          ],
+        },
+        original: {},
+      },
+      mapSubtitle: '',
+      favorites: [],
+      mapUi: { disabled: true, button: '', status: '' },
+      terrainUi: { disabled: true, button: '', status: '' },
+      carPoint: null,
+      requestLocation: vi.fn(),
+      exportGpx: vi.fn(),
+      exportGeoJson: vi.fn(),
+    };
+    render(<MapView app={app} mapContent={<span>Карта</span>} />);
+
+    const followed = await screen.findByRole('region', { name: 'Избранные экипажи' });
+    expect(followed.textContent).toContain('2. № 8 · Иванов Иван');
+    expect(followed.textContent).toContain('отставание 00:00:10:0');
+    expect(followed.textContent).toContain('СУ 1: 00:00:11:0');
+  });
+
+  it('shows published crew start times for a selected spectator point and labels them as starts', async () => {
+    const tomorrow = new Date(Date.now() + 86400000);
+    const date = new Intl.DateTimeFormat('ru-RU', {
+      timeZone: 'Europe/Moscow',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(tomorrow);
+    const app = {
+      currentPackage: {
+        id: 'race-1',
+        original: {
+          schedule: [
+            {
+              location: 'СУ 1',
+              date,
+              events: [{ time: '12:00', text: 'Старт экипажа', crewNumber: 12 }],
+            },
+          ],
+        },
+      },
+      selectedPoint: { lat: 60, lon: 35, name: 'Точка' },
+      mapSubtitle: '',
+      favorites: [],
+      mapUi: { disabled: true, button: '', status: '' },
+      terrainUi: { disabled: true, button: '', status: '' },
+      carPoint: null,
+      requestLocation: vi.fn(),
+      exportGpx: vi.fn(),
+      exportGeoJson: vi.fn(),
+    };
+    render(
+      <MapView
+        app={app}
+        pointStageDistance={{
+          stage: { name: 'СУ 1' },
+          distance: { fromStart: 500, toFinish: 500 },
+        }}
+        mapContent={<span>Карта</span>}
+      />,
+    );
+
+    expect(await screen.findByRole('region', { name: 'Следующие экипажи на этапе' })).toBeTruthy();
+    expect(
+      screen.getByText(/Время старта опубликовано организатором.*ETA не рассчитывается\./),
+    ).toBeTruthy();
   });
 });

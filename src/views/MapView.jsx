@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
 import {
@@ -10,7 +10,13 @@ import {
 } from '../navigation.js';
 import { isFavoritePoint } from '../app/local-points.js';
 import { formatDistance } from '../app/geo.js';
-import { stageMapStatuses, pointFeatureDetails } from '../app/map-details.js';
+import {
+  stageMapStatuses,
+  pointFeatureDetails,
+  scheduledStageCrews,
+  formatRallyTimeOfDay,
+  stagePointResults,
+} from '../app/map-details.js';
 import { mapsMeLink } from '../navigation.js';
 import OfflineMapActions from '../components/OfflineMapActions.jsx';
 import Panel from '../components/Panel.jsx';
@@ -18,6 +24,8 @@ import SectionHeader from '../components/SectionHeader.jsx';
 import CollapsibleSection from '../components/CollapsibleSection.jsx';
 import ElevationProfile from '../components/ElevationProfile.jsx';
 import CompassReadout from '../components/CompassReadout.jsx';
+import { getCrewSubscriptions } from '../db.js';
+import { crewName, overallCrewResults } from '../app/crew-results.js';
 import '../components/MapView.css';
 
 const mapsMeFallbackForPoint = point => `https://maps.me/${point.lat},${point.lon}`;
@@ -32,11 +40,65 @@ export default function MapView({
   mapContent,
 }) {
   const [compassOpen, setCompassOpen] = useState(false);
+  const [crewSubscriptions, setCrewSubscriptions] = useState([]);
   const pkg = app.currentPackage;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
   const selectedDetails =
     pkg && app.selectedPoint ? pointFeatureDetails(pkg, app.selectedPoint) : null;
+  const scheduledCrews =
+    pkg && pointStageDistance
+      ? scheduledStageCrews(
+          pkg,
+          pointStageDistance.stage?.name,
+          new Date(),
+          pointStageDistance.distance?.fromStart,
+        )
+      : [];
+  const nextStageCrews = scheduledCrews.slice(0, 3);
+  const pointStageResults =
+    pkg && pointStageDistance ? stagePointResults(pkg, pointStageDistance.stage?.name) : null;
+  useEffect(() => {
+    let alive = true;
+    Promise.resolve()
+      .then(() => getCrewSubscriptions())
+      .then(items => {
+        if (alive) setCrewSubscriptions(Array.isArray(items) ? items : []);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [pkg?.id]);
+  const raceKey = String(pkg?.raceId || pkg?.original?.id || pkg?.id || '');
+  const asmgKey = String(pkg?.asmgRaceId || pkg?.original?.asmg_id || pkg?.original?.asmgId || '');
+  const followed = crewSubscriptions
+    .filter(item => item.raceId === raceKey || (asmgKey && item.asmgRaceId === asmgKey))
+    .map(item => ({ id: item.crewId, number: item.number, name: item.name }));
+  const overallResults = overallCrewResults(pkg?.crewResults?.eventResults);
+  const followedResults = followed
+    .map(favorite => ({
+      favorite,
+      position: overallResults.findIndex(result =>
+        [result.crew?.id, result.crew?.number].some(
+          value => String(value) === String(favorite.id || favorite.number),
+        ),
+      ),
+    }))
+    .filter(item => item.position >= 0)
+    .map(item => ({ ...item, result: overallResults[item.position] }));
+  const followedEtas = followedResults
+    .map(item => ({
+      ...item,
+      scheduled: scheduledCrews.find(crew =>
+        [crew.id, crew.number].some(value =>
+          [item.favorite.id, item.favorite.number].some(
+            favoriteId => String(value) === String(favoriteId),
+          ),
+        ),
+      ),
+    }))
+    .filter(item => item.scheduled?.eta);
   const openYandex = point =>
     openCustomSchemeWithFallback(yandexNavigatorLink(point), yandexWebFallback(point));
   const copyPoint = async point => {
@@ -178,6 +240,35 @@ export default function MapView({
           </p>
         </section>
       )}
+      {followedResults.length > 0 && (
+        <section className="map-followed-crews" aria-label="Избранные экипажи">
+          <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
+          {followedResults.map(({ favorite, position, result }) => {
+            const stage = pkg.crewResults?.eventResults?.at(-1);
+            const stageResult = stage?.results?.find(row =>
+              [row.crew?.id, row.crew?.number].some(
+                value => String(value) === String(favorite.id || favorite.number),
+              ),
+            );
+            return (
+              <article className="map-followed-crew" key={favorite.id || favorite.number}>
+                <strong>
+                  {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
+                  {crewName(result.crew) || favorite.name}
+                </strong>
+                <span>
+                  {result.formattedTime} ·{' '}
+                  {result.formattedFromLeader === '00:00:00:0'
+                    ? 'лидер'
+                    : `отставание ${result.formattedFromLeader}`}
+                  {stage?.specialStage?.name &&
+                    ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
+                </span>
+              </article>
+            );
+          })}
+        </section>
+      )}
       <div className="map-field-notice" role="note">
         <strong>Безопасность и офлайн</strong>
         <span>
@@ -290,6 +381,61 @@ export default function MapView({
                 </>
               )}
             </dl>
+          )}
+          {(selectedDetails?.description || selectedDetails?.rating) && (
+            <div className="map-point-description">
+              {selectedDetails.description && <p>{selectedDetails.description}</p>}
+              {selectedDetails.rating && <p>Оценка точки: {selectedDetails.rating}</p>}
+            </div>
+          )}
+          {nextStageCrews.length > 0 && (
+            <section className="map-point-next-crews" aria-label="Следующие экипажи на этапе">
+              <strong>Следующие старты на {pointStageDistance.stage.name}</strong>
+              <ol>
+                {nextStageCrews.map(crew => (
+                  <li key={crew.id}>
+                    {crew.number ? `№ ${crew.number}` : crew.name} · старт {crew.time}
+                    {crew.eta &&
+                      ` · ориентировочное прибытие около ${formatRallyTimeOfDay(crew.eta, pkg)}`}
+                  </li>
+                ))}
+              </ol>
+              <small>
+                {nextStageCrews.some(crew => crew.eta)
+                  ? 'Старт опубликован организатором. Прибытие рассчитано по среднему темпу экипажей с результатом на этом СУ; оценка дана без live GPS.'
+                  : 'Время старта опубликовано организатором. Данных о темпе на этом СУ пока нет, ETA не рассчитывается.'}
+              </small>
+            </section>
+          )}
+          {pointStageResults && (
+            <section className="map-point-stage-results" aria-label="Результаты этапа у точки">
+              <strong>Обстановка на {pointStageDistance.stage.name}</strong>
+              <p>
+                По опубликованному протоколу СУ завершили экипажей:{' '}
+                {pointStageResults.completedCount}.
+              </p>
+              {pointStageResults.bestResult && (
+                <p>
+                  Лучший результат: № {pointStageResults.bestResult.crew?.number || '—'}{' '}
+                  {crewName(pointStageResults.bestResult.crew)} ·{' '}
+                  {pointStageResults.bestResult.formattedTime || 'время не отформатировано'}
+                </p>
+              )}
+              <small>
+                Отдельные отметки времени прохождения этой зрительской точки не опубликованы.
+              </small>
+            </section>
+          )}
+          {followedEtas.length > 0 && (
+            <section className="map-favorite-etas" aria-label="Оценка избранных экипажей">
+              <strong>Избранные экипажи · оценка у точки</strong>
+              {followedEtas.map(({ favorite, scheduled }) => (
+                <p key={favorite.id || favorite.number}>
+                  № {scheduled.number || favorite.number} · около{' '}
+                  {formatRallyTimeOfDay(scheduled.eta, pkg)}
+                </p>
+              ))}
+            </section>
           )}
           <ActionGroup className="point-buttons">
             <Button

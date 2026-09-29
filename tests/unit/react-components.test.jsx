@@ -31,6 +31,8 @@ const mocks = vi.hoisted(() => ({
   requestCrewResultsBackgroundRefresh: vi.fn(),
   bootSnapshot: vi.fn(),
   collectStorageDiagnostics: vi.fn(),
+  loadErudaVisibility: vi.fn(),
+  setErudaVisible: vi.fn(),
   markBoot: vi.fn(),
   hasSafetyConsent: vi.fn(),
   saveSafetyConsent: vi.fn(),
@@ -86,6 +88,10 @@ vi.mock('../../src/app/boot-diagnostics.js', () => ({
   collectStorageDiagnostics: mocks.collectStorageDiagnostics,
   markBoot: mocks.markBoot,
 }));
+vi.mock('../../src/app/eruda.js', () => ({
+  loadErudaVisibility: mocks.loadErudaVisibility,
+  setErudaVisible: mocks.setErudaVisible,
+}));
 vi.mock('../../src/app/safety-consent.js', () => ({
   hasSafetyConsent: mocks.hasSafetyConsent,
   saveSafetyConsent: mocks.saveSafetyConsent,
@@ -122,7 +128,13 @@ import AppLayout from '../../src/views/AppLayout.jsx';
 import MapView from '../../src/views/MapView.jsx';
 import RaceDetails from '../../src/views/RaceDetails.jsx';
 import SettingsView from '../../src/views/SettingsView.jsx';
-import TodayView, { nextScheduledCrew } from '../../src/views/TodayView.jsx';
+import TodayView, {
+  countdownLabel,
+  currentScheduledCrew,
+  latestPositionChange,
+  nextProgramItem,
+  nextScheduledCrew,
+} from '../../src/views/TodayView.jsx';
 import App from '../../src/views/App.jsx';
 import BootDiagnostics from '../../src/modals/BootDiagnostics.jsx';
 import CrewResultsModal from '../../src/modals/CrewResultsModal.jsx';
@@ -336,6 +348,8 @@ beforeEach(() => {
     storage: null,
   });
   mocks.collectStorageDiagnostics.mockResolvedValue({});
+  mocks.loadErudaVisibility.mockReturnValue(false);
+  mocks.setErudaVisible.mockResolvedValue(true);
   mocks.hasSafetyConsent.mockReturnValue(true);
 });
 afterEach(() => {
@@ -753,7 +767,85 @@ describe('application components', () => {
       expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
         'Пилот Иван',
       );
+      expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
+        '1. № 12',
+      );
+      expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
+        'лидер',
+      );
+      expect(screen.getByRole('region', { name: 'Избранные экипажи' }).textContent).toContain(
+        'СУ 1: 00:01:30:0',
+      );
     });
+  });
+
+  it('keeps an explicitly live stage visible after its scheduled start time', () => {
+    const pkg = {
+      original: {
+        schedule: [
+          {
+            location: 'СУ 1',
+            date: todayDate,
+            events: [{ time: '10:00', text: 'Старт СУ 1', state: 'live', crewNumber: 12 }],
+          },
+          {
+            location: 'СУ 2',
+            date: todayDate,
+            events: [{ time: '20:00', text: 'Открытие дороги' }],
+          },
+        ],
+      },
+    };
+    const active = nextProgramItem(pkg, new Date('2026-09-29T15:00:00.000Z'));
+    expect(active.event.text).toBe('Старт СУ 1');
+    expect(currentScheduledCrew(pkg).row.crewNumber).toBe(12);
+    expect(countdownLabel(pkg, new Date('2026-09-29T05:00:00.000Z'), 2)).toContain(
+      'До старта 0 дн. 2 ч.',
+    );
+
+    const livePackage = {
+      ...race,
+      original: {
+        ...race.original,
+        schedule: [
+          {
+            location: 'СУ 1',
+            date: todayDate,
+            events: [{ time: '10:00', text: 'Старт СУ 1', state: 'live', crewNumber: 12 }],
+          },
+        ],
+      },
+    };
+    render(
+      <TodayView app={appFixture({ currentPackage: livePackage, packages: [livePackage] })} />,
+    );
+    expect(screen.getByText('Текущий экипаж:')).toBeTruthy();
+  });
+
+  it('summarizes a published crew position change between the latest two stages', () => {
+    const results = [
+      {
+        specialStage: { name: 'СУ 1' },
+        results: [
+          { crew: { id: 'a', number: 1 }, time: 1000 },
+          { crew: { id: 'b', number: 2 }, time: 1100 },
+        ],
+      },
+      {
+        specialStage: { name: 'СУ 2' },
+        results: [
+          { crew: { id: 'b', number: 2 }, time: 500 },
+          { crew: { id: 'a', number: 1 }, time: 1100 },
+        ],
+      },
+    ];
+    expect(latestPositionChange(results)).toEqual({
+      crew: { id: 'b', number: 2 },
+      from: 2,
+      to: 1,
+      stage: 'СУ 2',
+    });
+    expect(latestPositionChange(results.slice(0, 1))).toBeNull();
   });
 
   it('offers an upcoming catalog race and marks a downloaded race finished yesterday', () => {
@@ -841,6 +933,9 @@ describe('application components', () => {
       </>,
     );
     expect(screen.getByRole('dialog', { name: 'Boot diagnostics' })).toBeTruthy();
+    const erudaToggle = screen.getByRole('checkbox', { name: 'Показывать кнопку Eruda' });
+    fireEvent.click(erudaToggle);
+    await waitFor(() => expect(mocks.setErudaVisible).toHaveBeenCalledWith(true));
     fireEvent.click(screen.getByRole('button', { name: 'Проверить хранилище' }));
     await waitFor(() => expect(mocks.collectStorageDiagnostics).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }));

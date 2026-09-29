@@ -75,7 +75,14 @@ describe('inline results screen', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'По СУ' })[0]);
     const details = document.querySelector('[data-crew-details="1"]');
     expect(details).toBeTruthy();
-    expect(within(details).getByText('СУ 1')).toBeTruthy();
+    expect(within(details).getByText(/СУ 1 · место 1/)).toBeTruthy();
+    expect(within(details).getByText(/СУ 1 · место 1/)).toBeTruthy();
     expect(within(details).getByText('00:00:50')).toBeTruthy();
+    expect(within(details).getByText('От лидера: лидер')).toBeTruthy();
+    expect(
+      within(screen.getAllByRole('row').find(row => row.hasAttribute('data-crew-row'))).getByText(
+        'От лидера: лидер',
+      ),
+    ).toBeTruthy();
   });
 });

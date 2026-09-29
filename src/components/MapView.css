@@ -43,6 +43,22 @@
     color: #8b241d;
     background: #fde9e7;
   }
+  .map-stage-pill.is-live {
+    color: #8b241d;
+    background: #fde9e7;
+  }
+  .map-stage-pill.is-completed {
+    color: #126336;
+    background: #e2f4e8;
+  }
+  .map-stage-pill.is-changed {
+    color: #805500;
+    background: #fff2cc;
+  }
+  .map-stage-pill.is-expected {
+    color: #175cd3;
+    background: #eff8ff;
+  }
   .map-field-notice {
     display: grid;
     gap: 5px;
@@ -574,4 +590,22 @@
     background: #fff;
     clip-path: polygon(50% 0, 100% 100%, 50% 70%, 0 100%);
   }
+}
+.map-followed-crews {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line, #d9dee5);
+  border-radius: 0.75rem;
+}
+.map-followed-crew {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--line, #d9dee5);
+}
+.map-followed-crew span,
+.map-point-description {
+  color: var(--muted, #667085);
+  font-size: 0.9rem;
 }

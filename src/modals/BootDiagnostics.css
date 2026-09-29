@@ -102,6 +102,13 @@
       Menlo,
       monospace;
   }
+  .boot-diagnostics-eruda {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
 }
 @layer responsive {
   @media (max-width: 560px) {

@@ -19,10 +19,23 @@ function scheduleMoment(item, event, pkg) {
   return parseScheduleDateTime(item?.date, event?.time || item?.time, pkg);
 }
 
+function explicitStageState(item, event) {
+  const value = String(
+    item?.status || item?.state || item?.status_race || event?.status || event?.state || '',
+  ).toLocaleLowerCase('ru');
+  if (/live|ид[её]т|в эфире|актив/.test(value)) return { label: 'LIVE', kind: 'live' };
+  if (/заверш|оконч|состоял|прош|finished|completed/.test(value))
+    return { label: 'Завершён', kind: 'done' };
+  return { label: 'По расписанию', kind: 'planned' };
+}
+
 export function nextProgramItem(pkg, now = new Date()) {
   const events = asArray(pkg?.original?.schedule).flatMap(item =>
     asArray(item?.events).map(event => ({ item, event, moment: scheduleMoment(item, event, pkg) })),
   );
+  const liveEvents = events.filter(row => explicitStageState(row.item, row.event).kind === 'live');
+  if (liveEvents.length)
+    return liveEvents.sort((a, b) => (b.moment?.getTime() || 0) - (a.moment?.getTime() || 0))[0];
   return (
     events
       .filter(row => row.moment && row.moment.getTime() >= now.getTime())
@@ -49,14 +62,74 @@ export function nextScheduledCrew(pkg, now = new Date()) {
   );
 }
 
-function explicitStageState(item, event) {
-  const value = String(
-    item?.status || item?.state || item?.status_race || event?.status || event?.state || '',
-  ).toLocaleLowerCase('ru');
-  if (/live|ид[её]т|в эфире|актив/.test(value)) return { label: 'LIVE', kind: 'live' };
-  if (/заверш|оконч|состоял|прош|finished|completed/.test(value))
-    return { label: 'Завершён', kind: 'done' };
-  return { label: 'По расписанию', kind: 'planned' };
+export function currentScheduledCrew(pkg) {
+  const rows = asArray(pkg?.original?.schedule).flatMap(item =>
+    [...asArray(item?.crews), ...asArray(item?.starts), ...asArray(item?.events)].map(row => ({
+      item,
+      row,
+    })),
+  );
+  return (
+    rows.find(
+      ({ item, row }) =>
+        explicitStageState(item, row).kind === 'live' &&
+        (row?.crew || row?.crewNumber || row?.number),
+    ) || null
+  );
+}
+
+export function countdownLabel(pkg, now, fallbackDays) {
+  const upcomingStarts = asArray(pkg?.original?.schedule)
+    .flatMap(item =>
+      asArray(item?.events)
+        .filter(event => {
+          if (/^(?:race[-_ ]?)?start|first[-_ ]?start$/i.test(String(event?.kind || '')))
+            return true;
+          const text = `${event?.text || ''} ${event?.kind || ''} ${item?.location || ''}`
+            .toLocaleLowerCase('ru')
+            .replace(/ё/g, 'е');
+          return /перв(?:ый|ого)\s+старт|(?:су|ss)\s*1.*старт|старт.*(?:су|ss)\s*1|официальн(?:ый|ого)\s+старт|начал[оа]\s+(?:ралли|соревнован)|rally\s+start|start\s+(?:ss\s*1|stage\s*1)/i.test(
+            text,
+          );
+        })
+        .map(event => scheduleMoment(item, event, pkg))
+        .filter(Boolean),
+    )
+    .filter(moment => moment >= now)
+    .sort((a, b) => a - b);
+  const start = upcomingStarts[0];
+  if (!start) return `До начала примерно ${Math.max(1, Math.round(fallbackDays))} дн.`;
+  const remainingHours = Math.max(0, Math.floor((start.getTime() - now.getTime()) / 3600000));
+  const days = Math.floor(remainingHours / 24);
+  const hours = remainingHours % 24;
+  return `До старта ${days} дн. ${hours} ч.`;
+}
+
+export function latestPositionChange(eventResults) {
+  if (!Array.isArray(eventResults) || eventResults.length < 2) return null;
+  const previous = overallCrewResults(eventResults.slice(0, -1));
+  const current = overallCrewResults(eventResults);
+  const previousPlaces = new Map(
+    previous.map((row, index) => [String(row?.crew?.id || row?.crew?.number || ''), index + 1]),
+  );
+  return (
+    current
+      .map((row, index) => {
+        const key = String(row?.crew?.id || row?.crew?.number || '');
+        const before = previousPlaces.get(key);
+        const place = index + 1;
+        return before && before !== place
+          ? {
+              crew: row.crew,
+              from: before,
+              to: place,
+              stage: eventResults.at(-1)?.specialStage?.name,
+            }
+          : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.from - b.to - (a.from - a.to))[0] || null
+  );
 }
 
 function updateSummary(pkg) {
@@ -199,7 +272,8 @@ export default function TodayView({ app, onMap, onResults }) {
   const nextProgram = nextProgramItem(todayPackage, now);
   const program = nextProgram || null;
   const stageState = explicitStageState(program?.item, program?.event);
-  const nextCrew = nextScheduledCrew(todayPackage, now);
+  const currentCrew = currentScheduledCrew(todayPackage);
+  const nextCrew = currentCrew || nextScheduledCrew(todayPackage, now);
   const changes = updateSummary(todayPackage);
   const offline = offlineLabel(app, todayPackage, raceId);
   const raceKey = String(todayPackage.raceId || todayPackage.original?.id || todayPackage.id);
@@ -222,17 +296,28 @@ export default function TodayView({ app, onMap, onResults }) {
   const favoriteRows = favoriteCrews
     .map(favorite => ({
       favorite,
-      result: overall.find(row =>
+      position: overall.findIndex(row =>
         [row.crew?.id, row.crew?.number].some(
           value => String(value) === String(favorite.id || favorite.number),
         ),
       ),
     }))
-    .filter(row => row.result);
+    .filter(row => row.position >= 0)
+    .map(row => {
+      const result = overall[row.position];
+      const stage = todayPackage.crewResults?.eventResults?.at(-1);
+      const stageResult = stage?.results?.find(item =>
+        [item.crew?.id, item.crew?.number].some(
+          value => String(value) === String(row.favorite.id || row.favorite.number),
+        ),
+      );
+      return { ...row, result, stage, stageResult };
+    });
   const latestResults = asArray(todayPackage.crewResults?.eventResults).at(-1);
   const latestWinner = asArray(latestResults?.results)
     .filter(row => Number(row?.time) > 0 && !row?.goingOff && !row?.goingOffAfterSu)
     .sort((a, b) => Number(a.time) - Number(b.time))[0];
+  const positionChange = latestPositionChange(todayPackage.crewResults?.eventResults);
   return (
     <section className="today-screen">
       <article className="today-race-card" style={{ '--race-bg': `url('${assetUrl(image)}')` }}>
@@ -251,8 +336,7 @@ export default function TodayView({ app, onMap, onResults }) {
           <p>{todayPackage.summary?.dates || 'Расписание сохранено офлайн'}</p>
           {isUpcoming && distanceFromTodayDays(todayPackage, now) > 0 && (
             <p className="today-countdown">
-              До начала примерно {Math.max(1, Math.round(distanceFromTodayDays(todayPackage, now)))}{' '}
-              дн.
+              {countdownLabel(todayPackage, now, distanceFromTodayDays(todayPackage, now))}
             </p>
           )}
         </div>
@@ -297,7 +381,7 @@ export default function TodayView({ app, onMap, onResults }) {
         )}
         {nextCrew && (
           <p className="today-next-crew">
-            <strong>Следующий экипаж:</strong>{' '}
+            <strong>{currentCrew ? 'Текущий экипаж:' : 'Следующий экипаж:'}</strong>{' '}
             {nextCrew.row.crew?.name ||
               nextCrew.row.name ||
               nextCrew.row.pilot ||
@@ -322,14 +406,18 @@ export default function TodayView({ app, onMap, onResults }) {
       {favoriteRows.length > 0 && (
         <section className="today-card today-favorite-crews" aria-label="Избранные экипажи">
           <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
-          {favoriteRows.map(({ favorite, result }) => (
+          {favoriteRows.map(({ favorite, result, position, stage, stageResult }) => (
             <div className="today-favorite-row" key={favorite.id || favorite.number}>
               <strong>
-                № {result.crew?.number || favorite.number || '—'} ·{' '}
+                {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
                 {crewName(result.crew) || favorite.name}
               </strong>
               <span>
                 {result.discipline?.name || 'Общий зачёт'} · {result.formattedTime}
+                {result.formattedFromLeader &&
+                  ` · ${result.formattedFromLeader === '00:00:00:0' ? 'лидер' : `+${result.formattedFromLeader}`}`}
+                {stage?.specialStage?.name &&
+                  ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
               </span>
             </div>
           ))}
@@ -348,6 +436,13 @@ export default function TodayView({ app, onMap, onResults }) {
           <p className="muted small">
             Обновлено: {todayPackage.crewResults?.updatedAt || 'время обновления не указано'}
           </p>
+          {positionChange && (
+            <p>
+              {positionChange.stage ? `${positionChange.stage} · ` : ''}
+              {crewName(positionChange.crew) || `Экипаж № ${positionChange.crew?.number || '—'}`}:
+              место {positionChange.from} → {positionChange.to}
+            </p>
+          )}
         </section>
       )}
       {changes && (

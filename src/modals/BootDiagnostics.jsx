@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
 import { bootSnapshot, collectStorageDiagnostics, markBoot } from '../app/boot-diagnostics.js';
+import { loadErudaVisibility, setErudaVisible } from '../app/eruda.js';
 
 function describeDetail(detail) {
   if (detail == null) return '';
@@ -14,6 +15,7 @@ export default function BootDiagnostics({ open, onClose }) {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [storageError, setStorageError] = useState('');
+  const [erudaVisible, setErudaVisibleState] = useState(() => loadErudaVisibility());
   useEffect(() => {
     const update = () => setRevision(value => value + 1);
     window.addEventListener('rfm:boot-mark', update);
@@ -55,6 +57,15 @@ export default function BootDiagnostics({ open, onClose }) {
     link.download = `rfm-diagnostics-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const toggleEruda = async event => {
+    const visible = event.target.checked;
+    setErudaVisibleState(visible);
+    try {
+      await setErudaVisible(visible);
+    } catch {
+      setErudaVisibleState(false);
+    }
   };
 
   return (
@@ -116,6 +127,10 @@ export default function BootDiagnostics({ open, onClose }) {
                 : '\nЛокальные данные: нажми «Проверить хранилище».',
           ].join('\n')}
         </pre>
+        <label className="boot-diagnostics-eruda">
+          <input type="checkbox" checked={erudaVisible} onChange={toggleEruda} />
+          <span>Показывать кнопку Eruda</span>
+        </label>
         <ActionGroup>
           <Button
             id="bootDiagnosticsRefreshPackages"

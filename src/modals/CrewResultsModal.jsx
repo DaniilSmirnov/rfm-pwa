@@ -4,6 +4,15 @@ import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
 import SelectField from '../components/SelectField.jsx';
 
+function gapFromLeader(result, rows) {
+  if (result?.goingOff || result?.goingOffAfterSu) return '—';
+  if (result?.formattedFromLeader) return result.formattedFromLeader;
+  const leader = rows.find(row => !row?.goingOff && !row?.goingOffAfterSu && Number(row?.time) > 0);
+  if (!leader || leader === result) return 'лидер';
+  const difference = Math.max(0, Number(result?.time) - Number(leader.time));
+  return `+${(difference / 1000).toFixed(1)} с`;
+}
+
 export default function CrewResultsModal({
   open,
   standalone = false,
@@ -192,6 +201,7 @@ export default function CrewResultsModal({
                         {result.formattedTimePenalty && (
                           <small>Штраф {result.formattedTimePenalty}</small>
                         )}
+                        <small>От лидера: {gapFromLeader(result, selectedClassResults)}</small>
                       </td>
                       <td>
                         <Button
@@ -214,11 +224,16 @@ export default function CrewResultsModal({
                             <ol>
                               {stages.map(({ view, result: stageResult }) => (
                                 <li key={view.key}>
-                                  <span>{view.name}</span>
+                                  <span>
+                                    {view.name} · место {view.results.indexOf(stageResult) + 1}
+                                  </span>
                                   <span>
                                     {stageResult.goingOff || stageResult.goingOffAfterSu
                                       ? stageResult.reasonGoingOff || 'Сход'
                                       : stageResult.formattedTime || 'Время пока недоступно'}
+                                    <small>
+                                      От лидера: {gapFromLeader(stageResult, view.results)}
+                                    </small>
                                   </span>
                                 </li>
                               ))}
