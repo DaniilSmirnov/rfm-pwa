@@ -38,6 +38,11 @@ describe('MapView enhancements', () => {
           ],
         },
       },
+      packages: [
+        { id: 'race-1', name: 'Rally' },
+        { id: 8, name: 'Пермь' },
+      ],
+      selectPackage: vi.fn(),
       mapUi: { disabled: false, button: 'Скачать офлайн-карту', status: 'Не скачана' },
       downloadMap: vi.fn(),
       deleteOfflineMap: vi.fn(),
@@ -78,6 +83,10 @@ describe('MapView enhancements', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Инструменты карты' })).toBeTruthy();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Гонка на карте' }), {
+      target: { value: '8' },
+    });
+    expect(app.selectPackage).toHaveBeenCalledWith(8);
     expect(
       screen.getByRole('button', { name: 'Инструменты карты' }).getAttribute('aria-controls'),
     ).toBe('mapToolsDrawer');

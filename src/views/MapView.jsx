@@ -121,7 +121,10 @@ export default function MapView({
             <select
               aria-label="Гонка на карте"
               value={pkg?.id || ''}
-              onChange={event => void app.selectPackage(event.target.value)}
+              onChange={event => {
+                const selected = app.packages.find(item => String(item.id) === event.target.value);
+                if (selected) void app.selectPackage(selected.id);
+              }}
             >
               {app.packages.map(item => (
                 <option key={item.id} value={item.id}>
