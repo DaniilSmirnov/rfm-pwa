@@ -145,7 +145,9 @@ function raceDate(offsetDays = 0) {
   const date = new Date(
     Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day) + offsetDays),
   );
-  return `${String(date.getUTCDate()).padStart(2, '0')}.${String(date.getUTCMonth() + 1).padStart(2, '0')}.${date.getUTCFullYear()}`;
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${day}.${month}.${date.getUTCFullYear()}`;
 }
 const todayDate = raceDate();
 
