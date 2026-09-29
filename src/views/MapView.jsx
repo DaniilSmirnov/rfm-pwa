@@ -151,10 +151,24 @@ export default function MapView({
         id="mapToolsToggle"
         className="map-tools-toggle"
         aria-expanded={toolsOpen}
+        aria-controls="mapToolsDrawer"
         onClick={() => setToolsOpen(open => !open)}
       >
         {toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
       </Button>
+      <div className="map-locate-control">
+        <Button
+          id="locateBtn"
+          className="map-locate-button"
+          aria-label="Показать где я"
+          onClick={app.requestLocation}
+        >
+          <img className="rfm-icon" src="/assets/location.svg" alt="" />
+        </Button>
+        <span id="geoStatus" className={`map-locate-status ${app.geoClass}`} role="status">
+          {app.geoStatus}
+        </span>
+      </div>
       <div id="mapToolsDrawer" className="map-tools-drawer" hidden={!toolsOpen}>
         <div className="map-tools-heading">
           <strong>Инструменты карты</strong>
@@ -331,13 +345,7 @@ export default function MapView({
           </ActionGroup>
         </div>
         <div className="map-location-controls">
-          <Button id="locateBtn" className="button" onClick={app.requestLocation}>
-            <img className="rfm-icon" src="/assets/location.svg" alt="" />
-            Показать где я
-          </Button>
-          <p id="geoStatus" className={`muted small ${app.geoClass}`}>
-            {app.geoStatus}
-          </p>
+          <p className={`muted small ${app.geoClass}`}>{app.geoStatus}</p>
         </div>
         <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
         <div className="legend">
@@ -402,12 +410,13 @@ export default function MapView({
             <Button
               className="button map-point-details-toggle"
               aria-expanded={pointDetailsOpen}
+              aria-controls="mapPointDetails"
               onClick={() => setPointDetailsOpen(open => !open)}
             >
               {pointDetailsOpen ? 'Скрыть детали' : 'Показать детали'}
             </Button>
           </div>
-          <div className="map-point-sheet-details" hidden={!pointDetailsOpen}>
+          <div id="mapPointDetails" className="map-point-sheet-details" hidden={!pointDetailsOpen}>
             <span id="pointCoords" className="muted">
               {coordinateText(app.selectedPoint)}
             </span>

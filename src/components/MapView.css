@@ -743,10 +743,46 @@
     font-size: 12px;
     font-weight: 700;
   }
+  .map-locate-control {
+    position: absolute;
+    z-index: 6;
+    top: calc(151px + var(--safe-top));
+    right: max(14px, var(--safe-right));
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+  }
+  .map-locate-button {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(25, 34, 42, 0.12);
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(24, 38, 48, 0.14);
+  }
+  .map-locate-button .rfm-icon {
+    width: 19px;
+    height: 19px;
+  }
+  .map-locate-status {
+    max-width: 160px;
+    padding: 3px 7px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #59666e;
+    font-size: 10px;
+    text-align: center;
+  }
+  .map-locate-status:empty {
+    display: none;
+  }
   .map-tools-drawer {
     position: absolute;
     z-index: 15;
-    top: calc(151px + var(--safe-top));
+    top: calc(204px + var(--safe-top));
     right: max(12px, var(--safe-right));
     bottom: calc(78px + var(--safe-bottom));
     width: min(440px, calc(100vw - 24px));
@@ -862,7 +898,7 @@
       bottom: auto;
     }
     .map-tools-drawer {
-      top: calc(151px + var(--safe-top));
+      top: calc(204px + var(--safe-top));
       bottom: calc(132px + var(--safe-bottom));
       width: auto;
     }

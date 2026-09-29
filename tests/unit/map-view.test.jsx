@@ -78,9 +78,18 @@ describe('MapView enhancements', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Инструменты карты' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Инструменты карты' }).getAttribute('aria-controls'),
+    ).toBe('mapToolsDrawer');
+    expect(screen.getByRole('button', { name: 'Показать где я' }).getAttribute('id')).toBe(
+      'locateBtn',
+    );
     expect(document.getElementById('mapToolsDrawer').hidden).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
     fireEvent.click(screen.getByRole('button', { name: 'Показать детали' }));
+    expect(
+      screen.getByRole('button', { name: 'Скрыть детали' }).getAttribute('aria-controls'),
+    ).toBe('mapPointDetails');
     expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
     expect(screen.getByText('700 м')).toBeTruthy();
