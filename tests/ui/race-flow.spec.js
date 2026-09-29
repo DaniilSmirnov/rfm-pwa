@@ -208,7 +208,6 @@ test.describe('saved race user flows', () => {
     const row = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
     const fav = row.locator('[data-nav="favorite"]');
     await fav.click();
-    await page.getByRole('button', { name: 'Показать детали' }).click();
     await expect(
       page
         .locator('.point-row')
