@@ -23,7 +23,6 @@ export default function AppLayout({
   return (
     <>
       <AppHeader
-        online={app.online}
         onLogoClick={onLogoClick}
         currentPackage={app.currentPackage}
         packages={app.packages}

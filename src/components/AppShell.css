@@ -23,14 +23,6 @@
   }
 }
 @layer views {
-  .topbar h1 {
-    margin: 0;
-    font:
-      italic 700 18px/1 'RF Dewi Expanded Italic',
-      Arial,
-      sans-serif;
-    letter-spacing: 0.04em;
-  }
   .header-wordmark {
     color: #101214;
     font:
