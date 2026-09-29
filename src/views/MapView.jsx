@@ -72,6 +72,9 @@ export default function MapView({
       alive = false;
     };
   }, [pkg?.id]);
+  useEffect(() => {
+    if (app.selectedPoint) setToolsOpen(false);
+  }, [app.selectedPoint]);
   const raceKey = String(pkg?.raceId || pkg?.original?.id || pkg?.id || '');
   const asmgKey = String(pkg?.asmgRaceId || pkg?.original?.asmg_id || pkg?.original?.asmgId || '');
   const followed = crewSubscriptions

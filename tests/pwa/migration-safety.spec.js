@@ -362,7 +362,7 @@ test.describe('PWA migration safety', () => {
     await openTab(reopened, 'Ещё');
     await reopened.getByRole('button', { name: 'Документы и материалы' }).click();
     const organizer = reopened
-      .locator('#raceMedia details')
+      .locator('.react-tab-content #raceMedia details')
       .filter({ hasText: 'КАРТА ОРГАНИЗАТОРА' });
     await organizer.locator('summary').click();
     const mediaImage = organizer.locator('img').first();
