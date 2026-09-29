@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   openApp,
+  openRaceManagement,
   installAppMocks,
   openMapWithAcceptedSafety,
   raceFixture,
@@ -11,13 +12,13 @@ import {
 test.describe('offline, import and failure states', () => {
   test('shows API health failure', async ({ page }) => {
     await openApp(page, { healthStatus: 503 });
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('API недоступен');
   });
 
   test('shows catalog failure after healthy proxy', async ({ page }) => {
     await openApp(page, { catalogStatus: 500 });
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('API недоступен');
   });
 
@@ -32,26 +33,26 @@ test.describe('offline, import and failure states', () => {
       window.dispatchEvent(new Event('offline'));
     });
 
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('Офлайн');
   });
 
   test('shows offline catalog state when navigator is offline', async ({ page }) => {
     await openApp(page, { online: false });
     await expect(page.locator('#networkBadge')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('Офлайн');
   });
 
   test('shows no-nearby-races message without search', async ({ page }) => {
     await openApp(page, { catalog: [secondRace] });
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogList')).toContainText('Нет гонок в пределах недели');
   });
 
   test('manual GeoJSON import creates saved package', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     const data = {
       name: 'Imported Test',
       type: 'FeatureCollection',
@@ -75,7 +76,7 @@ test.describe('offline, import and failure states', () => {
 
   test('invalid manual JSON shows an error dialog', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     const dialogPromise = page.waitForEvent('dialog');
     await page.locator('#racesFileInput').setInputFiles({
       name: 'bad.json',
@@ -92,7 +93,7 @@ test.describe('offline, import and failure states', () => {
     await seedFixtureRace(page);
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#packageList')).toContainText(raceFixture.name);
   });
 

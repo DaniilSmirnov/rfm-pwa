@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp } from './helpers.js';
+import { openApp, seedFixtureRace } from './helpers.js';
 
 async function getBounds(page, selector) {
   return page.locator(selector).evaluate(element => {
@@ -19,6 +19,9 @@ test('aligns the brand left and race selector right without a network label or P
   page,
 }) => {
   await openApp(page);
+  await seedFixtureRace(page);
+  await page.getByRole('button', { name: 'Сегодня' }).click();
+  await page.reload();
 
   const header = await getBounds(page, '.topbar');
   const brand = await getBounds(page, '.header-brand');

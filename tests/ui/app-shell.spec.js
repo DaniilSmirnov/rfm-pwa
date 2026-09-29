@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { openApp, raceFixture, secondRace } from './helpers.js';
+import { openApp, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
 
 const release = {
   ...JSON.parse(readFileSync(new URL('../../version.json', import.meta.url), 'utf8')),
@@ -35,6 +35,9 @@ test.describe('app shell and catalog', () => {
 
   test('shows the race selector instead of a network badge', async ({ page }) => {
     await openApp(page);
+    await seedFixtureRace(page);
+    await page.getByRole('button', { name: 'Сегодня' }).click();
+    await page.reload();
     await expect(page.getByRole('combobox', { name: 'Текущая гонка' })).toBeVisible();
     await expect(page.locator('#networkBadge')).toHaveCount(0);
     await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
