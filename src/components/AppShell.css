@@ -299,6 +299,16 @@
   }
 }
 @layer responsive {
+  @media (max-width: 380px) {
+    .header-wordmark {
+      display: none;
+    }
+    .current-rally-select {
+      width: min(55vw, 220px);
+    }
+  }
+}
+@layer responsive {
   @media (max-width: 560px) {
     .header-brand {
       gap: var(--space-2);

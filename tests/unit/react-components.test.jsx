@@ -503,7 +503,7 @@ describe('application components', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
     expect(onSettings).toHaveBeenCalledOnce();
-    expect(screen.getByText('Офлайн')).toBeTruthy();
+    expect(screen.getByText('Офлайн', { selector: 'span' })).toBeTruthy();
     expect(screen.getByText('РУЧНОЙ ИМПОРТ')).toBeTruthy();
   });
 
