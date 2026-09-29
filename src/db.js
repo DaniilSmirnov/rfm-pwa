@@ -102,6 +102,7 @@ async function withStore(name, mode, fn) {
 }
 
 export const savePackage = pkg => withStore(PACKAGE_STORE, 'readwrite', s => s.put(pkg));
+export const deletePackage = id => withStore(PACKAGE_STORE, 'readwrite', s => s.delete(id));
 export const deleteAllPackages = () => withStore(PACKAGE_STORE, 'readwrite', s => s.clear());
 export const getAllPackages = () => withStore(PACKAGE_STORE, 'readonly', s => s.getAll());
 export const getPackage = id => withStore(PACKAGE_STORE, 'readonly', s => s.get(id));

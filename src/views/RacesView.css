@@ -1,0 +1,102 @@
+/*Component styles: RacesView.*/
+@layer views {
+  .races-screen {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-3) calc(96px + var(--safe-bottom));
+  }
+}
+@layer views {
+  .races-preferences,
+  .races-downloaded {
+    margin: 0;
+  }
+}
+@layer views {
+  .races-section-title p,
+  .races-list-header p {
+    margin: var(--space-1) 0 0;
+  }
+}
+@layer views {
+  .races-auto-delete {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--page-bg);
+    cursor: pointer;
+  }
+}
+@layer views {
+  .races-auto-delete input {
+    width: 20px;
+    height: 20px;
+    margin: 1px 0 0;
+    accent-color: #f50;
+  }
+}
+@layer views {
+  .races-auto-delete span {
+    display: grid;
+    gap: var(--space-1);
+  }
+}
+@layer views {
+  .races-auto-delete small {
+    color: var(--muted);
+    line-height: 1.4;
+  }
+}
+@layer views {
+  .races-list-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+}
+@layer views {
+  .races-list-header .search {
+    max-width: 280px;
+  }
+}
+@layer views {
+  .races-import {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+  }
+}
+@layer views {
+  .races-import summary {
+    margin-bottom: var(--space-2);
+    cursor: pointer;
+  }
+}
+@layer views {
+  .races-clear-all {
+    margin-top: var(--space-3);
+  }
+}
+@layer theme {
+  :root[data-theme='dark'] .races-auto-delete {
+    background: #111318;
+    border-color: #30353d;
+  }
+}
+@layer responsive {
+  @media (max-width: 620px) {
+    .races-list-header {
+      flex-direction: column;
+    }
+    .races-list-header .search {
+      width: 100%;
+      max-width: none;
+    }
+  }
+}

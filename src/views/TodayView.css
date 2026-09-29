@@ -72,11 +72,12 @@
 }
 @layer views {
   .bottom-tabbar button {
+    flex: 1 1 0;
     display: grid;
     place-items: center;
     gap: 3px;
-    min-width: 88px;
-    padding: 5px 14px;
+    min-width: 0;
+    padding: 5px 8px;
     border: 0;
     border-radius: var(--radius-md);
     background: transparent;
@@ -98,6 +99,7 @@
 @layer views {
   .bottom-tabbar button b {
     font-size: 11px;
+    white-space: nowrap;
   }
 }
 @layer views {

@@ -22,6 +22,14 @@ export function favoritesForPackage(packageId) {
   return Array.isArray(store[String(packageId || '')]) ? store[String(packageId || '')] : [];
 }
 
+export function removePackageFavorites(packageId) {
+  const store = loadFavoritesStore();
+  delete store[String(packageId || '')];
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(store));
+  } catch {}
+}
+
 export function isFavoritePoint(point, packageId) {
   if (!point || !packageId) return false;
   const key = pointKey(point);

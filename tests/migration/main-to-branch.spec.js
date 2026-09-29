@@ -333,6 +333,7 @@ test('migrates installed PWA from current main to branch without losing persiste
   // controllerchange triggers an automatic reload in the app runtime. Once the
   // branch version and active worker are confirmed, wait for the restored UI
   // instead of racing that automatic navigation with a second reload.
+  await page.getByRole('button', { name: 'Гонки' }).click();
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');
   await page.getByRole('button', { name: 'Карта' }).click();
@@ -342,6 +343,7 @@ test('migrates installed PWA from current main to branch without losing persiste
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#networkBadge')).toHaveText('офлайн');
+  await page.getByRole('button', { name: 'Гонки' }).click();
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');
 });

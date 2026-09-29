@@ -105,6 +105,7 @@ import ElevationProfile from '../../src/components/ElevationProfile.jsx';
 import FallbackMap from '../../src/components/FallbackMap.jsx';
 import FavoritesList from '../../src/components/FavoritesList.jsx';
 import MoreMenu from '../../src/components/MoreMenu.jsx';
+import RacesView from '../../src/views/RacesView.jsx';
 import OfflineMapActions from '../../src/components/OfflineMapActions.jsx';
 import PointList from '../../src/components/PointList.jsx';
 import PushSettings from '../../src/components/PushSettings.jsx';
@@ -114,6 +115,7 @@ import RallyMap from '../../src/components/RallyMap.jsx';
 import SafetyMemo from '../../src/components/SafetyMemo.jsx';
 import SavedOfflineSection from '../../src/components/SavedOfflineSection.jsx';
 import SavedPackagesList from '../../src/components/SavedPackagesList.jsx';
+import DownloadedRacesList from '../../src/components/DownloadedRacesList.jsx';
 import ScheduleList from '../../src/components/ScheduleList.jsx';
 import TodayLeaders from '../../src/components/TodayLeaders.jsx';
 import AppLayout from '../../src/views/AppLayout.jsx';
@@ -132,6 +134,23 @@ const feature = {
   properties: { name: 'Start' },
   geometry: { type: 'Point', coordinates: [30, 61] },
 };
+function raceDate(offsetDays = 0) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  const date = new Date(
+    Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day) + offsetDays),
+  );
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${day}.${month}.${date.getUTCFullYear()}`;
+}
+const todayDate = raceDate();
+
 const race = {
   id: 7,
   raceId: 7,
@@ -148,7 +167,7 @@ const race = {
     how_it_was: '<p>Финиш</p>',
     schedule: [
       {
-        date: '28.09.2026',
+        date: todayDate,
         location: 'СУ 1',
         coordinates: '61, 30',
         events: [{ time: '10:00', text: 'Старт СУ 1' }],
@@ -158,7 +177,7 @@ const race = {
   summary: {
     category: 'Ралли',
     stage: 'Кубок',
-    dates: '28.09.2026',
+    dates: todayDate,
     city: 'Карелия',
     totalDistance: 100,
     combatKm: 60,
@@ -207,6 +226,7 @@ function appFixture(overrides = {}) {
     geoClass: '',
     compassEnabled: false,
     storageStats: { count: 1, jsonBytes: 12, mapBytes: 22, mapCount: 2, persisted: true },
+    autoDeleteCompletedRaces: false,
     ...Object.fromEntries(
       [
         'setCatalogQuery',
@@ -219,6 +239,8 @@ function appFixture(overrides = {}) {
         'downloadTerrainForRace',
         'deleteTerrain',
         'downloadRace',
+        'deleteRace',
+        'setAutoDeleteCompletedRaces',
         'showPoint',
         'toggleFavorite',
         'selectPackage',
@@ -338,7 +360,7 @@ describe('application components', () => {
     expect(screen.getByText('офлайн')).toBeTruthy();
     expect(screen.getByText(/Companion v/)).toBeTruthy();
     expect(screen.getByText('Карелия')).toBeTruthy();
-    expect(screen.getByRole('searchbox', { name: '' })).toBeTruthy();
+    expect(screen.getByRole('searchbox', { name: 'Найти гонку или этап' })).toBeTruthy();
     expect(screen.getByText('Добавь приложение')).toBeTruthy();
     await waitFor(() => expect(mocks.subscribePwaInstall).toHaveBeenCalled());
   });
@@ -353,6 +375,42 @@ describe('application components', () => {
       />,
     );
     expect(screen.getByRole('button', { name: '42%' })).toBeTruthy();
+  });
+
+  it('renders race management controls and hides Rally Pack internals', async () => {
+    const pkg = {
+      id: 'race-101',
+      raceId: 101,
+      name: 'Sortavala Rally',
+      summary: { dates: '26.09.2026', stage: 'СУ 1' },
+      geojson: { type: 'FeatureCollection', features: [] },
+      assetNames: ['hero.jpg'],
+    };
+    const app = appFixture({ packages: [pkg] });
+    render(<RacesView app={app} />);
+    expect(screen.getByLabelText('Удалять автоматически по завершению гонки').checked).toBe(false);
+    expect(screen.getByText('Sortavala Rally')).toBeTruthy();
+    expect(screen.queryByText(/hero\.jpg|тайлов/i)).toBeNull();
+    expect(screen.getByText('Выбрать JSON или GeoJSON')).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(app.setAutoDeleteCompletedRaces).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Обновить' }));
+    expect(app.downloadRace).toHaveBeenCalledWith(101);
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    expect(app.deleteRace).toHaveBeenCalledWith('race-101');
+  });
+
+  it('keeps a stable downloaded races list container in empty and no-match states', () => {
+    const { rerender } = render(
+      <DownloadedRacesList app={appFixture({ packages: [], packageQuery: '' })} />,
+    );
+    expect(document.querySelector('#packageList')).toBeTruthy();
+    expect(screen.getByText('Скачанных гонок пока нет.')).toBeTruthy();
+    rerender(
+      <DownloadedRacesList app={appFixture({ packages: [race], packageQuery: 'missing' })} />,
+    );
+    expect(document.querySelector('#packageList')).toBeTruthy();
+    expect(screen.getByText('По этому запросу гонок не найдено.')).toBeTruthy();
   });
 
   it('renders point lists, favorites, offline actions, and saved packages', () => {
@@ -546,7 +604,7 @@ describe('application components', () => {
     expect(document.documentElement.dataset.theme).toBe('dark');
     fireEvent.click(screen.getByRole('button', { name: '← Ещё' }));
     expect(onBack).toHaveBeenCalledOnce();
-    rerender(<TodayView app={appFixture({ catalog: [], packages: [] })} />);
+    rerender(<TodayView app={appFixture({ catalog: [], packages: [], currentPackage: null })} />);
     expect(screen.getByText(/Нет гонки сегодня/)).toBeTruthy();
   });
 
@@ -555,7 +613,13 @@ describe('application components', () => {
       ...race,
       original: {
         ...race.original,
-        schedule: [{ location: 'СУ 2', events: [{ time: '23:59', text: 'Старт' }] }],
+        schedule: [
+          {
+            date: todayDate,
+            location: 'СУ 2',
+            events: [{ time: '23:59', text: 'Старт' }],
+          },
+        ],
       },
     };
     const previous = {
@@ -566,7 +630,7 @@ describe('application components', () => {
       original: { status_race: 'Завершена' },
     };
     const app = appFixture({
-      catalog: [{ id: 7, name: 'Карелия', dates: '28.09.2026', date_race: '28.09.2026' }],
+      catalog: [{ id: 7, name: 'Карелия', dates: todayDate, date_race: todayDate }],
       packages: [today, previous],
       currentPackage: today,
       downloadedIds: new Set([7]),
@@ -581,7 +645,7 @@ describe('application components', () => {
   });
 
   it('offers an upcoming catalog race and marks a downloaded race finished yesterday', () => {
-    const upcoming = { id: 8, name: 'Следующая гонка', dates: '29.09.2026' };
+    const upcoming = { id: 8, name: 'Следующая гонка', dates: raceDate(1) };
     const { rerender } = render(
       <TodayView
         app={appFixture({ catalog: [upcoming], packages: [], currentPackage: null })}
@@ -599,10 +663,10 @@ describe('application components', () => {
       original: {
         ...race.original,
         status_race: 'Завершена',
-        dates: '27.09.2026',
+        dates: raceDate(-1),
         overlap_schedule: ['overlap.jpg'],
       },
-      summary: { ...race.summary, dates: '27.09.2026' },
+      summary: { ...race.summary, dates: raceDate(-1) },
       crewResults: { eventResults: [crewData.eventResults[0]] },
     };
     rerender(

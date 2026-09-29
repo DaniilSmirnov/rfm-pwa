@@ -8,12 +8,24 @@ import {
   loadThemePreference,
   resolveTheme,
   saveThemePreference,
+  AUTO_DELETE_COMPLETED_RACES_KEY,
+  loadAutoDeleteCompletedRaces,
+  saveAutoDeleteCompletedRaces,
 } from '../../src/app/preferences.js';
 
 beforeEach(() => localStorage.clear());
 const pkg = { id: 'race-1', raceId: 1 };
 
 describe('preferences', () => {
+  it('keeps automatic Rally Pack cleanup off by default and persists the choice', () => {
+    expect(loadAutoDeleteCompletedRaces()).toBe(false);
+    expect(saveAutoDeleteCompletedRaces(true)).toBe(true);
+    expect(localStorage.getItem(AUTO_DELETE_COMPLETED_RACES_KEY)).toBe('true');
+    expect(loadAutoDeleteCompletedRaces()).toBe(true);
+    saveAutoDeleteCompletedRaces(false);
+    expect(loadAutoDeleteCompletedRaces()).toBe(false);
+  });
+
   it('starts with no stage subscriptions', () => expect([...subscribedStageKeys(pkg)]).toEqual([]));
   it('adds stage subscription', () => {
     setStageSubscribed(pkg, 'су-1', true);
