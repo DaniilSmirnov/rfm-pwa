@@ -613,7 +613,13 @@ describe('application components', () => {
       ...race,
       original: {
         ...race.original,
-        schedule: [{ date: todayDate, location: 'СУ 2', events: [{ time: '23:59', text: 'Старт' }] }],
+        schedule: [
+          {
+            date: todayDate,
+            location: 'СУ 2',
+            events: [{ time: '23:59', text: 'Старт' }],
+          },
+        ],
       },
     };
     const previous = {
