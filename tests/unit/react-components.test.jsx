@@ -344,6 +344,25 @@ afterEach(() => {
 });
 
 describe('application components', () => {
+  it('selects the current rally from the shared header', () => {
+    const onSelectRally = vi.fn();
+    render(
+      <AppHeader
+        online
+        onLogoClick={() => {}}
+        currentPackage={{ id: 7, name: 'Карелия' }}
+        packages={[
+          { id: 7, name: 'Карелия' },
+          { id: 8, name: 'Пермь' },
+        ]}
+        onSelectRally={onSelectRally}
+      />,
+    );
+    fireEvent.change(screen.getByRole('combobox', { name: 'Текущая гонка' }), {
+      target: { value: '8' },
+    });
+    expect(onSelectRally).toHaveBeenCalledWith('8');
+  });
   it('provides race management and settings destinations from More', () => {
     const onRaces = vi.fn();
     const onSettings = vi.fn();

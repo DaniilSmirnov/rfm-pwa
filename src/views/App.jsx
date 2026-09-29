@@ -36,6 +36,9 @@ function readTab() {
   if (requested === 'races') return 'more';
   return ['today', 'map', 'results', 'more'].includes(requested) ? requested : 'today';
 }
+function readMoreScreen() {
+  return new URLSearchParams(location.search).get('tab') === 'races' ? 'races' : 'menu';
+}
 export default function App() {
   const app = useRfmApp();
   const pkg = app.currentPackage;
@@ -44,7 +47,7 @@ export default function App() {
     [pkg, app.selectedPoint],
   );
   const [tab, setTab] = useState(readTab());
-  const [moreScreen, setMoreScreen] = useState('menu');
+  const [moreScreen, setMoreScreen] = useState(readMoreScreen);
   const [crewResultsOpen, setCrewResultsOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [pointElevation, setPointElevation] = useState('Высота: выбери точку.');
@@ -61,7 +64,7 @@ export default function App() {
     url.searchParams.set('tab', next);
     history.pushState({ tab: next }, '', url);
     setTab(next);
-    if (next !== 'more') setMoreScreen('menu');
+    setMoreScreen('menu');
   };
 
   useEffect(() => {
@@ -83,7 +86,7 @@ export default function App() {
     const update = () => {
       const next = readTab();
       scrollPositions.current[activeScrollKey] = window.scrollY;
-      setMoreScreen('menu');
+      setMoreScreen(readMoreScreen());
       setTab(next);
       restoreScrollKey.current = next;
     };
@@ -195,6 +198,7 @@ export default function App() {
       ) : moreScreen === 'races' ? (
         <RacesView
           app={app}
+          onBack={() => setMoreScreen('menu')}
           onOpenRace={async id => {
             await app.selectPackage(id);
             activate('map');
