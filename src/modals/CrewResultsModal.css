@@ -275,9 +275,9 @@
   }
   .crew-results-class-chips {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     overflow-x: auto;
-    padding: 2px 0 10px;
+    padding: 4px 0 12px;
     scrollbar-width: none;
   }
   .crew-results-class-chips::-webkit-scrollbar {
@@ -285,14 +285,14 @@
   }
   .crew-results-class-chips button {
     flex: 0 0 auto;
-    min-height: 34px;
-    padding: 0 13px;
+    min-height: 44px;
+    padding: 0 18px;
     border: 1px solid #e4e6e8;
-    border-radius: 10px;
+    border-radius: 12px;
     background: #f3f4f5;
     color: #30343a;
     font: inherit;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
   }
   .crew-results-class-chips button.active {
@@ -510,6 +510,12 @@
     border-color: #30353d;
     background: #1d2127;
     color: #f5f7fa;
+  }
+
+  :root[data-theme='dark'] .crew-results-class-chips button.active {
+    border-color: var(--brand-orange);
+    background: var(--brand-orange);
+    color: #fff;
   }
 }
 
