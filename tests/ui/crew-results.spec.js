@@ -16,13 +16,11 @@ test.describe('ASMG crew results', () => {
     page,
   }) => {
     const results = page.locator('.results-tab-screen');
-    const dialogClass = page.locator('#crewResultsDialogClass');
     await expect(results).toHaveCount(0);
     await openAllResults(page);
     await expect(results).toBeVisible();
     await expect(results.locator('.crew-results-inline')).toBeVisible();
-    await expect(page.locator('#crewResultsStage')).toHaveValue('overall');
-    await dialogClass.selectOption('Абсолют');
+    await expect(page.getByRole('button', { name: 'Все' })).toBeVisible();
 
     const rows = page.locator('[data-crew-row]');
     await expect(rows).toHaveCount(4);
@@ -31,10 +29,10 @@ test.describe('ASMG crew results', () => {
     await expect(rows.first()).toContainText('Абсолют');
     await expect(rows.nth(2)).toContainText('Гаврилов Клим / Еникеев Кирилл');
 
-    await dialogClass.selectOption('R5');
+    await page.getByRole('button', { name: 'R5', exact: true }).click();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText('Сидоров Иван / Петров Павел');
-    await dialogClass.selectOption('');
+    await page.getByRole('button', { name: 'Все', exact: true }).click();
     await expect(rows).toHaveCount(5);
 
     await page.locator('#crewResultsSearch').fill('40');
@@ -44,16 +42,16 @@ test.describe('ASMG crew results', () => {
     await expect(results).toHaveCount(0);
   });
 
-  test('shows cumulative time and selected-stage time in the table', async ({ page }) => {
+  test('opens a crew modal with stage-by-stage times', async ({ page }) => {
     await openAllResults(page);
     await expect(page.locator('.crew-results-inline')).toBeVisible();
     const firstRow = page.locator('[data-crew-row]').first();
     await expect(firstRow).toContainText('00:14:50:0');
-    await expect(page.locator('#crewResultsTimeHeading')).toContainText('Общий итог');
-
-    await page.locator('#crewResultsStage').selectOption('0');
-    await expect(page.locator('#crewResultsTimeHeading')).toContainText('СУ 2 · Пуйккола');
-    await expect(firstRow).toContainText('00:14:50:0');
+    await firstRow.getByRole('button', { name: /Открыть результаты экипажа/ }).click();
+    const dialog = page.getByRole('dialog', { name: /Гожев Руслан/ });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('СУ 2 · Пуйккола');
+    await expect(dialog).toContainText('00:14:50:0');
   });
 
   test('stores a followed crew so the service worker can refresh it offline', async ({ page }) => {

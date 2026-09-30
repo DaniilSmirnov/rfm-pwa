@@ -55,34 +55,35 @@ describe('inline results screen', () => {
   it('renders as a first-class inline screen with stage, class and search controls', () => {
     renderResults();
     expect(screen.getByRole('region', { name: 'Результаты экипажей' })).toBeTruthy();
-    expect(screen.getByLabelText('Спецучасток')).toBeTruthy();
     expect(screen.getByLabelText('Класс')).toBeTruthy();
     expect(screen.getByRole('searchbox', { name: 'Поиск экипажа' })).toBeTruthy();
   });
 
   it('prioritizes followed crews without changing their protocol places', () => {
     renderResults({ subscriptions: [{ crewId: '2', key: '55:2' }] });
-    const rows = screen.getAllByRole('row').filter(row => row.hasAttribute('data-crew-row'));
-    expect(within(rows[0]).getByText('Bravo / Co-driver')).toBeTruthy();
-    expect(within(rows[0]).getByText('2')).toBeTruthy();
-    expect(within(rows[1]).getByText('Alpha / Co-driver')).toBeTruthy();
-    expect(within(rows[1]).getByText('1')).toBeTruthy();
-    expect(screen.getByText(/Место в протоколе не меняется/)).toBeTruthy();
+    const cards = screen.getAllByRole('article');
+    expect(within(cards[0]).getByText('№22 Bravo / Co-driver')).toBeTruthy();
+    expect(within(cards[0]).getByText('2')).toBeTruthy();
+    expect(within(cards[1]).getByText('№11 Alpha / Co-driver')).toBeTruthy();
+    expect(within(cards[1]).getByText('1')).toBeTruthy();
   });
 
-  it('shows the selected crew stage by stage when expanded', () => {
+  it('opens all stage results in the crew details modal', () => {
     renderResults();
-    fireEvent.click(screen.getAllByRole('button', { name: 'По СУ' })[0]);
-    const details = document.querySelector('[data-crew-details="1"]');
-    expect(details).toBeTruthy();
-    expect(within(details).getByText(/СУ 1 · место 1/)).toBeTruthy();
-    expect(within(details).getByText(/СУ 1 · место 1/)).toBeTruthy();
-    expect(within(details).getByText('00:00:50')).toBeTruthy();
-    expect(within(details).getByText('От лидера: лидер')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
+    expect(screen.getByRole('dialog', { name: 'Alpha / Co-driver' })).toBeTruthy();
+    expect(screen.getByText('СУ 1')).toBeTruthy();
+    expect(screen.getByText('00:00:50')).toBeTruthy();
+  });
+
+  it('shows a retirement status in the card and in the details modal', () => {
+    const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'Поломка' };
+    renderResults({ visible: [retired], selectedClassResults: [retired] });
+    expect(screen.getAllByText('Поломка')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
+    expect(screen.getByRole('dialog', { name: 'Alpha / Co-driver' })).toBeTruthy();
     expect(
-      within(screen.getAllByRole('row').find(row => row.hasAttribute('data-crew-row'))).getByText(
-        'От лидера: лидер',
-      ),
+      within(screen.getByRole('dialog', { name: 'Alpha / Co-driver' })).getByText('Поломка'),
     ).toBeTruthy();
   });
 });
