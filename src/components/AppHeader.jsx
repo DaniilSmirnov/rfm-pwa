@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronDown, MapPin } from 'lucide-react';
 import packageMeta from '../../package.json';
+import SelectField from './SelectField.jsx';
 import './AppShell.css';
 
 export default function AppHeader({ onLogoClick, currentPackage, packages = [], onSelectRally }) {
@@ -25,8 +26,9 @@ export default function AppHeader({ onLogoClick, currentPackage, packages = [], 
               <strong>{currentPackage?.name || 'Выбрать гонку'}</strong>
               <small>{currentPackage?.summary?.dates || currentPackage?.dates || ''}</small>
             </span>
-            <select
+            <SelectField
               aria-label="Текущая гонка"
+              className="current-rally-field"
               value={currentPackage?.id || ''}
               onChange={event => onSelectRally?.(event.target.value)}
             >
@@ -36,7 +38,7 @@ export default function AppHeader({ onLogoClick, currentPackage, packages = [], 
                   {item.name || `Гонка ${item.raceId || item.id}`}
                 </option>
               ))}
-            </select>
+            </SelectField>
             <ChevronDown aria-hidden="true" size={16} className="current-rally-chevron" />
           </label>
         )}
