@@ -187,25 +187,25 @@ describe('MapView enhancements', () => {
     const photoLink = pointActions.querySelector('.map-point-sheet-photo-link');
     fireEvent.touchStart(photoLink, { touches: [{ clientY: 140 }] });
     fireEvent.touchEnd(photoLink, { changedTouches: [{ clientY: 260 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('false');
 
     // Gestures must work from the whole sheet, and collapse in two steps.
     fireEvent.click(screen.getByRole('button', { name: 'Свернуть карточку точки' }));
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('true');
     const sheet = screen.getByRole('dialog');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 230 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('true');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchCancel(sheet);
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 120 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('true');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 140 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('false');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 140 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('true');
     expect(app.showPoint).not.toHaveBeenCalledWith(null);
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 380 }] });
