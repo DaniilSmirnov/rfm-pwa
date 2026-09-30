@@ -221,6 +221,13 @@ export default function TodayView({ app, onMap, onResults }) {
         У тебя скачан предыдущий Rally Pack «{previousPackage.name}». Если он больше не нужен
         офлайн, удали его, чтобы освободить место.
       </span>
+      <Button
+        className="button primary today-storage-recommendation-action"
+        type="button"
+        onClick={() => void app.deleteRace(previousPackage.id)}
+      >
+        Удалить предыдущий Rally Pack
+      </Button>
     </Notice>
   );
   const summary = todaySummary(todayPackage, now);

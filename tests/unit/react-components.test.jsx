@@ -688,6 +688,8 @@ describe('application components', () => {
     expect(screen.getByText('Карелия')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Обновить Rally Pack' })).toBeTruthy();
     expect(screen.getByText('Освободи место')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить предыдущий Rally Pack' }));
+    expect(app.deleteRace).toHaveBeenCalledWith(6);
     fireEvent.click(screen.getByRole('button', { name: 'Все результаты' }));
     expect(onResults).toHaveBeenCalledOnce();
   });

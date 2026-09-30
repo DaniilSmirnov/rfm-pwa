@@ -371,6 +371,12 @@
   }
 }
 @layer views {
+  .today-storage-recommendation-action {
+    justify-self: start;
+    border-radius: var(--radius-md);
+  }
+}
+@layer views {
   .today-status-heading {
     display: flex;
     align-items: center;
