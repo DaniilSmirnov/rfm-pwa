@@ -1,16 +1,20 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import './Button.css';
 
-export default function Button({
-  type = 'button',
-  className = 'button',
-  loading = false,
-  disabled = false,
-  children,
-  ...props
-}) {
+const Button = forwardRef(function Button(
+  {
+    type = 'button',
+    className = 'button',
+    loading = false,
+    disabled = false,
+    children,
+    ...props
+  },
+  ref,
+) {
   return (
     <button
+      ref={ref}
       {...props}
       type={type}
       className={className}
@@ -20,4 +24,6 @@ export default function Button({
       {children}
     </button>
   );
-}
+});
+
+export default Button;
