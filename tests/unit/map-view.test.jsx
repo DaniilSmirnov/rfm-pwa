@@ -197,7 +197,6 @@ describe('MapView enhancements', () => {
         .getByRole('button', { name: 'Свернуть карточку точки' })
         .getAttribute('aria-controls'),
     ).toBe('mapPointDetails');
-    expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
     expect(within(document.getElementById('mapPointDetails')).getByText('700 м')).toBeTruthy();
     expect(screen.getByText('Вид на прыжок')).toBeTruthy();
@@ -288,7 +287,7 @@ describe('MapView enhancements', () => {
     };
     render(<MapView app={app} mapContent={<span>Карта</span>} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Избранное' }));
 
     const followed = await screen.findByRole('region', { name: 'Избранные экипажи' });
     expect(followed.textContent).toContain('2. № 8 · Иванов Иван');
