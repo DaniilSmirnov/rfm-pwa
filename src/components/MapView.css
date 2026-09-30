@@ -920,7 +920,19 @@
   .map-point-sheet-details {
     display: grid;
     gap: 10px;
+    max-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    opacity: 0;
+    transition:
+      max-height 220ms ease,
+      padding-top 220ms ease,
+      opacity 160ms ease;
+  }
+  .map-point-sheet.is-expanded .map-point-sheet-details {
+    max-height: 1200px;
     padding-top: 12px;
+    opacity: 1;
   }
   .map-point-sheet .point-buttons {
     display: flex;
