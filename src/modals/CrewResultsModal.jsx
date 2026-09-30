@@ -72,6 +72,7 @@ function crewIdOf(result, resultLabel) {
 }
 
 function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
+  useEdgeSwipeBack(onClose, Boolean(crewResult));
   if (!crewResult) return null;
   const crewId = crewIdOf(crewResult, resultLabel);
   const stageResults = views.slice(1).map(view => ({
@@ -81,7 +82,6 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
   const overallStatus = retirementDetails(crewResult, views, resultLabel);
   const overallText =
     overallStatus?.reason || (overallStatus ? 'Сход' : crewResult.formattedFromLeader || '—');
-  useEdgeSwipeBack(onClose, true);
 
   return (
     <Dialog.Root
