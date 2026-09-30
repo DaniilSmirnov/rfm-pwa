@@ -116,13 +116,7 @@ test('supports real touch swipes on the mobile point sheet', async ({ page }, te
     },
   });
   await openMapWithAcceptedSafety(page);
-  await page.getByRole('button', { name: 'Инструменты карты' }).click();
-  await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-  await page
-    .locator('.point-row')
-    .filter({ hasText: 'Смотровая точка' })
-    .locator('.point-row-copy')
-    .click();
+  await selectMapPoint(page);
   const sheet = page.locator('#pointActions');
   await expect(sheet).toBeVisible();
   const cdp = await page.context().newCDPSession(page);
