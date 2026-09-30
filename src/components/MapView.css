@@ -550,10 +550,17 @@
   }
 }
 @layer components {
-  .terrain-mode-control .terrain-mode-button svg {
-    width: 20px;
+  .terrain-mode-control .terrain-mode-icon {
+    display: grid;
+    place-items: center;
+    min-width: 24px;
     height: 20px;
-    display: block;
+    padding: 0 2px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
   }
 }
 @layer components {
