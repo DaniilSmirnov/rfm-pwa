@@ -47,10 +47,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - batch: 1/4
-          - batch: 2/4
-          - batch: 3/4
-          - batch: 4/4
+          - batch: 1
+            shard: 1/4
+          - batch: 2
+            shard: 2/4
+          - batch: 3
+            shard: 3/4
+          - batch: 4
+            shard: 4/4
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -60,7 +64,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium webkit
       - name: Run Playwright UI batch
-        run: npm run test:ui -- --shard=${{ matrix.batch }}
+        run: npm run test:ui -- --shard=${{ matrix.shard }}
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v7
