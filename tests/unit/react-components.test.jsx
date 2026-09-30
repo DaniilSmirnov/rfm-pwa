@@ -893,16 +893,15 @@ describe('application components', () => {
   });
 
   it('mounts the app, switches tabs, opens settings, and reveals diagnostics by logo taps', async () => {
-    history.replaceState({}, '', '/');
-    document.body.dataset.activeTab = 'today';
-    document.body.dataset.moreScreen = 'menu';
+    history.replaceState({}, '', '/?tab=more');
     window.scrollTo = vi.fn();
     HTMLElement.prototype.scrollIntoView = vi.fn();
     const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
     mocks.useRfmApp.mockReturnValue(app);
     render(<App />);
-    await waitFor(() => expect(screen.getByText('Ещё')).toBeTruthy());
-    fireEvent.click(screen.getByText('Ещё').closest('button'));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Настройки и диагностика/ })).toBeTruthy(),
+    );
     fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
     expect(screen.getByRole('heading', { name: 'Настройки и диагностика' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '← Ещё' }));
