@@ -164,6 +164,13 @@ function overlaps(race) {
   return Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
 }
 
+export function nextRaceDownloadSuggestion(pkg, catalog, now = new Date()) {
+  if (!pkg || !raceHasFinished(pkg, now)) return null;
+  const next = nextUpcomingRace(catalog, now);
+  if (!next) return null;
+  return packageRaceId(pkg) === Number(next.id) ? null : next;
+}
+
 export default function TodayView({ app, onMap, onResults }) {
   const [now, setNow] = useState(() => new Date());
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
@@ -265,6 +272,11 @@ export default function TodayView({ app, onMap, onResults }) {
   const hasSavedPack = app.downloadedIds.has(raceId);
   const overlapImages = overlaps(todayPackage.original || todayPackage);
   const raceFinished = summary.raceFinished || raceHasFinished(todayPackage, now);
+  const nextRaceSuggestion = nextRaceDownloadSuggestion(todayPackage, app.catalog, now);
+  const nextRaceId = Number(nextRaceSuggestion?.id);
+  const nextRaceDownloaded =
+    Number.isFinite(nextRaceId) && Boolean(app.downloadedIds?.has?.(nextRaceId));
+  const nextRaceProgress = Number.isFinite(nextRaceId) ? app.raceProgress?.[nextRaceId] : null;
   const finishedYesterday = distanceFromTodayDays(todayPackage, now) === 1;
   const isUpcoming =
     packageRaceId(todayPackage) === Number(upcoming?.id) ||
@@ -320,6 +332,31 @@ export default function TodayView({ app, onMap, onResults }) {
   const positionChange = latestPositionChange(todayPackage.crewResults?.eventResults);
   return (
     <section className="today-screen">
+      {nextRaceSuggestion && (
+        <Notice
+          as="aside"
+          variant="warning"
+          className="today-next-race-recommendation"
+          aria-label="Следующая гонка доступна"
+        >
+          <div className="today-next-race-copy">
+            <strong>Следующая гонка уже доступна</strong>
+            <span>
+              {nextRaceSuggestion.name || `Ралли #${nextRaceId}`}
+              {(nextRaceSuggestion.dates || nextRaceSuggestion.date_race) &&
+                ` · ${nextRaceSuggestion.dates || nextRaceSuggestion.date_race}`}
+            </span>
+          </div>
+          <Button
+            className="button primary"
+            onClick={() => app.downloadRace(nextRaceId)}
+            disabled={!Number.isFinite(nextRaceId)}
+          >
+            {nextRaceProgress ||
+              (nextRaceDownloaded ? 'Обновить Rally Pack' : 'Скачать Rally Pack')}
+          </Button>
+        </Notice>
+      )}
       <article className="today-race-card" style={{ '--race-bg': `url('${assetUrl(image)}')` }}>
         <div className="today-race-shade" />
         <div className="today-race-copy">
