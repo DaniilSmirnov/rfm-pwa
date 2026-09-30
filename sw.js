@@ -159,7 +159,12 @@ self.addEventListener('fetch', event => {
         cached ||
         fetch(event.request)
           .then(response => {
-            if (response.ok) caches.open(CACHE).then(c => c.put(event.request, response.clone()));
+            if (response.ok) {
+              // Clone synchronously, before yielding to caches.open(). The browser may start
+              // consuming the original response body as soon as it is returned to respondWith().
+              const cacheResponse = response.clone();
+              caches.open(CACHE).then(c => c.put(event.request, cacheResponse));
+            }
             return response;
           })
           .catch(() => caches.match('/index.html')),
