@@ -875,9 +875,11 @@
   .map-point-sheet-handle > span:not(.sr-only) {
     overflow: hidden;
     color: var(--text);
-    font-size: 16px;
+    font-family: 'RF Dewi Expanded Bold', Arial, sans-serif;
+    font-size: clamp(20px, 5vw, 26px);
     font-weight: 700;
-    line-height: 1.2;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
