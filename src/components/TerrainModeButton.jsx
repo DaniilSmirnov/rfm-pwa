@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Button from './Button.jsx';
-import MountainTerrainIcon from './MountainTerrainIcon.jsx';
 
 export default function TerrainModeButton({ initialMode = 'hillshade', onModeChange, map }) {
   const [mode, setMode] = useState(initialMode === '3d' ? '3d' : 'hillshade');
@@ -31,7 +30,7 @@ export default function TerrainModeButton({ initialMode = 'hillshade', onModeCha
       disabled={busy}
       onClick={() => void toggleMode()}
     >
-      <MountainTerrainIcon />
+      <span className="terrain-mode-icon" aria-hidden="true">{is3d ? '3D' : '2D'}</span>
     </Button>
   );
 }
