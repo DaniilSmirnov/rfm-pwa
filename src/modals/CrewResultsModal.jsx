@@ -429,6 +429,12 @@ export default function CrewResultsModal({
 
   const standaloneContent = (
     <section className="crew-results-inline crew-results-mobile" aria-label="Результаты экипажей">
+      <header className="crew-results-dialog-head crew-results-standalone-head">
+        <div>
+          <h2>Результаты экипажей</h2>
+          <p className="muted small">Выбери класс, чтобы увидеть весь его состав.</p>
+        </div>
+      </header>
       <div className="crew-results-mobile-controls">
         <div className="crew-results-class-chips" aria-label="Класс">
           <Button
