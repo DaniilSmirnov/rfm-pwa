@@ -153,6 +153,9 @@ describe('MapView enhancements', () => {
     expect(document.querySelector('.map-point-summary').textContent).toContain('4.8 / 5');
     expect(document.querySelector('.point-actions-copy').textContent).toContain('700 м');
     expect(screen.getByRole('dialog').getAttribute('aria-labelledby')).toBe('pointName');
+    expect(document.querySelector('.map-point-sheet-header #pointName').textContent).toBe(
+      'Зрительская зона',
+    );
     const compactHandle = within(screen.getByRole('dialog')).getByRole('button', {
       name: 'Развернуть карточку точки',
     });
