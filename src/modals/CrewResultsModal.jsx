@@ -22,7 +22,12 @@ function retirementLabel(result) {
   return result.reasonGoingOff || (result.goingOffAfterSu ? 'Сход после спецучастка' : 'Сход');
 }
 
-function sentenceCase(value) {\n  const normalized = String(value || '').toLocaleLowerCase('ru').trim();\n  return normalized ? normalized[0].toLocaleUpperCase('ru') + normalized.slice(1) : '';\n}\n\nfunction cleanRetirementReason(result, views, resultLabel) {
+function sentenceCase(value) {
+  const normalized = String(value || '').toLocaleLowerCase('ru').trim();
+  return normalized ? normalized[0].toLocaleUpperCase('ru') + normalized.slice(1) : '';
+}
+
+function cleanRetirementReason(result, views, resultLabel) {
   const reason = retirementLabel(result);
   if (!reason || reason === 'Сход' || reason === 'Сход после спецучастка') return '';
 
