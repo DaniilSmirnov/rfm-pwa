@@ -12,6 +12,7 @@ describe('terrain mode control', () => {
     const button = root.querySelector('button');
 
     expect(button.querySelector('.terrain-mode-icon')?.textContent).toBe('2D');
+    expect(button.querySelector('.terrain-mode-icon')).toBeTruthy();
     expect(button.dataset.mode).toBe('hillshade');
     await act(async () => {
       fireEvent.click(button);
