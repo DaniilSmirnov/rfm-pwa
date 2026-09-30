@@ -55,7 +55,7 @@
   bottom: 0;
   left: 14px;
   width: 5px;
-  background: #f05217;
+  background: var(--brand-orange);
   content: '';
 }
 .safety-memo-kicker {
@@ -125,7 +125,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #f05217;
+  background: var(--brand-orange);
   content: '';
 }
 .safety-cars {
@@ -169,7 +169,7 @@
   min-width: 88px;
 }
 .safety-cars li b {
-  color: #ff641c;
+  color: var(--brand-orange);
   text-transform: uppercase;
 }
 .safety-cars small {
@@ -192,7 +192,7 @@
   gap: 2px;
   margin: 14px 14px 0;
   padding: var(--space-3) 18px;
-  background: linear-gradient(100deg, #ee4b11, #bd571a);
+  background: linear-gradient(100deg, var(--brand-orange), #c84312);
   color: #fff;
   text-transform: uppercase;
 }
@@ -407,7 +407,7 @@
   bottom: 0;
   left: 0;
   width: 4px;
-  background: #f05217;
+  background: var(--brand-orange);
   content: '';
 }
 .safety-stage-cards {
@@ -479,7 +479,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #f05217;
+  background: var(--brand-orange);
   content: '';
 }
 .safety-sweep-note {

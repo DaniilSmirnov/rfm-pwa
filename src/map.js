@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
+import { BRAND_ORANGE } from './app/design-tokens.js';
 import { geometryBounds } from './normalize.js';
 import { baseStyle } from './map/style.js';
 import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
@@ -94,12 +95,7 @@ function pointPayload(feature) {
 }
 
 function sourceColorExpression() {
-  return [
-    'case',
-    ['==', ['slice', ['to-string', ['coalesce', ['get', 'kind'], '']], 0, 7], 'yandex-'],
-    '#ffd21e',
-    '#e63b2e',
-  ];
+  return BRAND_ORANGE;
 }
 
 function featureName(props = {}) {
@@ -322,7 +318,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options = {}) {
       minzoom: 0,
       maxzoom: 24,
       paint: {
-        'line-color': '#e63b2e',
+        'line-color': BRAND_ORANGE,
         'line-width': ['interpolate', ['linear'], ['zoom'], 5, 3, 12, 6, 17, 9],
         'line-opacity': 1,
       },
@@ -348,7 +344,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options = {}) {
       minzoom: 0,
       maxzoom: 24,
       paint: {
-        'line-color': '#ffd21e',
+        'line-color': BRAND_ORANGE,
         'line-width': ['interpolate', ['linear'], ['zoom'], 5, 4, 12, 7, 17, 10],
         'line-opacity': 1,
       },
@@ -413,7 +409,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options = {}) {
         'circle-color': [
           'case',
           ['==', ['slice', ['to-string', ['coalesce', ['get', 'kind'], '']], 0, 7], 'yandex-'],
-          '#ffd21e',
+          BRAND_ORANGE,
           '#f3f5f7',
         ],
         'circle-stroke-color': '#111318',

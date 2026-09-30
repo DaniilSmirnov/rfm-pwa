@@ -26,6 +26,7 @@ import CollapsibleSection from '../components/CollapsibleSection.jsx';
 import ElevationProfile from '../components/ElevationProfile.jsx';
 import CompassReadout from '../components/CompassReadout.jsx';
 import { getCrewSubscriptions } from '../db.js';
+import { BRAND_ORANGE } from '../app/design-tokens.js';
 import { crewName, overallCrewResults } from '../app/crew-results.js';
 import '../components/MapView.css';
 
@@ -121,7 +122,7 @@ export default function MapView({
     <Panel id="mapSection" className="map-card legacy-map map-screen">
       <header className="map-floating-header">
         <span className="map-brand" aria-label="Rally Fans Map">
-          RALLY
+          <span>RALLY FANS</span> <em>MAP</em>
         </span>
         <label className="current-rally-select map-rally-picker">
           <MapPin aria-hidden="true" size={20} className="current-rally-pin" />
@@ -370,7 +371,7 @@ export default function MapView({
             RallyFansMap
           </span>
           <span>
-            <i style={{ background: '#ffd21e' }} />
+            <i style={{ background: BRAND_ORANGE }} />
             Yandex Constructor
           </span>
           <span>
