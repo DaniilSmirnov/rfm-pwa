@@ -31,7 +31,7 @@ const tabs = [
   { key: 'today', label: 'Сегодня', Icon: CalendarDays },
   { key: 'map', label: 'Карта', Icon: Map },
   { key: 'results', label: 'Результаты', Icon: Trophy },
-  { key: 'more', label: 'Ещё', Icon: CircleEllipsis },
+  { key: 'more', label: 'Меню', Icon: CircleEllipsis },
 ];
 function readTab() {
   const requested = new URLSearchParams(location.search).get('tab');
@@ -174,6 +174,16 @@ export default function App() {
     restoreScrollKey.current = 'more:menu';
     setMoreScreen('menu');
   };
+  const openRaces = () => {
+    scrollPositions.current[activeScrollKey] = window.scrollY;
+    restoreScrollKey.current = 'more:races';
+    const url = new URL(location.href);
+    url.searchParams.set('tab', 'more');
+    history.pushState({ tab: 'more' }, '', url);
+    setMoreScreen('races');
+    setTab('more');
+  };
+
   const returnToMoreMenu = () => {
     setMoreScreen('menu');
     const url = new URL(location.href);
@@ -183,7 +193,12 @@ export default function App() {
   const openCrewResults = () => setCrewResultsOpen(true);
   const screenContent =
     tab === 'today' ? (
-      <TodayView app={app} onMap={() => activate('map')} onResults={() => activate('results')} />
+      <TodayView
+        app={app}
+        onMap={() => activate('map')}
+        onResults={() => activate('results')}
+        onRaces={openRaces}
+      />
     ) : tab === 'results' ? (
       <section className="results-tab-screen">
         <CrewResults
