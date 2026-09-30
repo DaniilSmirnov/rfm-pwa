@@ -272,10 +272,3 @@
     font-size: 13px;
   }
 }
-
-@layer views {
-  .current-rally-select:focus-within {
-    outline: 2px solid #e21c23;
-    outline-offset: 3px;
-  }
-}

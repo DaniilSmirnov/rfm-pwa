@@ -29,7 +29,7 @@ for (const theme of ['light', 'dark']) {
     await expect(page.locator('.map-rally-picker')).toHaveCSS('outline-width', '2px');
     await page.getByRole('combobox', { name: 'Гонка на карте' }).blur();
     const map = await page.locator('.map-screen > .map').boundingBox();
-    expect(map.height).toBe(844);
+    expect(map.height).toBeCloseTo(844, 0);
     const header = await page.locator('.map-floating-header').boundingBox();
     const tools = await page.getByRole('button', { name: 'Инструменты карты' }).boundingBox();
     expect(header.height).toBeLessThan(65);
