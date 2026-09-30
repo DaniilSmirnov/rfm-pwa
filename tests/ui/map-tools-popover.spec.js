@@ -41,7 +41,8 @@ for (const theme of ['light', 'dark']) {
     await expect(favoritesDrawer).toBeHidden();
     await expect(carDrawer).toBeHidden();
 
-    await page.locator('.map-screen > .map').click({ position: { x: 20, y: 300 } });
+    const viewport = page.viewportSize();
+    await page.mouse.click(viewport.width - 12, 300);
     await expect(drawer).toBeHidden();
     await expect(trigger).toBeFocused();
 
