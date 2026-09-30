@@ -77,6 +77,26 @@ describe('inline results screen', () => {
     expect(screen.getByText('00:00:50')).toBeTruthy();
   });
 
+  it('shows unrun stages instead of NaN after retirement', () => {
+    const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'Поломка' };
+    const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'Поломка' };
+    const retiredViews = [
+      views[0],
+      { ...views[1], results: [retiredStage, views[1].results[1]] },
+      { key: '1', name: 'СУ 2', results: [views[1].results[1]] },
+    ];
+    renderResults({
+      visible: [retired],
+      selectedClassResults: [retired],
+      views: retiredViews,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Детали экипажа' });
+    expect(within(dialog).getAllByText('Не пройден')).toHaveLength(2);
+    expect(within(dialog).queryByText(/NaN/)).toBeNull();
+  });
+
   it('shows retirement reason and stage while keeping the normal card layout', () => {
     const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'Поломка' };
     const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'Поломка' };
