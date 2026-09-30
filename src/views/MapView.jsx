@@ -428,9 +428,6 @@ export default function MapView({
               </Button>
             </ActionGroup>
           </div>
-          <div className="map-location-controls">
-            <p className={`muted small ${app.geoClass}`}>{app.geoStatus}</p>
-          </div>
           <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
           <div className="legend">
             <span>
