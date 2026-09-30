@@ -1,6 +1,10 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
-import { pointMarkerKind, createPointMarkerContent } from '../../src/map/point-marker.js';
+import {
+  pointMarkerKind,
+  pointWithMarkerIcon,
+  createPointMarkerContent,
+} from '../../src/map/point-marker.js';
 
 describe('spectator map symbols', () => {
   it.each([
@@ -13,26 +17,19 @@ describe('spectator map symbols', () => {
     ['Дорога закрыта', 'closure'],
     ['Неизвестная точка', 'location'],
   ])('keeps the meaning of %s', (name, kind) => expect(pointMarkerKind({}, name)).toBe(kind));
-  it('renders communication, start and finish with dedicated svg icons', () => {
-    const communication = document.createElement('button');
-    createPointMarkerContent(communication, 'Пост связи', 'communication');
-    expect(
-      communication.querySelector('.map-point-symbol').classList.contains('is-communication'),
-    ).toBe(true);
-    expect(communication.querySelector('.map-point-svg')).toBeTruthy();
+  it('stores the icon as a point property and renders no separate icon node', () => {
+    const feature = pointWithMarkerIcon({
+      type: 'Feature',
+      properties: { name: 'Пост связи' },
+      geometry: { type: 'Point', coordinates: [30, 60] },
+    });
+    expect(feature.properties.markerIcon).toBe('communication');
 
-    const passport = document.createElement('button');
-    createPointMarkerContent(passport, 'Паспорт', 'passport');
-    expect(passport.querySelector('.map-point-svg')).toBeTruthy();
-
-    const start = document.createElement('button');
-    createPointMarkerContent(start, 'Старт', 'start');
-    expect(start.querySelector('.map-point-flag')).toBeTruthy();
-
-    const finish = document.createElement('button');
-    createPointMarkerContent(finish, 'Финиш', 'finish');
-    expect(finish.querySelector('.map-point-finish-flag')).toBeTruthy();
-    expect(finish.querySelectorAll('.map-point-finish-flag path')).toHaveLength(2);
+    const el = document.createElement('button');
+    createPointMarkerContent(el, feature.properties.name, feature.properties.markerIcon);
+    expect(el.dataset.pointIcon).toBe('communication');
+    expect(el.querySelector('.map-point-symbol')).toBeNull();
+    expect(el.querySelector('.map-point-svg')).toBeNull();
   });
 
   it('uses source type and keeps an accessible safe label', () => {
@@ -41,7 +38,7 @@ describe('spectator map symbols', () => {
     createPointMarkerContent(el, name, pointMarkerKind({ type: 'spectator' }));
     expect(el.getAttribute('aria-label')).toBe(name);
     expect(el.querySelector('.map-point-label').textContent).toBe(name);
-    expect(el.querySelectorAll('img')).toHaveLength(1);
-    expect(el.querySelector('img').getAttribute('src')).toBe('/assets/spectator.svg');
+    expect(el.dataset.pointIcon).toBe('spectator');
+    expect(el.querySelectorAll('img')).toHaveLength(0);
   });
 });
