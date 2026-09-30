@@ -47,7 +47,7 @@ async function openPushApp(
     document.querySelector('#catalogStatus')?.textContent?.includes('гонок'),
   );
   await page.getByRole('button', { name: 'Сегодня' }).click();
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
   await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
 }
 
