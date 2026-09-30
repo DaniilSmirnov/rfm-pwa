@@ -14,7 +14,13 @@ export function pointMarkerKind(properties = {}, name = '') {
 export function pointWithMarkerIcon(feature) {
   if (!feature || feature.geometry?.type !== 'Point') return feature;
   const properties = feature.properties || {};
-  const name = properties.name || properties.title || '';
+  const name =
+    properties['name:ru'] ||
+    properties.name_ru ||
+    properties.name ||
+    properties.title ||
+    properties.caption ||
+    '';
   return {
     ...feature,
     properties: {
