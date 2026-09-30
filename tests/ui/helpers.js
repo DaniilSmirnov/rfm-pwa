@@ -440,7 +440,7 @@ export async function openApp(page, options = {}) {
   await installAppMocks(page, options);
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await page.waitForFunction(
     () =>
@@ -452,7 +452,7 @@ export async function openApp(page, options = {}) {
 }
 
 export async function openRaceManagement(page) {
-  await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+  await page.getByRole('button', { name: 'Меню', exact: true }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
 }
 

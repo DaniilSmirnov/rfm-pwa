@@ -12,7 +12,7 @@ export default function RacesView({ app, onOpenRace, onBack }) {
     <section className="races-screen" aria-label="Управление гонками">
       {onBack && (
         <Button className="button compact races-back" onClick={onBack}>
-          Назад в меню «Ещё»
+          Назад в меню «Меню»
         </Button>
       )}
       <Panel className="races-preferences">

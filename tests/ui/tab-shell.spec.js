@@ -3,7 +3,7 @@ import { openApp, openMapWithAcceptedSafety } from './helpers.js';
 
 test('uses the same orange borderless active state for every tab', async ({ page }) => {
   await openApp(page);
-  const tabs = ['Сегодня', 'Карта', 'Результаты', 'Ещё'];
+  const tabs = ['Сегодня', 'Карта', 'Результаты', 'Меню'];
   let activeColor = null;
 
   for (const label of tabs) {
@@ -37,15 +37,15 @@ test('switches between offline-first main tabs', async ({ page }) => {
     'Смотри сохранённые результаты и обновляй данные',
   );
   await expect(page.locator('.crew-results-section')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+  await page.getByRole('button', { name: 'Меню', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Гонки и Rally Pack' })).toBeVisible();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await expect(page.getByLabel('Управление гонками')).toBeVisible();
   await expect(page.getByLabel('Удалять автоматически по завершению гонки')).not.toBeChecked();
-  await page.getByRole('button', { name: 'Назад в меню «Ещё»' }).click();
+  await page.getByRole('button', { name: 'Назад в меню «Меню»' }).click();
   await expect(page.getByRole('button', { name: 'Настройки и диагностика' })).toBeVisible();
   await expect(page).toHaveURL(/\?tab=more$/);
-  await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+  await page.getByRole('button', { name: 'Меню', exact: true }).click();
   await expect(page.locator('.react-tab-content')).toHaveCSS('padding-bottom', '0px');
   await expect(page.locator('.crew-results-section>.section-head')).toBeHidden();
   await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'more');
