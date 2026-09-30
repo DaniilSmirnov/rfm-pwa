@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Layers, MapPin, ChevronDown, Star, ParkingSquare } from 'lucide-react';
-import * as Popover from '@radix-ui/react-popover';
 import packageMeta from '../../package.json';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
@@ -108,15 +107,28 @@ export default function MapView({
   }, [app.selectedPoint]);
   useEffect(() => {
     if (!toolsOpen) return undefined;
+    const trigger = document.getElementById('mapToolsToggle');
+    const closeTools = () => {
+      setToolsOpen(false);
+      requestAnimationFrame(() => trigger?.focus());
+    };
     const handlePointerDown = event => {
       const target = event.target;
       const drawer = document.getElementById('mapToolsDrawer');
-      const trigger = document.getElementById('mapToolsToggle');
       if (drawer?.contains(target) || trigger?.contains(target)) return;
-      setToolsOpen(false);
+      closeTools();
+    };
+    const handleKeyDown = event => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeTools();
     };
     document.addEventListener('pointerdown', handlePointerDown, true);
-    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [toolsOpen]);
   useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
   const beginPointSheetGesture = event => {
@@ -303,9 +315,8 @@ export default function MapView({
       <div className="map" aria-label="offline rally map">
         {mapContent}
       </div>
-      <Popover.Root open={toolsOpen} onOpenChange={setToolsOpen}>
-        <Popover.Anchor asChild>
-          <Button
+      <>
+        <Button
             id="mapToolsToggle"
             className="map-tools-toggle"
             aria-label={toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
@@ -315,7 +326,6 @@ export default function MapView({
           >
             <Layers aria-hidden="true" size={21} />
           </Button>
-        </Popover.Anchor>
         {liveStage && (
           <div className="map-live-stage" aria-label="Активный спецучасток">
             <span aria-hidden="true" />
@@ -336,14 +346,13 @@ export default function MapView({
             {app.geoStatus}
           </span>
         </div>
-        <Popover.Content
-          asChild
-          forceMount
+        <div
+          id="mapToolsDrawer"
+          className="map-tools-drawer"
           role="region"
           aria-label="Инструменты карты"
-          onPointerDownOutside={() => setToolsOpen(false)}
+          hidden={!toolsOpen}
         >
-          <div id="mapToolsDrawer" className="map-tools-drawer" hidden={!toolsOpen}>
             <div className="map-tools-heading">
               <strong>Инструменты карты</strong>
               <OfflineMapActions app={app} />
@@ -563,9 +572,8 @@ export default function MapView({
                 {pointsContent}
               </div>
             </CollapsibleSection>
-          </div>
-        </Popover.Content>
-      </Popover.Root>
+        </div>
+      </>
       {pointSheetPoint && (
         <>
           <Button
