@@ -17,7 +17,7 @@ for (const theme of ['light', 'dark']) {
     await openMapWithAcceptedSafety(page);
     await page.evaluate(theme => (document.documentElement.dataset.theme = theme), theme);
     const mapLogo = page.locator('.map-brand-logo');
-    await expect(mapLogo).toHaveAttribute('src', '/rfm/icon.png');
+    await expect(mapLogo).toHaveAttribute('src', /\/rfm\/icon\.png\?v=\d+/);
     await expect(mapLogo).toHaveAttribute('alt', 'Rally Fans Map');
     await expect(mapLogo).toBeVisible();
     await expect(page.locator('.map-brand')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
@@ -52,16 +52,28 @@ for (const theme of ['light', 'dark']) {
     await expect(sheet).toBeVisible();
     await expect(sheet.locator('img')).toBeVisible();
     await expect(sheet).toContainText('350 м от парковки');
-    const cta = page.getByRole('button', { name: 'Показать детали' });
-    await expect(cta).toHaveCSS('background-color', 'rgb(240, 82, 23)');
+    await expect(page.locator('#mapPointDetails')).toBeHidden();
+    const sheetHandle = page.getByRole('button', { name: 'Развернуть карточку точки' });
+    await sheetHandle.click();
+    await expect(page.locator('#mapPointDetails')).toBeVisible();
     const sheetBox = await sheet.boundingBox();
-    const ctaBox = await cta.boundingBox();
-    expect(ctaBox.width).toBeGreaterThan(sheetBox.width * 0.85);
+    expect(sheetBox.height).toBeGreaterThan(120);
     const tabs = await page.locator('.bottom-tabbar').boundingBox();
     expect(sheetBox.y + sheetBox.height).toBeLessThanOrEqual(tabs.y);
     await page.screenshot({ path: testInfo.outputPath(`map-${theme}.png`) });
-    await cta.click();
-    await expect(page.locator('#mapPointDetails')).toBeVisible();
+    await page.locator('#mapPointSheetBackdrop').click({ position: { x: 10, y: 10 } });
+    await expect(page.locator('#pointActions')).toBeHidden();
+    await expect(page.locator('#mapPointSheetBackdrop')).toBeHidden();
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
+    const pointRow = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
+    if (!(await pointRow.isVisible())) await page.getByText('ГДЕ СМОТРЕТЬ?').click();
+    await page
+      .locator('.point-row')
+      .filter({ hasText: 'Смотровая точка' })
+      .locator('.point-row-copy')
+      .click();
+    await expect(page.locator('#pointActions')).toBeVisible();
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await page.getByRole('button', { name: 'Ещё', exact: true }).click();
     const gaps = await page.locator('.more-menu-grid').evaluateAll(groups =>
       groups.flatMap(group => {

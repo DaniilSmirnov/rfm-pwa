@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Layers, MapPin, ChevronDown, ArrowRight, Star, ParkingSquare } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Layers, MapPin, ChevronDown, Star, ParkingSquare } from 'lucide-react';
+import packageMeta from '../../package.json';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
 import {
@@ -45,6 +46,8 @@ export default function MapView({
   const [toolsOpen, setToolsOpen] = useState(false);
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
+  const pointSheetRef = useRef(null);
+  const pointSheetGesture = useRef({ startY: 0, suppressClick: false });
   const pkg = app.currentPackage;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
@@ -78,6 +81,44 @@ export default function MapView({
   useEffect(() => {
     if (app.selectedPoint) setToolsOpen(false);
   }, [app.selectedPoint]);
+  useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
+  useEffect(() => {
+    if (!app.selectedPoint) return undefined;
+    const sheet = pointSheetRef.current;
+    const previousFocus = document.activeElement;
+    const closePoint = () => app.showPoint?.(null);
+    const focusable = () =>
+      [...(sheet?.querySelectorAll('button, a, input, select, textarea, [tabindex]') || [])].filter(
+        node => !node.disabled && !node.closest('[hidden]') && node.tabIndex >= 0,
+      );
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closePoint();
+        return;
+      }
+      if (event.key !== 'Tab' || !sheet) return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.body.classList.add('modal-open');
+    document.addEventListener('keydown', onKeyDown);
+    requestAnimationFrame(() => sheet?.querySelector('.map-point-sheet-handle')?.focus());
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.classList.remove('modal-open');
+      if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
+    };
+  }, [app.selectedPoint, app.showPoint]);
   const raceKey = String(pkg?.raceId || pkg?.original?.id || pkg?.id || '');
   const asmgKey = String(pkg?.asmgRaceId || pkg?.original?.asmg_id || pkg?.original?.asmgId || '');
   const followed = crewSubscriptions
@@ -122,7 +163,11 @@ export default function MapView({
     <Panel id="mapSection" className="map-card legacy-map map-screen">
       <header className="map-floating-header">
         <span className="map-brand" aria-label="Rally Fans Map">
-          <img className="map-brand-logo" src="/rfm/icon.png" alt="Rally Fans Map" />
+          <img
+            className="map-brand-logo"
+            src={`/rfm/icon.png?v=${String(packageMeta.version).replace(/\D/g, '')}`}
+            alt="Rally Fans Map"
+          />
         </span>
         <label className="current-rally-select map-rally-picker">
           <MapPin aria-hidden="true" size={20} className="current-rally-pin" />
@@ -398,215 +443,257 @@ export default function MapView({
         </CollapsibleSection>
       </div>
       {app.selectedPoint && (
-        <aside
-          id="pointActions"
-          className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''}`}
-        >
-          <div className={`point-actions-copy ${selectedDetails?.photo ? 'has-photo' : ''}`}>
-            {selectedDetails?.photo && (
-              <a
-                className="map-point-sheet-photo-link"
-                href={selectedDetails.photo}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <img
-                  className="map-point-sheet-photo"
-                  src={selectedDetails.photo}
-                  alt={`Фото: ${app.selectedPoint.name}`}
-                />
-              </a>
-            )}
-
-            <strong id="pointName">{app.selectedPoint.name}</strong>
-            <span className="map-point-sheet-meta">
-              {pointStageDistance
-                ? `${pointStageDistance.stage.name} · ${formatDistance(pointStageDistance.distance.fromStart)} от старта`
-                : 'Точка на карте'}
-            </span>
-            {selectedDetails?.rating && (
-              <span className="map-point-summary">
-                <Star size={14} aria-hidden="true" /> {selectedDetails.rating}
-              </span>
-            )}
-            {selectedDetails?.walking && (
-              <span className="map-point-summary map-point-walking">
-                <ParkingSquare size={14} aria-hidden="true" /> {selectedDetails.walking}
-              </span>
-            )}
-          </div>
+        <>
           <Button
-            className="button map-point-details-toggle"
-            aria-expanded={pointDetailsOpen}
-            aria-controls="mapPointDetails"
-            onClick={() => setPointDetailsOpen(open => !open)}
+            id="mapPointSheetBackdrop"
+            className="map-point-sheet-backdrop"
+            type="button"
+            aria-label="Закрыть карточку точки"
+            onClick={() => app.showPoint?.(null)}
+          />
+          <aside
+            ref={pointSheetRef}
+            id="pointActions"
+            className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pointName"
           >
-            {pointDetailsOpen ? 'Скрыть детали' : 'Показать детали'}
-            <ArrowRight size={16} aria-hidden="true" />
-          </Button>
-          <div id="mapPointDetails" className="map-point-sheet-details" hidden={!pointDetailsOpen}>
-            <span id="pointCoords" className="muted">
-              {coordinateText(app.selectedPoint)}
-            </span>
-            <span id="pointStageDistance" className="muted small">
-              {pointStageDistance
-                ? `${pointStageDistance.stage.name}: ${formatDistance(pointStageDistance.distance.fromStart)} от старта · ${formatDistance(pointStageDistance.distance.toFinish)} до финиша`
-                : ''}
-            </span>
-            {(selectedDetails?.parking || selectedDetails?.walking) && (
-              <dl className="map-point-access">
-                {selectedDetails.parking && (
-                  <>
-                    <dt>Парковка</dt>
-                    <dd>{selectedDetails.parking}</dd>
-                  </>
-                )}
-                {selectedDetails.walking && (
-                  <>
-                    <dt>Пешком</dt>
-                    <dd>{selectedDetails.walking}</dd>
-                  </>
-                )}
-              </dl>
-            )}
-            {(selectedDetails?.description || selectedDetails?.rating) && (
-              <div className="map-point-description">
-                {selectedDetails.description && <p>{selectedDetails.description}</p>}
-                {selectedDetails.rating && <p>Оценка точки: {selectedDetails.rating}</p>}
-              </div>
-            )}
-            {nextStageCrews.length > 0 && (
-              <section className="map-point-next-crews" aria-label="Следующие экипажи на этапе">
-                <strong>Следующие старты на {pointStageDistance.stage.name}</strong>
-                <ol>
-                  {nextStageCrews.map(crew => (
-                    <li key={crew.id}>
-                      {crew.number ? `№ ${crew.number}` : crew.name} · старт {crew.time}
-                      {crew.eta &&
-                        ` · ориентировочное прибытие около ${formatRallyTimeOfDay(crew.eta, pkg)}`}
-                    </li>
-                  ))}
-                </ol>
-                <small>
-                  {nextStageCrews.some(crew => crew.eta)
-                    ? 'Старт опубликован организатором. Прибытие рассчитано по среднему темпу экипажей с результатом на этом СУ; оценка дана без live GPS.'
-                    : 'Время старта опубликовано организатором. Данных о темпе на этом СУ пока нет, ETA не рассчитывается.'}
-                </small>
-              </section>
-            )}
-            {pointStageResults && (
-              <section className="map-point-stage-results" aria-label="Результаты этапа у точки">
-                <strong>Обстановка на {pointStageDistance.stage.name}</strong>
-                <p>
-                  По опубликованному протоколу СУ завершили экипажей:{' '}
-                  {pointStageResults.completedCount}.
-                </p>
-                {pointStageResults.bestResult && (
+            <Button
+              className="map-point-sheet-handle"
+              type="button"
+              aria-expanded={pointDetailsOpen}
+              aria-controls="mapPointDetails"
+              aria-label={
+                pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'
+              }
+              onPointerDown={event => {
+                pointSheetGesture.current = { startY: event.clientY, suppressClick: false };
+                event.currentTarget.setPointerCapture?.(event.pointerId);
+              }}
+              onPointerUp={event => {
+                const delta = event.clientY - pointSheetGesture.current.startY;
+                if (Math.abs(delta) < 36) return;
+                event.preventDefault();
+                pointSheetGesture.current.suppressClick = true;
+                if (delta > 0) app.showPoint?.(null);
+                else setPointDetailsOpen(true);
+              }}
+              onClick={() => {
+                if (pointSheetGesture.current.suppressClick) {
+                  pointSheetGesture.current.suppressClick = false;
+                  return;
+                }
+                setPointDetailsOpen(open => !open);
+              }}
+            >
+              <span className="map-point-sheet-grabber" aria-hidden="true" />
+              <span className="sr-only">
+                {pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'}
+              </span>
+            </Button>
+            <div className={`point-actions-copy ${selectedDetails?.photo ? 'has-photo' : ''}`}>
+              {selectedDetails?.photo && (
+                <a
+                  className="map-point-sheet-photo-link"
+                  href={selectedDetails.photo}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    className="map-point-sheet-photo"
+                    src={selectedDetails.photo}
+                    alt={`Фото: ${app.selectedPoint.name}`}
+                  />
+                </a>
+              )}
+
+              <strong id="pointName">{app.selectedPoint.name || 'Точка на карте'}</strong>
+              <span className="map-point-sheet-meta">
+                {pointStageDistance
+                  ? `${pointStageDistance.stage.name} · ${formatDistance(pointStageDistance.distance.fromStart)} от старта`
+                  : 'Точка на карте'}
+              </span>
+              {selectedDetails?.rating && (
+                <span className="map-point-summary">
+                  <Star size={14} aria-hidden="true" /> {selectedDetails.rating}
+                </span>
+              )}
+              {selectedDetails?.walking && (
+                <span className="map-point-summary map-point-walking">
+                  <ParkingSquare size={14} aria-hidden="true" /> {selectedDetails.walking}
+                </span>
+              )}
+            </div>
+            <div
+              id="mapPointDetails"
+              className="map-point-sheet-details"
+              hidden={!pointDetailsOpen}
+            >
+              <span id="pointCoords" className="muted">
+                {coordinateText(app.selectedPoint)}
+              </span>
+              <span id="pointStageDistance" className="muted small">
+                {pointStageDistance
+                  ? `${pointStageDistance.stage.name}: ${formatDistance(pointStageDistance.distance.fromStart)} от старта · ${formatDistance(pointStageDistance.distance.toFinish)} до финиша`
+                  : ''}
+              </span>
+              {(selectedDetails?.parking || selectedDetails?.walking) && (
+                <dl className="map-point-access">
+                  {selectedDetails.parking && (
+                    <>
+                      <dt>Парковка</dt>
+                      <dd>{selectedDetails.parking}</dd>
+                    </>
+                  )}
+                  {selectedDetails.walking && (
+                    <>
+                      <dt>Пешком</dt>
+                      <dd>{selectedDetails.walking}</dd>
+                    </>
+                  )}
+                </dl>
+              )}
+              {(selectedDetails?.description || selectedDetails?.rating) && (
+                <div className="map-point-description">
+                  {selectedDetails.description && <p>{selectedDetails.description}</p>}
+                  {selectedDetails.rating && <p>Оценка точки: {selectedDetails.rating}</p>}
+                </div>
+              )}
+              {nextStageCrews.length > 0 && (
+                <section className="map-point-next-crews" aria-label="Следующие экипажи на этапе">
+                  <strong>Следующие старты на {pointStageDistance.stage.name}</strong>
+                  <ol>
+                    {nextStageCrews.map(crew => (
+                      <li key={crew.id}>
+                        {crew.number ? `№ ${crew.number}` : crew.name} · старт {crew.time}
+                        {crew.eta &&
+                          ` · ориентировочное прибытие около ${formatRallyTimeOfDay(crew.eta, pkg)}`}
+                      </li>
+                    ))}
+                  </ol>
+                  <small>
+                    {nextStageCrews.some(crew => crew.eta)
+                      ? 'Старт опубликован организатором. Прибытие рассчитано по среднему темпу экипажей с результатом на этом СУ; оценка дана без live GPS.'
+                      : 'Время старта опубликовано организатором. Данных о темпе на этом СУ пока нет, ETA не рассчитывается.'}
+                  </small>
+                </section>
+              )}
+              {pointStageResults && (
+                <section className="map-point-stage-results" aria-label="Результаты этапа у точки">
+                  <strong>Обстановка на {pointStageDistance.stage.name}</strong>
                   <p>
-                    Лучший результат: № {pointStageResults.bestResult.crew?.number || '—'}{' '}
-                    {crewName(pointStageResults.bestResult.crew)} ·{' '}
-                    {pointStageResults.bestResult.formattedTime || 'время не отформатировано'}
+                    По опубликованному протоколу СУ завершили экипажей:{' '}
+                    {pointStageResults.completedCount}.
                   </p>
-                )}
-                <small>
-                  Отдельные отметки времени прохождения этой зрительской точки не опубликованы.
-                </small>
-              </section>
-            )}
-            {followedEtas.length > 0 && (
-              <section className="map-favorite-etas" aria-label="Оценка избранных экипажей">
-                <strong>Избранные экипажи · оценка у точки</strong>
-                {followedEtas.map(({ favorite, scheduled }) => (
-                  <p key={favorite.id || favorite.number}>
-                    № {scheduled.number || favorite.number} · около{' '}
-                    {formatRallyTimeOfDay(scheduled.eta, pkg)}
-                  </p>
-                ))}
-              </section>
-            )}
-            <ActionGroup className="point-buttons">
-              <Button
-                id="favoritePointBtn"
-                className={`button ${favorite ? 'downloaded' : ''}`}
-                onClick={() => app.toggleFavorite(app.selectedPoint)}
-              >
-                {favorite ? '★ В избранном' : '☆ В избранное'}
-              </Button>
-              <Button
-                id="mapsMeBtn"
-                className="button primary"
-                onClick={() =>
-                  openCustomSchemeWithFallback(
-                    mapsMeLink(app.selectedPoint),
-                    mapsMeFallbackForPoint(app.selectedPoint),
-                  )
+                  {pointStageResults.bestResult && (
+                    <p>
+                      Лучший результат: № {pointStageResults.bestResult.crew?.number || '—'}{' '}
+                      {crewName(pointStageResults.bestResult.crew)} ·{' '}
+                      {pointStageResults.bestResult.formattedTime || 'время не отформатировано'}
+                    </p>
+                  )}
+                  <small>
+                    Отдельные отметки времени прохождения этой зрительской точки не опубликованы.
+                  </small>
+                </section>
+              )}
+              {followedEtas.length > 0 && (
+                <section className="map-favorite-etas" aria-label="Оценка избранных экипажей">
+                  <strong>Избранные экипажи · оценка у точки</strong>
+                  {followedEtas.map(({ favorite, scheduled }) => (
+                    <p key={favorite.id || favorite.number}>
+                      № {scheduled.number || favorite.number} · около{' '}
+                      {formatRallyTimeOfDay(scheduled.eta, pkg)}
+                    </p>
+                  ))}
+                </section>
+              )}
+              <ActionGroup className="point-buttons">
+                <Button
+                  id="favoritePointBtn"
+                  className={`button ${favorite ? 'downloaded' : ''}`}
+                  onClick={() => app.toggleFavorite(app.selectedPoint)}
+                >
+                  {favorite ? '★ В избранном' : '☆ В избранное'}
+                </Button>
+                <Button
+                  id="mapsMeBtn"
+                  className="button primary"
+                  onClick={() =>
+                    openCustomSchemeWithFallback(
+                      mapsMeLink(app.selectedPoint),
+                      mapsMeFallbackForPoint(app.selectedPoint),
+                    )
+                  }
+                >
+                  MAPS.ME
+                </Button>
+                <Button
+                  id="yandexMapsBtn"
+                  className="button"
+                  onClick={() => openYandex(app.selectedPoint)}
+                >
+                  Yandex Navigator
+                </Button>
+                <Button
+                  id="googleMapsBtn"
+                  className="button"
+                  onClick={() => (window.location.href = googleMapsDirections(app.selectedPoint))}
+                >
+                  Google Maps
+                </Button>
+                <Button
+                  id="sharePointBtn"
+                  className="button"
+                  onClick={() => app.sharePoint(app.selectedPoint)}
+                >
+                  Поделиться
+                </Button>
+                <Button
+                  id="copyCoordsBtn"
+                  className="button"
+                  onClick={() => void copyPoint(app.selectedPoint)}
+                >
+                  Копировать
+                </Button>
+              </ActionGroup>
+              <p id="pointElevation" className="muted small">
+                {pointElevation}
+              </p>
+              <p id="navStatus" className="muted small">
+                {app.navStatus}
+              </p>
+              <CollapsibleSection
+                id="spectatorCompass"
+                open={compassOpen}
+                onToggle={event => setCompassOpen(event.currentTarget.open)}
+                className="spectator-compass"
+                bodyClassName="spectator-compass-body"
+                summary={
+                  <>
+                    <span className="block-title">КОМПАС ЗРИТЕЛЯ</span>
+                    <span className="summary-chevron">⌄</span>
+                  </>
                 }
               >
-                MAPS.ME
-              </Button>
-              <Button
-                id="yandexMapsBtn"
-                className="button"
-                onClick={() => openYandex(app.selectedPoint)}
-              >
-                Yandex Navigator
-              </Button>
-              <Button
-                id="googleMapsBtn"
-                className="button"
-                onClick={() => (window.location.href = googleMapsDirections(app.selectedPoint))}
-              >
-                Google Maps
-              </Button>
-              <Button
-                id="sharePointBtn"
-                className="button"
-                onClick={() => app.sharePoint(app.selectedPoint)}
-              >
-                Поделиться
-              </Button>
-              <Button
-                id="copyCoordsBtn"
-                className="button"
-                onClick={() => void copyPoint(app.selectedPoint)}
-              >
-                Копировать
-              </Button>
-            </ActionGroup>
-            <p id="pointElevation" className="muted small">
-              {pointElevation}
-            </p>
-            <p id="navStatus" className="muted small">
-              {app.navStatus}
-            </p>
-            <CollapsibleSection
-              id="spectatorCompass"
-              open={compassOpen}
-              onToggle={event => setCompassOpen(event.currentTarget.open)}
-              className="spectator-compass"
-              bodyClassName="spectator-compass-body"
-              summary={
-                <>
-                  <span className="block-title">КОМПАС ЗРИТЕЛЯ</span>
-                  <span className="summary-chevron">⌄</span>
-                </>
-              }
-            >
-              <p className="muted small">
-                Показывает направление и расстояние до выбранной точки прямо по положению телефона.
-              </p>
-              <Button
-                id="compassEnableBtn"
-                className="button"
-                type="button"
-                onClick={app.enableCompass}
-              >
-                {app.compassEnabled ? 'Компас включён' : 'Включить компас'}
-              </Button>
-              <CompassReadout point={app.selectedPoint} userPos={app.userPos} />
-            </CollapsibleSection>
-          </div>
-        </aside>
+                <p className="muted small">
+                  Показывает направление и расстояние до выбранной точки прямо по положению
+                  телефона.
+                </p>
+                <Button
+                  id="compassEnableBtn"
+                  className="button"
+                  type="button"
+                  onClick={app.enableCompass}
+                >
+                  {app.compassEnabled ? 'Компас включён' : 'Включить компас'}
+                </Button>
+                <CompassReadout point={app.selectedPoint} userPos={app.userPos} />
+              </CollapsibleSection>
+            </div>
+          </aside>
+        </>
       )}
     </Panel>
   );

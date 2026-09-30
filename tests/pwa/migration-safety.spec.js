@@ -448,7 +448,7 @@ test.describe('PWA migration safety', () => {
       .locator('.point-row-copy')
       .click();
     await expect(page.locator('#pointActions')).toBeVisible();
-    await page.getByRole('button', { name: 'Показать детали' }).click();
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await expect(page.locator('#pointCoords')).toContainText('61.700000');
   });
 

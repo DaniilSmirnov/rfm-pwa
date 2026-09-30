@@ -789,6 +789,45 @@
     color: var(--text);
     box-shadow: 0 -3px 18px #18263020;
     gap: 14px;
+    transition:
+      max-height 180ms ease,
+      box-shadow 180ms ease;
+  }
+  .map-point-sheet-backdrop {
+    position: absolute;
+    z-index: 9;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(16 18 22 / 18%);
+    cursor: default;
+  }
+  .map-point-sheet-handle {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: 20px;
+    margin: -8px 0 0;
+    padding: 8px 0 4px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    cursor: grab;
+    touch-action: none;
+  }
+  .map-point-sheet-handle:active {
+    cursor: grabbing;
+  }
+  .map-point-sheet-grabber {
+    width: 44px;
+    height: 4px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.7;
   }
   .map-point-sheet .point-actions-copy {
     display: grid;
@@ -834,18 +873,6 @@
   }
   .map-point-walking svg {
     color: #1768c5;
-  }
-  .map-point-sheet .map-point-details-toggle {
-    width: 100%;
-    min-height: 44px;
-    border: 0;
-    border-radius: 9px;
-    background: var(--brand-orange);
-    color: #fff;
-    font-size: 13px;
-  }
-  .map-point-sheet .map-point-details-toggle:hover {
-    background: #c84312;
   }
   .map-point-sheet-details[hidden] {
     display: none;
@@ -895,9 +922,8 @@
   :root[data-theme='dark'] .map-locate-button .rfm-icon {
     filter: invert(1);
   }
-  :root[data-theme='dark'] .map-point-sheet .map-point-details-toggle {
-    background: var(--brand-orange);
-    color: #fff;
+  :root[data-theme='dark'] .map-point-sheet-backdrop {
+    background: rgb(0 0 0 / 36%);
   }
 }
 

@@ -189,7 +189,7 @@ test.describe('saved race user flows', () => {
       .locator('.point-row-copy')
       .click();
     await expect(page.locator('#pointActions')).toBeVisible();
-    await page.getByRole('button', { name: 'Показать детали' }).click();
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await expect(page.locator('#pointName')).toHaveText('Смотровая точка');
     await expect(page.locator('#pointCoords')).toContainText('61.702000');
     await expect(page.locator('#pointElevation')).toContainText('рельеф не скачан');
@@ -275,7 +275,7 @@ test.describe('saved race user flows', () => {
     await page.locator('#saveCarBtn').click();
     await page.locator('#carCompassBtn').click();
     await expect(page.locator('#pointActions')).toBeVisible();
-    await page.getByRole('button', { name: 'Показать детали' }).click();
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await expect(page.locator('#pointName')).toHaveText('Машина');
     await expect(page.locator('#spectatorCompass')).toHaveAttribute('open', '');
     await expect(page.locator('#compassDistance')).not.toHaveText('—');
