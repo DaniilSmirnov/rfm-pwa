@@ -775,15 +775,19 @@
   .map-point-sheet {
     position: absolute;
     z-index: 10;
-    right: max(12px, var(--safe-right));
+    right: 0;
     bottom: calc(68px + var(--safe-bottom));
-    left: max(12px, var(--safe-left));
+    left: 0;
     max-height: min(48dvh, 450px);
     overflow: auto;
-    margin: 0 auto;
-    width: min(620px, calc(100% - 24px));
-    padding: 16px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 16px max(16px, var(--safe-right)) 16px max(16px, var(--safe-left));
     border: 1px solid var(--line);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
     border-radius: 16px 16px 0 0;
     background: var(--surface);
     color: var(--text);
@@ -802,14 +806,18 @@
     margin: 0;
     padding: 0;
     border: 0;
-    background: rgb(16 18 22 / 18%);
+    background: transparent;
     cursor: default;
+    pointer-events: none;
+  }
+  .map-point-sheet-backdrop.is-interactive {
+    pointer-events: auto;
   }
   .map-point-sheet-handle {
     display: grid;
     place-items: center;
     width: 100%;
-    min-height: 20px;
+    min-height: 44px;
     margin: -8px 0 0;
     padding: 8px 0 4px;
     border: 0;
@@ -834,6 +842,7 @@
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
     gap: 5px 14px;
+    touch-action: none;
   }
   .map-point-sheet .point-actions-copy.has-photo {
     grid-template-columns: 92px minmax(0, 1fr);
@@ -899,7 +908,7 @@
   @media (max-width: 600px) {
     .map-point-sheet {
       bottom: calc(64px + var(--safe-bottom));
-      width: auto;
+      width: 100%;
       max-height: 38dvh;
     }
     .map-tools-toggle {
@@ -921,9 +930,6 @@
 @layer theme {
   :root[data-theme='dark'] .map-locate-button .rfm-icon {
     filter: invert(1);
-  }
-  :root[data-theme='dark'] .map-point-sheet-backdrop {
-    background: rgb(0 0 0 / 36%);
   }
 }
 

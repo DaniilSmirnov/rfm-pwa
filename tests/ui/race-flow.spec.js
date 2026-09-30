@@ -205,6 +205,11 @@ test.describe('saved race user flows', () => {
     const row = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
     await row.locator('[data-nav="favorite"]').click();
     await expect(page.locator('#favoritesList')).toContainText('Смотровая точка');
+    await page.locator('#favoritesList .point-row-copy').click();
+    await expect(page.locator('#pointActions')).toBeVisible();
+    await page.locator('.map-screen > .map').click({ position: { x: 20, y: 300 } });
+    await expect(page.locator('#pointActions')).toBeHidden();
+    await openMapTools(page);
     await page.locator('#favoritesList').getByRole('button', { name: 'Удалить' }).click();
     await expect(page.locator('#favoritesList')).toContainText('Пока пусто');
   });
