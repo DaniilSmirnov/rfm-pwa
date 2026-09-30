@@ -704,6 +704,17 @@
     box-shadow: 0 2px 10px #18263016;
     pointer-events: auto;
   }
+  .map-floating-header .map-rally-picker > .select-field {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
   .map-tools-toggle,
   .map-locate-button {
     display: grid;
@@ -967,6 +978,34 @@
 .map-screen:has(.map-point-sheet) .maplibregl-ctrl-bottom-left,
 .map-screen:has(.map-point-sheet) .maplibregl-ctrl-bottom-right {
   bottom: calc(260px + var(--safe-bottom));
+}
+
+/* Radix Popover wraps Content in a positioning layer. Keep the existing drawer geometry. */
+.map-screen > [data-radix-popper-content-wrapper]:has(> .map-tools-drawer) {
+  position: absolute !important;
+  top: calc(116px + var(--safe-top)) !important;
+  right: max(12px, var(--safe-right)) !important;
+  bottom: calc(78px + var(--safe-bottom)) !important;
+  left: auto !important;
+  width: min(440px, calc(100vw - 24px)) !important;
+  transform: none !important;
+}
+
+.map-screen > [data-radix-popper-content-wrapper]:has(> .map-tools-drawer) > .map-tools-drawer {
+  position: static !important;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  transform: none !important;
+}
+
+@media (max-width: 600px) {
+  .map-screen > [data-radix-popper-content-wrapper]:has(> .map-tools-drawer) {
+    top: calc(116px + var(--safe-top)) !important;
+    right: max(12px, var(--safe-right)) !important;
+    bottom: calc(132px + var(--safe-bottom)) !important;
+    width: calc(100vw - 24px) !important;
+  }
 }
 
 @layer theme {
