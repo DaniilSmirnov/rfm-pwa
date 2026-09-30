@@ -1,5 +1,6 @@
 import './CrewResultsModal.css';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import React, { useMemo, useRef, useState } from 'react';
 import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
 import SelectField from '../components/SelectField.jsx';
@@ -36,15 +37,6 @@ export default function CrewResultsModal({
   const dialog = useRef(null);
   const searchRef = useRef(null);
   const [expandedCrew, setExpandedCrew] = useState('');
-  useEffect(() => {
-    const node = dialog.current;
-    if (!node || standalone) return;
-    if (open && !node.open) {
-      node.showModal();
-      requestAnimationFrame(() => searchRef.current?.focus());
-    } else if (!open && node.open) node.close();
-  }, [open, standalone]);
-
   const followedIds = useMemo(
     () => new Set(subscriptions.map(item => String(item.crewId))),
     [subscriptions],
@@ -73,17 +65,20 @@ export default function CrewResultsModal({
       {!standalone && (
         <header className="crew-results-dialog-head">
           <div>
-            <h2 id="crewResultsDialogTitle">Результаты экипажей</h2>
+            <Dialog.Title asChild>
+              <h2 id="crewResultsDialogTitle">Результаты экипажей</h2>
+            </Dialog.Title>
             <p className="muted small">Выбери класс, чтобы увидеть весь его состав.</p>
           </div>
-          <Button
-            className="button crew-results-close"
-            type="button"
-            aria-label="Закрыть результаты"
-            onClick={() => dialog.current?.close()}
-          >
-            ×
-          </Button>
+          <Dialog.Close asChild>
+            <Button
+              className="button crew-results-close"
+              type="button"
+              aria-label="Закрыть результаты"
+            >
+              ×
+            </Button>
+          </Dialog.Close>
         </header>
       )}
       <div className="crew-results-toolbar">
@@ -270,13 +265,24 @@ export default function CrewResultsModal({
       </section>
     );
   return (
-    <dialog
-      ref={dialog}
-      className="crew-results-dialog"
-      aria-labelledby="crewResultsDialogTitle"
-      onClose={onClose}
+    <Dialog.Root
+      open={open}
+      onOpenChange={nextOpen => {
+        if (!nextOpen) onClose?.();
+      }}
     >
-      {content}
-    </dialog>
+      <Dialog.Overlay className="crew-results-dialog-overlay" />
+      <Dialog.Content
+        ref={dialog}
+        className="crew-results-dialog"
+        aria-labelledby="crewResultsDialogTitle"
+        onOpenAutoFocus={event => {
+          event.preventDefault();
+          searchRef.current?.focus();
+        }}
+      >
+        {content}
+      </Dialog.Content>
+    </Dialog.Root>
   );
 }
