@@ -25,7 +25,7 @@ import BootDiagnostics from '../modals/BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { selectedPackage } from '../app/rally-context.js';
 import RacesView from './RacesView.jsx';
-import MoreSectionView from './MoreSectionView.jsx';
+import MoreSectionView, { moreSectionTitles } from './MoreSectionView.jsx';
 
 const tabs = [
   { key: 'today', label: 'Сегодня', Icon: CalendarDays },
@@ -184,12 +184,44 @@ export default function App() {
     setTab('more');
   };
 
-  const returnToMoreMenu = () => {
+  const returnToMoreMenu = useCallback(() => {
     setMoreScreen('menu');
     const url = new URL(location.href);
     url.searchParams.set('tab', 'more');
     history.replaceState({ tab: 'more' }, '', url);
-  };
+  }, [activeScrollKey]);
+  const screenHeaderTitle =
+    tab === 'more' && moreScreen !== 'menu'
+      ? {
+          races: 'Управление гонками',
+          settings: 'Настройки и диагностика',
+          ...moreSectionTitles,
+        }[moreScreen] || 'Раздел гонки'
+      : null;
+
+  useEffect(() => {
+    if (!screenHeaderTitle) return undefined;
+    let start = null;
+    const onTouchStart = event => {
+      const touch = event.changedTouches[0];
+      if (touch && touch.clientX <= 48) start = { x: touch.clientX, y: touch.clientY };
+    };
+    const onTouchEnd = event => {
+      if (!start) return;
+      const touch = event.changedTouches[0];
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      start = null;
+      if (dx >= 60 && Math.abs(dy) <= 80) returnToMoreMenu();
+    };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [returnToMoreMenu, screenHeaderTitle]);
+
   const openCrewResults = () => setCrewResultsOpen(true);
   const screenContent =
     tab === 'today' ? (
@@ -266,6 +298,9 @@ export default function App() {
         favoritesContent={<FavoritesList app={app} />}
         scheduleContent={pkg && <ScheduleList pkg={pkg} />}
         mediaContent={<RaceMedia pkg={pkg} />}
+        screenHeader={
+          screenHeaderTitle ? { title: screenHeaderTitle, onBack: returnToMoreMenu } : null
+        }
       />
       <BootDiagnostics open={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
       <AppFooter />
