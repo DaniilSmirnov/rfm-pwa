@@ -93,13 +93,17 @@ export function overallCrewResults(stages) {
         goingOffAfterSu: false,
         reasonGoingOff: '',
       };
-      row.crew = {
-        ...row.crew,
-        ...crew,
-        pilot: { ...(row.crew?.pilot || {}), ...(crew.pilot || {}) },
-        navigator: { ...(row.crew?.navigator || {}), ...(crew.navigator || {}) },
-        car: crew.car || row.crew?.car,
-      };
+      const nextCrew = { ...row.crew, ...crew };
+      if (row.crew?.pilot || crew.pilot) {
+        nextCrew.pilot = { ...(row.crew?.pilot || {}), ...(crew.pilot || {}) };
+      }
+      if (row.crew?.navigator || crew.navigator) {
+        nextCrew.navigator = { ...(row.crew?.navigator || {}), ...(crew.navigator || {}) };
+      }
+      if (row.crew?.car || crew.car) {
+        nextCrew.car = crew.car || row.crew.car;
+      }
+      row.crew = nextCrew;
       row.discipline = {
         ...(row.discipline || {}),
         ...(result.discipline || {}),
