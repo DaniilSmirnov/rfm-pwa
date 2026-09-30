@@ -901,8 +901,8 @@ describe('application components', () => {
     const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
     mocks.useRfmApp.mockReturnValue(app);
     render(<App />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /Ещё/ })).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: /Ещё/ }));
+    await waitFor(() => expect(screen.getByText('Ещё')).toBeTruthy());
+    fireEvent.click(screen.getByText('Ещё').closest('button'));
     fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
     expect(screen.getByRole('heading', { name: 'Настройки и диагностика' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '← Ещё' }));
