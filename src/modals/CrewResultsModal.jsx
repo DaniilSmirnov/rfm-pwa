@@ -431,13 +431,27 @@ export default function CrewResultsModal({
                   'ru',
                 )}
               >
+                <div className="crew-result-card-leading">
+                  <span className="crew-result-card-place">{retired ? '—' : place}</span>
+                  <Button
+                    className={`crew-result-star ${subscribed ? 'active' : ''}`}
+                    type="button"
+                    aria-label={`${subscribed ? 'Отписаться от экипажа' : 'Следить за экипажем'}: ${resultLabel(result)}`}
+                    onClick={() => void onToggleSubscription(result)}
+                  >
+                    <Star
+                      size={18}
+                      fill={subscribed ? 'currentColor' : 'none'}
+                      aria-hidden="true"
+                    />
+                  </Button>
+                </div>
                 <Button
                   type="button"
                   className="crew-result-card-main"
                   onClick={() => setSelectedCrew(result)}
                   aria-label={`Открыть результаты экипажа ${resultLabel(result)}`}
                 >
-                  <span className="crew-result-card-place">{retired ? '—' : place}</span>
                   <span className="crew-result-card-copy">
                     <strong>
                       №{crew.number || '—'} {resultLabel(result)}
@@ -450,13 +464,6 @@ export default function CrewResultsModal({
                     {!retired && <small>{gapFromLeader(result, selectedClassResults)}</small>}
                   </span>
                   <ChevronRight size={18} aria-hidden="true" />
-                </Button>
-                <Button
-                  className={`button crew-result-star ${subscribed ? 'active' : ''}`}
-                  aria-label={`${subscribed ? 'Отписаться от экипажа' : 'Следить за экипажем'}: ${resultLabel(result)}`}
-                  onClick={() => void onToggleSubscription(result)}
-                >
-                  <Star size={18} fill={subscribed ? 'currentColor' : 'none'} aria-hidden="true" />
                 </Button>
               </article>
             );

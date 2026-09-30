@@ -70,7 +70,10 @@ describe('inline results screen', () => {
 
   it('opens all stage results in the crew details modal', () => {
     renderResults();
-    fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
+    const card = screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ });
+    expect(card).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Следить за экипажем: Alpha/ })).toBeTruthy();
+    fireEvent.click(card);
     const dialog = screen.getByRole('dialog', { name: 'Детали экипажа' });
     expect(dialog).toBeTruthy();
     expect(within(dialog).getByRole('heading', { name: 'Детали экипажа' })).toBeTruthy();
