@@ -61,11 +61,11 @@ for (const theme of ['light', 'dark']) {
       'rgba(0, 0, 0, 0)',
     );
     await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS('pointer-events', 'none');
-    const sheetHandle = page.getByRole('button', { name: 'Развернуть карточку точки' });
-    const handleBox = await sheetHandle.boundingBox();
-    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 24);
+    const gestureSurface = sheet.locator('.point-actions-copy');
+    const gestureBox = await gestureSurface.boundingBox();
+    await page.mouse.move(gestureBox.x + gestureBox.width / 2, gestureBox.y + 24);
     await page.mouse.down();
-    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y - 72, { steps: 4 });
+    await page.mouse.move(gestureBox.x + gestureBox.width / 2, gestureBox.y - 72, { steps: 4 });
     await page.mouse.up();
     await expect(page.locator('#mapPointDetails')).toBeVisible();
     await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS('pointer-events', 'auto');

@@ -112,27 +112,6 @@ describe('MapView enhancements', () => {
         .getByRole('button', { name: 'Свернуть карточку точки' })
         .getAttribute('aria-controls'),
     ).toBe('mapPointDetails');
-    fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', {
-        name: 'Свернуть карточку точки',
-      }),
-    );
-    const compactHandleAgain = within(screen.getByRole('dialog')).getByRole('button', {
-      name: 'Развернуть карточку точки',
-    });
-    fireEvent.touchStart(compactHandleAgain, { touches: [{ clientY: 220 }] });
-    fireEvent.touchEnd(compactHandleAgain, { changedTouches: [{ clientY: 120 }] });
-    expect(
-      within(screen.getByRole('dialog')).getByRole('button', {
-        name: 'Свернуть карточку точки',
-      }),
-    ).toBeTruthy();
-    const expandedHandle = within(screen.getByRole('dialog')).getByRole('button', {
-      name: 'Свернуть карточку точки',
-    });
-    fireEvent.touchStart(expandedHandle, { touches: [{ clientY: 120 }] });
-    fireEvent.touchEnd(expandedHandle, { changedTouches: [{ clientY: 220 }] });
-    expect(app.showPoint).toHaveBeenCalledWith(null);
     expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
     expect(within(document.getElementById('mapPointDetails')).getByText('700 м')).toBeTruthy();

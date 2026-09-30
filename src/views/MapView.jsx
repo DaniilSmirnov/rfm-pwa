@@ -86,6 +86,7 @@ export default function MapView({
   useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
   const beginPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
+    if (!event.target.closest?.('.map-point-sheet-handle, .point-actions-copy')) return;
     const source = event.touches?.[0] || event;
     pointSheetGesture.current = { startY: source.clientY, suppressClick: false };
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -103,6 +104,10 @@ export default function MapView({
     if (delta > 0) app.showPoint?.(null);
     else setPointDetailsOpen(true);
   };
+  const cancelPointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
+    pointSheetGesture.current = { startY: null, suppressClick: false };
+  };
   useEffect(() => {
     if (!app.selectedPoint) return undefined;
     const sheet = pointSheetRef.current;
@@ -119,6 +124,7 @@ export default function MapView({
         return;
       }
       if (event.key !== 'Tab' || !sheet) return;
+      if (!pointDetailsOpen) return;
       const items = focusable();
       if (!items.length) return;
       const first = items[0];
@@ -134,21 +140,21 @@ export default function MapView({
     const onDocumentClick = event => {
       if (
         sheet?.contains(event.target) ||
-        event.target.closest?.('.point-row') ||
-        event.target.closest?.('#mapPointSheetBackdrop') ||
-        event.target.closest?.('button, a, input, select, textarea, summary')
+        event.target.closest?.('.point-row, [data-point-opener]') ||
+        event.target.closest?.('#mapPointSheetBackdrop')
       ) {
         return;
       }
       const pointAtClick = selectedPointRef.current;
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         if (selectedPointRef.current === pointAtClick) closePoint();
-      });
+      }, 0);
     };
     if (pointDetailsOpen) document.body.classList.add('modal-open');
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('click', onDocumentClick);
-    requestAnimationFrame(() => sheet?.querySelector('.map-point-sheet-handle')?.focus());
+    if (pointDetailsOpen)
+      requestAnimationFrame(() => sheet?.querySelector('.map-point-sheet-handle')?.focus());
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('click', onDocumentClick);
@@ -317,6 +323,7 @@ export default function MapView({
               <div className="point-nav-buttons">
                 <Button
                   id="carCompassBtn"
+                  data-point-opener="true"
                   className="button compact"
                   onClick={async () => {
                     setCompassOpen(true);
@@ -494,8 +501,14 @@ export default function MapView({
             id="pointActions"
             className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''}`}
             role="dialog"
-            aria-modal="true"
+            aria-modal={pointDetailsOpen ? 'true' : undefined}
             aria-labelledby="pointName"
+            onPointerDown={beginPointSheetGesture}
+            onPointerUp={endPointSheetGesture}
+            onPointerCancel={cancelPointSheetGesture}
+            onTouchStart={beginPointSheetGesture}
+            onTouchEnd={endPointSheetGesture}
+            onTouchCancel={cancelPointSheetGesture}
           >
             <Button
               className="map-point-sheet-handle"
@@ -505,10 +518,6 @@ export default function MapView({
               aria-label={
                 pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'
               }
-              onPointerDown={beginPointSheetGesture}
-              onPointerUp={endPointSheetGesture}
-              onTouchStart={beginPointSheetGesture}
-              onTouchEnd={endPointSheetGesture}
               onClick={() => {
                 if (pointSheetGesture.current.suppressClick) {
                   pointSheetGesture.current.suppressClick = false;
