@@ -93,8 +93,18 @@ export function overallCrewResults(stages) {
         goingOffAfterSu: false,
         reasonGoingOff: '',
       };
-      row.crew = crew;
-      row.discipline = result.discipline || row.discipline;
+      row.crew = {
+        ...row.crew,
+        ...crew,
+        pilot: { ...(row.crew?.pilot || {}), ...(crew.pilot || {}) },
+        navigator: { ...(row.crew?.navigator || {}), ...(crew.navigator || {}) },
+        car: crew.car || row.crew?.car,
+      };
+      row.discipline = {
+        ...(row.discipline || {}),
+        ...(result.discipline || {}),
+        name: result.discipline?.name || row.discipline?.name,
+      };
       if (!result.goingOff) {
         row.time += Number(result.time) || 0;
         row.timePenalty += Number(result.timePenalty) || 0;
@@ -108,7 +118,7 @@ export function overallCrewResults(stages) {
     }
   }
   const results = [...crews.values()]
-    .filter(result => result.time > 0 || result.goingOff)
+    .filter(result => result.time > 0 || result.goingOff || result.goingOffAfterSu)
     .map(result => {
       const time = result.time + result.timePenalty;
       return {

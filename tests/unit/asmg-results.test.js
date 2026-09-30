@@ -112,6 +112,46 @@ describe('ASMG results adapter', () => {
     expect(sortCrewResults([dnf, second, first])).toEqual([first, second, dnf]);
   });
 
+  it('preserves metadata for a retired crew when the retirement row is partial', () => {
+    const stages = [
+      {
+        specialStage: { name: 'СУ 1', distance: '10' },
+        results: [{
+          time: 120000,
+          crew: {
+            id: 7,
+            number: 27,
+            car: 'Skoda Fabia RS Rally2',
+            pilot: { firstName: 'Иван', lastName: 'Иванов' },
+            navigator: { firstName: 'Петр', lastName: 'Петров' },
+          },
+          discipline: { name: 'R5' },
+        }],
+      },
+      {
+        specialStage: { name: 'СУ 2', distance: '10' },
+        results: [{
+          time: 0,
+          goingOff: true,
+          reasonGoingOff: 'Поломка',
+          crew: { id: 7, number: 27 },
+          discipline: {},
+        }],
+      },
+    ];
+
+    expect(overallCrewResults(stages)[0]).toMatchObject({
+      goingOff: true,
+      crew: {
+        number: 27,
+        car: 'Skoda Fabia RS Rally2',
+        pilot: { lastName: 'Иванов' },
+        navigator: { lastName: 'Петров' },
+      },
+      discipline: { name: 'R5' },
+    });
+  });
+
   it('builds the cumulative leaderboard from stage times and uses it as the default view', () => {
     const crew = (id, number) => ({ id, number, pilot: { lastName: `Crew${number}` } });
     const stages = [
