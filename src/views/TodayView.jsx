@@ -11,6 +11,9 @@ import { raceHasFinished } from '../app/today-summary.js';
 import { parseScheduleDateTime } from '../app/schedule.js';
 import { crewName, overallCrewResults } from '../app/crew-results.js';
 import { getCrewSubscriptions } from '../db.js';
+import OverlapSchedule from '../components/OverlapSchedule.jsx';
+import sortavalaOverlapSchedule from '../data/sortavala-overlap-schedule.json';
+import { isSortavalaRace } from '../app/overlap-schedule.js';
 
 const asArray = value =>
   Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
@@ -171,7 +174,7 @@ export function nextRaceDownloadSuggestion(pkg, catalog, now = new Date()) {
   return packageRaceId(pkg) === Number(next.id) ? null : next;
 }
 
-export default function TodayView({ app, onMap, onResults, onRaces }) {
+export default function TodayView({ app, onMap, onResults }) {
   const [now, setNow] = useState(() => new Date());
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
   useEffect(() => {
@@ -218,11 +221,6 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
         У тебя скачан предыдущий Rally Pack «{previousPackage.name}». Если он больше не нужен
         офлайн, удали его, чтобы освободить место.
       </span>
-      {onRaces && (
-        <Button className="button compact today-storage-link" onClick={onRaces}>
-          Управлять сохранёнными гонками
-        </Button>
-      )}
     </Notice>
   );
   const summary = todaySummary(todayPackage, now);
@@ -276,6 +274,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
   const refreshProgress = app.raceProgress[raceId];
   const hasSavedPack = app.downloadedIds.has(raceId);
   const overlapImages = overlaps(todayPackage.original || todayPackage);
+  const generatedOverlapSchedule = isSortavalaRace(todayPackage) ? sortavalaOverlapSchedule : null;
   const raceFinished = summary.raceFinished || raceHasFinished(todayPackage, now);
   const nextRaceSuggestion = nextRaceDownloadSuggestion(todayPackage, app.catalog, now);
   const nextRaceId = Number(nextRaceSuggestion?.id);
@@ -524,18 +523,22 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
               : 'Время последнего обновления не указано.'}
         </p>
       </section>
-      {overlapImages.length > 0 && (
-        <section className="today-card today-overlap">
-          <div className="block-title">ГРАФИК ПЕРЕКРЫТИЙ</div>
-          {overlapImages.map((name, index) => (
-            <img
-              key={`${name}-${index}`}
-              src={assetUrl(name)}
-              alt={`График перекрытий ${index + 1}`}
-              loading="lazy"
-            />
-          ))}
-        </section>
+      {generatedOverlapSchedule ? (
+        <OverlapSchedule schedule={generatedOverlapSchedule} />
+      ) : (
+        overlapImages.length > 0 && (
+          <section className="today-card today-overlap">
+            <div className="block-title">ГРАФИК ПЕРЕКРЫТИЙ</div>
+            {overlapImages.map((name, index) => (
+              <img
+                key={`${name}-${index}`}
+                src={assetUrl(name)}
+                alt={`График перекрытий ${index + 1}`}
+                loading="lazy"
+              />
+            ))}
+          </section>
+        )
       )}
       {!raceFinished ? (
         <TodayLeaders key={todayPackage.id} pkg={todayPackage} onResults={onResults} />

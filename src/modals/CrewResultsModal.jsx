@@ -3,14 +3,12 @@ import * as Dialog from '@radix-ui/react-dialog';
 import React, { useMemo, useRef, useState } from 'react';
 import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
-import ScreenHeader, { useEdgeSwipeBack } from '../components/ScreenHeader.jsx';
 import SelectField from '../components/SelectField.jsx';
-import { ChevronRight, Star } from 'lucide-react';
+import { formatRetirementReason } from '../app/crew-results.js';
+import { ArrowLeft, ChevronRight, Filter, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
-  if (!result) return 'Не пройден';
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
-  if (!Number.isFinite(Number(result?.time)) || Number(result?.time) <= 0) return 'Не пройден';
   if (result?.formattedFromLeader) return result.formattedFromLeader;
   const leader = rows.find(row => !row?.goingOff && !row?.goingOffAfterSu && Number(row?.time) > 0);
   if (!leader || leader === result) return 'лидер';
@@ -19,52 +17,7 @@ function gapFromLeader(result, rows) {
 }
 
 function retirementLabel(result) {
-  if (!result?.goingOff && !result?.goingOffAfterSu) return '';
-  return result.reasonGoingOff || (result.goingOffAfterSu ? 'Сход после спецучастка' : 'Сход');
-}
-
-function sentenceCase(value) {
-  const normalized = String(value || '').toLocaleLowerCase('ru').trim();
-  return normalized ? normalized[0].toLocaleUpperCase('ru') + normalized.slice(1) : '';
-}
-
-function cleanRetirementReason(result, views, resultLabel) {
-  const reason = retirementLabel(result);
-  if (!reason || reason === 'Сход' || reason === 'Сход после спецучастка') return '';
-
-  const crew = result?.crew || {};
-  const removable = [
-    resultLabel(result),
-    [crew?.pilot?.lastName, crew?.pilot?.firstName].filter(Boolean).join(' '),
-    [crew?.pilot?.firstName, crew?.pilot?.lastName].filter(Boolean).join(' '),
-    [crew?.navigator?.lastName, crew?.navigator?.firstName].filter(Boolean).join(' '),
-    [crew?.navigator?.firstName, crew?.navigator?.lastName].filter(Boolean).join(' '),
-    ...views.slice(1).flatMap(view => [
-      view?.name,
-      String(view?.name || '').replace(/^Спецучасток\s*/i, 'СУ '),
-    ]),
-  ].filter(Boolean);
-
-  let cleaned = reason;
-  for (const value of removable) {
-    cleaned = cleaned.replaceAll(String(value), ' ');
-  }
-  cleaned = cleaned
-    .replace(/\b(?:СУ|SS)\s*[-№#:]?\s*\d+\b/gi, ' ')
-    .replace(/\bспецучаст(?:ок|ка)\s*[-№#:]?\s*\d+\b/gi, ' ')
-    .replace(/^\s*сход\s*[:—-]?\s*/i, '')
-    .replace(/[·|,;:—-]+\s*$/g, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-
-  return sentenceCase(cleaned);
-}
-
-function retirementDetails(result, views, resultLabel) {
-  if (!retirementLabel(result)) return null;
-  return {
-    reason: cleanRetirementReason(result, views, resultLabel),
-  };
+  return formatRetirementReason(result);
 }
 
 function crewIdOf(result, resultLabel) {
@@ -72,16 +25,13 @@ function crewIdOf(result, resultLabel) {
 }
 
 function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
-  useEdgeSwipeBack(onClose, Boolean(crewResult));
   if (!crewResult) return null;
   const crewId = crewIdOf(crewResult, resultLabel);
   const stageResults = views.slice(1).map(view => ({
     view,
     result: view.results.find(item => crewIdOf(item, resultLabel) === crewId),
   }));
-  const overallStatus = retirementDetails(crewResult, views, resultLabel);
-  const overallText =
-    overallStatus?.reason || (overallStatus ? 'Сход' : crewResult.formattedFromLeader || '—');
+  const overallStatus = retirementLabel(crewResult);
 
   return (
     <Dialog.Root
@@ -91,8 +41,17 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
       }}
     >
       <Dialog.Overlay className="crew-details-dialog-overlay" />
-      <Dialog.Content className="crew-details-dialog" aria-label="Детали экипажа">
-        <ScreenHeader title="Детали экипажа" onBack={onClose} />
+      <Dialog.Content className="crew-details-dialog" aria-labelledby="crewDetailsTitle">
+        <div className="crew-details-page-head">
+          <Dialog.Close asChild>
+            <Button className="button crew-details-back" aria-label="Назад к результатам">
+              <ArrowLeft size={20} aria-hidden="true" />
+            </Button>
+          </Dialog.Close>
+          <Dialog.Title asChild>
+            <h2 id="crewDetailsTitle">Детали экипажа</h2>
+          </Dialog.Title>
+        </div>
 
         <div className="crew-details-profile">
           <div className="crew-details-profile-copy">
@@ -117,7 +76,7 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
             <span aria-hidden="true">RALLY</span>
           </div>
           <div className="crew-details-overall">
-            <strong>{overallText}</strong>
+            <strong>{overallStatus || `${crewResult.formattedFromLeader || '—'}`}</strong>
             <span>к лидеру</span>
           </div>
         </div>
@@ -146,14 +105,13 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
             {stageResults.length ? (
               <div role="rowgroup">
                 {stageResults.map(({ view, result }) => {
-                  const retirement = retirementDetails(result, views, resultLabel);
-                  const status = retirement?.reason || (retirement ? 'Сход' : '');
+                  const status = retirementLabel(result);
                   return (
                     <div className="crew-details-stage-row" role="row" key={view.key}>
                       <span role="cell">{view.name.replace(/^Спецучасток\s*/i, 'СУ')}</span>
                       <span role="cell">{result ? view.results.indexOf(result) + 1 : '—'}</span>
                       <span className={status ? 'retired' : ''} role="cell">
-                        {status || result?.formattedTime || 'Не пройден'}
+                        {status || result?.formattedTime || '—'}
                       </span>
                       <span className={status ? 'retired' : ''} role="cell">
                         {status || gapFromLeader(result, view.results)}
@@ -312,7 +270,6 @@ export default function CrewResultsModal({
                 );
                 const place = selectedClassResults.indexOf(result) + 1;
                 const retired = result.goingOff || result.goingOffAfterSu;
-                const retirement = retirementDetails(result, views, resultLabel);
                 const stages = views
                   .slice(1)
                   .map(view => ({
@@ -350,7 +307,7 @@ export default function CrewResultsModal({
                       </td>
                       <td className="crew-results-time">
                         {retired
-                          ? retirement?.reason || (retired ? 'Сход' : 'Сход после финиша')
+                          ? formatRetirementReason(result)
                           : result.formattedTime || 'Время пока недоступно'}
                         {result.formattedTimePenalty && (
                           <small>Штраф {result.formattedTimePenalty}</small>
@@ -383,7 +340,7 @@ export default function CrewResultsModal({
                                   </span>
                                   <span>
                                     {stageResult.goingOff || stageResult.goingOffAfterSu
-                                      ? retirementDetails(stageResult, views, resultLabel)?.reason || 'Сход'
+                                      ? formatRetirementReason(stageResult)
                                       : stageResult.formattedTime || 'Время пока недоступно'}
                                     <small>
                                       От лидера: {gapFromLeader(stageResult, view.results)}
@@ -457,6 +414,9 @@ export default function CrewResultsModal({
             value={query}
             onChange={event => onQueryChange(event.target.value)}
           />
+          <Button className="button crew-results-filter" aria-label="Фильтры">
+            <Filter size={18} aria-hidden="true" />
+          </Button>
         </div>
       </div>
       <div className="crew-results-mobile-list">
@@ -464,7 +424,7 @@ export default function CrewResultsModal({
           rankedRows.map(({ result }) => {
             const id = crewIdOf(result, resultLabel);
             const crew = result.crew || {};
-            const retirement = retirementDetails(result, views, resultLabel);
+            const retired = retirementLabel(result);
             const subscribed = subscriptions.some(
               item => item.key === subscriptionKey(data.eventId, id),
             );
@@ -472,7 +432,7 @@ export default function CrewResultsModal({
             return (
               <article
                 key={id}
-                className="crew-result-card"
+                className={`crew-result-card ${retired ? 'retired' : ''}`}
                 data-crew-row
                 data-search={`${crew.number || ''} ${resultLabel(result)} ${crew.car || ''} ${result?.discipline?.name || ''}`.toLocaleLowerCase(
                   'ru',
@@ -484,35 +444,22 @@ export default function CrewResultsModal({
                   onClick={() => setSelectedCrew(result)}
                   aria-label={`Открыть результаты экипажа ${resultLabel(result)}`}
                 >
-                  <span className="crew-result-card-place">{place}</span>
+                  <span className="crew-result-card-place">{retired ? '—' : place}</span>
                   <span className="crew-result-card-copy">
                     <strong>
                       №{crew.number || '—'} {resultLabel(result)}
                     </strong>
                     <small>{crew.car || 'Автомобиль не указан'}</small>
-                    <small>{result?.discipline?.name || 'Зачёт не указан'}</small>
+                    <small>{retired || result?.discipline?.name || 'Зачёт не указан'}</small>
                   </span>
-                  <span className={`crew-result-card-time ${retirement ? 'is-retired' : ''}`}>
-                    {retirement ? (
-                      <>
-                        <span className="crew-result-card-retirement-label">Сход</span>
-                        {retirement.reason && (
-                          <span className="crew-result-card-retirement-reason">
-                            {retirement.reason}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {result.formattedTime || '—'}
-                        <small>{gapFromLeader(result, selectedClassResults)}</small>
-                      </>
-                    )}
+                  <span className="crew-result-card-time">
+                    {retired || result.formattedTime || '—'}
+                    {!retired && <small>{gapFromLeader(result, selectedClassResults)}</small>}
                   </span>
-                  <ChevronRight className="crew-result-card-chevron" size={18} aria-hidden="true" />
+                  <ChevronRight size={18} aria-hidden="true" />
                 </Button>
                 <Button
-                  className={`crew-result-star ${subscribed ? 'active' : ''}`}
+                  className={`button crew-result-star ${subscribed ? 'active' : ''}`}
                   aria-label={`${subscribed ? 'Отписаться от экипажа' : 'Следить за экипажем'}: ${resultLabel(result)}`}
                   onClick={() => void onToggleSubscription(result)}
                 >
