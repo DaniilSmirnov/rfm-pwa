@@ -123,7 +123,10 @@ test('supports real touch swipes on the mobile point sheet', async ({ page }, te
   test.skip(testInfo.project.name !== 'mobile-chromium', 'requires Chromium touch input');
   await openApp(page);
   await seedFixtureRace(page, {
-    pointProperties: { photo: '/assets/safety/corner-jump.webp' },
+    pointProperties: {
+      photo: '/assets/safety/corner-jump.webp',
+      description: 'Подробности точки. '.repeat(80),
+    },
   });
   await openMapWithAcceptedSafety(page);
   await page.getByRole('button', { name: 'Инструменты карты' }).click();
@@ -152,7 +155,23 @@ test('supports real touch swipes on the mobile point sheet', async ({ page }, te
   await swipe(summaryBox, summaryBox.y - 72);
   await expect(page.locator('#mapPointDetails')).toBeVisible();
   const expandedSheetBox = await sheet.boundingBox();
+  const expandedScrollState = await page.evaluate(() => {
+    const currentSheet = document.querySelector('#pointActions');
+    currentSheet.scrollTop = Math.min(48, currentSheet.scrollHeight - currentSheet.clientHeight);
+    return {
+      scrollTop: currentSheet.scrollTop,
+      canScroll: currentSheet.scrollHeight > currentSheet.clientHeight,
+    };
+  });
+  expect(expandedScrollState.canScroll).toBe(true);
+  expect(expandedScrollState.scrollTop).toBeGreaterThan(0);
   await swipe(expandedSheetBox, expandedSheetBox.y + 172, 100);
+  await expect(page.locator('#mapPointDetails')).toBeVisible();
+  await page.evaluate(() => {
+    document.querySelector('#pointActions').scrollTop = 0;
+  });
+  const topExpandedSheetBox = await sheet.boundingBox();
+  await swipe(topExpandedSheetBox, topExpandedSheetBox.y + 172, 100);
   await expect(page.locator('#mapPointDetails')).toBeHidden();
   await expect(sheet).toBeVisible();
   const compactSheetBox = await sheet.boundingBox();
