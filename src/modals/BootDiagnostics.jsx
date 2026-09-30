@@ -1,4 +1,5 @@
 import './BootDiagnostics.css';
+import * as Dialog from '@radix-ui/react-dialog';
 import React, { useEffect, useState } from 'react';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
@@ -25,7 +26,6 @@ export default function BootDiagnostics({ open, onClose }) {
       document.body.classList.remove('modal-open');
     };
   }, [open]);
-  if (!open) return null;
   const snapshot = bootSnapshot();
 
   const refreshStorage = async () => {
@@ -69,104 +69,115 @@ export default function BootDiagnostics({ open, onClose }) {
   };
 
   return (
-    <div
-      id="bootDiagnosticsModal"
-      className="boot-diagnostics-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="bootDiagnosticsTitle"
-      onClick={event => {
-        if (event.target === event.currentTarget) onClose();
+    <Dialog.Root
+      open={open}
+      onOpenChange={nextOpen => {
+        if (!nextOpen) onClose?.();
       }}
     >
-      <div className="boot-diagnostics-card">
-        <div className="boot-diagnostics-head">
-          <div>
-            <div className="eyebrow">СЛУЖЕБНЫЙ ЭКРАН</div>
-            <h2 id="bootDiagnosticsTitle">Boot diagnostics</h2>
-          </div>
-          <Button
-            id="bootDiagnosticsClose"
-            className="button compact"
-            type="button"
-            onClick={onClose}
+      <Dialog.Overlay asChild>
+        <div
+          id="bootDiagnosticsModal"
+          className="boot-diagnostics-modal"
+          onClick={event => {
+            if (event.target === event.currentTarget) onClose?.();
+          }}
+        >
+          <Dialog.Content
+            asChild
+            aria-labelledby="bootDiagnosticsTitle"
+            aria-modal="true"
           >
-            Закрыть
-          </Button>
-        </div>
-        <div id="bootDiagnosticsList" className="boot-diagnostics-list">
-          {snapshot.marks.length ? (
-            snapshot.marks.map((entry, index) => {
-              const previous = index ? snapshot.marks[index - 1].ms : 0;
-              return (
-                <div className="boot-diagnostic-row" key={`${entry.name}-${index}`}>
-                  <span>{entry.name}</span>
-                  <strong>{entry.ms} ms</strong>
-                  <em>+{entry.ms - previous} ms</em>
-                  {entry.detail != null && <small>{describeDetail(entry.detail)}</small>}
+            <div className="boot-diagnostics-card">
+              <div className="boot-diagnostics-head">
+                <div>
+                  <div className="eyebrow">СЛУЖЕБНЫЙ ЭКРАН</div>
+                  <Dialog.Title asChild>
+                    <h2 id="bootDiagnosticsTitle">Boot diagnostics</h2>
+                  </Dialog.Title>
                 </div>
-              );
-            })
-          ) : (
-            <p className="muted">Пока нет отметок.</p>
-          )}
+                <Dialog.Close asChild>
+                  <Button id="bootDiagnosticsClose" className="button compact" type="button">
+                    Закрыть
+                  </Button>
+                </Dialog.Close>
+              </div>
+              <div id="bootDiagnosticsList" className="boot-diagnostics-list">
+                {snapshot.marks.length ? (
+                  snapshot.marks.map((entry, index) => {
+                    const previous = index ? snapshot.marks[index - 1].ms : 0;
+                    return (
+                      <div className="boot-diagnostic-row" key={`${entry.name}-${index}`}>
+                        <span>{entry.name}</span>
+                        <strong>{entry.ms} ms</strong>
+                        <em>+{entry.ms - previous} ms</em>
+                        {entry.detail != null && <small>{describeDetail(entry.detail)}</small>}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="muted">Пока нет отметок.</p>
+                )}
+              </div>
+              <pre id="bootDiagnosticsMeta" className="boot-diagnostics-meta">
+                {[
+                  `online: ${snapshot.meta.online}`,
+                  `display: ${snapshot.meta.displayMode}`,
+                  `navigation: ${snapshot.meta.navigationType}`,
+                  `SW controlled: ${snapshot.meta.serviceWorkerControlled}`,
+                  `DOMContentLoaded: ${snapshot.meta.domContentLoadedMs} ms`,
+                  `load: ${snapshot.meta.loadEventMs} ms`,
+                  snapshot.meta.userAgent,
+                  snapshot.storage
+                    ? `\nЛокальные данные:\n${JSON.stringify(snapshot.storage, null, 2)}`
+                    : storageError
+                      ? `\nОшибка диагностики: ${storageError}`
+                      : '\nЛокальные данные: нажми «Проверить хранилище».',
+                ].join('\n')}
+              </pre>
+              <label className="boot-diagnostics-eruda">
+                <input type="checkbox" checked={erudaVisible} onChange={toggleEruda} />
+                <span>Показывать кнопку Eruda</span>
+              </label>
+              <ActionGroup>
+                <Button
+                  id="bootDiagnosticsRefreshPackages"
+                  className="button"
+                  type="button"
+                  onClick={() => window.dispatchEvent(new Event('rfm:refresh-local-data'))}
+                >
+                  Перечитать сохранённые данные
+                </Button>
+                <Button
+                  id="bootDiagnosticsRefresh"
+                  className="button"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void refreshStorage()}
+                >
+                  {busy ? 'Проверяю…' : 'Проверить хранилище'}
+                </Button>
+                <Button
+                  id="bootDiagnosticsCopy"
+                  className="button"
+                  type="button"
+                  onClick={() => void copy()}
+                >
+                  {copied ? 'Скопировано' : 'Скопировать диагностику'}
+                </Button>
+                <Button
+                  id="bootDiagnosticsExport"
+                  className="button"
+                  type="button"
+                  onClick={exportReport}
+                >
+                  Скачать отчёт
+                </Button>
+              </ActionGroup>
+            </div>
+          </Dialog.Content>
         </div>
-        <pre id="bootDiagnosticsMeta" className="boot-diagnostics-meta">
-          {[
-            `online: ${snapshot.meta.online}`,
-            `display: ${snapshot.meta.displayMode}`,
-            `navigation: ${snapshot.meta.navigationType}`,
-            `SW controlled: ${snapshot.meta.serviceWorkerControlled}`,
-            `DOMContentLoaded: ${snapshot.meta.domContentLoadedMs} ms`,
-            `load: ${snapshot.meta.loadEventMs} ms`,
-            snapshot.meta.userAgent,
-            snapshot.storage
-              ? `\nЛокальные данные:\n${JSON.stringify(snapshot.storage, null, 2)}`
-              : storageError
-                ? `\nОшибка диагностики: ${storageError}`
-                : '\nЛокальные данные: нажми «Проверить хранилище».',
-          ].join('\n')}
-        </pre>
-        <label className="boot-diagnostics-eruda">
-          <input type="checkbox" checked={erudaVisible} onChange={toggleEruda} />
-          <span>Показывать кнопку Eruda</span>
-        </label>
-        <ActionGroup>
-          <Button
-            id="bootDiagnosticsRefreshPackages"
-            className="button"
-            type="button"
-            onClick={() => window.dispatchEvent(new Event('rfm:refresh-local-data'))}
-          >
-            Перечитать сохранённые данные
-          </Button>
-          <Button
-            id="bootDiagnosticsRefresh"
-            className="button"
-            type="button"
-            disabled={busy}
-            onClick={() => void refreshStorage()}
-          >
-            {busy ? 'Проверяю…' : 'Проверить хранилище'}
-          </Button>
-          <Button
-            id="bootDiagnosticsCopy"
-            className="button"
-            type="button"
-            onClick={() => void copy()}
-          >
-            {copied ? 'Скопировано' : 'Скопировать диагностику'}
-          </Button>
-          <Button
-            id="bootDiagnosticsExport"
-            className="button"
-            type="button"
-            onClick={exportReport}
-          >
-            Скачать отчёт
-          </Button>
-        </ActionGroup>
-      </div>
-    </div>
+      </Dialog.Overlay>
+    </Dialog.Root>
   );
 }
