@@ -23,7 +23,6 @@ import {
 import { mapsMeLink } from '../navigation.js';
 import OfflineMapActions from '../components/OfflineMapActions.jsx';
 import Panel from '../components/Panel.jsx';
-import SectionHeader from '../components/SectionHeader.jsx';
 import CollapsibleSection from '../components/CollapsibleSection.jsx';
 import ElevationProfile from '../components/ElevationProfile.jsx';
 import CompassReadout from '../components/CompassReadout.jsx';
