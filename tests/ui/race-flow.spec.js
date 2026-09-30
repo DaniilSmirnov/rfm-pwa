@@ -299,6 +299,7 @@ test.describe('saved race user flows', () => {
     await selectMapPoint(page);
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await page.locator('#favoritePointBtn').click();
+    await page.getByRole('button', { name: 'Закрыть карточку точки' }).click();
     await openRaceManagement(page);
     page.once('dialog', dialog => dialog.accept());
     await page.locator('#clearBtn').click();
