@@ -53,7 +53,7 @@ function cleanRetirementReason(result, views, resultLabel) {
     .replace(/\b(?:СУ|SS)\s*[-№#:]?\s*\d+\b/gi, ' ')
     .replace(/\bспецучаст(?:ок|ка)\s*[-№#:]?\s*\d+\b/gi, ' ')
     .replace(/^\s*сход\s*[:—-]?\s*/i, '')
-    .replace(/^[·|,;:—-]+\s*/g, '')
+    .replace(/^(?:[·|,;:—-]\s*)+/g, '')
     .replace(/[·|,;:—-]+\s*$/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
