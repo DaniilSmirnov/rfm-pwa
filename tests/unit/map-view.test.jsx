@@ -71,7 +71,7 @@ describe('MapView enhancements', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('renders stage status, source-backed point details, safety and offline guidance', () => {
+  it('renders live stage and source-backed point details without redundant tool sections', () => {
     const point = { lat: 60, lon: 35, name: 'Зрительская зона' };
     const app = {
       currentPackage: {
@@ -182,7 +182,9 @@ describe('MapView enhancements', () => {
     expect(screen.getByRole('img', { name: 'Фото: Зрительская зона' }).getAttribute('src')).toBe(
       'https://example.com/photo.jpg',
     );
-    expect(screen.getByText(/Оставайся в разрешённых зрительских зонах/)).toBeTruthy();
+    expect(screen.queryByText('БЕЗОПАСНОСТЬ И ОФЛАЙН')).toBeNull();
+    expect(screen.queryByText('СТАТУСЫ СПЕЦУЧАСТКОВ')).toBeNull();
+    expect(screen.queryByText('ГДЕ СМОТРЕТЬ?')).toBeNull();
 
     const pointActions = screen.getByRole('dialog');
     const navButtons = within(pointActions)
