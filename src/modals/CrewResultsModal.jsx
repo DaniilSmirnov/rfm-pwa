@@ -7,7 +7,9 @@ import SelectField from '../components/SelectField.jsx';
 import { ArrowLeft, ChevronRight, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
+  if (!result) return 'Не пройден';
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
+  if (!Number.isFinite(Number(result?.time)) || Number(result?.time) <= 0) return 'Не пройден';
   if (result?.formattedFromLeader) return result.formattedFromLeader;
   const leader = rows.find(row => !row?.goingOff && !row?.goingOffAfterSu && Number(row?.time) > 0);
   if (!leader || leader === result) return 'лидер';
@@ -128,7 +130,7 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
                       <span role="cell">{view.name.replace(/^Спецучасток\s*/i, 'СУ')}</span>
                       <span role="cell">{result ? view.results.indexOf(result) + 1 : '—'}</span>
                       <span className={status ? 'retired' : ''} role="cell">
-                        {status || result?.formattedTime || '—'}
+                        {status || result?.formattedTime || 'Не пройден'}
                       </span>
                       <span className={status ? 'retired' : ''} role="cell">
                         {status || gapFromLeader(result, view.results)}
@@ -470,7 +472,7 @@ export default function CrewResultsModal({
                   <span className="crew-result-card-time">
                     {retirement ? (
                       <>
-                        <strong>{retirement.reason}</strong>
+                        {retirement.reason}
                         <small>{retirement.place}</small>
                       </>
                     ) : (
