@@ -28,12 +28,6 @@ export default function SettingsView({ app, onBack, onDiagnostics }) {
   };
   return (
     <section id="settingsSection" className="settings-screen">
-      <header className="settings-screen-head">
-        <Button className="button compact" onClick={onBack}>
-          ← Ещё
-        </Button>
-        <h2>Настройки и диагностика</h2>
-      </header>
       <p className="muted small">Настройки приложения и диагностика.</p>
       <fieldset className="settings-group">
         <legend>Тема оформления</legend>
