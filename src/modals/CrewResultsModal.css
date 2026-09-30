@@ -496,10 +496,14 @@
 }
 
 @layer theme {
-  :root[data-theme='dark'] .crew-results-mobile-controls,
   :root[data-theme='dark'] .crew-result-card,
   :root[data-theme='dark'] .crew-details-dialog {
     background: var(--surface, #111418);
+    color: #f5f7fa;
+  }
+
+  :root[data-theme='dark'] .crew-results-mobile-controls {
+    background: transparent;
     color: #f5f7fa;
   }
   :root[data-theme='dark'] .crew-result-card,
