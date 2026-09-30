@@ -631,7 +631,7 @@ export default function MapView({
             <div
               id="mapPointDetails"
               className="map-point-sheet-details"
-              hidden={!pointDetailsOpen}
+              aria-hidden={!pointDetailsOpen}
             >
               <span id="pointCoords" className="muted">
                 {coordinateText(pointSheetPoint)}
