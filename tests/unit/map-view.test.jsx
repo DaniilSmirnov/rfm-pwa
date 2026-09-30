@@ -67,10 +67,20 @@ describe('MapView enhancements', () => {
     expect(favoritesTrigger.getAttribute('aria-expanded')).toBe('true');
     expect(drawer.hidden).toBe(true);
     expect(within(favoritesDrawer).getByText('ИЗБРАННЫЕ ТОЧКИ')).toBeTruthy();
+    expect(within(favoritesDrawer).getByText('Пока ничего нет')).toBeTruthy();
+
+    const carTrigger = screen.getByRole('button', { name: 'Моя машина' });
+    fireEvent.click(carTrigger);
+    const carDrawer = document.getElementById('mapCarDrawer');
+    expect(carDrawer.hidden).toBe(false);
+    expect(carTrigger.getAttribute('aria-expanded')).toBe('true');
+    expect(favoritesDrawer.hidden).toBe(true);
+    expect(within(carDrawer).getByText('ГДЕ МАШИНА?')).toBeTruthy();
 
     fireEvent.click(trigger);
     expect(drawer.hidden).toBe(false);
     expect(favoritesDrawer.hidden).toBe(true);
+    expect(carDrawer.hidden).toBe(true);
 
     fireEvent.pointerDown(document.body);
     expect(drawer.hidden).toBe(true);
