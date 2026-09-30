@@ -92,7 +92,7 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
     >
       <Dialog.Overlay className="crew-details-dialog-overlay" />
       <Dialog.Content className="crew-details-dialog" aria-label="Детали экипажа">
-        <ScreenHeader title="Детали экипажа" onBack={onClose} />
+        <ScreenHeader title="Детали экипажа" onBack={onClose} safeArea={false} />
 
         <div className="crew-details-profile">
           <div className="crew-details-profile-copy">
