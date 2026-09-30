@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layers, MapPin, ChevronDown, Star, ParkingSquare } from 'lucide-react';
+import { Settings, MapPin, ChevronDown, Star, ParkingSquare } from 'lucide-react';
 import packageMeta from '../../package.json';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
@@ -44,6 +44,7 @@ export default function MapView({
 }) {
   const [compassOpen, setCompassOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
   const [pointSheetDragProgress, setPointSheetDragProgress] = useState(0);
   const [pointSheetPoint, setPointSheetPoint] = useState(app.selectedPoint);
@@ -85,7 +86,10 @@ export default function MapView({
     };
   }, [pkg?.id]);
   useEffect(() => {
-    if (app.selectedPoint) setToolsOpen(false);
+    if (app.selectedPoint) {
+      setToolsOpen(false);
+      setFavoritesOpen(false);
+    }
   }, [app.selectedPoint]);
   useEffect(() => {
     if (app.selectedPoint) {
@@ -104,22 +108,33 @@ export default function MapView({
     return () => window.clearTimeout(timer);
   }, [app.selectedPoint]);
   useEffect(() => {
-    if (!toolsOpen) return undefined;
-    const trigger = document.getElementById('mapToolsToggle');
-    const closeTools = () => {
+    if (!toolsOpen && !favoritesOpen) return undefined;
+    const toolsTrigger = document.getElementById('mapToolsToggle');
+    const favoritesTrigger = document.getElementById('mapFavoritesToggle');
+    const toolsDrawer = document.getElementById('mapToolsDrawer');
+    const favoritesDrawer = document.getElementById('mapFavoritesDrawer');
+    const activeTrigger = toolsOpen ? toolsTrigger : favoritesTrigger;
+    const closePanels = () => {
       setToolsOpen(false);
-      requestAnimationFrame(() => trigger?.focus());
+      setFavoritesOpen(false);
+      requestAnimationFrame(() => activeTrigger?.focus());
     };
     const handlePointerDown = event => {
       const target = event.target;
-      const drawer = document.getElementById('mapToolsDrawer');
-      if (drawer?.contains(target) || trigger?.contains(target)) return;
-      closeTools();
+      if (
+        toolsDrawer?.contains(target) ||
+        favoritesDrawer?.contains(target) ||
+        toolsTrigger?.contains(target) ||
+        favoritesTrigger?.contains(target)
+      ) {
+        return;
+      }
+      closePanels();
     };
     const handleKeyDown = event => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
-      closeTools();
+      closePanels();
     };
     document.addEventListener('pointerdown', handlePointerDown, true);
     document.addEventListener('keydown', handleKeyDown);
@@ -127,7 +142,7 @@ export default function MapView({
       document.removeEventListener('pointerdown', handlePointerDown, true);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [toolsOpen]);
+  }, [toolsOpen, favoritesOpen]);
   useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
   const beginPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
@@ -320,9 +335,25 @@ export default function MapView({
           aria-label={toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
           aria-expanded={toolsOpen}
           aria-controls="mapToolsDrawer"
-          onClick={() => setToolsOpen(open => !open)}
+          onClick={() => {
+            setToolsOpen(open => !open);
+            setFavoritesOpen(false);
+          }}
         >
-          <Layers aria-hidden="true" size={21} />
+          <Settings aria-hidden="true" size={21} />
+        </Button>
+        <Button
+          id="mapFavoritesToggle"
+          className="map-favorites-toggle"
+          aria-label={favoritesOpen ? 'Закрыть избранное' : 'Избранное'}
+          aria-expanded={favoritesOpen}
+          aria-controls="mapFavoritesDrawer"
+          onClick={() => {
+            setFavoritesOpen(open => !open);
+            setToolsOpen(false);
+          }}
+        >
+          <Star aria-hidden="true" size={21} />
         </Button>
         {liveStage && (
           <div className="map-live-stage" aria-label="Активный спецучасток">
@@ -355,23 +386,6 @@ export default function MapView({
             <strong>Инструменты карты</strong>
             <OfflineMapActions app={app} />
           </div>
-          <section className="favorites-panel" aria-labelledby="favoritesTitle">
-            <SectionHeader className="compact-section-head">
-              <div>
-                <div id="favoritesTitle" className="block-title">
-                  ИЗБРАННЫЕ ТОЧКИ
-                </div>
-                <p id="favoritesStatus" className="muted small">
-                  {app.favorites.length
-                    ? `${app.favorites.length} сохранено для этой гонки.`
-                    : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
-                </p>
-              </div>
-            </SectionHeader>
-            <div id="favoritesList" className="favorites-list">
-              {favoritesContent}
-            </div>
-          </section>
           <section className="car-panel" aria-labelledby="carTitle">
             <SectionHeader className="compact-section-head">
               <div>
@@ -453,35 +467,6 @@ export default function MapView({
               </div>
             )}
           </section>
-          {followedResults.length > 0 && (
-            <section className="map-followed-crews" aria-label="Избранные экипажи">
-              <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
-              {followedResults.map(({ favorite, position, result }) => {
-                const stage = pkg.crewResults?.eventResults?.at(-1);
-                const stageResult = stage?.results?.find(row =>
-                  [row.crew?.id, row.crew?.number].some(
-                    value => String(value) === String(favorite.id || favorite.number),
-                  ),
-                );
-                return (
-                  <article className="map-followed-crew" key={favorite.id || favorite.number}>
-                    <strong>
-                      {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
-                      {crewName(result.crew) || favorite.name}
-                    </strong>
-                    <span>
-                      {result.formattedTime} ·{' '}
-                      {result.formattedFromLeader === '00:00:00:0'
-                        ? 'лидер'
-                        : `отставание ${result.formattedFromLeader}`}
-                      {stage?.specialStage?.name &&
-                        ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
-                    </span>
-                  </article>
-                );
-              })}
-            </section>
-          )}
           <div className="map-export-actions">
             <div>
               <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
@@ -519,6 +504,63 @@ export default function MapView({
               вы
             </span>
           </div>
+        </div>
+        <div
+          id="mapFavoritesDrawer"
+          className="map-tools-drawer map-favorites-drawer"
+          role="region"
+          aria-label="Избранное"
+          hidden={!favoritesOpen}
+        >
+          <div className="map-tools-heading">
+            <strong>Избранное</strong>
+          </div>
+          <section className="favorites-panel" aria-labelledby="favoritesTitle">
+            <SectionHeader className="compact-section-head">
+              <div>
+                <div id="favoritesTitle" className="block-title">
+                  ИЗБРАННЫЕ ТОЧКИ
+                </div>
+                <p id="favoritesStatus" className="muted small">
+                  {app.favorites.length
+                    ? `${app.favorites.length} сохранено для этой гонки.`
+                    : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
+                </p>
+              </div>
+            </SectionHeader>
+            <div id="favoritesList" className="favorites-list">
+              {favoritesContent}
+            </div>
+          </section>
+          {followedResults.length > 0 && (
+            <section className="map-followed-crews" aria-label="Избранные экипажи">
+              <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
+              {followedResults.map(({ favorite, position, result }) => {
+                const stage = pkg.crewResults?.eventResults?.at(-1);
+                const stageResult = stage?.results?.find(row =>
+                  [row.crew?.id, row.crew?.number].some(
+                    value => String(value) === String(favorite.id || favorite.number),
+                  ),
+                );
+                return (
+                  <article className="map-followed-crew" key={favorite.id || favorite.number}>
+                    <strong>
+                      {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
+                      {crewName(result.crew) || favorite.name}
+                    </strong>
+                    <span>
+                      {result.formattedTime} ·{' '}
+                      {result.formattedFromLeader === '00:00:00:0'
+                        ? 'лидер'
+                        : `отставание ${result.formattedFromLeader}`}
+                      {stage?.specialStage?.name &&
+                        ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
+                    </span>
+                  </article>
+                );
+              })}
+            </section>
+          )}
         </div>
       </>
       {pointSheetPoint && (
