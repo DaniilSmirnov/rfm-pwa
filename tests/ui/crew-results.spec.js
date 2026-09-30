@@ -42,7 +42,7 @@ test.describe('ASMG crew results', () => {
     await expect(results).toHaveCount(0);
   });
 
-  test('opens a crew modal with stage-by-stage times', async ({ page }) => {
+  test('opens a crew screen with stage-by-stage times', async ({ page }) => {
     await openAllResults(page);
     await expect(page.locator('.crew-results-inline')).toBeVisible();
     const firstRow = page.locator('[data-crew-row]').first();
@@ -50,6 +50,7 @@ test.describe('ASMG crew results', () => {
     await firstRow.getByRole('button', { name: /Открыть результаты экипажа/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Детали экипажа' });
     await expect(dialog).toBeVisible();
+    await expect(dialog.locator('.screen-header')).toContainText('Детали экипажа');
     await expect(dialog).toContainText('СУ 2 · Пуйккола');
     await expect(dialog).toContainText('00:14:50:0');
   });
