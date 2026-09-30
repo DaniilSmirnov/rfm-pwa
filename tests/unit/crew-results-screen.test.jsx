@@ -76,6 +76,7 @@ describe('inline results screen', () => {
     fireEvent.click(card);
     const dialog = screen.getByRole('dialog', { name: 'Детали экипажа' });
     expect(dialog).toBeTruthy();
+    expect(dialog.getAttribute('data-state')).toBe('open');
     expect(within(dialog).getByRole('heading', { name: 'Детали экипажа' })).toBeTruthy();
     expect(screen.getByText('СУ 1')).toBeTruthy();
     expect(screen.getByText('00:00:50')).toBeTruthy();
