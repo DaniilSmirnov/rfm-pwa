@@ -65,7 +65,7 @@ function MarqueeTitle({ children }) {
     <span
       ref={viewportRef}
       className={`map-point-sheet-title${overflowing ? ' is-overflowing' : ''}`}
-      style={{ '--map-title-distance': \`${distance}px\` }}
+      style={{ '--map-title-distance': `${distance}px` }}
     >
       <span ref={textRef}>{children}</span>
     </span>
