@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layers, MapPin, ChevronDown, Star, ParkingSquare } from 'lucide-react';
+import { Settings, MapPin, ChevronDown, Star, ParkingSquare, Car } from 'lucide-react';
 import packageMeta from '../../package.json';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
+import SelectField from '../components/SelectField.jsx';
 import {
   googleMapsDirections,
   yandexNavigatorLink,
@@ -22,7 +23,6 @@ import {
 import { mapsMeLink } from '../navigation.js';
 import OfflineMapActions from '../components/OfflineMapActions.jsx';
 import Panel from '../components/Panel.jsx';
-import SectionHeader from '../components/SectionHeader.jsx';
 import CollapsibleSection from '../components/CollapsibleSection.jsx';
 import ElevationProfile from '../components/ElevationProfile.jsx';
 import CompassReadout from '../components/CompassReadout.jsx';
@@ -38,29 +38,29 @@ export default function MapView({
   selectedRoute,
   pointElevation,
   pointStageDistance,
-  pointsContent,
   favoritesContent,
   mapContent,
 }) {
   const [compassOpen, setCompassOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [carOpen, setCarOpen] = useState(false);
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
+  const [pointSheetDragProgress, setPointSheetDragProgress] = useState(0);
+  const [pointSheetPoint, setPointSheetPoint] = useState(app.selectedPoint);
+  const [pointSheetClosing, setPointSheetClosing] = useState(false);
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
   const pointSheetRef = useRef(null);
-  const pointSheetGesture = useRef({
-    startY: null,
-    startScrollTop: 0,
-    suppressClick: false,
-    resetTimer: null,
-  });
+  const pointSheetPointRef = useRef(app.selectedPoint);
+  const pointSheetGesture = useRef({ startY: null, suppressClick: false });
   const selectedPointRef = useRef(app.selectedPoint);
   selectedPointRef.current = app.selectedPoint;
+  pointSheetPointRef.current = pointSheetPoint;
   const pkg = app.currentPackage;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
   const liveStage = stages.find(stage => stage.mapStatusKind === 'live');
-  const selectedDetails =
-    pkg && app.selectedPoint ? pointFeatureDetails(pkg, app.selectedPoint) : null;
+  const selectedDetails = pkg && pointSheetPoint ? pointFeatureDetails(pkg, pointSheetPoint) : null;
   const scheduledCrews =
     pkg && pointStageDistance
       ? scheduledStageCrews(
@@ -86,8 +86,69 @@ export default function MapView({
     };
   }, [pkg?.id]);
   useEffect(() => {
-    if (app.selectedPoint) setToolsOpen(false);
+    if (app.selectedPoint) {
+      setToolsOpen(false);
+      setFavoritesOpen(false);
+      setCarOpen(false);
+    }
   }, [app.selectedPoint]);
+  useEffect(() => {
+    if (app.selectedPoint) {
+      setPointSheetPoint(app.selectedPoint);
+      setPointSheetClosing(false);
+      return undefined;
+    }
+    if (!pointSheetPointRef.current) return undefined;
+    setPointDetailsOpen(false);
+    setPointSheetClosing(true);
+    const timer = window.setTimeout(() => {
+      pointSheetPointRef.current = null;
+      setPointSheetPoint(null);
+      setPointSheetClosing(false);
+    }, 220);
+    return () => window.clearTimeout(timer);
+  }, [app.selectedPoint]);
+  useEffect(() => {
+    if (!toolsOpen && !favoritesOpen && !carOpen) return undefined;
+    const toolsTrigger = document.getElementById('mapToolsToggle');
+    const favoritesTrigger = document.getElementById('mapFavoritesToggle');
+    const carTrigger = document.getElementById('mapCarToggle');
+    const toolsDrawer = document.getElementById('mapToolsDrawer');
+    const favoritesDrawer = document.getElementById('mapFavoritesDrawer');
+    const carDrawer = document.getElementById('mapCarDrawer');
+    const activeTrigger = toolsOpen ? toolsTrigger : favoritesOpen ? favoritesTrigger : carTrigger;
+    const closePanels = () => {
+      setToolsOpen(false);
+      setFavoritesOpen(false);
+      setCarOpen(false);
+      requestAnimationFrame(() => activeTrigger?.focus());
+    };
+    const handlePointerDown = event => {
+      const target = event.target;
+      if (
+        toolsDrawer?.contains(target) ||
+        favoritesDrawer?.contains(target) ||
+        carDrawer?.contains(target) ||
+        toolsTrigger?.contains(target) ||
+        favoritesTrigger?.contains(target) ||
+        carTrigger?.contains(target)
+      ) {
+        return;
+      }
+      closePanels();
+    };
+    const handleKeyDown = event => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closePanels();
+    };
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [toolsOpen, favoritesOpen, carOpen]);
   useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
   const beginPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
@@ -97,16 +158,20 @@ export default function MapView({
     );
     if (interactiveTarget && !handleTarget) return;
     const source = event.touches?.[0] || event;
-    if (pointSheetGesture.current.resetTimer != null)
-      window.clearTimeout(pointSheetGesture.current.resetTimer);
-    pointSheetGesture.current = {
-      startY: source.clientY,
-      startScrollTop: pointSheetRef.current?.scrollTop || 0,
-      suppressClick: false,
-      resetTimer: null,
-    };
+    pointSheetGesture.current = { startY: source.clientY, suppressClick: false };
+    setPointSheetDragProgress(pointDetailsOpen ? 1 : 0);
     handleTarget?.setPointerCapture?.(event.pointerId);
     if (!handleTarget) event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const movePointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
+    const startY = pointSheetGesture.current.startY;
+    const source = event.touches?.[0] || event;
+    if (startY == null) return;
+    const delta = source.clientY - startY;
+    const progress = pointDetailsOpen ? 1 - delta / 220 : -delta / 220;
+    setPointSheetDragProgress(Math.max(0, Math.min(1, progress)));
+    if (Math.abs(delta) > 4) event.preventDefault?.();
   };
   const endPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
@@ -116,35 +181,21 @@ export default function MapView({
     if (startY == null) return;
     const delta = source.clientY - startY;
     if (Math.abs(delta) < 36) return;
-    if (
-      delta > 0 &&
-      pointDetailsOpen &&
-      (pointSheetRef.current?.scrollTop > 0 || pointSheetGesture.current.startScrollTop > 0)
-    )
-      return;
     event.preventDefault?.();
     pointSheetGesture.current.suppressClick = true;
-    if (pointSheetGesture.current.resetTimer != null)
-      window.clearTimeout(pointSheetGesture.current.resetTimer);
-    pointSheetGesture.current.resetTimer = window.setTimeout(() => {
-      pointSheetGesture.current.suppressClick = false;
-      pointSheetGesture.current.resetTimer = null;
-    }, 500);
     if (delta > 0) {
-      if (pointDetailsOpen) setPointDetailsOpen(false);
-      else app.showPoint?.(null);
-    } else setPointDetailsOpen(true);
+      if (pointDetailsOpen) {
+        setPointDetailsOpen(false);
+        setPointSheetDragProgress(0);
+      } else app.showPoint?.(null);
+    } else {
+      setPointDetailsOpen(true);
+      setPointSheetDragProgress(1);
+    }
   };
   const cancelPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
-    if (pointSheetGesture.current.resetTimer != null)
-      window.clearTimeout(pointSheetGesture.current.resetTimer);
-    pointSheetGesture.current = {
-      startY: null,
-      startScrollTop: 0,
-      suppressClick: false,
-      resetTimer: null,
-    };
+    pointSheetGesture.current = { startY: null, suppressClick: false };
   };
   useEffect(() => {
     if (!app.selectedPoint) return undefined;
@@ -257,8 +308,9 @@ export default function MapView({
             <small>{pkg?.summary?.dates || pkg?.dates || ''}</small>
           </span>
           {app.packages?.length > 0 && (
-            <select
+            <SelectField
               aria-label="Гонка на карте"
+              className="map-rally-field"
               value={pkg?.id || ''}
               onChange={event => {
                 const selected = app.packages.find(item => String(item.id) === event.target.value);
@@ -271,7 +323,7 @@ export default function MapView({
                   {item.name}
                 </option>
               ))}
-            </select>
+            </SelectField>
           )}
           <ChevronDown aria-hidden="true" size={16} />
         </label>
@@ -282,249 +334,265 @@ export default function MapView({
       <div className="map" aria-label="offline rally map">
         {mapContent}
       </div>
-      <Button
-        id="mapToolsToggle"
-        className="map-tools-toggle"
-        aria-label={toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
-        aria-expanded={toolsOpen}
-        aria-controls="mapToolsDrawer"
-        onClick={() => setToolsOpen(open => !open)}
-      >
-        <Layers aria-hidden="true" size={21} />
-      </Button>
-      {liveStage && (
-        <div className="map-live-stage" aria-label="Активный спецучасток">
-          <span aria-hidden="true" />
-          <strong>{liveStage.name}</strong>
-          <small>{liveStage.mapStatus}</small>
-        </div>
-      )}
-      <div className="map-locate-control">
+      <>
         <Button
-          id="locateBtn"
-          className="map-locate-button"
-          aria-label="Показать где я"
-          onClick={app.requestLocation}
+          id="mapToolsToggle"
+          className="map-tools-toggle"
+          aria-label="Инструменты карты"
+          aria-expanded={toolsOpen}
+          aria-controls="mapToolsDrawer"
+          onClick={() => {
+            setToolsOpen(open => !open);
+            setFavoritesOpen(false);
+            setCarOpen(false);
+          }}
         >
-          <img className="rfm-icon" src="/assets/location.svg" alt="" />
+          <Settings aria-hidden="true" size={21} />
         </Button>
-        <span id="geoStatus" className={`map-locate-status ${app.geoClass}`} aria-live="polite">
-          {app.geoStatus}
-        </span>
-      </div>
-      <div id="mapToolsDrawer" className="map-tools-drawer" hidden={!toolsOpen}>
-        <div className="map-tools-heading">
-          <strong>Инструменты карты</strong>
-          <OfflineMapActions app={app} />
-        </div>
-        <section className="favorites-panel" aria-labelledby="favoritesTitle">
-          <SectionHeader className="compact-section-head">
-            <div>
-              <div id="favoritesTitle" className="block-title">
-                ИЗБРАННЫЕ ТОЧКИ
-              </div>
-              <p id="favoritesStatus" className="muted small">
-                {app.favorites.length
-                  ? `${app.favorites.length} сохранено для этой гонки.`
-                  : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
-              </p>
-            </div>
-          </SectionHeader>
-          <div id="favoritesList" className="favorites-list">
-            {favoritesContent}
+        <Button
+          id="mapFavoritesToggle"
+          className="map-favorites-toggle"
+          aria-label="Избранное"
+          aria-expanded={favoritesOpen}
+          aria-controls="mapFavoritesDrawer"
+          onClick={() => {
+            setFavoritesOpen(open => !open);
+            setToolsOpen(false);
+            setCarOpen(false);
+          }}
+        >
+          <Star aria-hidden="true" size={21} />
+        </Button>
+        <Button
+          id="mapCarToggle"
+          className="map-car-toggle"
+          aria-label="Моя машина"
+          aria-expanded={carOpen}
+          aria-controls="mapCarDrawer"
+          onClick={() => {
+            setCarOpen(open => !open);
+            setToolsOpen(false);
+            setFavoritesOpen(false);
+          }}
+        >
+          <Car aria-hidden="true" size={21} />
+        </Button>
+        {liveStage && (
+          <div className="map-live-stage" aria-label="Активный спецучасток">
+            <span aria-hidden="true" />
+            <strong>{liveStage.name}</strong>
+            <small>{liveStage.mapStatus}</small>
           </div>
-        </section>
-        <section className="car-panel" aria-labelledby="carTitle">
-          <SectionHeader className="compact-section-head">
+        )}
+        <div className="map-locate-control">
+          <Button
+            id="locateBtn"
+            className="map-locate-button"
+            aria-label="Показать где я"
+            onClick={app.requestLocation}
+          >
+            <img className="rfm-icon" src="/assets/location.svg" alt="" />
+          </Button>
+          <span id="geoStatus" className={`map-locate-status ${app.geoClass}`} aria-live="polite">
+            {app.geoStatus}
+          </span>
+        </div>
+        <div
+          id="mapToolsDrawer"
+          className="map-tools-drawer"
+          role="region"
+          aria-label="Инструменты карты"
+          hidden={!toolsOpen}
+        >
+          <div className="map-tools-heading map-tools-heading-stacked">
+            <div className="block-title">ИНСТРУМЕНТЫ КАРТЫ</div>
+            <OfflineMapActions app={app} />
+          </div>
+          <div className="map-export-actions">
             <div>
-              <div id="carTitle" className="block-title">
-                ГДЕ МАШИНА?
+              <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
+              <p className="muted small">Экспортирует текущую гонку без обращения к серверу.</p>
+            </div>
+            <ActionGroup>
+              <Button id="exportGpxBtn" className="button" disabled={!pkg} onClick={app.exportGpx}>
+                GPX
+              </Button>
+              <Button
+                id="exportGeoJsonBtn"
+                className="button"
+                disabled={!pkg}
+                onClick={app.exportGeoJson}
+              >
+                GeoJSON
+              </Button>
+            </ActionGroup>
+          </div>
+          <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
+          <div className="legend">
+            <span>
+              <i style={{ background: '#f3f5f7' }} />
+              RallyFansMap
+            </span>
+            <span>
+              <i style={{ background: BRAND_ORANGE }} />
+              Yandex Constructor
+            </span>
+            <span>
+              <i style={{ background: '#4da3ff' }} />
+              вы
+            </span>
+          </div>
+        </div>
+        <div
+          id="mapFavoritesDrawer"
+          className="map-tools-drawer map-favorites-drawer"
+          role="region"
+          aria-label="Избранное"
+          hidden={!favoritesOpen}
+        >
+          <div className="map-tools-heading">
+            <div id="favoritesTitle" className="block-title">
+              ИЗБРАННЫЕ ТОЧКИ
+            </div>
+          </div>
+          {app.favorites.length === 0 && followedResults.length === 0 && (
+            <div className="map-favorites-empty" role="status">
+              <Star aria-hidden="true" size={28} />
+              <strong>Пока ничего нет</strong>
+              <span>Добавляй точки и экипажи в избранное — они появятся здесь.</span>
+            </div>
+          )}
+          {app.favorites.length > 0 && (
+            <section className="favorites-panel" aria-labelledby="favoritesTitle">
+              <p id="favoritesStatus" className="muted small">
+                {`${app.favorites.length} сохранено для этой гонки.`}
+              </p>
+              <div id="favoritesList" className="favorites-list">
+                {favoritesContent}
               </div>
+            </section>
+          )}
+          {followedResults.length > 0 && (
+            <section className="map-followed-crews" aria-label="Избранные экипажи">
+              <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
+              {followedResults.map(({ favorite, position, result }) => {
+                const stage = pkg.crewResults?.eventResults?.at(-1);
+                const stageResult = stage?.results?.find(row =>
+                  [row.crew?.id, row.crew?.number].some(
+                    value => String(value) === String(favorite.id || favorite.number),
+                  ),
+                );
+                return (
+                  <article className="map-followed-crew" key={favorite.id || favorite.number}>
+                    <strong>
+                      {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
+                      {crewName(result.crew) || favorite.name}
+                    </strong>
+                    <span>
+                      {result.formattedTime} ·{' '}
+                      {result.formattedFromLeader === '00:00:00:0'
+                        ? 'лидер'
+                        : `отставание ${result.formattedFromLeader}`}
+                      {stage?.specialStage?.name &&
+                        ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
+                    </span>
+                  </article>
+                );
+              })}
+            </section>
+          )}
+        </div>
+        <div
+          id="mapCarDrawer"
+          className="map-tools-drawer map-car-drawer"
+          role="region"
+          aria-label="Моя машина"
+          hidden={!carOpen}
+        >
+          <div className="map-tools-heading">
+            <div id="carTitle" className="block-title">
+              ГДЕ МАШИНА?
+            </div>
+          </div>
+          <section className="car-panel" aria-labelledby="carTitle">
+            <div className="car-panel-head">
               <p id="carStatus" className="muted small">
                 {app.carPoint
                   ? `Сохранено ${app.carPoint.savedAt ? new Date(app.carPoint.savedAt).toLocaleString() : ''}`
                   : 'Сохрани текущие GPS-координаты машины.'}
               </p>
+              <Button id="saveCarBtn" className="button" type="button" onClick={app.saveCar}>
+                {app.carPoint ? 'Обновить координаты машины' : 'Запомнить машину'}
+              </Button>
             </div>
-            <Button id="saveCarBtn" className="button" type="button" onClick={app.saveCar}>
-              {app.carPoint ? 'Обновить координаты машины' : 'Запомнить машину'}
-            </Button>
-          </SectionHeader>
-          {app.carPoint && (
-            <div id="carPointCard" className="car-point-card">
-              <div className="point-row-copy">
-                <strong>🚗 Машина</strong>
-                <span id="carCoords" className="muted">
-                  {coordinateText(app.carPoint)}
-                </span>
-              </div>
-              <div className="point-nav-buttons">
-                <Button
-                  id="carCompassBtn"
-                  data-point-opener="true"
-                  className="button compact"
-                  onClick={async () => {
-                    setCompassOpen(true);
-                    app.showPoint(app.carPoint);
-                    await app.enableCompass();
-                  }}
-                >
-                  Компас
-                </Button>
-                <Button
-                  id="carMapsMeBtn"
-                  className="button compact primary"
-                  onClick={() =>
-                    openCustomSchemeWithFallback(
-                      mapsMeLink(app.carPoint),
-                      mapsMeFallbackForPoint(app.carPoint),
-                    )
-                  }
-                >
-                  MAPS.ME
-                </Button>
-                <Button
-                  id="carYandexBtn"
-                  className="button compact"
-                  onClick={() => openYandex(app.carPoint)}
-                >
-                  Yandex
-                </Button>
-                <Button
-                  id="carGoogleBtn"
-                  className="button compact"
-                  onClick={() => (window.location.href = googleMapsDirections(app.carPoint))}
-                >
-                  Google Maps
-                </Button>
-                <Button
-                  id="carShareBtn"
-                  className="button compact"
-                  onClick={() => app.sharePoint(app.carPoint)}
-                >
-                  Поделиться
-                </Button>
-                <Button id="carDeleteBtn" className="button compact danger" onClick={app.removeCar}>
-                  Удалить
-                </Button>
-              </div>
-            </div>
-          )}
-        </section>
-        {stages.length > 0 && (
-          <section className="map-stage-statuses" aria-labelledby="mapStageStatusesTitle">
-            <div id="mapStageStatusesTitle" className="block-title">
-              СТАТУСЫ СПЕЦУЧАСТКОВ
-            </div>
-            <div className="map-stage-status-list">
-              {stages.map(stage => (
-                <article className="map-stage-status" key={stage.key}>
-                  <strong>{stage.name}</strong>
-                  <span className={`map-stage-pill is-${stage.mapStatusKind}`}>
-                    {stage.mapStatus}
+            {app.carPoint && (
+              <div id="carPointCard" className="car-point-card">
+                <div className="point-row-copy">
+                  <strong>🚗 Машина</strong>
+                  <span id="carCoords" className="muted">
+                    {coordinateText(app.carPoint)}
                   </span>
-                  <span className="muted small">{stage.date || stage.location}</span>
-                </article>
-              ))}
-            </div>
-            <p className="muted small">
-              Статус показан по последнему опубликованному сообщению расписания.
-            </p>
+                </div>
+                <div className="point-nav-buttons">
+                  <Button
+                    id="carCompassBtn"
+                    data-point-opener="true"
+                    className="button compact"
+                    onClick={async () => {
+                      setCompassOpen(true);
+                      app.showPoint(app.carPoint);
+                      await app.enableCompass();
+                    }}
+                  >
+                    Компас
+                  </Button>
+                  <Button
+                    id="carMapsMeBtn"
+                    className="button compact primary"
+                    onClick={() =>
+                      openCustomSchemeWithFallback(
+                        mapsMeLink(app.carPoint),
+                        mapsMeFallbackForPoint(app.carPoint),
+                      )
+                    }
+                  >
+                    MAPS.ME
+                  </Button>
+                  <Button
+                    id="carYandexBtn"
+                    className="button compact"
+                    onClick={() => openYandex(app.carPoint)}
+                  >
+                    Yandex
+                  </Button>
+                  <Button
+                    id="carGoogleBtn"
+                    className="button compact"
+                    onClick={() => (window.location.href = googleMapsDirections(app.carPoint))}
+                  >
+                    Google Maps
+                  </Button>
+                  <Button
+                    id="carShareBtn"
+                    className="button compact"
+                    onClick={() => app.sharePoint(app.carPoint)}
+                  >
+                    Поделиться
+                  </Button>
+                  <Button
+                    id="carDeleteBtn"
+                    className="button compact danger"
+                    onClick={app.removeCar}
+                  >
+                    Удалить
+                  </Button>
+                </div>
+              </div>
+            )}
           </section>
-        )}
-        {followedResults.length > 0 && (
-          <section className="map-followed-crews" aria-label="Избранные экипажи">
-            <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
-            {followedResults.map(({ favorite, position, result }) => {
-              const stage = pkg.crewResults?.eventResults?.at(-1);
-              const stageResult = stage?.results?.find(row =>
-                [row.crew?.id, row.crew?.number].some(
-                  value => String(value) === String(favorite.id || favorite.number),
-                ),
-              );
-              return (
-                <article className="map-followed-crew" key={favorite.id || favorite.number}>
-                  <strong>
-                    {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
-                    {crewName(result.crew) || favorite.name}
-                  </strong>
-                  <span>
-                    {result.formattedTime} ·{' '}
-                    {result.formattedFromLeader === '00:00:00:0'
-                      ? 'лидер'
-                      : `отставание ${result.formattedFromLeader}`}
-                    {stage?.specialStage?.name &&
-                      ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
-                  </span>
-                </article>
-              );
-            })}
-          </section>
-        )}
-        <div className="map-field-notice" role="note">
-          <strong>Безопасность и офлайн</strong>
-          <span>
-            Оставайся в разрешённых зрительских зонах и следуй указаниям маршалов. Скачай
-            офлайн-карту до выезда; доступность внешнего навигатора и его офлайн-карт зависит от
-            самого приложения.
-          </span>
         </div>
-        <div className="map-export-actions">
-          <div>
-            <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
-            <p className="muted small">Экспортирует текущую гонку без обращения к серверу.</p>
-          </div>
-          <ActionGroup>
-            <Button id="exportGpxBtn" className="button" disabled={!pkg} onClick={app.exportGpx}>
-              GPX
-            </Button>
-            <Button
-              id="exportGeoJsonBtn"
-              className="button"
-              disabled={!pkg}
-              onClick={app.exportGeoJson}
-            >
-              GeoJSON
-            </Button>
-          </ActionGroup>
-        </div>
-        <div className="map-location-controls">
-          <p className={`muted small ${app.geoClass}`}>{app.geoStatus}</p>
-        </div>
-        <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
-        <div className="legend">
-          <span>
-            <i style={{ background: '#f3f5f7' }} />
-            RallyFansMap
-          </span>
-          <span>
-            <i style={{ background: BRAND_ORANGE }} />
-            Yandex Constructor
-          </span>
-          <span>
-            <i style={{ background: '#4da3ff' }} />
-            вы
-          </span>
-        </div>
-        <div className="full-width-line" />
-        <CollapsibleSection
-          className="points-panel"
-          summary={
-            <>
-              <span className="block-title">ГДЕ СМОТРЕТЬ?</span>
-              <span className="summary-chevron">⌄</span>
-            </>
-          }
-        >
-          <p className="muted small">
-            Точки можно открыть во внешнем навигаторе без доступа к геопозиции PWA.
-          </p>
-          <div id="pointList" className="point-list">
-            {pointsContent}
-          </div>
-        </CollapsibleSection>
-      </div>
-      {app.selectedPoint && (
+      </>
+      {pointSheetPoint && (
         <>
           <Button
             id="mapPointSheetBackdrop"
@@ -537,7 +605,8 @@ export default function MapView({
           <aside
             ref={pointSheetRef}
             id="pointActions"
-            className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''}`}
+            className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''} ${pointSheetClosing ? 'is-closing' : ''} ${pointSheetGesture.current.startY != null ? 'is-dragging' : ''}`}
+            style={{ '--point-sheet-progress': pointSheetDragProgress }}
             role="dialog"
             aria-modal={pointDetailsOpen ? 'true' : undefined}
             aria-labelledby="pointName"
@@ -545,21 +614,9 @@ export default function MapView({
             onPointerUp={endPointSheetGesture}
             onPointerCancel={cancelPointSheetGesture}
             onTouchStart={beginPointSheetGesture}
+            onTouchMove={movePointSheetGesture}
             onTouchEnd={endPointSheetGesture}
             onTouchCancel={cancelPointSheetGesture}
-            onClickCapture={event => {
-              if (!pointSheetGesture.current.suppressClick) return;
-              event.preventDefault();
-              event.stopPropagation();
-              if (pointSheetGesture.current.resetTimer != null)
-                window.clearTimeout(pointSheetGesture.current.resetTimer);
-              pointSheetGesture.current = {
-                startY: null,
-                startScrollTop: 0,
-                suppressClick: false,
-                resetTimer: null,
-              };
-            }}
           >
             <Button
               className="map-point-sheet-handle"
@@ -577,7 +634,7 @@ export default function MapView({
                 setPointDetailsOpen(open => !open);
               }}
             >
-              <span className="map-point-sheet-grabber" aria-hidden="true" />
+              <span id="pointName">{pointSheetPoint.name || 'Точка на карте'}</span>
               <span className="sr-only">
                 {pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'}
               </span>
@@ -593,12 +650,11 @@ export default function MapView({
                   <img
                     className="map-point-sheet-photo"
                     src={selectedDetails.photo}
-                    alt={`Фото: ${app.selectedPoint.name}`}
+                    alt={`Фото: ${pointSheetPoint.name}`}
                   />
                 </a>
               )}
 
-              <strong id="pointName">{app.selectedPoint.name || 'Точка на карте'}</strong>
               <span className="map-point-sheet-meta">
                 {pointStageDistance
                   ? `${pointStageDistance.stage.name} · ${formatDistance(pointStageDistance.distance.fromStart)} от старта`
@@ -618,10 +674,10 @@ export default function MapView({
             <div
               id="mapPointDetails"
               className="map-point-sheet-details"
-              hidden={!pointDetailsOpen}
+              aria-hidden={!pointDetailsOpen}
             >
               <span id="pointCoords" className="muted">
-                {coordinateText(app.selectedPoint)}
+                {coordinateText(pointSheetPoint)}
               </span>
               <span id="pointStageDistance" className="muted small">
                 {pointStageDistance
@@ -703,7 +759,7 @@ export default function MapView({
                 <Button
                   id="favoritePointBtn"
                   className={`button ${favorite ? 'downloaded' : ''}`}
-                  onClick={() => app.toggleFavorite(app.selectedPoint)}
+                  onClick={() => app.toggleFavorite(pointSheetPoint)}
                 >
                   {favorite ? '★ В избранном' : '☆ В избранное'}
                 </Button>
@@ -712,8 +768,8 @@ export default function MapView({
                   className="button primary"
                   onClick={() =>
                     openCustomSchemeWithFallback(
-                      mapsMeLink(app.selectedPoint),
-                      mapsMeFallbackForPoint(app.selectedPoint),
+                      mapsMeLink(pointSheetPoint),
+                      mapsMeFallbackForPoint(pointSheetPoint),
                     )
                   }
                 >
@@ -722,28 +778,28 @@ export default function MapView({
                 <Button
                   id="yandexMapsBtn"
                   className="button"
-                  onClick={() => openYandex(app.selectedPoint)}
+                  onClick={() => openYandex(pointSheetPoint)}
                 >
                   Yandex Navigator
                 </Button>
                 <Button
                   id="googleMapsBtn"
                   className="button"
-                  onClick={() => (window.location.href = googleMapsDirections(app.selectedPoint))}
+                  onClick={() => (window.location.href = googleMapsDirections(pointSheetPoint))}
                 >
                   Google Maps
                 </Button>
                 <Button
                   id="sharePointBtn"
                   className="button"
-                  onClick={() => app.sharePoint(app.selectedPoint)}
+                  onClick={() => app.sharePoint(pointSheetPoint)}
                 >
                   Поделиться
                 </Button>
                 <Button
                   id="copyCoordsBtn"
                   className="button"
-                  onClick={() => void copyPoint(app.selectedPoint)}
+                  onClick={() => void copyPoint(pointSheetPoint)}
                 >
                   Копировать
                 </Button>
@@ -779,7 +835,7 @@ export default function MapView({
                 >
                   {app.compassEnabled ? 'Компас включён' : 'Включить компас'}
                 </Button>
-                <CompassReadout point={app.selectedPoint} userPos={app.userPos} />
+                <CompassReadout point={pointSheetPoint} userPos={app.userPos} />
               </CollapsibleSection>
             </div>
           </aside>

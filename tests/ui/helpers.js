@@ -476,6 +476,25 @@ export async function openMapWithAcceptedSafety(page) {
   await gate.waitFor({ state: 'hidden' });
 }
 
+export async function selectMapPoint(page, name = 'Смотровая точка') {
+  const marker = page.locator('.map-race-label').filter({ hasText: name }).first();
+  await marker.waitFor({ state: 'visible' });
+  await marker.click();
+  await page.locator('#pointActions').waitFor({ state: 'visible' });
+}
+
+export async function openFavoritesPanel(page) {
+  const trigger = page.getByRole('button', { name: 'Избранное' });
+  await trigger.click();
+  await page.locator('#mapFavoritesDrawer').waitFor({ state: 'visible' });
+}
+
+export async function openCarPanel(page) {
+  const trigger = page.getByRole('button', { name: 'Моя машина' });
+  await trigger.click();
+  await page.locator('#mapCarDrawer').waitFor({ state: 'visible' });
+}
+
 export async function seedFixtureRace(page, { pointProperties = {} } = {}) {
   await page.evaluate(
     async ({ race, results, pointProperties }) => {

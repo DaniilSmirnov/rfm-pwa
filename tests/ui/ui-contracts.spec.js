@@ -4,6 +4,7 @@ import {
   openMapWithAcceptedSafety,
   openRaceManagement,
   seedFixtureRace,
+  selectMapPoint,
 } from './helpers.js';
 
 test.describe('basic UI contracts', () => {
@@ -61,9 +62,7 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
-    await page.getByRole('button', { name: 'Инструменты карты' }).click();
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page.locator('.point-row').first().locator('.point-row-copy').click();
+    await selectMapPoint(page);
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     for (const id of [
       'googleMapsBtn',
@@ -83,9 +82,7 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
-    await page.getByRole('button', { name: 'Инструменты карты' }).click();
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page.locator('.point-row').first().locator('.point-row-copy').click();
+    await selectMapPoint(page);
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     const compass = page.locator('#spectatorCompass');
     await expect(compass).toBeVisible();

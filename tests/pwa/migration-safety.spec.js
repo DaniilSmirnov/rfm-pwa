@@ -265,7 +265,10 @@ test.describe('PWA migration safety', () => {
     await openTab(reopened, 'Карта');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
     await openTab(reopened, 'Карта');
-    await expect(reopened.locator('#pointList')).toContainText('Offline spectator point');
+    await expect(
+      reopened.locator('.map-race-label').filter({ hasText: 'Offline spectator point' }),
+    ).toBeVisible();
+    await reopened.getByRole('button', { name: 'Избранное' }).click();
     await expect(reopened.locator('#favoritesList')).toContainText('Offline spectator point');
   });
 
@@ -437,16 +440,16 @@ test.describe('PWA migration safety', () => {
     await expect(page.locator('#networkBadge')).toHaveCount(0);
     await openTab(page, 'Карта');
     await expect(page.locator('#raceDetails')).toBeVisible();
-    await expect(page.locator('#pointList')).toContainText('Offline spectator point');
-    await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
+    const spectatorPoint = page
+      .locator('.map-race-label')
+      .filter({ hasText: 'Offline spectator point' });
+    await expect(spectatorPoint).toBeVisible();
 
-    await openMapTools(page);
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page
-      .locator('.point-row')
-      .filter({ hasText: 'Offline spectator point' })
-      .locator('.point-row-copy')
-      .click();
+    await page.getByRole('button', { name: 'Избранное' }).click();
+    await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
+    await page.getByRole('button', { name: 'Избранное' }).click();
+
+    await spectatorPoint.click();
     await expect(page.locator('#pointActions')).toBeVisible();
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await expect(page.locator('#pointCoords')).toContainText('61.700000');

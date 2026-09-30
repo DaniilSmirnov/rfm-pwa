@@ -12,7 +12,89 @@ vi.mock('../../src/db.js', () => ({
 afterEach(cleanup);
 
 describe('MapView enhancements', () => {
-  it('renders stage status, source-backed point details, safety and offline guidance', () => {
+  it('keeps separate map tools and favorites panels accessible', () => {
+    const app = {
+      currentPackage: null,
+      packages: [],
+      favorites: [],
+      mapSubtitle: '',
+      mapUi: { disabled: false, button: 'Скачать офлайн-карту', status: 'Не скачана' },
+      terrainUi: { disabled: false, button: 'Скачать рельеф', status: 'Не скачан' },
+      carPoint: null,
+      geoStatus: '',
+      geoClass: '',
+      requestLocation: vi.fn(),
+      downloadMap: vi.fn(),
+      deleteMap: vi.fn(),
+      downloadTerrainForRace: vi.fn(),
+      deleteTerrain: vi.fn(),
+      saveCar: vi.fn(),
+      exportGpx: vi.fn(),
+      exportGeoJson: vi.fn(),
+      selectedPoint: null,
+      showPoint: vi.fn(),
+    };
+    render(
+      <MapView
+        app={app}
+        pointsContent={<span>Точки</span>}
+        favoritesContent={<span>Избранное</span>}
+        mapContent={<span>Карта</span>}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Инструменты карты' });
+    trigger.focus();
+    fireEvent.click(trigger);
+    const drawer = document.getElementById('mapToolsDrawer');
+    expect(drawer.hidden).toBe(false);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(within(drawer).getByText('ИНСТРУМЕНТЫ КАРТЫ')).toBeTruthy();
+
+    fireEvent.click(trigger);
+    expect(drawer.hidden).toBe(true);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(trigger);
+    expect(drawer.hidden).toBe(false);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Скачать офлайн-карту' }));
+    expect(app.downloadMap).toHaveBeenCalledOnce();
+
+    const favoritesTrigger = screen.getByRole('button', { name: 'Избранное' });
+    fireEvent.click(favoritesTrigger);
+    const favoritesDrawer = document.getElementById('mapFavoritesDrawer');
+    expect(favoritesDrawer.hidden).toBe(false);
+    expect(favoritesTrigger.getAttribute('aria-expanded')).toBe('true');
+    expect(drawer.hidden).toBe(true);
+    expect(within(favoritesDrawer).getByText('ИЗБРАННЫЕ ТОЧКИ')).toBeTruthy();
+    expect(within(favoritesDrawer).getByText('Пока ничего нет')).toBeTruthy();
+
+    const carTrigger = screen.getByRole('button', { name: 'Моя машина' });
+    fireEvent.click(carTrigger);
+    const carDrawer = document.getElementById('mapCarDrawer');
+    expect(carDrawer.hidden).toBe(false);
+    expect(carTrigger.getAttribute('aria-expanded')).toBe('true');
+    expect(favoritesDrawer.hidden).toBe(true);
+    expect(within(carDrawer).getByText('ГДЕ МАШИНА?')).toBeTruthy();
+
+    fireEvent.click(trigger);
+    expect(drawer.hidden).toBe(false);
+    expect(favoritesDrawer.hidden).toBe(true);
+    expect(carDrawer.hidden).toBe(true);
+
+    fireEvent.pointerDown(document.body);
+    expect(drawer.hidden).toBe(true);
+    expect(document.activeElement).toBe(trigger);
+
+    fireEvent.click(trigger);
+    expect(drawer.hidden).toBe(false);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(drawer.hidden).toBe(true);
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('renders live stage and source-backed point details without redundant tool sections', () => {
     const point = { lat: 60, lon: 35, name: 'Зрительская зона' };
     const app = {
       currentPackage: {
@@ -102,6 +184,9 @@ describe('MapView enhancements', () => {
     expect(document.querySelector('.map-point-summary').textContent).toContain('4.8 / 5');
     expect(document.querySelector('.point-actions-copy').textContent).toContain('700 м');
     expect(screen.getByRole('dialog').getAttribute('aria-labelledby')).toBe('pointName');
+    expect(document.querySelector('.map-point-sheet-handle #pointName').textContent).toBe(
+      'Зрительская зона',
+    );
     const compactHandle = within(screen.getByRole('dialog')).getByRole('button', {
       name: 'Развернуть карточку точки',
     });
@@ -112,7 +197,6 @@ describe('MapView enhancements', () => {
         .getByRole('button', { name: 'Свернуть карточку точки' })
         .getAttribute('aria-controls'),
     ).toBe('mapPointDetails');
-    expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
     expect(within(document.getElementById('mapPointDetails')).getByText('700 м')).toBeTruthy();
     expect(screen.getByText('Вид на прыжок')).toBeTruthy();
@@ -120,7 +204,9 @@ describe('MapView enhancements', () => {
     expect(screen.getByRole('img', { name: 'Фото: Зрительская зона' }).getAttribute('src')).toBe(
       'https://example.com/photo.jpg',
     );
-    expect(screen.getByText(/Оставайся в разрешённых зрительских зонах/)).toBeTruthy();
+    expect(screen.queryByText('БЕЗОПАСНОСТЬ И ОФЛАЙН')).toBeNull();
+    expect(screen.queryByText('СТАТУСЫ СПЕЦУЧАСТКОВ')).toBeNull();
+    expect(screen.queryByText('ГДЕ СМОТРЕТЬ?')).toBeNull();
 
     const pointActions = screen.getByRole('dialog');
     const navButtons = within(pointActions)
@@ -133,42 +219,26 @@ describe('MapView enhancements', () => {
     const photoLink = pointActions.querySelector('.map-point-sheet-photo-link');
     fireEvent.touchStart(photoLink, { touches: [{ clientY: 140 }] });
     fireEvent.touchEnd(photoLink, { changedTouches: [{ clientY: 260 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
-
-    const sheet = screen.getByRole('dialog');
-    Object.defineProperty(sheet, 'scrollTop', { configurable: true, value: 24, writable: true });
-    fireEvent.touchStart(sheet, { touches: [{ clientY: 140 }] });
-    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
-    sheet.scrollTop = 0;
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('false');
 
     // Gestures must work from the whole sheet, and collapse in two steps.
     fireEvent.click(screen.getByRole('button', { name: 'Свернуть карточку точки' }));
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('true');
+    const sheet = screen.getByRole('dialog');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 230 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('true');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchCancel(sheet);
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 120 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('true');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 140 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('false');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 140 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(document.getElementById('mapPointDetails').getAttribute('aria-hidden')).toBe('true');
     expect(app.showPoint).not.toHaveBeenCalledWith(null);
-    const compactHandleAfterSwipe = within(sheet).getByRole('button', {
-      name: 'Развернуть карточку точки',
-    });
-    fireEvent.click(compactHandleAfterSwipe);
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
-    fireEvent.click(compactHandleAfterSwipe);
-    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
-    fireEvent.touchStart(sheet, { touches: [{ clientY: 140 }] });
-    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] });
-    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 380 }] });
     expect(app.showPoint).toHaveBeenCalledWith(null);
@@ -217,7 +287,7 @@ describe('MapView enhancements', () => {
     };
     render(<MapView app={app} mapContent={<span>Карта</span>} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Избранное' }));
 
     const followed = await screen.findByRole('region', { name: 'Избранные экипажи' });
     expect(followed.textContent).toContain('2. № 8 · Иванов Иван');

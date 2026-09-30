@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, seedFixtureRace, openMapWithAcceptedSafety } from './helpers.js';
+import { openApp, seedFixtureRace, openMapWithAcceptedSafety, selectMapPoint } from './helpers.js';
 
 for (const theme of ['light', 'dark']) {
   test(`map controls and More rows follow the mobile composition (${theme})`, async ({
@@ -41,13 +41,7 @@ for (const theme of ['light', 'dark']) {
     expect(header.height).toBeLessThan(65);
     expect(header.x + header.width).toBeLessThan(tools.x);
     expect(tools.width).toBe(42);
-    await page.getByRole('button', { name: 'Инструменты карты' }).click();
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page
-      .locator('.point-row')
-      .filter({ hasText: 'Смотровая точка' })
-      .locator('.point-row-copy')
-      .click();
+    await selectMapPoint(page);
     const sheet = page.locator('#pointActions');
     await expect(sheet).toBeVisible();
     await expect(sheet.locator('img')).toBeVisible();
@@ -87,14 +81,7 @@ for (const theme of ['light', 'dark']) {
     await page.locator('#mapPointSheetBackdrop').click({ position: { x: 10, y: 10 } });
     await expect(page.locator('#pointActions')).toBeHidden();
     await expect(page.locator('#mapPointSheetBackdrop')).toBeHidden();
-    await page.getByRole('button', { name: 'Инструменты карты' }).click();
-    const pointRow = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
-    if (!(await pointRow.isVisible())) await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page
-      .locator('.point-row')
-      .filter({ hasText: 'Смотровая точка' })
-      .locator('.point-row-copy')
-      .click();
+    await selectMapPoint(page);
     await expect(page.locator('#pointActions')).toBeVisible();
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await page.getByRole('button', { name: 'Ещё', exact: true }).click();

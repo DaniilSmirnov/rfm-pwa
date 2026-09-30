@@ -461,3 +461,36 @@
     border-color: #30353d;
   }
 }
+
+@layer views {
+  .today-next-race-recommendation {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 14px;
+  }
+
+  .today-next-race-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .today-next-race-copy span {
+    color: inherit;
+  }
+
+  .today-next-race-recommendation .button {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 560px) {
+    .today-next-race-recommendation {
+      grid-template-columns: 1fr;
+    }
+
+    .today-next-race-recommendation .button {
+      width: 100%;
+    }
+  }
+}
