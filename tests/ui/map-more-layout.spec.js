@@ -16,8 +16,12 @@ for (const theme of ['light', 'dark']) {
     });
     await openMapWithAcceptedSafety(page);
     await page.evaluate(theme => (document.documentElement.dataset.theme = theme), theme);
-    await expect(page.locator('.map-brand')).toContainText('RALLY FANS');
-    await expect(page.locator('.map-brand em')).toHaveText('MAP');
+    const mapLogo = page.locator('.map-brand-logo');
+    await expect(mapLogo).toHaveAttribute('src', '/rfm/icon.png');
+    await expect(mapLogo).toHaveAttribute('alt', 'Rally Fans Map');
+    await expect(mapLogo).toBeVisible();
+    await expect(page.locator('.map-brand')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(page.locator('.map-brand')).toHaveCSS('padding', '0px');
     await expect(page.locator('.bottom-tabbar button.active')).toHaveCSS(
       'color',
       'rgb(240, 82, 23)',
