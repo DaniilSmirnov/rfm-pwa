@@ -33,6 +33,45 @@ import '../components/MapView.css';
 
 const mapsMeFallbackForPoint = point => `https://maps.me/${point.lat},${point.lon}`;
 
+function MarqueeTitle({ children }) {
+  const viewportRef = useRef(null);
+  const textRef = useRef(null);
+  const [distance, setDistance] = useState(0);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const text = textRef.current;
+    if (!viewport || !text) return undefined;
+
+    const measure = () => {
+      const nextDistance = Math.max(0, text.scrollWidth - viewport.clientWidth);
+      setDistance(nextDistance);
+    };
+    measure();
+
+    const observer =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(viewport);
+    observer?.observe(text);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [children]);
+
+  const overflowing = distance > 0;
+  return (
+    <span
+      ref={viewportRef}
+      className={`map-point-sheet-title${overflowing ? ' is-overflowing' : ''}`}
+      style={{ '--map-title-distance': \`${distance}px\` }}
+    >
+      <span ref={textRef}>{children}</span>
+    </span>
+  );
+}
+
 export default function MapView({
   app,
   selectedRoute,
@@ -634,7 +673,7 @@ export default function MapView({
                 setPointDetailsOpen(open => !open);
               }}
             >
-              <span id="pointName">{pointSheetPoint.name || 'Точка на карте'}</span>
+              <MarqueeTitle>{pointSheetPoint.name || 'Точка на карте'}</MarqueeTitle>
               <span className="sr-only">
                 {pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'}
               </span>
