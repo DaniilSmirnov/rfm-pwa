@@ -122,7 +122,7 @@ export default function MapView({
     <Panel id="mapSection" className="map-card legacy-map map-screen">
       <header className="map-floating-header">
         <span className="map-brand" aria-label="Rally Fans Map">
-          <span>RALLY FANS</span> <em>MAP</em>
+          <img className="map-brand-logo" src="/rfm/icon.png" alt="Rally Fans Map" />
         </span>
         <label className="current-rally-select map-rally-picker">
           <MapPin aria-hidden="true" size={20} className="current-rally-pin" />

@@ -676,23 +676,20 @@
     pointer-events: none;
   }
   .map-brand {
-    display: block;
+    display: grid;
     flex: 0 0 auto;
-    max-width: 112px;
-    overflow: hidden;
-    font:
-      italic 900 12px/1 'RF Dewi Expanded Italic',
-      Arial,
-      sans-serif;
-    letter-spacing: -0.65px;
-    white-space: nowrap;
-    padding: 12px 4px;
-    background: var(--surface);
-    border-radius: 6px;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
   }
-  .map-brand em {
-    color: var(--brand-orange);
-    font-style: inherit;
+  .map-brand-logo {
+    display: block;
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
   }
   .map-floating-header .map-rally-picker {
     flex: 1;
