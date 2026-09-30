@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { BRAND_ORANGE } from '../app/design-tokens.js';
 
 const SIZE = { width: 1000, height: 620, pad: 58 };
 function positions(geometry) {
@@ -76,9 +77,7 @@ export default function FallbackMap({ geojson, userPos, onPointClick }) {
           feature,
           path,
           index,
-          color:
-            feature.properties?.color ||
-            (String(feature.properties?.kind || '').startsWith('yandex-') ? '#ffd21e' : '#e63b2e'),
+          color: feature.properties?.color || BRAND_ORANGE,
         })),
       );
     const points = features
@@ -183,7 +182,7 @@ export default function FallbackMap({ geojson, userPos, onPointClick }) {
             cx={xy[0]}
             cy={xy[1]}
             r={yandex ? 8 : 9}
-            fill={yandex ? '#ffd21e' : '#f3f5f7'}
+            fill={yandex ? BRAND_ORANGE : '#f3f5f7'}
             stroke="#111318"
             strokeWidth="4"
           >

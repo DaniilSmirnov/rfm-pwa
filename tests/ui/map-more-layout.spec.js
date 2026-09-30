@@ -16,9 +16,11 @@ for (const theme of ['light', 'dark']) {
     });
     await openMapWithAcceptedSafety(page);
     await page.evaluate(theme => (document.documentElement.dataset.theme = theme), theme);
+    await expect(page.locator('.map-brand')).toContainText('RALLY FANS');
+    await expect(page.locator('.map-brand em')).toHaveText('MAP');
     await expect(page.locator('.bottom-tabbar button.active')).toHaveCSS(
       'color',
-      'rgb(226, 28, 35)',
+      'rgb(240, 82, 23)',
     );
     await expect(page.locator('.bottom-tabbar button.active')).toHaveCSS(
       'background-color',
@@ -47,7 +49,7 @@ for (const theme of ['light', 'dark']) {
     await expect(sheet.locator('img')).toBeVisible();
     await expect(sheet).toContainText('350 м от парковки');
     const cta = page.getByRole('button', { name: 'Показать детали' });
-    await expect(cta).toHaveCSS('background-color', 'rgb(226, 28, 35)');
+    await expect(cta).toHaveCSS('background-color', 'rgb(240, 82, 23)');
     const sheetBox = await sheet.boundingBox();
     const ctaBox = await cta.boundingBox();
     expect(ctaBox.width).toBeGreaterThan(sheetBox.width * 0.85);

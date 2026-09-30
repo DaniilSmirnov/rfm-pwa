@@ -103,7 +103,7 @@
     cursor: pointer;
   }
   .current-rally-pin {
-    color: #d91f27;
+    color: var(--brand-orange);
   }
   .current-rally-copy {
     display: grid;
@@ -275,7 +275,7 @@
 
 @layer views {
   .current-rally-select:focus-within {
-    outline: 2px solid #e21c23;
+    outline: 2px solid var(--brand-orange);
     outline-offset: 3px;
   }
 }

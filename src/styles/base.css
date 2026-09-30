@@ -60,6 +60,7 @@
     --line: #ebebeb;
     --muted: #a3a3a3;
     --black: #000;
+    --brand-orange: #f05217;
     --radius: var(--radius-xl);
     --ios-safe-top-floor: 0px;
     --ios-safe-bottom-floor: 0px;
@@ -80,6 +81,7 @@
     --line: #2b2f36;
     --muted: #9aa0a9;
     --black: #f5f7fa;
+    --brand-orange: #f05217;
     color: var(--text);
     background: var(--page-bg);
     color-scheme: dark;

@@ -40,12 +40,12 @@
     background: #e2f4e8;
   }
   .map-stage-pill.is-close {
-    color: #8b241d;
-    background: #fde9e7;
+    color: var(--brand-orange);
+    background: #fff0e8;
   }
   .map-stage-pill.is-live {
-    color: #8b241d;
-    background: #fde9e7;
+    color: var(--brand-orange);
+    background: #fff0e8;
   }
   .map-stage-pill.is-completed {
     color: #126336;
@@ -676,14 +676,23 @@
     pointer-events: none;
   }
   .map-brand {
+    display: block;
+    flex: 0 0 auto;
+    max-width: 112px;
+    overflow: hidden;
     font:
-      italic 900 17px/1 'RF Dewi Expanded Italic',
+      italic 900 12px/1 'RF Dewi Expanded Italic',
       Arial,
       sans-serif;
-    letter-spacing: -1px;
+    letter-spacing: -0.65px;
+    white-space: nowrap;
     padding: 12px 4px;
     background: var(--surface);
     border-radius: 6px;
+  }
+  .map-brand em {
+    color: var(--brand-orange);
+    font-style: inherit;
   }
   .map-floating-header .map-rally-picker {
     flex: 1;
@@ -834,12 +843,12 @@
     min-height: 44px;
     border: 0;
     border-radius: 9px;
-    background: #e21c23;
+    background: var(--brand-orange);
     color: #fff;
     font-size: 13px;
   }
   .map-point-sheet .map-point-details-toggle:hover {
-    background: #bd161d;
+    background: #c84312;
   }
   .map-point-sheet-details[hidden] {
     display: none;
@@ -890,7 +899,7 @@
     filter: invert(1);
   }
   :root[data-theme='dark'] .map-point-sheet .map-point-details-toggle {
-    background: #e21c23;
+    background: var(--brand-orange);
     color: #fff;
   }
 }
@@ -910,7 +919,7 @@
   body[data-active-tab='map'] .bottom-tabbar button.active,
   :root[data-theme='dark'] body[data-active-tab='map'] .bottom-tabbar button.active {
     background: transparent;
-    color: #e21c23;
+    color: var(--brand-orange);
   }
 }
 
@@ -957,7 +966,7 @@
     height: 30px;
     border: 2px solid white;
     border-radius: 10px;
-    background: #e21c23;
+    background: var(--brand-orange);
     color: white;
     font:
       700 19px/1 Arial,
