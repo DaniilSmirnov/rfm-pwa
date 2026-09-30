@@ -3,9 +3,10 @@ import * as Dialog from '@radix-ui/react-dialog';
 import React, { useMemo, useRef, useState } from 'react';
 import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
+import ScreenHeader, { useEdgeSwipeBack } from '../components/ScreenHeader.jsx';
 import SelectField from '../components/SelectField.jsx';
 import { formatRetirementReason } from '../app/crew-results.js';
-import { ArrowLeft, ChevronRight, Filter, Star } from 'lucide-react';
+import { ChevronRight, Filter, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
@@ -25,6 +26,7 @@ function crewIdOf(result, resultLabel) {
 }
 
 function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
+  useEdgeSwipeBack(onClose, Boolean(crewResult));
   if (!crewResult) return null;
   const crewId = crewIdOf(crewResult, resultLabel);
   const stageResults = views.slice(1).map(view => ({
@@ -41,17 +43,8 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
       }}
     >
       <Dialog.Overlay className="crew-details-dialog-overlay" />
-      <Dialog.Content className="crew-details-dialog" aria-labelledby="crewDetailsTitle">
-        <div className="crew-details-page-head">
-          <Dialog.Close asChild>
-            <Button className="button crew-details-back" aria-label="Назад к результатам">
-              <ArrowLeft size={20} aria-hidden="true" />
-            </Button>
-          </Dialog.Close>
-          <Dialog.Title asChild>
-            <h2 id="crewDetailsTitle">Детали экипажа</h2>
-          </Dialog.Title>
-        </div>
+      <Dialog.Content className="crew-details-dialog" aria-label="Детали экипажа">
+        <ScreenHeader title="Детали экипажа" onBack={onClose} />
 
         <div className="crew-details-profile">
           <div className="crew-details-profile-copy">
