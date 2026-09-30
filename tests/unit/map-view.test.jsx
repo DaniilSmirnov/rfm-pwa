@@ -129,6 +129,33 @@ describe('MapView enhancements', () => {
     expect(navButtons.indexOf('MAPS.ME')).toBeLessThan(navButtons.indexOf('Yandex Navigator'));
     expect(navButtons.indexOf('Yandex Navigator')).toBeLessThan(navButtons.indexOf('Google Maps'));
     expect(navButtons.indexOf('Google Maps')).toBeLessThan(navButtons.indexOf('Поделиться'));
+
+    const photoLink = pointActions.querySelector('.map-point-sheet-photo-link');
+    fireEvent.touchStart(photoLink, { touches: [{ clientY: 140 }] });
+    fireEvent.touchEnd(photoLink, { changedTouches: [{ clientY: 260 }] });
+    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
+
+    // Gestures must work from the whole sheet, and collapse in two steps.
+    fireEvent.click(screen.getByRole('button', { name: 'Свернуть карточку точки' }));
+    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    const sheet = screen.getByRole('dialog');
+    fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
+    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 230 }] });
+    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
+    fireEvent.touchCancel(sheet);
+    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 120 }] });
+    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
+    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 140 }] });
+    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
+    fireEvent.touchStart(sheet, { touches: [{ clientY: 140 }] });
+    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] });
+    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    expect(app.showPoint).not.toHaveBeenCalledWith(null);
+    fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
+    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 380 }] });
+    expect(app.showPoint).toHaveBeenCalledWith(null);
     fireEvent.click(screen.getByRole('button', { name: 'Закрыть карточку точки' }));
     expect(app.showPoint).toHaveBeenCalledWith(null);
   });

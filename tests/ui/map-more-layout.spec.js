@@ -61,6 +61,7 @@ for (const theme of ['light', 'dark']) {
       'rgba(0, 0, 0, 0)',
     );
     await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS('pointer-events', 'none');
+    await expect(sheet).toHaveCSS('touch-action', 'none');
     const sheetHandle = page.getByRole('button', { name: 'Развернуть карточку точки' });
     if (testInfo.project.name === 'webkit-iphone') {
       await sheetHandle.click();
@@ -135,11 +136,11 @@ test('supports real touch swipes on the mobile point sheet', async ({ page }, te
   const sheet = page.locator('#pointActions');
   await expect(sheet).toBeVisible();
   const cdp = await page.context().newCDPSession(page);
-  const swipe = async (box, endY) => {
+  const swipe = async (box, endY, startOffset = 24) => {
     const x = box.x + box.width / 2;
     await cdp.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
-      touchPoints: [{ x, y: box.y + 24, id: 1 }],
+      touchPoints: [{ x, y: box.y + startOffset, id: 1 }],
     });
     await cdp.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
@@ -150,9 +151,11 @@ test('supports real touch swipes on the mobile point sheet', async ({ page }, te
   const summaryBox = await sheet.locator('.point-actions-copy').boundingBox();
   await swipe(summaryBox, summaryBox.y - 72);
   await expect(page.locator('#mapPointDetails')).toBeVisible();
-  const handleBox = await page
-    .getByRole('button', { name: 'Свернуть карточку точки' })
-    .boundingBox();
-  await swipe(handleBox, handleBox.y + 72);
+  const expandedSheetBox = await sheet.boundingBox();
+  await swipe(expandedSheetBox, expandedSheetBox.y + 172, 100);
+  await expect(page.locator('#mapPointDetails')).toBeHidden();
+  await expect(sheet).toBeVisible();
+  const compactSheetBox = await sheet.boundingBox();
+  await swipe(compactSheetBox, compactSheetBox.y + 144, 72);
   await expect(sheet).toBeHidden();
 });

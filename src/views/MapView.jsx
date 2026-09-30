@@ -86,12 +86,15 @@ export default function MapView({
   useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
   const beginPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
-    if (!event.target.closest?.('.map-point-sheet-handle, .point-actions-copy')) return;
+    const handleTarget = event.target.closest?.('.map-point-sheet-handle');
+    const interactiveTarget = event.target.closest?.(
+      'button:not(.map-point-sheet-handle), a, input, select, textarea, summary',
+    );
+    if (interactiveTarget && !handleTarget) return;
     const source = event.touches?.[0] || event;
     pointSheetGesture.current = { startY: source.clientY, suppressClick: false };
-    event.target
-      .closest?.('.map-point-sheet-handle, .point-actions-copy')
-      ?.setPointerCapture?.(event.pointerId);
+    handleTarget?.setPointerCapture?.(event.pointerId);
+    if (!handleTarget) event.currentTarget.setPointerCapture?.(event.pointerId);
   };
   const endPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
@@ -103,8 +106,10 @@ export default function MapView({
     if (Math.abs(delta) < 36) return;
     event.preventDefault?.();
     pointSheetGesture.current.suppressClick = true;
-    if (delta > 0) app.showPoint?.(null);
-    else setPointDetailsOpen(true);
+    if (delta > 0) {
+      if (pointDetailsOpen) setPointDetailsOpen(false);
+      else app.showPoint?.(null);
+    } else setPointDetailsOpen(true);
   };
   const cancelPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;

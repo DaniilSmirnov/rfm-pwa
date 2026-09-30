@@ -797,6 +797,9 @@
       max-height 180ms ease,
       box-shadow 180ms ease;
   }
+  .map-point-sheet:not(.is-expanded) {
+    touch-action: none;
+  }
   .map-point-sheet-backdrop {
     position: absolute;
     z-index: 9;
