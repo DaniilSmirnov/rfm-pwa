@@ -21,7 +21,7 @@
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: 12px;
-    background: var(--card-bg, #fff);
+    background: var(--surface);
   }
 
   .more-menu-row {
@@ -30,6 +30,9 @@
     align-items: center;
     gap: 11px;
     min-width: 0;
+    width: 100%;
+    margin: 0;
+    cursor: pointer;
     min-height: 52px;
     padding: 9px 12px;
     text-align: left;

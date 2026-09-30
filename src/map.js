@@ -6,6 +6,7 @@ import { baseStyle } from './map/style.js';
 import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
 import { TerrainModeControl } from './map/terrain-control.js';
 import { installRouteDirections } from './map/route-direction.js';
+import { pointMarkerKind, createPointMarkerContent } from './map/point-marker.js';
 import BasemapPopup from './components/BasemapPopup.jsx';
 
 let activeMap = null;
@@ -207,7 +208,7 @@ function installRacePointLabels(map, points, onPointClick, { alwaysVisible = fal
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'map-label map-race-label';
-    el.textContent = item.name;
+    createPointMarkerContent(el, item.name, pointMarkerKind(item.feature.properties, item.name));
     el.title = item.name;
     if (onPointClick)
       el.addEventListener('click', e => {
@@ -215,7 +216,7 @@ function installRacePointLabels(map, points, onPointClick, { alwaysVisible = fal
         e.stopPropagation();
         onPointClick(pointPayload(item.feature));
       });
-    const marker = new maplibregl.Marker({ element: el, anchor: 'left', offset: [12, 0] })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'left', offset: [-15, 0] })
       .setLngLat(item.coords)
       .addTo(map);
     activeRaceLabelMarkers.push(marker);
@@ -225,7 +226,7 @@ function installRacePointLabels(map, points, onPointClick, { alwaysVisible = fal
     const visible = alwaysVisible || map.getZoom() >= 9;
     for (const marker of activeRaceLabelMarkers) {
       const el = marker.getElement();
-      el.style.display = visible ? 'block' : 'none';
+      el.style.display = visible ? 'flex' : 'none';
     }
   };
   update();

@@ -476,9 +476,9 @@ export async function openMapWithAcceptedSafety(page) {
   await gate.waitFor({ state: 'hidden' });
 }
 
-export async function seedFixtureRace(page) {
+export async function seedFixtureRace(page, { pointProperties = {} } = {}) {
   await page.evaluate(
-    async ({ race, results }) => {
+    async ({ race, results, pointProperties }) => {
       const request = indexedDB.open('rallyfans-offline', 3);
       request.onupgradeneeded = () => {
         const db = request.result;
@@ -504,7 +504,7 @@ export async function seedFixtureRace(page) {
             .map(Number);
           return {
             type: 'Feature',
-            properties: { kind: 'race-point', name: point.name },
+            properties: { ...pointProperties, kind: 'race-point', name: point.name },
             geometry: { type: 'Point', coordinates: [lon, lat] },
           };
         })
@@ -558,7 +558,7 @@ export async function seedFixtureRace(page) {
       db.close();
       window.dispatchEvent(new Event('rfm:refresh-local-data'));
     },
-    { race: raceFixture, results: asmgResultsFixture },
+    { race: raceFixture, results: asmgResultsFixture, pointProperties },
   );
   await page.getByRole('button', { name: 'Карта', exact: true }).click();
   await page.locator('.race-page').waitFor({ state: 'visible' });
