@@ -105,6 +105,7 @@ test.describe('offline, import and failure states', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова', {
       timeout: 20_000,
@@ -120,6 +121,7 @@ test.describe('offline, import and failure states', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова', {
       timeout: 20_000,
@@ -140,6 +142,7 @@ test.describe('offline, import and failure states', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова', {
       timeout: 20_000,

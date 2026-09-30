@@ -81,8 +81,10 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
+    await page.getByRole('button', { name: 'Показать детали' }).click();
     const compass = page.locator('#spectatorCompass');
     await expect(compass).toBeVisible();
     await compass.locator('summary').click();

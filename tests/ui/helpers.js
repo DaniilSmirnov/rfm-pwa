@@ -452,7 +452,7 @@ export async function openApp(page, options = {}) {
 }
 
 export async function openRaceManagement(page) {
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Ещё', exact: true }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
 }
 
@@ -562,10 +562,8 @@ export async function seedFixtureRace(page) {
   );
   await page.getByRole('button', { name: 'Карта', exact: true }).click();
   await page.locator('.race-page').waitFor({ state: 'visible' });
-  await page.waitForFunction(() =>
-    Boolean(
-      document.querySelector('#crewResultsOpen') &&
-        !document.querySelector('#crewResultsOpen').hidden,
-    ),
-  );
+  await page
+    .locator('.race-page h2')
+    .filter({ hasText: raceFixture.name })
+    .waitFor({ state: 'visible' });
 }

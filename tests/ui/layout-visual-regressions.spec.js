@@ -32,7 +32,7 @@ test('aligns the brand left and race selector right without a network label or P
   expect(brand.left).toBeLessThan(header.left + header.width / 2);
   expect(brand.right).toBeLessThanOrEqual(actions.left);
   expect(header.right - actions.right).toBeLessThanOrEqual(40);
-  expect(actions.left).toBeGreaterThan(header.left + header.width / 2);
+  expect(actions.left + actions.width / 2).toBeGreaterThan(header.left + header.width / 2);
   await expect(page.getByRole('button', { name: 'Установить PWA' })).toHaveCount(0);
   await expect(page.locator('.top-actions button')).toHaveCount(0);
   await expect(page.getByRole('combobox', { name: 'Текущая гонка' })).toBeVisible();

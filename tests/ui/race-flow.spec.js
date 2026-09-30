@@ -57,13 +57,15 @@ test.describe('saved race user flows', () => {
   });
 
   test('opens and closes image modal', async ({ page }) => {
-    await openMap(page);
-    await page.getByText('КАРТА ОРГАНИЗАТОРА').click();
-    const media = page.locator('[data-media-name]').first();
+    await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+    await page.getByRole('button', { name: 'Документы и материалы' }).click();
+    const documents = page.getByLabel('Документы гонки');
+    await documents.getByText('КАРТА ОРГАНИЗАТОРА').click();
+    const media = documents.locator('[data-media-name]').first();
     await media.click();
-    await expect(page.locator('#imageModal')).toBeVisible();
-    await page.locator('#imageModalClose').click();
-    await expect(page.locator('#imageModal')).toBeHidden();
+    await expect(documents.locator('#imageModal')).toBeVisible();
+    await documents.locator('#imageModalClose').click();
+    await expect(documents.locator('#imageModal')).toBeHidden();
   });
 
   test('renders saved package row', async ({ page }) => {

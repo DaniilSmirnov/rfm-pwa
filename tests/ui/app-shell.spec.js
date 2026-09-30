@@ -19,7 +19,7 @@ test.describe('app shell and catalog', () => {
     await expect(page.locator('.app-footer')).toBeHidden();
     await page.getByRole('button', { name: 'Ещё' }).click();
     await expect(page.locator('.app-footer')).toContainText(release.version);
-    await expect(page.locator('.header-brand')).toContainText('Rally Fans Map');
+    await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
   });
 
   test('shows browser PWA installation CTA on Today only', async ({ page }) => {
