@@ -103,7 +103,7 @@ vi.mock('../../src/app/crew-results.js', async importOriginal => {
 
 import AppHeader from '../../src/components/AppHeader.jsx';
 import AppFooter from '../../src/components/AppFooter.jsx';
-import ScreenHeader from '../../src/components/ScreenHeader.jsx';
+import ScreenHeader, { useEdgeSwipeBack } from '../../src/components/ScreenHeader.jsx';
 import CatalogList from '../../src/components/CatalogList.jsx';
 import CatalogSection from '../../src/components/CatalogSection.jsx';
 import CompassReadout from '../../src/components/CompassReadout.jsx';
@@ -1016,6 +1016,25 @@ describe('application components', () => {
     expect(layout.container.querySelector('.topbar')).toBeTruthy();
     expect(screen.getByText('Экран')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain('Обновление');
+  });
+
+  it('covers the edge swipe back hook', () => {
+    const onBack = vi.fn();
+    function SwipeHarness({ enabled }) {
+      useEdgeSwipeBack(onBack, enabled);
+      return null;
+    }
+
+    const disabled = render(<SwipeHarness enabled={false} />);
+    disabled.unmount();
+    render(<SwipeHarness enabled />);
+    const start = new Event('touchstart');
+    Object.defineProperty(start, 'changedTouches', { value: [{ clientX: 10, clientY: 20 }] });
+    document.dispatchEvent(start);
+    const end = new Event('touchend');
+    Object.defineProperty(end, 'changedTouches', { value: [{ clientX: 90, clientY: 30 }] });
+    document.dispatchEvent(end);
+    expect(onBack).toHaveBeenCalledOnce();
   });
 
   it('renders the shared screen header actions', () => {
