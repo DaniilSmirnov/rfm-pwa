@@ -1225,9 +1225,20 @@
       sans-serif;
     box-shadow: 0 1px 5px #0003;
   }
-  .map-point-symbol img {
+  .map-point-symbol img,
+  .map-point-symbol .map-point-svg {
     width: 22px;
     height: 22px;
+  }
+  .map-point-symbol .map-point-flag-left,
+  .map-point-symbol .map-point-finish-flag {
+    transform: scaleX(-1);
+    transform-origin: center;
+  }
+  .map-point-symbol.is-communication {
+    border-radius: 50%;
+    background: #1768c5;
+    color: #fff;
   }
   .map-point-symbol.is-parking {
     background: #1768c5;
