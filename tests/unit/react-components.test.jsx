@@ -892,6 +892,22 @@ describe('application components', () => {
     expect(screen.queryByRole('button', { name: /Rally Pack/ })).toBeNull();
   });
 
+  it('builds the Sortavala overlap chart from the local JSON instead of its image', () => {
+    const sortavala = {
+      ...race,
+      name: 'Ралли Белые Ночи',
+      original: { ...race.original, name: 'Ралли Белые Ночи', overlap_schedule: ['overlap.jpg'] },
+    };
+    render(<TodayView app={appFixture({ currentPackage: sortavala, packages: [sortavala] })} />);
+
+    expect(
+      screen.getByRole('img', { name: /Временная шкала перекрытия дорог: 8 спецучастков/ }),
+    ).toBeTruthy();
+    expect(screen.getByText('ГРАФИК ПЕРЕКРЫТИЙ · БЕЛЫЕ НОЧИ')).toBeTruthy();
+    expect(screen.getAllByText('ВЯЛИМЯКИ')).toHaveLength(2);
+    expect(screen.queryByRole('img', { name: 'График перекрытий 1' })).toBeNull();
+  });
+
   it('mounts the app, switches tabs, opens settings, and reveals diagnostics by logo taps', async () => {
     window.scrollTo = vi.fn();
     HTMLElement.prototype.scrollIntoView = vi.fn();

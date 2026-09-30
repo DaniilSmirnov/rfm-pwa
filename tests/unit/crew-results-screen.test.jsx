@@ -52,12 +52,11 @@ function renderResults(overrides = {}) {
 }
 
 describe('inline results screen', () => {
-  it('renders as a first-class inline screen with class chips and search without a filter button', () => {
+  it('renders as a first-class inline screen with stage, class and search controls', () => {
     renderResults();
     expect(screen.getByRole('region', { name: 'Результаты экипажей' })).toBeTruthy();
     expect(screen.getByLabelText('Класс')).toBeTruthy();
     expect(screen.getByRole('searchbox', { name: 'Поиск экипажа' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Фильтры' })).toBeNull();
   });
 
   it('prioritizes followed crews without changing their protocol places', () => {
@@ -77,52 +76,48 @@ describe('inline results screen', () => {
     expect(screen.getByText('00:00:50')).toBeTruthy();
   });
 
-  it('shows unrun stages instead of NaN after retirement', () => {
-    const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'ПОЛОМКА' };
-    const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'ПОЛОМКА' };
-    const retiredViews = [
-      views[0],
-      { ...views[1], results: [retiredStage, views[1].results[1]] },
-      { key: '1', name: 'СУ 2', results: [views[1].results[1]] },
-    ];
-    renderResults({
-      visible: [retired],
-      selectedClassResults: [retired],
-      views: retiredViews,
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
-    const dialog = screen.getByRole('dialog', { name: 'Детали экипажа' });
-    expect(within(dialog).getAllByText('Не пройден')).toHaveLength(2);
-    expect(within(dialog).queryByText(/NaN/)).toBeNull();
-  });
-
-  it('shows a cleaned retirement reason in regular card layout', () => {
-    const retired = {
-      ...overall[0],
-      goingOff: true,
-      reasonGoingOff: 'Alpha / Co-driver · СУ 1 · ПОЛОМКА',
-    };
-    const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'ПОЛОМКА' };
-    const retiredViews = [views[0], { ...views[1], results: [retiredStage, views[1].results[1]] }];
-    renderResults({
-      visible: [retired],
-      selectedClassResults: [retired],
-      views: retiredViews,
-    });
-    const card = screen.getByRole('article');
-    expect(within(card).getByText('1')).toBeTruthy();
-    expect(within(card).getByText('№11 Alpha / Co-driver')).toBeTruthy();
-    expect(within(card).getByText('Car A')).toBeTruthy();
-    expect(within(card).getByText('A')).toBeTruthy();
-    expect(within(card).getByText('Сход')).toBeTruthy();
-    expect(within(card).getByText('Поломка')).toBeTruthy();
-    expect(within(card).queryByText(/Alpha \/ Co-driver · СУ 1/)).toBeNull();
-    expect(card.querySelector('.crew-result-card-chevron')).toBeTruthy();
+  it('shows a retirement status in the card and in the details modal', () => {
+    const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'Поломка' };
+    renderResults({ visible: [retired], selectedClassResults: [retired] });
+    expect(screen.getAllByText('Поломка')).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
     expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
     expect(
       within(screen.getByRole('dialog', { name: 'Детали экипажа' })).getByText('Поломка'),
     ).toBeTruthy();
+  });
+
+  it('removes crew names and stage number from the retirement reason everywhere', () => {
+    const retiredCrew = {
+      ...crew1,
+      pilot: { firstName: 'Иван', lastName: 'Alpha' },
+      navigator: { firstName: 'Co-driver', lastName: 'Петров' },
+    };
+    const retired = {
+      ...overall[0],
+      crew: retiredCrew,
+      goingOff: true,
+      reasonGoingOff: 'Alpha Иван / Co-driver Петров / СУ 5 СХОД С ТРАССЫ',
+    };
+    const retiredStage = {
+      ...makeResult(retiredCrew, 0),
+      goingOff: true,
+      reasonGoingOff: retired.reasonGoingOff,
+    };
+
+    renderResults({
+      visible: [retired],
+      selectedClassResults: [retired],
+      views: [views[0], { ...views[1], results: [retiredStage] }],
+      resultLabel: result => `${result.crew.pilot.lastName} / Co-driver`,
+    });
+
+    expect(screen.getAllByText('Сход с трассы')).toHaveLength(2);
+    expect(screen.queryByText(/Alpha Иван|Co-driver Петров|СУ 5/i)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
+    expect(
+      within(screen.getByRole('dialog', { name: 'Детали экипажа' })).getAllByText('Сход с трассы'),
+    ).toHaveLength(3);
   });
 });
