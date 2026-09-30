@@ -40,7 +40,7 @@ test('switches between offline-first main tabs', async ({ page }) => {
   await page.getByRole('button', { name: 'Ещё', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Гонки и Rally Pack' })).toBeVisible();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
-  await expect(page.getByLabel('Управление гонками')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Управление гонками' })).toBeVisible();
   await expect(page.getByLabel('Удалять автоматически по завершению гонки')).not.toBeChecked();
   await page.getByRole('button', { name: 'Назад в меню «Ещё»' }).click();
   await expect(page.getByRole('button', { name: 'Настройки и диагностика' })).toBeVisible();
