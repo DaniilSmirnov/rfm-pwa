@@ -1228,40 +1228,57 @@
     white-space: normal;
     box-shadow: 0 1px 5px #0003;
   }
-  .map-point-symbol {
-    display: grid;
-    place-items: center;
+  .map-screen .map-race-label::before {
+    content: '';
+    display: block;
     flex: 0 0 30px;
     width: 30px;
     height: 30px;
     border: 2px solid white;
     border-radius: 10px;
-    background: var(--brand-orange);
-    color: white;
-    font:
-      700 19px/1 Arial,
-      sans-serif;
+    background-color: var(--brand-orange);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 22px 22px;
     box-shadow: 0 1px 5px #0003;
   }
-  .map-point-symbol img,
-  .map-point-symbol .map-point-svg {
-    width: 22px;
-    height: 22px;
+
+  .map-screen .map-race-label[data-point-icon='spectator']::before {
+    background-image: url('/assets/spectator.svg');
   }
-  .map-point-symbol.is-communication {
+
+  .map-screen .map-race-label[data-point-icon='communication']::before {
     border-radius: 50%;
-    background: #1768c5;
-    color: #fff;
+    background-color: #1768c5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m13 2-9 12h8l-1 8 9-12h-8l1-8Z' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
-  .map-point-symbol.is-parking {
-    background: #1768c5;
+
+  .map-screen .map-race-label[data-point-icon='passport']::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='5' width='18' height='14' rx='2' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Ccircle cx='8.5' cy='11' r='2' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cpath d='M5.5 16c.7-1.6 1.8-2.4 3-2.4s2.3.8 3 2.4M14 9h4M14 13h4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+
+  .map-screen .map-race-label[data-point-icon='start']::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3v18M6 4h11l-3 4 3 4H6' fill='none' stroke='%23fff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+
+  .map-screen .map-race-label[data-point-icon='finish']::before {
+    background-color: #20252a;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3v18M6 4h11v9H6z' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 5h3v3H7zm6 0h3v3h-3zm-3 3h3v3h-3zm6 0h1v3h-1z' fill='%23fff'/%3E%3C/svg%3E");
+  }
+
+  .map-screen .map-race-label[data-point-icon='parking']::before {
     border-radius: 6px;
+    background-color: #1768c5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 19V5h5.5a4 4 0 0 1 0 8H8M8 13h5.5' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
-  .map-point-symbol.is-finish {
-    background: #20252a;
+
+  .map-screen .map-race-label[data-point-icon='closure']::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 7v6M12 17h.01' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E");
   }
-  .map-point-symbol.is-location {
+
+  .map-screen .map-race-label[data-point-icon='location']::before {
     border-radius: 50%;
+    background-image: radial-gradient(circle, #fff 0 3px, transparent 4px);
   }
   .map-live-stage {
     position: absolute;
