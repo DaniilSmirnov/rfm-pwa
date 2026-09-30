@@ -103,6 +103,7 @@ vi.mock('../../src/app/crew-results.js', async importOriginal => {
 
 import AppHeader from '../../src/components/AppHeader.jsx';
 import AppFooter from '../../src/components/AppFooter.jsx';
+import ScreenHeader from '../../src/components/ScreenHeader.jsx';
 import CatalogList from '../../src/components/CatalogList.jsx';
 import CatalogSection from '../../src/components/CatalogSection.jsx';
 import CompassReadout from '../../src/components/CompassReadout.jsx';
@@ -1016,4 +1017,13 @@ describe('application components', () => {
     expect(screen.getByText('Экран')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain('Обновление');
   });
+
+  it('renders the shared screen header actions', () => {
+    const onBack = vi.fn();
+    render(<ScreenHeader title="Результаты" onBack={onBack} />);
+    expect(screen.getByRole('heading', { name: 'Результаты' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
+    expect(onBack).toHaveBeenCalledOnce();
+  });
+
 });
