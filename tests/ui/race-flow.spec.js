@@ -60,7 +60,7 @@ test.describe('saved race user flows', () => {
   });
 
   test('opens and closes image modal', async ({ page }) => {
-    await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+    await page.getByRole('button', { name: 'Меню', exact: true }).click();
     await page.getByRole('button', { name: 'Документы и материалы' }).click();
     const documents = page.getByLabel('Документы гонки');
     await documents.getByText('КАРТА ОРГАНИЗАТОРА').click();
@@ -293,7 +293,7 @@ test.describe('saved race user flows', () => {
 
   test('map engine diagnostic reports MapLibre', async ({ page }) => {
     await openMap(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
     await expect(page.locator('.settings-diagnostics')).toContainText('MapLibre ✓');
   });
