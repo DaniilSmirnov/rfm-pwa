@@ -7,7 +7,12 @@ export function pointMarkerKind(properties = {}, name = '') {
   if (/finish|финиш/i.test(description)) return 'finish';
   if (/start|старт/i.test(description)) return 'start';
   if (/closure|закрыт|перекрыт/i.test(description)) return 'closure';
-  if (/spectator|viewpoint|зрител|смотров|трамплин/i.test(description)) return 'spectator';
+  const normalizedName = String(name).trim().toLowerCase();
+  if (
+    /spectator|viewpoint|зрител|смотров|трамплин|вылет|машинопад/i.test(description) ||
+    normalizedName === '90'
+  )
+    return 'spectator';
   return 'location';
 }
 
