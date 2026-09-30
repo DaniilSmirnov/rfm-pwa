@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [develop, main, fix/stabilize-develop-ci]
   push:
-    branches: [develop, main]
+    branches: [develop, main, fix/stabilize-develop-ci]
   workflow_dispatch:
 
 concurrency:
