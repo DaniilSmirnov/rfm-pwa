@@ -78,8 +78,8 @@ describe('inline results screen', () => {
   });
 
   it('shows unrun stages instead of NaN after retirement', () => {
-    const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'Поломка' };
-    const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'Поломка' };
+    const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'ПОЛОМКА' };
+    const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'ПОЛОМКА' };
     const retiredViews = [
       views[0],
       { ...views[1], results: [retiredStage, views[1].results[1]] },
@@ -101,9 +101,9 @@ describe('inline results screen', () => {
     const retired = {
       ...overall[0],
       goingOff: true,
-      reasonGoingOff: 'Alpha / Co-driver · СУ 1 · Поломка',
+      reasonGoingOff: 'Alpha / Co-driver · СУ 1 · ПОЛОМКА',
     };
-    const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'Поломка' };
+    const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'ПОЛОМКА' };
     const retiredViews = [views[0], { ...views[1], results: [retiredStage, views[1].results[1]] }];
     renderResults({
       visible: [retired],
