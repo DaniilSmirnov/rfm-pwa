@@ -82,6 +82,12 @@ describe('inline results screen', () => {
     expect(screen.getByText('00:00:50')).toBeTruthy();
   });
 
+  it('opens crew details when the result card itself is clicked', () => {
+    renderResults();
+    fireEvent.click(screen.getAllByRole('article')[0]);
+    expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
+  });
+
   it('shows a retirement status in the card and in the details modal', () => {
     const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'Поломка' };
     renderResults({ visible: [retired], selectedClassResults: [retired] });

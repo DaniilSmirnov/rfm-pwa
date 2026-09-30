@@ -684,12 +684,13 @@ describe('application components', () => {
       downloadedIds: new Set([7]),
     });
     const onResults = vi.fn();
-    render(<TodayView app={app} onMap={vi.fn()} onResults={onResults} />);
+    const onRaces = vi.fn();
+    render(<TodayView app={app} onMap={vi.fn()} onResults={onResults} onRaces={onRaces} />);
     expect(screen.getByText('Карелия')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Обновить Rally Pack' })).toBeTruthy();
     expect(screen.getByText('Освободи место')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Удалить предыдущий Rally Pack' }));
-    expect(app.deleteRace).toHaveBeenCalledWith(6);
+    fireEvent.click(screen.getByRole('button', { name: 'Управление картами' }));
+    expect(onRaces).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole('button', { name: 'Все результаты' }));
     expect(onResults).toHaveBeenCalledOnce();
   });
