@@ -39,7 +39,6 @@ export default function MapView({
   selectedRoute,
   pointElevation,
   pointStageDistance,
-  pointsContent,
   favoritesContent,
   mapContent,
 }) {
@@ -454,27 +453,6 @@ export default function MapView({
               </div>
             )}
           </section>
-          {stages.length > 0 && (
-            <section className="map-stage-statuses" aria-labelledby="mapStageStatusesTitle">
-              <div id="mapStageStatusesTitle" className="block-title">
-                СТАТУСЫ СПЕЦУЧАСТКОВ
-              </div>
-              <div className="map-stage-status-list">
-                {stages.map(stage => (
-                  <article className="map-stage-status" key={stage.key}>
-                    <strong>{stage.name}</strong>
-                    <span className={`map-stage-pill is-${stage.mapStatusKind}`}>
-                      {stage.mapStatus}
-                    </span>
-                    <span className="muted small">{stage.date || stage.location}</span>
-                  </article>
-                ))}
-              </div>
-              <p className="muted small">
-                Статус показан по последнему опубликованному сообщению расписания.
-              </p>
-            </section>
-          )}
           {followedResults.length > 0 && (
             <section className="map-followed-crews" aria-label="Избранные экипажи">
               <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
@@ -504,14 +482,6 @@ export default function MapView({
               })}
             </section>
           )}
-          <div className="map-field-notice" role="note">
-            <strong>Безопасность и офлайн</strong>
-            <span>
-              Оставайся в разрешённых зрительских зонах и следуй указаниям маршалов. Скачай
-              офлайн-карту до выезда; доступность внешнего навигатора и его офлайн-карт зависит от
-              самого приложения.
-            </span>
-          </div>
           <div className="map-export-actions">
             <div>
               <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
@@ -549,23 +519,6 @@ export default function MapView({
               вы
             </span>
           </div>
-          <div className="full-width-line" />
-          <CollapsibleSection
-            className="points-panel"
-            summary={
-              <>
-                <span className="block-title">ГДЕ СМОТРЕТЬ?</span>
-                <span className="summary-chevron">⌄</span>
-              </>
-            }
-          >
-            <p className="muted small">
-              Точки можно открыть во внешнем навигаторе без доступа к геопозиции PWA.
-            </p>
-            <div id="pointList" className="point-list">
-              {pointsContent}
-            </div>
-          </CollapsibleSection>
         </div>
       </>
       {pointSheetPoint && (
