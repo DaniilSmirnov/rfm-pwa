@@ -3,6 +3,7 @@ import AppHeader from '../components/AppHeader.jsx';
 import RaceDetails from './RaceDetails.jsx';
 import MapView from './MapView.jsx';
 import Notice from '../components/Notice.jsx';
+import ScreenHeader from '../components/ScreenHeader.jsx';
 
 export default function AppLayout({
   app,
@@ -19,15 +20,20 @@ export default function AppLayout({
   screenContent,
   updateMessage,
   onSelectRally,
+  screenHeader,
 }) {
   return (
     <>
-      <AppHeader
-        onLogoClick={onLogoClick}
-        currentPackage={app.currentPackage}
-        packages={app.packages}
-        onSelectRally={onSelectRally}
-      />
+      {screenHeader ? (
+        <ScreenHeader title={screenHeader.title} onBack={screenHeader.onBack} />
+      ) : (
+        <AppHeader
+          onLogoClick={onLogoClick}
+          currentPackage={app.currentPackage}
+          packages={app.packages}
+          onSelectRally={onSelectRally}
+        />
+      )}
       {installPrompt}
       <div className="react-tab-content">{screenContent}</div>
       <main>
