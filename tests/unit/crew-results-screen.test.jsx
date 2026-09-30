@@ -108,8 +108,12 @@ describe('inline results screen', () => {
     });
     const card = screen.getByRole('article');
     expect(within(card).getByText('1')).toBeTruthy();
-    expect(within(card).getByText('Поломка')).toBeTruthy();
+    expect(within(card).getByText('№11 Alpha / Co-driver')).toBeTruthy();
+    expect(within(card).getByText('Car A')).toBeTruthy();
+    expect(within(card).getByText('A')).toBeTruthy();
+    expect(within(card).getByText('Сход: Поломка')).toBeTruthy();
     expect(within(card).getByText('СУ 1')).toBeTruthy();
+    expect(card.querySelector('.crew-result-card-chevron')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
     expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
     expect(

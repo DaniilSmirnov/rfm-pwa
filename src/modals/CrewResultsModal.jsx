@@ -469,10 +469,12 @@ export default function CrewResultsModal({
                     <small>{crew.car || 'Автомобиль не указан'}</small>
                     <small>{result?.discipline?.name || 'Зачёт не указан'}</small>
                   </span>
-                  <span className="crew-result-card-time">
+                  <span className={`crew-result-card-time ${retirement ? 'is-retired' : ''}`}>
                     {retirement ? (
                       <>
-                        {retirement.reason}
+                        <span className="crew-result-card-retirement-reason">
+                          Сход: {retirement.reason}
+                        </span>
                         <small>{retirement.place}</small>
                       </>
                     ) : (
@@ -482,7 +484,7 @@ export default function CrewResultsModal({
                       </>
                     )}
                   </span>
-                  <ChevronRight size={18} aria-hidden="true" />
+                  <ChevronRight className="crew-result-card-chevron" size={18} aria-hidden="true" />
                 </Button>
                 <Button
                   className={`crew-result-star ${subscribed ? 'active' : ''}`}

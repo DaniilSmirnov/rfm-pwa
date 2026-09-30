@@ -318,7 +318,7 @@
   }
   .crew-result-card-main {
     display: grid;
-    grid-template-columns: 30px minmax(0, 1fr) auto 18px;
+    grid-template-columns: 30px minmax(0, 1fr) minmax(84px, 34%) 18px;
     gap: 8px;
     align-items: center;
     width: 100%;
@@ -358,12 +358,29 @@
   .crew-result-card-time {
     display: grid;
     gap: 3px;
+    min-width: 0;
     justify-items: end;
     color: #181b1f;
     font-size: 15px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
+    text-align: right;
     white-space: nowrap;
+  }
+
+  .crew-result-card-time.is-retired {
+    white-space: normal;
+  }
+
+  .crew-result-card-retirement-reason {
+    overflow-wrap: anywhere;
+    color: var(--brand-orange);
+    line-height: 1.2;
+  }
+
+  .crew-result-card-chevron {
+    display: block;
+    flex: 0 0 auto;
   }
   .crew-result-card-time small {
     color: #777d85;
@@ -384,11 +401,11 @@
     appearance: none;
     background: none;
     box-shadow: none;
-    color: #f2b900;
+    color: var(--brand-orange);
     cursor: pointer;
   }
   .crew-result-star.active {
-    color: #e8aa00;
+    color: var(--brand-orange);
   }
   .crew-result-card:has(.crew-result-star) .crew-result-card-main {
     padding-left: 34px;
