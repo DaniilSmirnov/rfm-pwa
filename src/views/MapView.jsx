@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Settings, MapPin, ChevronDown, Star, ParkingSquare } from 'lucide-react';
+import { Settings, MapPin, ChevronDown, Star, ParkingSquare, Car } from 'lucide-react';
 import packageMeta from '../../package.json';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
@@ -45,6 +45,7 @@ export default function MapView({
   const [compassOpen, setCompassOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [carOpen, setCarOpen] = useState(false);
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
   const [pointSheetDragProgress, setPointSheetDragProgress] = useState(0);
   const [pointSheetPoint, setPointSheetPoint] = useState(app.selectedPoint);
@@ -89,6 +90,7 @@ export default function MapView({
     if (app.selectedPoint) {
       setToolsOpen(false);
       setFavoritesOpen(false);
+      setCarOpen(false);
     }
   }, [app.selectedPoint]);
   useEffect(() => {
@@ -108,15 +110,18 @@ export default function MapView({
     return () => window.clearTimeout(timer);
   }, [app.selectedPoint]);
   useEffect(() => {
-    if (!toolsOpen && !favoritesOpen) return undefined;
+    if (!toolsOpen && !favoritesOpen && !carOpen) return undefined;
     const toolsTrigger = document.getElementById('mapToolsToggle');
     const favoritesTrigger = document.getElementById('mapFavoritesToggle');
+    const carTrigger = document.getElementById('mapCarToggle');
     const toolsDrawer = document.getElementById('mapToolsDrawer');
     const favoritesDrawer = document.getElementById('mapFavoritesDrawer');
-    const activeTrigger = toolsOpen ? toolsTrigger : favoritesTrigger;
+    const carDrawer = document.getElementById('mapCarDrawer');
+    const activeTrigger = toolsOpen ? toolsTrigger : favoritesOpen ? favoritesTrigger : carTrigger;
     const closePanels = () => {
       setToolsOpen(false);
       setFavoritesOpen(false);
+      setCarOpen(false);
       requestAnimationFrame(() => activeTrigger?.focus());
     };
     const handlePointerDown = event => {
@@ -124,8 +129,10 @@ export default function MapView({
       if (
         toolsDrawer?.contains(target) ||
         favoritesDrawer?.contains(target) ||
+        carDrawer?.contains(target) ||
         toolsTrigger?.contains(target) ||
-        favoritesTrigger?.contains(target)
+        favoritesTrigger?.contains(target) ||
+        carTrigger?.contains(target)
       ) {
         return;
       }
@@ -142,7 +149,7 @@ export default function MapView({
       document.removeEventListener('pointerdown', handlePointerDown, true);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [toolsOpen, favoritesOpen]);
+  }, [toolsOpen, favoritesOpen, carOpen]);
   useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
   const beginPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
@@ -338,6 +345,7 @@ export default function MapView({
           onClick={() => {
             setToolsOpen(open => !open);
             setFavoritesOpen(false);
+            setCarOpen(false);
           }}
         >
           <Settings aria-hidden="true" size={21} />
@@ -351,9 +359,24 @@ export default function MapView({
           onClick={() => {
             setFavoritesOpen(open => !open);
             setToolsOpen(false);
+            setCarOpen(false);
           }}
         >
           <Star aria-hidden="true" size={21} />
+        </Button>
+        <Button
+          id="mapCarToggle"
+          className="map-car-toggle"
+          aria-label="Моя машина"
+          aria-expanded={carOpen}
+          aria-controls="mapCarDrawer"
+          onClick={() => {
+            setCarOpen(open => !open);
+            setToolsOpen(false);
+            setFavoritesOpen(false);
+          }}
+        >
+          <Car aria-hidden="true" size={21} />
         </Button>
         {liveStage && (
           <div className="map-live-stage" aria-label="Активный спецучасток">
@@ -385,6 +408,118 @@ export default function MapView({
           <div className="map-tools-heading">
             <strong>Инструменты карты</strong>
             <OfflineMapActions app={app} />
+          </div>
+          <div className="map-export-actions">
+            <div>
+              <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
+              <p className="muted small">Экспортирует текущую гонку без обращения к серверу.</p>
+            </div>
+            <ActionGroup>
+              <Button id="exportGpxBtn" className="button" disabled={!pkg} onClick={app.exportGpx}>
+                GPX
+              </Button>
+              <Button
+                id="exportGeoJsonBtn"
+                className="button"
+                disabled={!pkg}
+                onClick={app.exportGeoJson}
+              >
+                GeoJSON
+              </Button>
+            </ActionGroup>
+          </div>
+          <div className="map-location-controls">
+            <p className={`muted small ${app.geoClass}`}>{app.geoStatus}</p>
+          </div>
+          <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
+          <div className="legend">
+            <span>
+              <i style={{ background: '#f3f5f7' }} />
+              RallyFansMap
+            </span>
+            <span>
+              <i style={{ background: BRAND_ORANGE }} />
+              Yandex Constructor
+            </span>
+            <span>
+              <i style={{ background: '#4da3ff' }} />
+              вы
+            </span>
+          </div>
+        </div>
+        <div
+          id="mapFavoritesDrawer"
+          className="map-tools-drawer map-favorites-drawer"
+          role="region"
+          aria-label="Избранное"
+          hidden={!favoritesOpen}
+        >
+          <div className="map-tools-heading">
+            <strong>Избранное</strong>
+          </div>
+          {app.favorites.length === 0 && followedResults.length === 0 && (
+            <div className="map-favorites-empty" role="status">
+              <Star aria-hidden="true" size={28} />
+              <strong>Пока ничего нет</strong>
+              <span>Добавляй точки и экипажи в избранное — они появятся здесь.</span>
+            </div>
+          )}
+          <section className="favorites-panel" aria-labelledby="favoritesTitle">
+            <SectionHeader className="compact-section-head">
+              <div>
+                <div id="favoritesTitle" className="block-title">
+                  ИЗБРАННЫЕ ТОЧКИ
+                </div>
+                <p id="favoritesStatus" className="muted small">
+                  {app.favorites.length
+                    ? `${app.favorites.length} сохранено для этой гонки.`
+                    : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
+                </p>
+              </div>
+            </SectionHeader>
+            <div id="favoritesList" className="favorites-list">
+              {favoritesContent}
+            </div>
+          </section>
+          {followedResults.length > 0 && (
+            <section className="map-followed-crews" aria-label="Избранные экипажи">
+              <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
+              {followedResults.map(({ favorite, position, result }) => {
+                const stage = pkg.crewResults?.eventResults?.at(-1);
+                const stageResult = stage?.results?.find(row =>
+                  [row.crew?.id, row.crew?.number].some(
+                    value => String(value) === String(favorite.id || favorite.number),
+                  ),
+                );
+                return (
+                  <article className="map-followed-crew" key={favorite.id || favorite.number}>
+                    <strong>
+                      {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
+                      {crewName(result.crew) || favorite.name}
+                    </strong>
+                    <span>
+                      {result.formattedTime} ·{' '}
+                      {result.formattedFromLeader === '00:00:00:0'
+                        ? 'лидер'
+                        : `отставание ${result.formattedFromLeader}`}
+                      {stage?.specialStage?.name &&
+                        ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
+                    </span>
+                  </article>
+                );
+              })}
+            </section>
+          )}
+        </div>
+        <div
+          id="mapCarDrawer"
+          className="map-tools-drawer map-car-drawer"
+          role="region"
+          aria-label="Моя машина"
+          hidden={!carOpen}
+        >
+          <div className="map-tools-heading">
+            <strong>Моя машина</strong>
           </div>
           <section className="car-panel" aria-labelledby="carTitle">
             <SectionHeader className="compact-section-head">
@@ -467,100 +602,6 @@ export default function MapView({
               </div>
             )}
           </section>
-          <div className="map-export-actions">
-            <div>
-              <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
-              <p className="muted small">Экспортирует текущую гонку без обращения к серверу.</p>
-            </div>
-            <ActionGroup>
-              <Button id="exportGpxBtn" className="button" disabled={!pkg} onClick={app.exportGpx}>
-                GPX
-              </Button>
-              <Button
-                id="exportGeoJsonBtn"
-                className="button"
-                disabled={!pkg}
-                onClick={app.exportGeoJson}
-              >
-                GeoJSON
-              </Button>
-            </ActionGroup>
-          </div>
-          <div className="map-location-controls">
-            <p className={`muted small ${app.geoClass}`}>{app.geoStatus}</p>
-          </div>
-          <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
-          <div className="legend">
-            <span>
-              <i style={{ background: '#f3f5f7' }} />
-              RallyFansMap
-            </span>
-            <span>
-              <i style={{ background: BRAND_ORANGE }} />
-              Yandex Constructor
-            </span>
-            <span>
-              <i style={{ background: '#4da3ff' }} />
-              вы
-            </span>
-          </div>
-        </div>
-        <div
-          id="mapFavoritesDrawer"
-          className="map-tools-drawer map-favorites-drawer"
-          role="region"
-          aria-label="Избранное"
-          hidden={!favoritesOpen}
-        >
-          <div className="map-tools-heading">
-            <strong>Избранное</strong>
-          </div>
-          <section className="favorites-panel" aria-labelledby="favoritesTitle">
-            <SectionHeader className="compact-section-head">
-              <div>
-                <div id="favoritesTitle" className="block-title">
-                  ИЗБРАННЫЕ ТОЧКИ
-                </div>
-                <p id="favoritesStatus" className="muted small">
-                  {app.favorites.length
-                    ? `${app.favorites.length} сохранено для этой гонки.`
-                    : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
-                </p>
-              </div>
-            </SectionHeader>
-            <div id="favoritesList" className="favorites-list">
-              {favoritesContent}
-            </div>
-          </section>
-          {followedResults.length > 0 && (
-            <section className="map-followed-crews" aria-label="Избранные экипажи">
-              <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
-              {followedResults.map(({ favorite, position, result }) => {
-                const stage = pkg.crewResults?.eventResults?.at(-1);
-                const stageResult = stage?.results?.find(row =>
-                  [row.crew?.id, row.crew?.number].some(
-                    value => String(value) === String(favorite.id || favorite.number),
-                  ),
-                );
-                return (
-                  <article className="map-followed-crew" key={favorite.id || favorite.number}>
-                    <strong>
-                      {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
-                      {crewName(result.crew) || favorite.name}
-                    </strong>
-                    <span>
-                      {result.formattedTime} ·{' '}
-                      {result.formattedFromLeader === '00:00:00:0'
-                        ? 'лидер'
-                        : `отставание ${result.formattedFromLeader}`}
-                      {stage?.specialStage?.name &&
-                        ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
-                    </span>
-                  </article>
-                );
-              })}
-            </section>
-          )}
         </div>
       </>
       {pointSheetPoint && (
