@@ -16,6 +16,14 @@ for (const theme of ['light', 'dark']) {
     });
     await openMapWithAcceptedSafety(page);
     await page.evaluate(theme => (document.documentElement.dataset.theme = theme), theme);
+    await expect(page.locator('.bottom-tabbar button.active')).toHaveCSS(
+      'color',
+      'rgb(226, 28, 35)',
+    );
+    await expect(page.locator('.bottom-tabbar button.active')).toHaveCSS(
+      'background-color',
+      'rgba(0, 0, 0, 0)',
+    );
     const map = await page.locator('.map-screen > .map').boundingBox();
     expect(map.height).toBe(844);
     const header = await page.locator('.map-floating-header').boundingBox();

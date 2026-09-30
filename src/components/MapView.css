@@ -734,8 +734,8 @@
     max-width: 160px;
     padding: 3px 7px;
     border-radius: 99px;
-    background: rgba(255, 255, 255, 0.94);
-    color: #59666e;
+    background: var(--surface);
+    color: var(--text);
     font-size: 10px;
     text-align: center;
   }
@@ -907,7 +907,8 @@
 }
 
 @layer theme {
-  body[data-active-tab='map'] .bottom-tabbar button.active {
+  body[data-active-tab='map'] .bottom-tabbar button.active,
+  :root[data-theme='dark'] body[data-active-tab='map'] .bottom-tabbar button.active {
     background: transparent;
     color: #e21c23;
   }
