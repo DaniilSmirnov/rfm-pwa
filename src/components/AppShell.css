@@ -285,17 +285,19 @@
 
 
 @layer views {
-  .bottom-tabbar > button.active,
-  .bottom-tabbar > button.active:hover,
-  .bottom-tabbar > button.active:focus,
-  .bottom-tabbar > button.active:focus-visible {
-    border-color: transparent;
-    outline: none;
+  .bottom-tabbar > button[aria-current='page'],
+  .bottom-tabbar > button[aria-current='page']:hover,
+  .bottom-tabbar > button[aria-current='page']:focus,
+  .bottom-tabbar > button[aria-current='page']:focus-visible {
+    border: 0;
+    outline: 0;
     background: transparent;
     box-shadow: none;
+    color: var(--brand-orange);
   }
 
-  .bottom-tabbar > button.active svg {
-    color: var(--brand-orange);
+  .bottom-tabbar > button[aria-current='page'] svg,
+  .bottom-tabbar > button[aria-current='page'] b {
+    color: inherit;
   }
 }
