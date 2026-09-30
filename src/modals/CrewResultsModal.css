@@ -308,13 +308,6 @@
     flex: 1;
     max-width: none;
   }
-  .crew-results-filter {
-    display: grid;
-    flex: 0 0 44px;
-    place-items: center;
-    width: 44px;
-    padding: 0;
-  }
   .crew-results-mobile-list {
     border-top: 1px solid #e5e6e8;
   }
@@ -322,9 +315,6 @@
     position: relative;
     border-bottom: 1px solid #e5e6e8;
     background: var(--surface, #fff);
-  }
-  .crew-result-card.retired {
-    background: #fff6e3;
   }
   .crew-result-card-main {
     display: grid;
@@ -390,8 +380,12 @@
     height: 24px;
     padding: 0;
     border: 0;
-    background: transparent;
+    border-radius: 0;
+    appearance: none;
+    background: none;
+    box-shadow: none;
     color: #f2b900;
+    cursor: pointer;
   }
   .crew-result-star.active {
     color: #e8aa00;
@@ -510,9 +504,6 @@
   :root[data-theme='dark'] .crew-results-mobile-list,
   :root[data-theme='dark'] .crew-details-stages li {
     border-color: #30353d;
-  }
-  :root[data-theme='dark'] .crew-result-card.retired {
-    background: #352a16;
   }
   :root[data-theme='dark'] .crew-results-class-chips button,
   :root[data-theme='dark'] .crew-details-summary {
