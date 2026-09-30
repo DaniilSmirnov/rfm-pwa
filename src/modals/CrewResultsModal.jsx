@@ -4,7 +4,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
 import SelectField from '../components/SelectField.jsx';
-import { ChevronRight, Filter, Star } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Filter, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
@@ -42,55 +42,88 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
     >
       <Dialog.Overlay className="crew-details-dialog-overlay" />
       <Dialog.Content className="crew-details-dialog" aria-labelledby="crewDetailsTitle">
-        <header className="crew-details-head">
-          <div>
-            <Dialog.Title asChild>
-              <h2 id="crewDetailsTitle">{resultLabel(crewResult)}</h2>
-            </Dialog.Title>
-            <p>
-              № {crewResult.crew?.number || '—'} · {crewResult.crew?.car || 'Автомобиль не указан'}
-            </p>
-          </div>
+        <div className="crew-details-page-head">
           <Dialog.Close asChild>
-            <Button className="button crew-results-close" aria-label="Закрыть результаты экипажа">
-              ×
+            <Button className="button crew-details-back" aria-label="Назад к результатам">
+              <ArrowLeft size={20} aria-hidden="true" />
             </Button>
           </Dialog.Close>
-        </header>
+          <Dialog.Title asChild>
+            <h2 id="crewDetailsTitle">Детали экипажа</h2>
+          </Dialog.Title>
+        </div>
 
-        <div className="crew-details-summary">
-          <span>Общее время</span>
-          <strong>{overallStatus || crewResult.formattedTime || '—'}</strong>
-          <small>{crewResult.discipline?.name || 'Зачёт не указан'}</small>
+        <div className="crew-details-profile">
+          <div className="crew-details-profile-copy">
+            <div className="crew-details-identity">
+              <strong>#{crewResult.crew?.number || '—'}</strong>
+              <Star
+                className="crew-details-star"
+                size={24}
+                fill="currentColor"
+                aria-label="Избранный экипаж"
+              />
+            </div>
+            <strong className="crew-details-name">{resultLabel(crewResult)}</strong>
+            <span className="crew-details-car">
+              {crewResult.crew?.car || 'Автомобиль не указан'}
+            </span>
+            <span className="crew-details-class">
+              {crewResult.discipline?.name || 'Зачёт не указан'}
+            </span>
+          </div>
+          <div className="crew-details-car-image" aria-label="Фото автомобиля">
+            <span aria-hidden="true">RALLY</span>
+          </div>
+          <div className="crew-details-overall">
+            <strong>{overallStatus || `${crewResult.formattedFromLeader || '—'}`}</strong>
+            <span>к лидеру</span>
+          </div>
+        </div>
+
+        <div className="crew-details-tabs" role="tablist" aria-label="Детали результатов">
+          <Button className="active" role="tab" aria-selected="true">
+            По СУ
+          </Button>
+          <Button className="disabled" role="tab" aria-selected="false" disabled>
+            График позиции
+          </Button>
         </div>
 
         <div className="crew-details-stages">
-          <h3>Время по спецучасткам</h3>
-          {stageResults.length ? (
-            <ol>
-              {stageResults.map(({ view, result }) => {
-                const status = retirementLabel(result);
-                return (
-                  <li key={view.key}>
-                    <span>
-                      <strong>{view.name}</strong>
-                      <small>
-                        {result ? `Место ${view.results.indexOf(result) + 1}` : 'Нет результата'}
-                      </small>
-                    </span>
-                    <span className={status ? 'retired' : ''}>
-                      {status || result?.formattedTime || '—'}
-                      {result && !status && (
-                        <small>От лидера: {gapFromLeader(result, view.results)}</small>
-                      )}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          ) : (
-            <p className="muted">Данные по спецучасткам пока недоступны.</p>
-          )}
+          <div
+            className="crew-details-stage-table"
+            role="table"
+            aria-label="Результаты по спецучасткам"
+          >
+            <div className="crew-details-stage-row crew-details-stage-header" role="row">
+              <span role="columnheader">СУ</span>
+              <span role="columnheader">Место</span>
+              <span role="columnheader">Время</span>
+              <span role="columnheader">Отставание</span>
+            </div>
+            {stageResults.length ? (
+              <div role="rowgroup">
+                {stageResults.map(({ view, result }) => {
+                  const status = retirementLabel(result);
+                  return (
+                    <div className="crew-details-stage-row" role="row" key={view.key}>
+                      <span role="cell">{view.name.replace(/^Спецучасток\s*/i, 'СУ')}</span>
+                      <span role="cell">{result ? view.results.indexOf(result) + 1 : '—'}</span>
+                      <span className={status ? 'retired' : ''} role="cell">
+                        {status || result?.formattedTime || '—'}
+                      </span>
+                      <span className={status ? 'retired' : ''} role="cell">
+                        {status || gapFromLeader(result, view.results)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="muted crew-details-empty">Данные по спецучасткам пока недоступны.</p>
+            )}
+          </div>
         </div>
       </Dialog.Content>
     </Dialog.Root>

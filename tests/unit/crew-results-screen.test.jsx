@@ -71,7 +71,7 @@ describe('inline results screen', () => {
   it('opens all stage results in the crew details modal', () => {
     renderResults();
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
-    expect(screen.getByRole('dialog', { name: 'Alpha / Co-driver' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
     expect(screen.getByText('СУ 1')).toBeTruthy();
     expect(screen.getByText('00:00:50')).toBeTruthy();
   });
@@ -81,9 +81,9 @@ describe('inline results screen', () => {
     renderResults({ visible: [retired], selectedClassResults: [retired] });
     expect(screen.getAllByText('Поломка')).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
-    expect(screen.getByRole('dialog', { name: 'Alpha / Co-driver' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
     expect(
-      within(screen.getByRole('dialog', { name: 'Alpha / Co-driver' })).getByText('Поломка'),
+      within(screen.getByRole('dialog', { name: 'Детали экипажа' })).getByText('Поломка'),
     ).toBeTruthy();
   });
 });

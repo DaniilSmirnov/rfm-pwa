@@ -516,6 +516,205 @@
     color: #f5f7fa;
   }
 }
+
+@layer modals {
+  .crew-details-dialog {
+    inset: 0;
+    width: 100vw;
+    max-height: none;
+    padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+      calc(20px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    border-radius: 0;
+    background: #f8f8f8;
+    box-shadow: none;
+  }
+  .crew-details-page-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 760px;
+    margin: 0 auto 8px;
+  }
+  .crew-details-page-head h2 {
+    margin: 0;
+    font-size: 16px;
+  }
+  .crew-details-back {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .crew-details-profile,
+  .crew-details-tabs,
+  .crew-details-stages {
+    width: min(100%, 760px);
+    margin-right: auto;
+    margin-left: auto;
+  }
+  .crew-details-profile {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 112px;
+    gap: 8px 12px;
+    min-height: 150px;
+    padding: 14px;
+    overflow: hidden;
+    border: 1px solid #e5e6e8;
+    border-radius: 14px;
+    background: #fff;
+  }
+  .crew-details-profile-copy {
+    min-width: 0;
+  }
+  .crew-details-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .crew-details-identity > strong {
+    font-size: 22px;
+  }
+  .crew-details-star {
+    color: #d71920;
+  }
+  .crew-details-name,
+  .crew-details-car {
+    display: block;
+    margin-top: 4px;
+  }
+  .crew-details-name {
+    font-size: 14px;
+  }
+  .crew-details-car {
+    color: #777d85;
+    font-size: 13px;
+  }
+  .crew-details-class {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #e9ecef;
+    color: #68707a;
+    font-size: 11px;
+  }
+  .crew-details-car-image {
+    display: grid;
+    place-items: center;
+    min-height: 76px;
+    border-radius: 9px;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.22), transparent 42%),
+      linear-gradient(160deg, #8f9ba4 0%, #30363c 48%, #c3c8cb 49%, #4d555c 100%);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 11px;
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+  }
+  .crew-details-overall {
+    grid-column: 2;
+    display: grid;
+    align-content: end;
+    justify-items: end;
+    gap: 2px;
+    text-align: right;
+  }
+  .crew-details-overall strong {
+    color: #df2630;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+  }
+  .crew-details-overall span {
+    color: #777d85;
+    font-size: 11px;
+  }
+  .crew-details-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .crew-details-tabs button {
+    min-height: 34px;
+    border: 1px solid #e5e6e8;
+    border-radius: 7px;
+    background: #f1f2f3;
+    color: #9aa0a9;
+    font-size: 12px;
+  }
+  .crew-details-tabs button.active {
+    border-color: #e52b2f;
+    background: #e52b2f;
+    color: #fff;
+  }
+  .crew-details-tabs button.disabled {
+    opacity: 1;
+  }
+  .crew-details-stages {
+    margin-top: 8px;
+    border-radius: 10px;
+    background: #fff;
+  }
+  .crew-details-stage-table {
+    overflow: hidden;
+    border: 1px solid #e5e6e8;
+    border-radius: 10px;
+  }
+  .crew-details-stage-row {
+    display: grid;
+    grid-template-columns: 1.1fr 0.8fr 1.25fr 1.35fr;
+    gap: 8px;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 10px;
+    border-bottom: 1px solid #e9eaec;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .crew-details-stage-row:last-child {
+    border-bottom: 0;
+  }
+  .crew-details-stage-header {
+    min-height: 32px;
+    color: #777d85;
+    font-size: 10px;
+  }
+  .crew-details-stage-row > span:not(:first-child) {
+    text-align: right;
+  }
+  .crew-details-stage-row .retired {
+    color: #df2630;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .crew-details-empty {
+    padding: 16px 10px;
+  }
+}
+
+@layer theme {
+  :root[data-theme='dark'] .crew-details-dialog {
+    background: #111418;
+  }
+  :root[data-theme='dark'] .crew-details-profile,
+  :root[data-theme='dark'] .crew-details-stages,
+  :root[data-theme='dark'] .crew-details-stage-table {
+    border-color: #30353d;
+    background: #1d2127;
+  }
+  :root[data-theme='dark'] .crew-details-stage-row {
+    border-color: #30353d;
+  }
+  :root[data-theme='dark'] .crew-details-class,
+  :root[data-theme='dark'] .crew-details-tabs button {
+    border-color: #30353d;
+    background: #292e35;
+  }
+}
 @layer theme {
   :root[data-theme='dark'] .crew-results-inline .crew-results-toolbar {
     background: var(--surface, #111418);

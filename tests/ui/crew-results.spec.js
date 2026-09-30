@@ -48,7 +48,7 @@ test.describe('ASMG crew results', () => {
     const firstRow = page.locator('[data-crew-row]').first();
     await expect(firstRow).toContainText('00:14:50:0');
     await firstRow.getByRole('button', { name: /Открыть результаты экипажа/ }).click();
-    const dialog = page.getByRole('dialog', { name: /Гожев Руслан/ });
+    const dialog = page.getByRole('dialog', { name: 'Детали экипажа' });
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText('СУ 2 · Пуйккола');
     await expect(dialog).toContainText('00:14:50:0');
