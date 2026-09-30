@@ -17,6 +17,21 @@ describe('spectator map symbols', () => {
     ['Дорога закрыта', 'closure'],
     ['Неизвестная точка', 'location'],
   ])('keeps the meaning of %s', (name, kind) => expect(pointMarkerKind({}, name)).toBe(kind));
+
+  it.each([
+    [{ caption: 'Пост связи' }, 'communication'],
+    [{ 'name:ru': 'Пост связи' }, 'communication'],
+    [{ name_ru: 'Пост связи' }, 'communication'],
+    [{ title: 'Пост связи' }, 'communication'],
+  ])('uses display-name aliases for marker classification', (properties, expected) => {
+    const feature = pointWithMarkerIcon({
+      type: 'Feature',
+      properties,
+      geometry: { type: 'Point', coordinates: [30, 60] },
+    });
+    expect(feature.properties.markerIcon).toBe(expected);
+  });
+
   it('stores the icon as a point property and renders no separate icon node', () => {
     const feature = pointWithMarkerIcon({
       type: 'Feature',
