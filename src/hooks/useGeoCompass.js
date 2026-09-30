@@ -2,6 +2,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteCarPoint, loadCarPoint, saveCarPoint } from '../app/local-points.js';
 import { publishCompassHeading } from '../hooks/compass-heading.js';
 
+export function normalizeGeolocationCoords(coords, extras = {}) {
+  if (!coords) return null;
+  return {
+    latitude: Number(coords.latitude),
+    longitude: Number(coords.longitude),
+    accuracy: Number(coords.accuracy),
+    altitude: coords.altitude == null ? null : Number(coords.altitude),
+    altitudeAccuracy: coords.altitudeAccuracy == null ? null : Number(coords.altitudeAccuracy),
+    heading: coords.heading == null ? null : Number(coords.heading),
+    speed: coords.speed == null ? null : Number(coords.speed),
+    ...extras,
+  };
+}
+
 export function useGeoCompass({ selectedPoint, setSelectedPoint, setNavStatus }) {
   const [carPoint, setCarPoint] = useState(() => loadCarPoint());
   const [userPos, setUserPos] = useState(null);
@@ -24,7 +38,7 @@ export function useGeoCompass({ selectedPoint, setSelectedPoint, setNavStatus })
     let first = true;
     geoWatchRef.current = navigator.geolocation.watchPosition(
       pos => {
-        setUserPos({ ...pos.coords, __center: first });
+        setUserPos(normalizeGeolocationCoords(pos.coords, { __center: first }));
         setGeoStatus(`Геопозиция включена · точность ±${Math.round(pos.coords.accuracy || 0)} м`);
         setGeoClass('geo-ok');
         first = false;
@@ -51,7 +65,7 @@ export function useGeoCompass({ selectedPoint, setSelectedPoint, setNavStatus })
     navigator.geolocation.getCurrentPosition(
       pos => {
         const coords = pos.coords;
-        setUserPos(coords);
+        setUserPos(normalizeGeolocationCoords(coords));
         setCarPoint(saveCarPoint({ lat: coords.latitude, lon: coords.longitude, name: 'Машина' }));
         setGeoStatus(`Геопозиция включена · точность ±${Math.round(coords.accuracy || 0)} м`);
         setGeoClass('geo-ok');
