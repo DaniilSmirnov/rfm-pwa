@@ -5,7 +5,7 @@ import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
 import ScreenHeader, { useEdgeSwipeBack } from '../components/ScreenHeader.jsx';
 import SelectField from '../components/SelectField.jsx';
-import { ArrowLeft, ChevronRight, Star } from 'lucide-react';
+import { ChevronRight, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
   if (!result) return 'Не пройден';
