@@ -282,3 +282,20 @@
     outline-offset: 3px;
   }
 }
+
+
+@layer views {
+  .bottom-tabbar > button.active,
+  .bottom-tabbar > button.active:hover,
+  .bottom-tabbar > button.active:focus,
+  .bottom-tabbar > button.active:focus-visible {
+    border-color: transparent;
+    outline: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .bottom-tabbar > button.active svg {
+    color: var(--brand-orange);
+  }
+}
