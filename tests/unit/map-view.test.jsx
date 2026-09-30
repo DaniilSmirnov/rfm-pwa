@@ -49,6 +49,14 @@ describe('MapView enhancements', () => {
     const drawer = document.getElementById('mapToolsDrawer');
     expect(drawer.hidden).toBe(false);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(trigger);
+    expect(drawer.hidden).toBe(true);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(trigger);
+    expect(drawer.hidden).toBe(false);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Скачать офлайн-карту' }));
     expect(app.downloadMap).toHaveBeenCalledOnce();
 
