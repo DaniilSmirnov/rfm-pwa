@@ -64,7 +64,7 @@ test.describe('basic UI contracts', () => {
     await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
-    await page.getByRole('button', { name: 'Показать детали' }).click();
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     for (const id of [
       'googleMapsBtn',
       'yandexMapsBtn',
@@ -75,6 +75,8 @@ test.describe('basic UI contracts', () => {
     ]) {
       await expect(page.locator('#' + id)).toBeVisible();
     }
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#pointActions')).toBeHidden();
   });
 
   test('spectator compass section is present for selected point', async ({ page }) => {
@@ -84,7 +86,7 @@ test.describe('basic UI contracts', () => {
     await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
-    await page.getByRole('button', { name: 'Показать детали' }).click();
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     const compass = page.locator('#spectatorCompass');
     await expect(compass).toBeVisible();
     await compass.locator('summary').click();

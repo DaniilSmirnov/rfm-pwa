@@ -1,13 +1,15 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import MapView from '../../src/views/MapView.jsx';
 import { getCrewSubscriptions } from '../../src/db.js';
 
 vi.mock('../../src/db.js', () => ({
   getCrewSubscriptions: vi.fn().mockResolvedValue([]),
 }));
+
+afterEach(cleanup);
 
 describe('MapView enhancements', () => {
   it('renders stage status, source-backed point details, safety and offline guidance', () => {
@@ -99,9 +101,16 @@ describe('MapView enhancements', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
     expect(document.querySelector('.map-point-summary').textContent).toContain('4.8 / 5');
     expect(document.querySelector('.point-actions-copy').textContent).toContain('700 м');
-    fireEvent.click(screen.getByRole('button', { name: 'Показать детали' }));
+    expect(screen.getByRole('dialog').getAttribute('aria-labelledby')).toBe('pointName');
+    const compactHandle = within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Развернуть карточку точки',
+    });
+    expect(compactHandle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(compactHandle);
     expect(
-      screen.getByRole('button', { name: 'Скрыть детали' }).getAttribute('aria-controls'),
+      within(screen.getByRole('dialog'))
+        .getByRole('button', { name: 'Свернуть карточку точки' })
+        .getAttribute('aria-controls'),
     ).toBe('mapPointDetails');
     expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
@@ -113,13 +122,15 @@ describe('MapView enhancements', () => {
     );
     expect(screen.getByText(/Оставайся в разрешённых зрительских зонах/)).toBeTruthy();
 
-    const pointActions = screen.getByRole('complementary');
+    const pointActions = screen.getByRole('dialog');
     const navButtons = within(pointActions)
       .getAllByRole('button')
       .map(button => button.textContent.trim());
     expect(navButtons.indexOf('MAPS.ME')).toBeLessThan(navButtons.indexOf('Yandex Navigator'));
     expect(navButtons.indexOf('Yandex Navigator')).toBeLessThan(navButtons.indexOf('Google Maps'));
     expect(navButtons.indexOf('Google Maps')).toBeLessThan(navButtons.indexOf('Поделиться'));
+    fireEvent.click(screen.getByRole('button', { name: 'Закрыть карточку точки' }));
+    expect(app.showPoint).toHaveBeenCalledWith(null);
   });
 
   it('shows followed crews on Map with overall place, gap and latest stage context', async () => {
@@ -213,7 +224,11 @@ describe('MapView enhancements', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Показать детали' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Развернуть карточку точки',
+      }),
+    );
 
     expect(await screen.findByRole('region', { name: 'Следующие экипажи на этапе' })).toBeTruthy();
     expect(
