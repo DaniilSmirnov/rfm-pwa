@@ -47,17 +47,21 @@ export default function MapView({
   const [compassOpen, setCompassOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
+  const [pointSheetPoint, setPointSheetPoint] = useState(app.selectedPoint);
+  const [pointSheetClosing, setPointSheetClosing] = useState(false);
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
   const pointSheetRef = useRef(null);
+  const pointSheetPointRef = useRef(app.selectedPoint);
   const pointSheetGesture = useRef({ startY: null, suppressClick: false });
   const selectedPointRef = useRef(app.selectedPoint);
   selectedPointRef.current = app.selectedPoint;
+  pointSheetPointRef.current = pointSheetPoint;
   const pkg = app.currentPackage;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
   const liveStage = stages.find(stage => stage.mapStatusKind === 'live');
   const selectedDetails =
-    pkg && app.selectedPoint ? pointFeatureDetails(pkg, app.selectedPoint) : null;
+    pkg && pointSheetPoint ? pointFeatureDetails(pkg, pointSheetPoint) : null;
   const scheduledCrews =
     pkg && pointStageDistance
       ? scheduledStageCrews(
@@ -84,6 +88,22 @@ export default function MapView({
   }, [pkg?.id]);
   useEffect(() => {
     if (app.selectedPoint) setToolsOpen(false);
+  }, [app.selectedPoint]);
+  useEffect(() => {
+    if (app.selectedPoint) {
+      setPointSheetPoint(app.selectedPoint);
+      setPointSheetClosing(false);
+      return undefined;
+    }
+    if (!pointSheetPointRef.current) return undefined;
+    setPointDetailsOpen(false);
+    setPointSheetClosing(true);
+    const timer = window.setTimeout(() => {
+      pointSheetPointRef.current = null;
+      setPointSheetPoint(null);
+      setPointSheetClosing(false);
+    }, 220);
+    return () => window.clearTimeout(timer);
   }, [app.selectedPoint]);
   useEffect(() => {
     if (!toolsOpen) return undefined;
@@ -528,7 +548,7 @@ export default function MapView({
           </div>
         </Popover.Content>
       </Popover.Root>
-      {app.selectedPoint && (
+      {pointSheetPoint && (
         <>
           <Button
             id="mapPointSheetBackdrop"
@@ -541,7 +561,7 @@ export default function MapView({
           <aside
             ref={pointSheetRef}
             id="pointActions"
-            className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''}`}
+            className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''} ${pointSheetClosing ? 'is-closing' : ''}`}
             role="dialog"
             aria-modal={pointDetailsOpen ? 'true' : undefined}
             aria-labelledby="pointName"
@@ -573,6 +593,9 @@ export default function MapView({
                 {pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'}
               </span>
             </Button>
+            <div className="map-point-sheet-header">
+              <strong id="pointName">{pointSheetPoint.name || 'Точка на карте'}</strong>
+            </div>
             <div className={`point-actions-copy ${selectedDetails?.photo ? 'has-photo' : ''}`}>
               {selectedDetails?.photo && (
                 <a
@@ -584,12 +607,11 @@ export default function MapView({
                   <img
                     className="map-point-sheet-photo"
                     src={selectedDetails.photo}
-                    alt={`Фото: ${app.selectedPoint.name}`}
+                    alt={`Фото: ${pointSheetPoint.name}`}
                   />
                 </a>
               )}
 
-              <strong id="pointName">{app.selectedPoint.name || 'Точка на карте'}</strong>
               <span className="map-point-sheet-meta">
                 {pointStageDistance
                   ? `${pointStageDistance.stage.name} · ${formatDistance(pointStageDistance.distance.fromStart)} от старта`
@@ -612,7 +634,7 @@ export default function MapView({
               hidden={!pointDetailsOpen}
             >
               <span id="pointCoords" className="muted">
-                {coordinateText(app.selectedPoint)}
+                {coordinateText(pointSheetPoint)}
               </span>
               <span id="pointStageDistance" className="muted small">
                 {pointStageDistance
@@ -694,7 +716,7 @@ export default function MapView({
                 <Button
                   id="favoritePointBtn"
                   className={`button ${favorite ? 'downloaded' : ''}`}
-                  onClick={() => app.toggleFavorite(app.selectedPoint)}
+                  onClick={() => app.toggleFavorite(pointSheetPoint)}
                 >
                   {favorite ? '★ В избранном' : '☆ В избранное'}
                 </Button>
@@ -703,8 +725,8 @@ export default function MapView({
                   className="button primary"
                   onClick={() =>
                     openCustomSchemeWithFallback(
-                      mapsMeLink(app.selectedPoint),
-                      mapsMeFallbackForPoint(app.selectedPoint),
+                      mapsMeLink(pointSheetPoint),
+                      mapsMeFallbackForPoint(pointSheetPoint),
                     )
                   }
                 >
@@ -713,28 +735,28 @@ export default function MapView({
                 <Button
                   id="yandexMapsBtn"
                   className="button"
-                  onClick={() => openYandex(app.selectedPoint)}
+                  onClick={() => openYandex(pointSheetPoint)}
                 >
                   Yandex Navigator
                 </Button>
                 <Button
                   id="googleMapsBtn"
                   className="button"
-                  onClick={() => (window.location.href = googleMapsDirections(app.selectedPoint))}
+                  onClick={() => (window.location.href = googleMapsDirections(pointSheetPoint))}
                 >
                   Google Maps
                 </Button>
                 <Button
                   id="sharePointBtn"
                   className="button"
-                  onClick={() => app.sharePoint(app.selectedPoint)}
+                  onClick={() => app.sharePoint(pointSheetPoint)}
                 >
                   Поделиться
                 </Button>
                 <Button
                   id="copyCoordsBtn"
                   className="button"
-                  onClick={() => void copyPoint(app.selectedPoint)}
+                  onClick={() => void copyPoint(pointSheetPoint)}
                 >
                   Копировать
                 </Button>
@@ -770,7 +792,7 @@ export default function MapView({
                 >
                   {app.compassEnabled ? 'Компас включён' : 'Включить компас'}
                 </Button>
-                <CompassReadout point={app.selectedPoint} userPos={app.userPos} />
+                <CompassReadout point={pointSheetPoint} userPos={app.userPos} />
               </CollapsibleSection>
             </div>
           </aside>
