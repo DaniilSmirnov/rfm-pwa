@@ -1,18 +1,23 @@
 import { test, expect } from '@playwright/test';
 import { openApp, openMapWithAcceptedSafety } from './helpers.js';
 
-test('uses the same orange icon-only active state for every tab', async ({ page }) => {
+test('uses the same orange borderless active state for every tab', async ({ page }) => {
+  await openApp(page);
   const tabs = ['Сегодня', 'Карта', 'Результаты', 'Ещё'];
   let activeColor = null;
 
   for (const label of tabs) {
     const button = page.locator('.bottom-tabbar').getByRole('button', { name: label });
     await button.click();
-    await expect(button).toHaveClass(/active/);
+    await expect(button).toHaveAttribute('aria-current', 'page');
     await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(button).toHaveCSS('border-top-width', '0px');
+
     const iconColor = await button.locator('svg').evaluate(node => getComputedStyle(node).color);
+    const labelColor = await button.locator('b').evaluate(node => getComputedStyle(node).color);
     activeColor ??= iconColor;
     expect(iconColor).toBe(activeColor);
+    expect(labelColor).toBe(activeColor);
   }
 });
 
