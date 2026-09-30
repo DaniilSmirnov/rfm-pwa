@@ -93,7 +93,7 @@ describe('inline results screen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
     const dialog = screen.getByRole('dialog', { name: 'Детали экипажа' });
-    expect(within(dialog).getAllByText('Не пройден')).toHaveLength(2);
+    expect(within(dialog).getAllByText('Не пройден')).toHaveLength(3);
     expect(within(dialog).queryByText(/NaN/)).toBeNull();
   });
 
