@@ -304,17 +304,18 @@ export default function MapView({
         {mapContent}
       </div>
       <Popover.Root open={toolsOpen} onOpenChange={setToolsOpen}>
-        <Popover.Trigger asChild>
+        <Popover.Anchor asChild>
           <Button
             id="mapToolsToggle"
             className="map-tools-toggle"
             aria-label={toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
             aria-expanded={toolsOpen}
             aria-controls="mapToolsDrawer"
+            onClick={() => setToolsOpen(open => !open)}
           >
             <Layers aria-hidden="true" size={21} />
           </Button>
-        </Popover.Trigger>
+        </Popover.Anchor>
         {liveStage && (
           <div className="map-live-stage" aria-label="Активный спецучасток">
             <span aria-hidden="true" />
