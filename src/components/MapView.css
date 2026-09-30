@@ -897,6 +897,7 @@
   .map-point-sheet-handle {
     display: grid;
     place-items: center;
+    gap: 6px;
     width: 100%;
     min-height: 34px;
     margin: -8px 0 0;
@@ -919,7 +920,7 @@
     opacity: 0.7;
   }
   .map-point-sheet-title {
-    display: block;
+    display: -webkit-box;
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
@@ -930,15 +931,10 @@
     letter-spacing: -0.02em;
     line-height: 1.1;
     text-align: left;
-    white-space: nowrap;
-  }
-  .map-point-sheet-title > span {
-    display: inline-block;
-    min-width: 100%;
-  }
-  .map-point-sheet-title.is-overflowing > span {
-    padding-right: 48px;
-    animation: map-point-title-marquee 18s ease-in-out infinite alternate;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
   .map-point-sheet.is-dragging,
   .map-point-sheet.is-dragging .map-point-sheet-details {
@@ -1048,17 +1044,6 @@
       width: calc(100vw - 80px);
     }
   }
-  @keyframes map-point-title-marquee {
-    0%,
-    18% {
-      transform: translateX(0);
-    }
-    82%,
-    100% {
-      transform: translateX(calc(-1 * var(--map-title-distance)));
-    }
-  }
-
   @keyframes map-point-sheet-enter {
     from {
       opacity: 0;
@@ -1073,10 +1058,6 @@
     .map-point-sheet {
       animation: none;
       transition: none;
-    }
-    .map-point-sheet-title.is-overflowing > span {
-      animation: none;
-      transform: translateX(0);
     }
   }
 }
