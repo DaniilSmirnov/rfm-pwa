@@ -22,20 +22,42 @@ function retirementLabel(result) {
   return result.reasonGoingOff || (result.goingOffAfterSu ? 'Сход после спецучастка' : 'Сход');
 }
 
-function retirementDetails(result, views, resultLabel) {
+function cleanRetirementReason(result, views, resultLabel) {
   const reason = retirementLabel(result);
-  if (!reason) return null;
-  const crewId = crewIdOf(result, resultLabel);
-  const stage = views
-    .slice(1)
-    .map(view => ({
-      view,
-      result: view.results.find(item => crewIdOf(item, resultLabel) === crewId),
-    }))
-    .find(item => retirementLabel(item.result));
+  if (!reason || reason === 'Сход' || reason === 'Сход после спецучастка') return '';
+
+  const crew = result?.crew || {};
+  const removable = [
+    resultLabel(result),
+    [crew?.pilot?.lastName, crew?.pilot?.firstName].filter(Boolean).join(' '),
+    [crew?.pilot?.firstName, crew?.pilot?.lastName].filter(Boolean).join(' '),
+    [crew?.navigator?.lastName, crew?.navigator?.firstName].filter(Boolean).join(' '),
+    [crew?.navigator?.firstName, crew?.navigator?.lastName].filter(Boolean).join(' '),
+    ...views.slice(1).flatMap(view => [
+      view?.name,
+      String(view?.name || '').replace(/^Спецучасток\s*/i, 'СУ '),
+    ]),
+  ].filter(Boolean);
+
+  let cleaned = reason;
+  for (const value of removable) {
+    cleaned = cleaned.replaceAll(String(value), ' ');
+  }
+  cleaned = cleaned
+    .replace(/\b(?:СУ|SS)\s*[-№#:]?\s*\d+\b/gi, ' ')
+    .replace(/\bспецучаст(?:ок|ка)\s*[-№#:]?\s*\d+\b/gi, ' ')
+    .replace(/^\s*сход\s*[:—-]?\s*/i, '')
+    .replace(/[·|,;:—-]+\s*$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  return cleaned;
+}
+
+function retirementDetails(result, views, resultLabel) {
+  if (!retirementLabel(result)) return null;
   return {
-    reason,
-    place: stage?.view?.name || 'Место схода не указано',
+    reason: cleanRetirementReason(result, views, resultLabel),
   };
 }
 
@@ -472,10 +494,12 @@ export default function CrewResultsModal({
                   <span className={`crew-result-card-time ${retirement ? 'is-retired' : ''}`}>
                     {retirement ? (
                       <>
-                        <span className="crew-result-card-retirement-reason">
-                          Сход: {retirement.reason}
-                        </span>
-                        <small>{retirement.place}</small>
+                        <span className="crew-result-card-retirement-label">Сход</span>
+                        {retirement.reason && (
+                          <span className="crew-result-card-retirement-reason">
+                            {retirement.reason}
+                          </span>
+                        )}
                       </>
                     ) : (
                       <>
