@@ -83,11 +83,7 @@ export default function BootDiagnostics({ open, onClose }) {
             if (event.target === event.currentTarget) onClose?.();
           }}
         >
-          <Dialog.Content
-            asChild
-            aria-labelledby="bootDiagnosticsTitle"
-            aria-modal="true"
-          >
+          <Dialog.Content asChild aria-labelledby="bootDiagnosticsTitle" aria-modal="true">
             <div className="boot-diagnostics-card">
               <div className="boot-diagnostics-head">
                 <div>

@@ -40,11 +40,7 @@ export default function ImageViewerModal({ image, onClose }) {
                 </Button>
               </Dialog.Close>
               <div className="image-modal-inner">
-                <img
-                  id="imageModalImg"
-                  src={assetUrl(image)}
-                  alt="Материал гонки"
-                />
+                <img id="imageModalImg" src={assetUrl(image)} alt="Материал гонки" />
               </div>
             </div>
           </Dialog.Content>

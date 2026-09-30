@@ -60,8 +60,7 @@ export default function MapView({
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
   const liveStage = stages.find(stage => stage.mapStatusKind === 'live');
-  const selectedDetails =
-    pkg && pointSheetPoint ? pointFeatureDetails(pkg, pointSheetPoint) : null;
+  const selectedDetails = pkg && pointSheetPoint ? pointFeatureDetails(pkg, pointSheetPoint) : null;
   const scheduledCrews =
     pkg && pointStageDistance
       ? scheduledStageCrews(
@@ -317,15 +316,15 @@ export default function MapView({
       </div>
       <>
         <Button
-            id="mapToolsToggle"
-            className="map-tools-toggle"
-            aria-label={toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
-            aria-expanded={toolsOpen}
-            aria-controls="mapToolsDrawer"
-            onClick={() => setToolsOpen(open => !open)}
-          >
-            <Layers aria-hidden="true" size={21} />
-          </Button>
+          id="mapToolsToggle"
+          className="map-tools-toggle"
+          aria-label={toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
+          aria-expanded={toolsOpen}
+          aria-controls="mapToolsDrawer"
+          onClick={() => setToolsOpen(open => !open)}
+        >
+          <Layers aria-hidden="true" size={21} />
+        </Button>
         {liveStage && (
           <div className="map-live-stage" aria-label="Активный спецучасток">
             <span aria-hidden="true" />
@@ -353,225 +352,220 @@ export default function MapView({
           aria-label="Инструменты карты"
           hidden={!toolsOpen}
         >
-            <div className="map-tools-heading">
-              <strong>Инструменты карты</strong>
-              <OfflineMapActions app={app} />
-            </div>
-            <section className="favorites-panel" aria-labelledby="favoritesTitle">
-              <SectionHeader className="compact-section-head">
-                <div>
-                  <div id="favoritesTitle" className="block-title">
-                    ИЗБРАННЫЕ ТОЧКИ
-                  </div>
-                  <p id="favoritesStatus" className="muted small">
-                    {app.favorites.length
-                      ? `${app.favorites.length} сохранено для этой гонки.`
-                      : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
-                  </p>
-                </div>
-              </SectionHeader>
-              <div id="favoritesList" className="favorites-list">
-                {favoritesContent}
-              </div>
-            </section>
-            <section className="car-panel" aria-labelledby="carTitle">
-              <SectionHeader className="compact-section-head">
-                <div>
-                  <div id="carTitle" className="block-title">
-                    ГДЕ МАШИНА?
-                  </div>
-                  <p id="carStatus" className="muted small">
-                    {app.carPoint
-                      ? `Сохранено ${app.carPoint.savedAt ? new Date(app.carPoint.savedAt).toLocaleString() : ''}`
-                      : 'Сохрани текущие GPS-координаты машины.'}
-                  </p>
-                </div>
-                <Button id="saveCarBtn" className="button" type="button" onClick={app.saveCar}>
-                  {app.carPoint ? 'Обновить координаты машины' : 'Запомнить машину'}
-                </Button>
-              </SectionHeader>
-              {app.carPoint && (
-                <div id="carPointCard" className="car-point-card">
-                  <div className="point-row-copy">
-                    <strong>🚗 Машина</strong>
-                    <span id="carCoords" className="muted">
-                      {coordinateText(app.carPoint)}
-                    </span>
-                  </div>
-                  <div className="point-nav-buttons">
-                    <Button
-                      id="carCompassBtn"
-                      data-point-opener="true"
-                      className="button compact"
-                      onClick={async () => {
-                        setCompassOpen(true);
-                        app.showPoint(app.carPoint);
-                        await app.enableCompass();
-                      }}
-                    >
-                      Компас
-                    </Button>
-                    <Button
-                      id="carMapsMeBtn"
-                      className="button compact primary"
-                      onClick={() =>
-                        openCustomSchemeWithFallback(
-                          mapsMeLink(app.carPoint),
-                          mapsMeFallbackForPoint(app.carPoint),
-                        )
-                      }
-                    >
-                      MAPS.ME
-                    </Button>
-                    <Button
-                      id="carYandexBtn"
-                      className="button compact"
-                      onClick={() => openYandex(app.carPoint)}
-                    >
-                      Yandex
-                    </Button>
-                    <Button
-                      id="carGoogleBtn"
-                      className="button compact"
-                      onClick={() => (window.location.href = googleMapsDirections(app.carPoint))}
-                    >
-                      Google Maps
-                    </Button>
-                    <Button
-                      id="carShareBtn"
-                      className="button compact"
-                      onClick={() => app.sharePoint(app.carPoint)}
-                    >
-                      Поделиться
-                    </Button>
-                    <Button
-                      id="carDeleteBtn"
-                      className="button compact danger"
-                      onClick={app.removeCar}
-                    >
-                      Удалить
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </section>
-            {stages.length > 0 && (
-              <section className="map-stage-statuses" aria-labelledby="mapStageStatusesTitle">
-                <div id="mapStageStatusesTitle" className="block-title">
-                  СТАТУСЫ СПЕЦУЧАСТКОВ
-                </div>
-                <div className="map-stage-status-list">
-                  {stages.map(stage => (
-                    <article className="map-stage-status" key={stage.key}>
-                      <strong>{stage.name}</strong>
-                      <span className={`map-stage-pill is-${stage.mapStatusKind}`}>
-                        {stage.mapStatus}
-                      </span>
-                      <span className="muted small">{stage.date || stage.location}</span>
-                    </article>
-                  ))}
-                </div>
-                <p className="muted small">
-                  Статус показан по последнему опубликованному сообщению расписания.
-                </p>
-              </section>
-            )}
-            {followedResults.length > 0 && (
-              <section className="map-followed-crews" aria-label="Избранные экипажи">
-                <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
-                {followedResults.map(({ favorite, position, result }) => {
-                  const stage = pkg.crewResults?.eventResults?.at(-1);
-                  const stageResult = stage?.results?.find(row =>
-                    [row.crew?.id, row.crew?.number].some(
-                      value => String(value) === String(favorite.id || favorite.number),
-                    ),
-                  );
-                  return (
-                    <article className="map-followed-crew" key={favorite.id || favorite.number}>
-                      <strong>
-                        {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
-                        {crewName(result.crew) || favorite.name}
-                      </strong>
-                      <span>
-                        {result.formattedTime} ·{' '}
-                        {result.formattedFromLeader === '00:00:00:0'
-                          ? 'лидер'
-                          : `отставание ${result.formattedFromLeader}`}
-                        {stage?.specialStage?.name &&
-                          ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
-                      </span>
-                    </article>
-                  );
-                })}
-              </section>
-            )}
-            <div className="map-field-notice" role="note">
-              <strong>Безопасность и офлайн</strong>
-              <span>
-                Оставайся в разрешённых зрительских зонах и следуй указаниям маршалов. Скачай
-                офлайн-карту до выезда; доступность внешнего навигатора и его офлайн-карт зависит от
-                самого приложения.
-              </span>
-            </div>
-            <div className="map-export-actions">
+          <div className="map-tools-heading">
+            <strong>Инструменты карты</strong>
+            <OfflineMapActions app={app} />
+          </div>
+          <section className="favorites-panel" aria-labelledby="favoritesTitle">
+            <SectionHeader className="compact-section-head">
               <div>
-                <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
-                <p className="muted small">Экспортирует текущую гонку без обращения к серверу.</p>
+                <div id="favoritesTitle" className="block-title">
+                  ИЗБРАННЫЕ ТОЧКИ
+                </div>
+                <p id="favoritesStatus" className="muted small">
+                  {app.favorites.length
+                    ? `${app.favorites.length} сохранено для этой гонки.`
+                    : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
+                </p>
               </div>
-              <ActionGroup>
-                <Button
-                  id="exportGpxBtn"
-                  className="button"
-                  disabled={!pkg}
-                  onClick={app.exportGpx}
-                >
-                  GPX
-                </Button>
-                <Button
-                  id="exportGeoJsonBtn"
-                  className="button"
-                  disabled={!pkg}
-                  onClick={app.exportGeoJson}
-                >
-                  GeoJSON
-                </Button>
-              </ActionGroup>
+            </SectionHeader>
+            <div id="favoritesList" className="favorites-list">
+              {favoritesContent}
             </div>
-            <div className="map-location-controls">
-              <p className={`muted small ${app.geoClass}`}>{app.geoStatus}</p>
-            </div>
-            <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
-            <div className="legend">
-              <span>
-                <i style={{ background: '#f3f5f7' }} />
-                RallyFansMap
-              </span>
-              <span>
-                <i style={{ background: BRAND_ORANGE }} />
-                Yandex Constructor
-              </span>
-              <span>
-                <i style={{ background: '#4da3ff' }} />
-                вы
-              </span>
-            </div>
-            <div className="full-width-line" />
-            <CollapsibleSection
-              className="points-panel"
-              summary={
-                <>
-                  <span className="block-title">ГДЕ СМОТРЕТЬ?</span>
-                  <span className="summary-chevron">⌄</span>
-                </>
-              }
-            >
+          </section>
+          <section className="car-panel" aria-labelledby="carTitle">
+            <SectionHeader className="compact-section-head">
+              <div>
+                <div id="carTitle" className="block-title">
+                  ГДЕ МАШИНА?
+                </div>
+                <p id="carStatus" className="muted small">
+                  {app.carPoint
+                    ? `Сохранено ${app.carPoint.savedAt ? new Date(app.carPoint.savedAt).toLocaleString() : ''}`
+                    : 'Сохрани текущие GPS-координаты машины.'}
+                </p>
+              </div>
+              <Button id="saveCarBtn" className="button" type="button" onClick={app.saveCar}>
+                {app.carPoint ? 'Обновить координаты машины' : 'Запомнить машину'}
+              </Button>
+            </SectionHeader>
+            {app.carPoint && (
+              <div id="carPointCard" className="car-point-card">
+                <div className="point-row-copy">
+                  <strong>🚗 Машина</strong>
+                  <span id="carCoords" className="muted">
+                    {coordinateText(app.carPoint)}
+                  </span>
+                </div>
+                <div className="point-nav-buttons">
+                  <Button
+                    id="carCompassBtn"
+                    data-point-opener="true"
+                    className="button compact"
+                    onClick={async () => {
+                      setCompassOpen(true);
+                      app.showPoint(app.carPoint);
+                      await app.enableCompass();
+                    }}
+                  >
+                    Компас
+                  </Button>
+                  <Button
+                    id="carMapsMeBtn"
+                    className="button compact primary"
+                    onClick={() =>
+                      openCustomSchemeWithFallback(
+                        mapsMeLink(app.carPoint),
+                        mapsMeFallbackForPoint(app.carPoint),
+                      )
+                    }
+                  >
+                    MAPS.ME
+                  </Button>
+                  <Button
+                    id="carYandexBtn"
+                    className="button compact"
+                    onClick={() => openYandex(app.carPoint)}
+                  >
+                    Yandex
+                  </Button>
+                  <Button
+                    id="carGoogleBtn"
+                    className="button compact"
+                    onClick={() => (window.location.href = googleMapsDirections(app.carPoint))}
+                  >
+                    Google Maps
+                  </Button>
+                  <Button
+                    id="carShareBtn"
+                    className="button compact"
+                    onClick={() => app.sharePoint(app.carPoint)}
+                  >
+                    Поделиться
+                  </Button>
+                  <Button
+                    id="carDeleteBtn"
+                    className="button compact danger"
+                    onClick={app.removeCar}
+                  >
+                    Удалить
+                  </Button>
+                </div>
+              </div>
+            )}
+          </section>
+          {stages.length > 0 && (
+            <section className="map-stage-statuses" aria-labelledby="mapStageStatusesTitle">
+              <div id="mapStageStatusesTitle" className="block-title">
+                СТАТУСЫ СПЕЦУЧАСТКОВ
+              </div>
+              <div className="map-stage-status-list">
+                {stages.map(stage => (
+                  <article className="map-stage-status" key={stage.key}>
+                    <strong>{stage.name}</strong>
+                    <span className={`map-stage-pill is-${stage.mapStatusKind}`}>
+                      {stage.mapStatus}
+                    </span>
+                    <span className="muted small">{stage.date || stage.location}</span>
+                  </article>
+                ))}
+              </div>
               <p className="muted small">
-                Точки можно открыть во внешнем навигаторе без доступа к геопозиции PWA.
+                Статус показан по последнему опубликованному сообщению расписания.
               </p>
-              <div id="pointList" className="point-list">
-                {pointsContent}
-              </div>
-            </CollapsibleSection>
+            </section>
+          )}
+          {followedResults.length > 0 && (
+            <section className="map-followed-crews" aria-label="Избранные экипажи">
+              <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
+              {followedResults.map(({ favorite, position, result }) => {
+                const stage = pkg.crewResults?.eventResults?.at(-1);
+                const stageResult = stage?.results?.find(row =>
+                  [row.crew?.id, row.crew?.number].some(
+                    value => String(value) === String(favorite.id || favorite.number),
+                  ),
+                );
+                return (
+                  <article className="map-followed-crew" key={favorite.id || favorite.number}>
+                    <strong>
+                      {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
+                      {crewName(result.crew) || favorite.name}
+                    </strong>
+                    <span>
+                      {result.formattedTime} ·{' '}
+                      {result.formattedFromLeader === '00:00:00:0'
+                        ? 'лидер'
+                        : `отставание ${result.formattedFromLeader}`}
+                      {stage?.specialStage?.name &&
+                        ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
+                    </span>
+                  </article>
+                );
+              })}
+            </section>
+          )}
+          <div className="map-field-notice" role="note">
+            <strong>Безопасность и офлайн</strong>
+            <span>
+              Оставайся в разрешённых зрительских зонах и следуй указаниям маршалов. Скачай
+              офлайн-карту до выезда; доступность внешнего навигатора и его офлайн-карт зависит от
+              самого приложения.
+            </span>
+          </div>
+          <div className="map-export-actions">
+            <div>
+              <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
+              <p className="muted small">Экспортирует текущую гонку без обращения к серверу.</p>
+            </div>
+            <ActionGroup>
+              <Button id="exportGpxBtn" className="button" disabled={!pkg} onClick={app.exportGpx}>
+                GPX
+              </Button>
+              <Button
+                id="exportGeoJsonBtn"
+                className="button"
+                disabled={!pkg}
+                onClick={app.exportGeoJson}
+              >
+                GeoJSON
+              </Button>
+            </ActionGroup>
+          </div>
+          <div className="map-location-controls">
+            <p className={`muted small ${app.geoClass}`}>{app.geoStatus}</p>
+          </div>
+          <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
+          <div className="legend">
+            <span>
+              <i style={{ background: '#f3f5f7' }} />
+              RallyFansMap
+            </span>
+            <span>
+              <i style={{ background: BRAND_ORANGE }} />
+              Yandex Constructor
+            </span>
+            <span>
+              <i style={{ background: '#4da3ff' }} />
+              вы
+            </span>
+          </div>
+          <div className="full-width-line" />
+          <CollapsibleSection
+            className="points-panel"
+            summary={
+              <>
+                <span className="block-title">ГДЕ СМОТРЕТЬ?</span>
+                <span className="summary-chevron">⌄</span>
+              </>
+            }
+          >
+            <p className="muted small">
+              Точки можно открыть во внешнем навигаторе без доступа к геопозиции PWA.
+            </p>
+            <div id="pointList" className="point-list">
+              {pointsContent}
+            </div>
+          </CollapsibleSection>
         </div>
       </>
       {pointSheetPoint && (

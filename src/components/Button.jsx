@@ -2,14 +2,7 @@ import React, { forwardRef } from 'react';
 import './Button.css';
 
 const Button = forwardRef(function Button(
-  {
-    type = 'button',
-    className = 'button',
-    loading = false,
-    disabled = false,
-    children,
-    ...props
-  },
+  { type = 'button', className = 'button', loading = false, disabled = false, children, ...props },
   ref,
 ) {
   return (

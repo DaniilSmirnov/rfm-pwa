@@ -90,9 +90,9 @@ describe('Radix dialog migrations', () => {
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(2);
-    expect(screen.getByRole('dialog', { name: 'Boot diagnostics' }).getAttribute('aria-modal')).toBe(
-      'true',
-    );
+    expect(
+      screen.getByRole('dialog', { name: 'Boot diagnostics' }).getAttribute('aria-modal'),
+    ).toBe('true');
   });
 
   it('retains image modal id/hidden contract and closes via close button', () => {
