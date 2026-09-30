@@ -6,6 +6,7 @@ describe('spectator map symbols', () => {
   it.each([
     ['Парковка зрителей', 'parking'],
     ['Пост связи', 'communication'],
+    ['Паспорт', 'passport'],
     ['Смотровая точка', 'spectator'],
     ['Финиш СУ 1', 'finish'],
     ['Старт', 'start'],
@@ -17,6 +18,10 @@ describe('spectator map symbols', () => {
     createPointMarkerContent(communication, 'Пост связи', 'communication');
     expect(communication.querySelector('.map-point-symbol').classList.contains('is-communication')).toBe(true);
     expect(communication.querySelector('.map-point-svg')).toBeTruthy();
+
+    const passport = document.createElement('button');
+    createPointMarkerContent(passport, 'Паспорт', 'passport');
+    expect(passport.querySelector('.map-point-svg')).toBeTruthy();
 
     const start = document.createElement('button');
     createPointMarkerContent(start, 'Старт', 'start');
