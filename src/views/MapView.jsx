@@ -47,7 +47,9 @@ export default function MapView({
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
   const pointSheetRef = useRef(null);
-  const pointSheetGesture = useRef({ startY: 0, suppressClick: false });
+  const pointSheetGesture = useRef({ startY: null, suppressClick: false });
+  const selectedPointRef = useRef(app.selectedPoint);
+  selectedPointRef.current = app.selectedPoint;
   const pkg = app.currentPackage;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
@@ -82,6 +84,25 @@ export default function MapView({
     if (app.selectedPoint) setToolsOpen(false);
   }, [app.selectedPoint]);
   useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
+  const beginPointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
+    const source = event.touches?.[0] || event;
+    pointSheetGesture.current = { startY: source.clientY, suppressClick: false };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const endPointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
+    const startY = pointSheetGesture.current.startY;
+    const source = event.changedTouches?.[0] || event;
+    pointSheetGesture.current.startY = null;
+    if (startY == null) return;
+    const delta = source.clientY - startY;
+    if (Math.abs(delta) < 36) return;
+    event.preventDefault?.();
+    pointSheetGesture.current.suppressClick = true;
+    if (delta > 0) app.showPoint?.(null);
+    else setPointDetailsOpen(true);
+  };
   useEffect(() => {
     if (!app.selectedPoint) return undefined;
     const sheet = pointSheetRef.current;
@@ -110,15 +131,31 @@ export default function MapView({
         first.focus();
       }
     };
-    document.body.classList.add('modal-open');
+    const onDocumentClick = event => {
+      if (
+        sheet?.contains(event.target) ||
+        event.target.closest?.('.point-row') ||
+        event.target.closest?.('#mapPointSheetBackdrop') ||
+        event.target.closest?.('button, a, input, select, textarea, summary')
+      ) {
+        return;
+      }
+      const pointAtClick = selectedPointRef.current;
+      requestAnimationFrame(() => {
+        if (selectedPointRef.current === pointAtClick) closePoint();
+      });
+    };
+    if (pointDetailsOpen) document.body.classList.add('modal-open');
     document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('click', onDocumentClick);
     requestAnimationFrame(() => sheet?.querySelector('.map-point-sheet-handle')?.focus());
     return () => {
       document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('click', onDocumentClick);
       document.body.classList.remove('modal-open');
       if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
     };
-  }, [app.selectedPoint, app.showPoint]);
+  }, [app.selectedPoint, app.showPoint, pointDetailsOpen]);
   const raceKey = String(pkg?.raceId || pkg?.original?.id || pkg?.id || '');
   const asmgKey = String(pkg?.asmgRaceId || pkg?.original?.asmg_id || pkg?.original?.asmgId || '');
   const followed = crewSubscriptions
@@ -446,9 +483,10 @@ export default function MapView({
         <>
           <Button
             id="mapPointSheetBackdrop"
-            className="map-point-sheet-backdrop"
+            className={`map-point-sheet-backdrop ${pointDetailsOpen ? 'is-interactive' : ''}`}
             type="button"
             aria-label="Закрыть карточку точки"
+            tabIndex={pointDetailsOpen ? 0 : -1}
             onClick={() => app.showPoint?.(null)}
           />
           <aside
@@ -467,18 +505,10 @@ export default function MapView({
               aria-label={
                 pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'
               }
-              onPointerDown={event => {
-                pointSheetGesture.current = { startY: event.clientY, suppressClick: false };
-                event.currentTarget.setPointerCapture?.(event.pointerId);
-              }}
-              onPointerUp={event => {
-                const delta = event.clientY - pointSheetGesture.current.startY;
-                if (Math.abs(delta) < 36) return;
-                event.preventDefault();
-                pointSheetGesture.current.suppressClick = true;
-                if (delta > 0) app.showPoint?.(null);
-                else setPointDetailsOpen(true);
-              }}
+              onPointerDown={beginPointSheetGesture}
+              onPointerUp={endPointSheetGesture}
+              onTouchStart={beginPointSheetGesture}
+              onTouchEnd={endPointSheetGesture}
               onClick={() => {
                 if (pointSheetGesture.current.suppressClick) {
                   pointSheetGesture.current.suppressClick = false;

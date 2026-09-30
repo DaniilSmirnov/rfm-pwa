@@ -53,9 +53,26 @@ for (const theme of ['light', 'dark']) {
     await expect(sheet.locator('img')).toBeVisible();
     await expect(sheet).toContainText('350 м от парковки');
     await expect(page.locator('#mapPointDetails')).toBeHidden();
+    const compactSheetBox = await sheet.boundingBox();
+    expect(compactSheetBox.x).toBe(0);
+    expect(compactSheetBox.width).toBeCloseTo(await page.evaluate(() => innerWidth), 0);
+    await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS(
+      'background-color',
+      'rgba(0, 0, 0, 0)',
+    );
+    await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS('pointer-events', 'none');
     const sheetHandle = page.getByRole('button', { name: 'Развернуть карточку точки' });
-    await sheetHandle.click();
+    const handleBox = await sheetHandle.boundingBox();
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 24);
+    await page.mouse.down();
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y - 72, { steps: 4 });
+    await page.mouse.up();
     await expect(page.locator('#mapPointDetails')).toBeVisible();
+    await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS('pointer-events', 'auto');
+    await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS(
+      'background-color',
+      'rgba(0, 0, 0, 0)',
+    );
     const sheetBox = await sheet.boundingBox();
     expect(sheetBox.height).toBeGreaterThan(120);
     const tabs = await page.locator('.bottom-tabbar').boundingBox();
