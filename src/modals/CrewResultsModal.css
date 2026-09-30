@@ -13,7 +13,7 @@
   }
 }
 @layer modals {
-  dialog.crew-results-dialog {
+  .crew-results-dialog {
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -23,6 +23,7 @@
     margin: 0;
     padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
       max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    z-index: 100001;
     border: 0;
     background: #fff;
     color: #111;
@@ -30,13 +31,16 @@
   }
 }
 @layer modals {
-  dialog.crew-results-dialog[open] {
+  .crew-results-dialog[data-state='open'] {
     display: flex;
     flex-direction: column;
   }
 }
 @layer modals {
-  dialog.crew-results-dialog::backdrop {
+  .crew-results-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
     background: rgba(0, 0, 0, 0.62);
   }
 }
@@ -176,7 +180,7 @@
 }
 @layer responsive {
   @media (max-width: 560px) {
-    dialog.crew-results-dialog {
+    .crew-results-dialog {
       padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
         max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     }
@@ -190,7 +194,7 @@
   }
 }
 @layer theme {
-  :root[data-theme='dark'] dialog.crew-results-dialog {
+  :root[data-theme='dark'] .crew-results-dialog {
     background: #111418;
     color: #f5f7fa;
   }
