@@ -494,3 +494,25 @@
     }
   }
 }
+
+@layer views {
+  .bottom-tabbar button.active,
+  .bottom-tabbar button.active:hover,
+  .bottom-tabbar button.active:focus-visible {
+    background: transparent;
+    color: var(--brand-orange);
+  }
+
+  .bottom-tabbar button.active svg {
+    color: currentColor;
+  }
+}
+
+@layer theme {
+  :root[data-theme='dark'] .bottom-tabbar button.active,
+  :root[data-theme='dark'] .bottom-tabbar button.active:hover,
+  :root[data-theme='dark'] .bottom-tabbar button.active:focus-visible {
+    background: transparent;
+    color: var(--brand-orange);
+  }
+}
