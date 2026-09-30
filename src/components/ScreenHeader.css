@@ -1,0 +1,37 @@
+@layer components {
+  .screen-header {
+    display: grid;
+    grid-template-columns: 42px 1fr 42px;
+    align-items: center;
+    min-height: 64px;
+    padding: 10px var(--space-3);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .screen-header h1 {
+    grid-column: 2;
+    margin: 0;
+    font:
+      italic 700 22px/1.1 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
+    text-align: center;
+  }
+
+  .screen-header-back {
+    grid-column: 1;
+    display: inline-grid;
+    width: 42px;
+    min-height: 42px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+
+  .screen-header-back:hover {
+    background: transparent;
+  }
+}

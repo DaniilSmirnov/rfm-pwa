@@ -10,11 +10,6 @@ import SearchField from '../components/SearchField.jsx';
 export default function RacesView({ app, onOpenRace, onBack }) {
   return (
     <section className="races-screen" aria-label="Управление гонками">
-      {onBack && (
-        <Button className="button compact races-back" onClick={onBack}>
-          Назад в меню «Меню»
-        </Button>
-      )}
       <Panel className="races-preferences">
         <div className="races-section-title">
           <div className="block-title">УПРАВЛЕНИЕ ГОНКАМИ</div>

@@ -1,6 +1,6 @@
 import '../components/SharedControls.css';
 import '../components/AppShell.css';
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Button from '../components/Button.jsx';
 import { CalendarDays, CircleEllipsis, Map, Trophy } from 'lucide-react';
 import { useRfmApp } from '../hooks/useRfmApp.js';
@@ -25,7 +25,8 @@ import BootDiagnostics from '../modals/BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { selectedPackage } from '../app/rally-context.js';
 import RacesView from './RacesView.jsx';
-import MoreSectionView from './MoreSectionView.jsx';
+import MoreSectionView, { moreSectionTitles } from './MoreSectionView.jsx';
+import { useEdgeSwipeBack } from '../components/ScreenHeader.jsx';
 
 const tabs = [
   { key: 'today', label: 'Сегодня', Icon: CalendarDays },
@@ -184,12 +185,23 @@ export default function App() {
     setTab('more');
   };
 
-  const returnToMoreMenu = () => {
+  const returnToMoreMenu = useCallback(() => {
     setMoreScreen('menu');
     const url = new URL(location.href);
     url.searchParams.set('tab', 'more');
     history.replaceState({ tab: 'more' }, '', url);
-  };
+  }, [activeScrollKey]);
+  const screenHeaderTitle =
+    tab === 'more' && moreScreen !== 'menu'
+      ? {
+          races: 'Управление гонками',
+          settings: 'Настройки и диагностика',
+          ...moreSectionTitles,
+        }[moreScreen] || 'Раздел гонки'
+      : null;
+
+  useEdgeSwipeBack(returnToMoreMenu, Boolean(screenHeaderTitle));
+
   const openCrewResults = () => setCrewResultsOpen(true);
   const screenContent =
     tab === 'today' ? (
@@ -266,6 +278,9 @@ export default function App() {
         favoritesContent={<FavoritesList app={app} />}
         scheduleContent={pkg && <ScheduleList pkg={pkg} />}
         mediaContent={<RaceMedia pkg={pkg} />}
+        screenHeader={
+          screenHeaderTitle ? { title: screenHeaderTitle, onBack: returnToMoreMenu } : null
+        }
       />
       <BootDiagnostics open={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
       <AppFooter />
