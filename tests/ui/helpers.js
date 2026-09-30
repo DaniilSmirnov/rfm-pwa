@@ -477,7 +477,11 @@ export async function openMapWithAcceptedSafety(page) {
 }
 
 export async function selectMapPoint(page, name = 'Смотровая точка') {
-  const marker = page.locator('.map-race-label').filter({ hasText: name }).first();
+  const marker = page
+    .locator('.map-race-label')
+    .filter({ hasText: name })
+    .or(page.getByRole('button', { name, exact: true }))
+    .first();
   await marker.waitFor({ state: 'visible' });
   await marker.click();
   await page.locator('#pointActions').waitFor({ state: 'visible' });
