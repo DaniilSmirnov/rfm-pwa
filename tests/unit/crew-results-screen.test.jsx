@@ -97,8 +97,12 @@ describe('inline results screen', () => {
     expect(within(dialog).queryByText(/NaN/)).toBeNull();
   });
 
-  it('shows retirement reason and stage while keeping the normal card layout', () => {
-    const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'Поломка' };
+  it('shows a cleaned retirement reason in regular card layout', () => {
+    const retired = {
+      ...overall[0],
+      goingOff: true,
+      reasonGoingOff: 'Alpha / Co-driver · СУ 1 · Поломка',
+    };
     const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'Поломка' };
     const retiredViews = [views[0], { ...views[1], results: [retiredStage, views[1].results[1]] }];
     renderResults({
@@ -111,8 +115,9 @@ describe('inline results screen', () => {
     expect(within(card).getByText('№11 Alpha / Co-driver')).toBeTruthy();
     expect(within(card).getByText('Car A')).toBeTruthy();
     expect(within(card).getByText('A')).toBeTruthy();
-    expect(within(card).getByText('Сход: Поломка')).toBeTruthy();
-    expect(within(card).getByText('СУ 1')).toBeTruthy();
+    expect(within(card).getByText('Сход')).toBeTruthy();
+    expect(within(card).getByText('Поломка')).toBeTruthy();
+    expect(within(card).queryByText(/Alpha \/ Co-driver · СУ 1/)).toBeNull();
     expect(card.querySelector('.crew-result-card-chevron')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
     expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
