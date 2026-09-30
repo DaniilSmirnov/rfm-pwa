@@ -176,8 +176,12 @@ test.describe('saved race user flows', () => {
 
   test('renders rally point list', async ({ page }) => {
     await openMap(page);
-    await expect(page.locator('.map-race-label').filter({ hasText: 'Смотровая точка' })).toBeVisible();
-    await expect(page.locator('.map-race-label').filter({ hasText: 'Парковка зрителей' })).toBeVisible();
+    await expect(
+      page.locator('.map-race-label').filter({ hasText: 'Смотровая точка' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('.map-race-label').filter({ hasText: 'Парковка зрителей' }),
+    ).toBeVisible();
   });
 
   test('opens actions for selected point', async ({ page }) => {

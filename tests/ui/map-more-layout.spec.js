@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  openApp,
-  seedFixtureRace,
-  openMapWithAcceptedSafety,
-  selectMapPoint,
-} from './helpers.js';
+import { openApp, seedFixtureRace, openMapWithAcceptedSafety, selectMapPoint } from './helpers.js';
 
 for (const theme of ['light', 'dark']) {
   test(`map controls and More rows follow the mobile composition (${theme})`, async ({
