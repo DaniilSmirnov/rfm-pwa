@@ -332,7 +332,7 @@ export default function MapView({
         <Button
           id="mapToolsToggle"
           className="map-tools-toggle"
-          aria-label={toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
+          aria-label="Инструменты карты"
           aria-expanded={toolsOpen}
           aria-controls="mapToolsDrawer"
           onClick={() => {
@@ -345,7 +345,7 @@ export default function MapView({
         <Button
           id="mapFavoritesToggle"
           className="map-favorites-toggle"
-          aria-label={favoritesOpen ? 'Закрыть избранное' : 'Избранное'}
+          aria-label="Избранное"
           aria-expanded={favoritesOpen}
           aria-controls="mapFavoritesDrawer"
           onClick={() => {
