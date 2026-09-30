@@ -805,8 +805,29 @@
     box-shadow: 0 -3px 18px #18263020;
     gap: 14px;
     transition:
+      transform 220ms ease,
+      opacity 220ms ease,
       max-height 180ms ease,
       box-shadow 180ms ease;
+    animation: map-point-sheet-enter 220ms ease both;
+  }
+  .map-point-sheet.is-closing {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  .map-point-sheet-header {
+    display: flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 4px 2px;
+  }
+  .map-point-sheet-header strong {
+    overflow: hidden;
+    font-size: 18px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .map-point-sheet:not(.is-expanded) {
     touch-action: none;
@@ -875,10 +896,6 @@
   .map-point-sheet .has-photo > :not(.map-point-sheet-photo-link) {
     grid-column: 2;
   }
-  .map-point-sheet #pointName {
-    font-size: 18px;
-    line-height: 1.2;
-  }
   .map-point-sheet-meta,
   .map-point-summary {
     color: var(--text);
@@ -937,6 +954,22 @@
     }
     .map-point-sheet.is-expanded {
       max-height: 58dvh;
+    }
+  }
+  @keyframes map-point-sheet-enter {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .map-point-sheet {
+      animation: none;
+      transition: none;
     }
   }
 }
