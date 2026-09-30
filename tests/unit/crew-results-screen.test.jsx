@@ -52,11 +52,12 @@ function renderResults(overrides = {}) {
 }
 
 describe('inline results screen', () => {
-  it('renders as a first-class inline screen with stage, class and search controls', () => {
+  it('renders as a first-class inline screen with class chips and search without a filter button', () => {
     renderResults();
     expect(screen.getByRole('region', { name: 'Результаты экипажей' })).toBeTruthy();
     expect(screen.getByLabelText('Класс')).toBeTruthy();
     expect(screen.getByRole('searchbox', { name: 'Поиск экипажа' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Фильтры' })).toBeNull();
   });
 
   it('prioritizes followed crews without changing their protocol places', () => {
@@ -76,10 +77,19 @@ describe('inline results screen', () => {
     expect(screen.getByText('00:00:50')).toBeTruthy();
   });
 
-  it('shows a retirement status in the card and in the details modal', () => {
+  it('shows retirement reason and stage while keeping the normal card layout', () => {
     const retired = { ...overall[0], goingOff: true, reasonGoingOff: 'Поломка' };
-    renderResults({ visible: [retired], selectedClassResults: [retired] });
-    expect(screen.getAllByText('Поломка')).toHaveLength(2);
+    const retiredStage = { ...views[1].results[0], goingOff: true, reasonGoingOff: 'Поломка' };
+    const retiredViews = [views[0], { ...views[1], results: [retiredStage, views[1].results[1]] }];
+    renderResults({
+      visible: [retired],
+      selectedClassResults: [retired],
+      views: retiredViews,
+    });
+    const card = screen.getByRole('article');
+    expect(within(card).getByText('1')).toBeTruthy();
+    expect(within(card).getByText('Поломка')).toBeTruthy();
+    expect(within(card).getByText('СУ 1')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
     expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
     expect(
