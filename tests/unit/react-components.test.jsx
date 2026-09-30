@@ -992,9 +992,7 @@ describe('application components', () => {
 
   it('loads crew results and renders shared app layout and tab shell', async () => {
     const pkg = { ...race, asmgRaceId: '55', crewResults: crewData };
-    render(
-      <CrewResults pkg={pkg} standalone onOpen={vi.fn()} onClose={vi.fn()} />,
-    );
+    render(<CrewResults pkg={pkg} standalone onOpen={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => expect(mocks.fetchAsmgResults).toHaveBeenCalled());
     expect(screen.getByText(/№12 Пилот Иван/)).toBeTruthy();
 
