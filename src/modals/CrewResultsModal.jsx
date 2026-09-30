@@ -22,7 +22,7 @@ function retirementLabel(result) {
   return result.reasonGoingOff || (result.goingOffAfterSu ? 'Сход после спецучастка' : 'Сход');
 }
 
-function cleanRetirementReason(result, views, resultLabel) {
+function sentenceCase(value) {\n  const normalized = String(value || '').toLocaleLowerCase('ru').trim();\n  return normalized ? normalized[0].toLocaleUpperCase('ru') + normalized.slice(1) : '';\n}\n\nfunction cleanRetirementReason(result, views, resultLabel) {
   const reason = retirementLabel(result);
   if (!reason || reason === 'Сход' || reason === 'Сход после спецучастка') return '';
 
@@ -51,7 +51,7 @@ function cleanRetirementReason(result, views, resultLabel) {
     .replace(/\s{2,}/g, ' ')
     .trim();
 
-  return cleaned;
+  return sentenceCase(cleaned);
 }
 
 function retirementDetails(result, views, resultLabel) {
@@ -72,7 +72,9 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
     view,
     result: view.results.find(item => crewIdOf(item, resultLabel) === crewId),
   }));
-  const overallStatus = retirementLabel(crewResult);
+  const overallStatus = retirementDetails(crewResult, views, resultLabel);
+  const overallText =
+    overallStatus?.reason || (overallStatus ? 'Сход' : crewResult.formattedFromLeader || '—');
 
   return (
     <Dialog.Root
@@ -117,7 +119,7 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
             <span aria-hidden="true">RALLY</span>
           </div>
           <div className="crew-details-overall">
-            <strong>{overallStatus || `${crewResult.formattedFromLeader || '—'}`}</strong>
+            <strong>{overallText}</strong>
             <span>к лидеру</span>
           </div>
         </div>
@@ -146,7 +148,8 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
             {stageResults.length ? (
               <div role="rowgroup">
                 {stageResults.map(({ view, result }) => {
-                  const status = retirementLabel(result);
+                  const retirement = retirementDetails(result, views, resultLabel);
+                  const status = retirement?.reason || (retirement ? 'Сход' : '');
                   return (
                     <div className="crew-details-stage-row" role="row" key={view.key}>
                       <span role="cell">{view.name.replace(/^Спецучасток\s*/i, 'СУ')}</span>
@@ -311,6 +314,7 @@ export default function CrewResultsModal({
                 );
                 const place = selectedClassResults.indexOf(result) + 1;
                 const retired = result.goingOff || result.goingOffAfterSu;
+                const retirement = retirementDetails(result, views, resultLabel);
                 const stages = views
                   .slice(1)
                   .map(view => ({
@@ -348,8 +352,7 @@ export default function CrewResultsModal({
                       </td>
                       <td className="crew-results-time">
                         {retired
-                          ? result.reasonGoingOff ||
-                            (result.goingOff ? 'Сход' : 'Сход после финиша')
+                          ? retirement?.reason || (retired ? 'Сход' : 'Сход после финиша')
                           : result.formattedTime || 'Время пока недоступно'}
                         {result.formattedTimePenalty && (
                           <small>Штраф {result.formattedTimePenalty}</small>
@@ -382,7 +385,7 @@ export default function CrewResultsModal({
                                   </span>
                                   <span>
                                     {stageResult.goingOff || stageResult.goingOffAfterSu
-                                      ? stageResult.reasonGoingOff || 'Сход'
+                                      ? retirementDetails(stageResult, views, resultLabel)?.reason || 'Сход'
                                       : stageResult.formattedTime || 'Время пока недоступно'}
                                     <small>
                                       От лидера: {gapFromLeader(stageResult, view.results)}
