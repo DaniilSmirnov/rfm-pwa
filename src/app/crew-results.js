@@ -38,7 +38,7 @@ export function crewResultClasses(results) {
 
 export function filterCrewResultsByClass(results, className = '') {
   const source = Array.isArray(results) ? results : [];
-  return className
+  return className && className !== '__all__'
     ? source.filter(result => String(result?.discipline?.name || '').trim() === className)
     : source;
 }

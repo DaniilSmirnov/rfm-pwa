@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
 import SelectField from '../components/SelectField.jsx';
+import { ArrowLeft, ChevronRight, Filter, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
@@ -12,6 +13,121 @@ function gapFromLeader(result, rows) {
   if (!leader || leader === result) return 'лидер';
   const difference = Math.max(0, Number(result?.time) - Number(leader.time));
   return `+${(difference / 1000).toFixed(1)} с`;
+}
+
+function retirementLabel(result) {
+  if (!result?.goingOff && !result?.goingOffAfterSu) return '';
+  return result.reasonGoingOff || (result.goingOffAfterSu ? 'Сход после спецучастка' : 'Сход');
+}
+
+function crewIdOf(result, resultLabel) {
+  return String(result?.crew?.id || result?.crew?.number || resultLabel(result));
+}
+
+function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
+  if (!crewResult) return null;
+  const crewId = crewIdOf(crewResult, resultLabel);
+  const stageResults = views.slice(1).map(view => ({
+    view,
+    result: view.results.find(item => crewIdOf(item, resultLabel) === crewId),
+  }));
+  const overallStatus = retirementLabel(crewResult);
+
+  return (
+    <Dialog.Root
+      open={Boolean(crewResult)}
+      onOpenChange={open => {
+        if (!open) onClose();
+      }}
+    >
+      <Dialog.Overlay className="crew-details-dialog-overlay" />
+      <Dialog.Content className="crew-details-dialog" aria-labelledby="crewDetailsTitle">
+        <div className="crew-details-page-head">
+          <Dialog.Close asChild>
+            <Button className="button crew-details-back" aria-label="Назад к результатам">
+              <ArrowLeft size={20} aria-hidden="true" />
+            </Button>
+          </Dialog.Close>
+          <Dialog.Title asChild>
+            <h2 id="crewDetailsTitle">Детали экипажа</h2>
+          </Dialog.Title>
+        </div>
+
+        <div className="crew-details-profile">
+          <div className="crew-details-profile-copy">
+            <div className="crew-details-identity">
+              <strong>#{crewResult.crew?.number || '—'}</strong>
+              <Star
+                className="crew-details-star"
+                size={24}
+                fill="currentColor"
+                aria-label="Избранный экипаж"
+              />
+            </div>
+            <strong className="crew-details-name">{resultLabel(crewResult)}</strong>
+            <span className="crew-details-car">
+              {crewResult.crew?.car || 'Автомобиль не указан'}
+            </span>
+            <span className="crew-details-class">
+              {crewResult.discipline?.name || 'Зачёт не указан'}
+            </span>
+          </div>
+          <div className="crew-details-car-image" aria-label="Фото автомобиля">
+            <span aria-hidden="true">RALLY</span>
+          </div>
+          <div className="crew-details-overall">
+            <strong>{overallStatus || `${crewResult.formattedFromLeader || '—'}`}</strong>
+            <span>к лидеру</span>
+          </div>
+        </div>
+
+        <div className="crew-details-tabs" role="tablist" aria-label="Детали результатов">
+          <Button className="active" role="tab" aria-selected="true">
+            По СУ
+          </Button>
+          <Button className="disabled" role="tab" aria-selected="false" disabled>
+            График позиции
+          </Button>
+        </div>
+
+        <div className="crew-details-stages">
+          <div
+            className="crew-details-stage-table"
+            role="table"
+            aria-label="Результаты по спецучасткам"
+          >
+            <div className="crew-details-stage-row crew-details-stage-header" role="row">
+              <span role="columnheader">СУ</span>
+              <span role="columnheader">Место</span>
+              <span role="columnheader">Время</span>
+              <span role="columnheader">Отставание</span>
+            </div>
+            {stageResults.length ? (
+              <div role="rowgroup">
+                {stageResults.map(({ view, result }) => {
+                  const status = retirementLabel(result);
+                  return (
+                    <div className="crew-details-stage-row" role="row" key={view.key}>
+                      <span role="cell">{view.name.replace(/^Спецучасток\s*/i, 'СУ')}</span>
+                      <span role="cell">{result ? view.results.indexOf(result) + 1 : '—'}</span>
+                      <span className={status ? 'retired' : ''} role="cell">
+                        {status || result?.formattedTime || '—'}
+                      </span>
+                      <span className={status ? 'retired' : ''} role="cell">
+                        {status || gapFromLeader(result, view.results)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="muted crew-details-empty">Данные по спецучасткам пока недоступны.</p>
+            )}
+          </div>
+        </div>
+      </Dialog.Content>
+    </Dialog.Root>
+  );
 }
 
 export default function CrewResultsModal({
@@ -37,6 +153,7 @@ export default function CrewResultsModal({
   const dialog = useRef(null);
   const searchRef = useRef(null);
   const [expandedCrew, setExpandedCrew] = useState('');
+  const [selectedCrew, setSelectedCrew] = useState(null);
   const followedIds = useMemo(
     () => new Set(subscriptions.map(item => String(item.crewId))),
     [subscriptions],
@@ -258,12 +375,114 @@ export default function CrewResultsModal({
     </>
   );
 
-  if (standalone)
-    return (
-      <section className="crew-results-inline" aria-label="Результаты экипажей">
-        {content}
-      </section>
-    );
+  const standaloneContent = (
+    <section className="crew-results-inline crew-results-mobile" aria-label="Результаты экипажей">
+      <div className="crew-results-mobile-controls">
+        <div className="crew-results-class-chips" aria-label="Класс">
+          <Button
+            className={!className ? 'active' : ''}
+            aria-pressed={!className}
+            onClick={() => onClassChange('')}
+          >
+            Абсолют
+          </Button>
+          {classes
+            .filter(name => name !== 'Абсолют')
+            .map(name => (
+              <Button
+                key={name}
+                className={className === name ? 'active' : ''}
+                aria-pressed={className === name}
+                onClick={() => onClassChange(name)}
+              >
+                {name}
+              </Button>
+            ))}
+          <Button
+            className={className === '__all__' ? 'active' : ''}
+            aria-pressed={className === '__all__'}
+            onClick={() => onClassChange('__all__')}
+          >
+            Все
+          </Button>
+        </div>
+        <div className="crew-results-search-row">
+          <SearchField
+            ref={searchRef}
+            id="crewResultsSearch"
+            placeholder="Поиск экипажа, пилота, номера…"
+            aria-label="Поиск экипажа"
+            value={query}
+            onChange={event => onQueryChange(event.target.value)}
+          />
+          <Button className="button crew-results-filter" aria-label="Фильтры">
+            <Filter size={18} aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
+      <div className="crew-results-mobile-list">
+        {rankedRows.length ? (
+          rankedRows.map(({ result }) => {
+            const id = crewIdOf(result, resultLabel);
+            const crew = result.crew || {};
+            const retired = retirementLabel(result);
+            const subscribed = subscriptions.some(
+              item => item.key === subscriptionKey(data.eventId, id),
+            );
+            const place = selectedClassResults.indexOf(result) + 1;
+            return (
+              <article
+                key={id}
+                className={`crew-result-card ${retired ? 'retired' : ''}`}
+                data-crew-row
+                data-search={`${crew.number || ''} ${resultLabel(result)} ${crew.car || ''} ${result?.discipline?.name || ''}`.toLocaleLowerCase(
+                  'ru',
+                )}
+              >
+                <Button
+                  type="button"
+                  className="crew-result-card-main"
+                  onClick={() => setSelectedCrew(result)}
+                  aria-label={`Открыть результаты экипажа ${resultLabel(result)}`}
+                >
+                  <span className="crew-result-card-place">{retired ? '—' : place}</span>
+                  <span className="crew-result-card-copy">
+                    <strong>
+                      №{crew.number || '—'} {resultLabel(result)}
+                    </strong>
+                    <small>{crew.car || 'Автомобиль не указан'}</small>
+                    <small>{retired || result?.discipline?.name || 'Зачёт не указан'}</small>
+                  </span>
+                  <span className="crew-result-card-time">
+                    {retired || result.formattedTime || '—'}
+                    {!retired && <small>{gapFromLeader(result, selectedClassResults)}</small>}
+                  </span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </Button>
+                <Button
+                  className={`button crew-result-star ${subscribed ? 'active' : ''}`}
+                  aria-label={`${subscribed ? 'Отписаться от экипажа' : 'Следить за экипажем'}: ${resultLabel(result)}`}
+                  onClick={() => void onToggleSubscription(result)}
+                >
+                  <Star size={18} fill={subscribed ? 'currentColor' : 'none'} aria-hidden="true" />
+                </Button>
+              </article>
+            );
+          })
+        ) : (
+          <p className="crew-results-empty">Экипажи по этому запросу не найдены.</p>
+        )}
+      </div>
+      <CrewDetailsDialog
+        crewResult={selectedCrew}
+        views={views}
+        resultLabel={resultLabel}
+        onClose={() => setSelectedCrew(null)}
+      />
+    </section>
+  );
+
+  if (standalone) return standaloneContent;
   return (
     <Dialog.Root
       open={open}

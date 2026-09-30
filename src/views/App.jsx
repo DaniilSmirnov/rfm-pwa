@@ -186,8 +186,6 @@ export default function App() {
       <TodayView app={app} onMap={() => activate('map')} onResults={() => activate('results')} />
     ) : tab === 'results' ? (
       <section className="results-tab-screen">
-        <h2>Результаты экипажей</h2>
-        <p>Смотри сохранённые результаты и обновляй данные, когда есть связь.</p>
         <CrewResults
           pkg={pkg}
           open={crewResultsOpen}
