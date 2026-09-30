@@ -24,6 +24,10 @@ for (const theme of ['light', 'dark']) {
       'background-color',
       'rgba(0, 0, 0, 0)',
     );
+    await page.getByRole('combobox', { name: 'Гонка на карте' }).focus();
+    await expect(page.locator('.map-rally-picker')).toHaveCSS('outline-style', 'solid');
+    await expect(page.locator('.map-rally-picker')).toHaveCSS('outline-width', '2px');
+    await page.getByRole('combobox', { name: 'Гонка на карте' }).blur();
     const map = await page.locator('.map-screen > .map').boundingBox();
     expect(map.height).toBe(844);
     const header = await page.locator('.map-floating-header').boundingBox();
