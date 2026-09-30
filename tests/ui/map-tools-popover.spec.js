@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { openApp, openMapWithAcceptedSafety, seedFixtureRace } from './helpers.js';
 
 for (const theme of ['light', 'dark']) {
-  test(`map tools drawer preserves positioning and dismissal (${theme})`, async ({ page }) => {
+  test(`map tools and favorites drawers preserve switching and dismissal (${theme})`, async ({ page }) => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
@@ -17,6 +17,18 @@ for (const theme of ['light', 'dark']) {
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#downloadMapBtn')).toBeEnabled();
     await expect(drawer).toHaveCSS('position', 'absolute');
+
+    const favoritesTrigger = page.getByRole('button', { name: 'Избранное' });
+    await favoritesTrigger.click();
+    const favoritesDrawer = page.locator('#mapFavoritesDrawer');
+    await expect(favoritesDrawer).toBeVisible();
+    await expect(favoritesTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(drawer).toBeHidden();
+    await expect(favoritesDrawer.getByText('ИЗБРАННЫЕ ТОЧКИ')).toBeVisible();
+
+    await trigger.click();
+    await expect(drawer).toBeVisible();
+    await expect(favoritesDrawer).toBeHidden();
 
     await page.locator('.map-screen > .map').click({ position: { x: 20, y: 300 } });
     await expect(drawer).toBeHidden();
