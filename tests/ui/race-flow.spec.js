@@ -4,6 +4,9 @@ import {
   openMapWithAcceptedSafety,
   openRaceManagement,
   seedFixtureRace,
+  selectMapPoint,
+  openFavoritesPanel,
+  openCarPanel,
   raceFixture,
 } from './helpers.js';
 
@@ -173,21 +176,13 @@ test.describe('saved race user flows', () => {
 
   test('renders rally point list', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await expect(page.locator('#pointList')).toContainText('Смотровая точка');
-    await expect(page.locator('#pointList')).toContainText('Парковка зрителей');
+    await expect(page.locator('.map-race-label').filter({ hasText: 'Смотровая точка' })).toBeVisible();
+    await expect(page.locator('.map-race-label').filter({ hasText: 'Парковка зрителей' })).toBeVisible();
   });
 
   test('opens actions for selected point', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page
-      .locator('.point-row')
-      .filter({ hasText: 'Смотровая точка' })
-      .locator('.point-row-copy')
-      .click();
+    await selectMapPoint(page);
     await expect(page.locator('#pointActions')).toBeVisible();
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await expect(page.locator('#pointName')).toHaveText('Смотровая точка');
@@ -200,62 +195,52 @@ test.describe('saved race user flows', () => {
 
   test('adds and removes point from favorites', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    const row = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
-    await row.locator('[data-nav="favorite"]').click();
+    await selectMapPoint(page);
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
+    await page.locator('#favoritePointBtn').click();
+    await page.getByRole('button', { name: 'Закрыть карточку точки' }).click();
+    await openFavoritesPanel(page);
     await expect(page.locator('#favoritesList')).toContainText('Смотровая точка');
     await page.locator('#favoritesList .point-row-copy').click();
     await expect(page.locator('#pointActions')).toBeVisible();
-    await page.locator('.map-screen > .map').click({ position: { x: 20, y: 300 } });
-    await expect(page.locator('#pointActions')).toBeHidden();
-    await openMapTools(page);
+    await page.getByRole('button', { name: 'Закрыть карточку точки' }).click();
+    await openFavoritesPanel(page);
     await page.locator('#favoritesList').getByRole('button', { name: 'Удалить' }).click();
-    await expect(page.locator('#favoritesList')).toContainText('Пока пусто');
+    await expect(page.locator('#favoritesList')).not.toContainText('Смотровая точка');
   });
 
   test('favorite state is reflected in point button', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    const row = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
-    const fav = row.locator('[data-nav="favorite"]');
+    await selectMapPoint(page);
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
+    const fav = page.locator('#favoritePointBtn');
     await fav.click();
-    await expect(
-      page
-        .locator('.point-row')
-        .filter({ hasText: 'Смотровая точка' })
-        .locator('[data-nav="favorite"]'),
-    ).toContainText('★ Избранное');
+    await expect(fav).toContainText('★ В избранном');
   });
 
   test('favorite survives page reload', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page
-      .locator('.point-row')
-      .filter({ hasText: 'Смотровая точка' })
-      .locator('[data-nav="favorite"]')
-      .click();
+    await selectMapPoint(page);
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
+    await page.locator('#favoritePointBtn').click();
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
-    await openMapTools(page);
+    await openMap(page);
+    await openFavoritesPanel(page);
     await expect(page.locator('#favoritesList')).toContainText('Смотровая точка');
   });
 
   test('copies point coordinates', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    const row = page.locator('.point-row').filter({ hasText: 'Смотровая точка' });
-    await row.locator('[data-nav="copy"]').click();
+    await selectMapPoint(page);
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
+    await page.locator('#copyCoordsBtn').click();
     await expect.poll(() => page.evaluate(() => window.__copied)).toContain('61.702000');
   });
 
   test('saves current geolocation as car position', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
+    await openCarPanel(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await expect(page.locator('#carCoords')).toContainText('61.700000');
@@ -264,19 +249,20 @@ test.describe('saved race user flows', () => {
 
   test('saved car position survives page reload', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
+    await openCarPanel(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
-    await openMapTools(page);
+    await openMap(page);
+    await openCarPanel(page);
     await expect(page.locator('#carPointCard')).toBeVisible();
     await expect(page.locator('#carCoords')).toContainText('61.700000');
   });
 
   test('opens spectator compass for saved car', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
+    await openCarPanel(page);
     await page.locator('#saveCarBtn').click();
     await page.locator('#carCompassBtn').click();
     await expect(page.locator('#pointActions')).toBeVisible();
@@ -288,7 +274,7 @@ test.describe('saved race user flows', () => {
 
   test('deletes saved car position', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
+    await openCarPanel(page);
     await page.locator('#saveCarBtn').click();
     await expect(page.locator('#carPointCard')).toBeVisible();
     await page.locator('#carDeleteBtn').click();
@@ -310,9 +296,9 @@ test.describe('saved race user flows', () => {
 
   test('clear all removes offline race and favorites', async ({ page }) => {
     await openMap(page);
-    await openMapTools(page);
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page.locator('.point-row').first().locator('[data-nav="favorite"]').click();
+    await selectMapPoint(page);
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
+    await page.locator('#favoritePointBtn').click();
     await openRaceManagement(page);
     page.once('dialog', dialog => dialog.accept());
     await page.locator('#clearBtn').click();
