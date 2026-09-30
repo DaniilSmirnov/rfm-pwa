@@ -9,12 +9,20 @@ export default function FavoritesList({ app }) {
     <>
       {app.favorites.map(point => (
         <article className="favorite-row" key={point.key || coordinateText(point)}>
-          <div className="point-row-copy" onClick={() => app.showPoint(point)}>
+          <div
+            className="point-row-copy"
+            data-point-opener="true"
+            onClick={() => app.showPoint(point)}
+          >
             <strong>★ {point.name}</strong>
             <span className="muted">{coordinateText(point)}</span>
           </div>
           <div className="point-nav-buttons">
-            <Button className="button compact primary" onClick={() => app.showPoint(point)}>
+            <Button
+              className="button compact primary"
+              data-point-opener="true"
+              onClick={() => app.showPoint(point)}
+            >
               Открыть
             </Button>
             <Button

@@ -112,3 +112,42 @@ for (const theme of ['light', 'dark']) {
     await page.screenshot({ path: testInfo.outputPath(`more-${theme}.png`), fullPage: true });
   });
 }
+
+test('supports real touch swipes on the mobile point sheet', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'requires Chromium touch input');
+  await openApp(page);
+  await seedFixtureRace(page, {
+    pointProperties: { photo: '/assets/safety/corner-jump.webp' },
+  });
+  await openMapWithAcceptedSafety(page);
+  await page.getByRole('button', { name: 'Инструменты карты' }).click();
+  await page.getByText('ГДЕ СМОТРЕТЬ?').click();
+  await page
+    .locator('.point-row')
+    .filter({ hasText: 'Смотровая точка' })
+    .locator('.point-row-copy')
+    .click();
+  const sheet = page.locator('#pointActions');
+  await expect(sheet).toBeVisible();
+  const cdp = await page.context().newCDPSession(page);
+  const swipe = async (box, endY) => {
+    const x = box.x + box.width / 2;
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y: box.y + 24, id: 1 }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x, y: endY, id: 1 }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  };
+  const summaryBox = await sheet.locator('.point-actions-copy').boundingBox();
+  await swipe(summaryBox, summaryBox.y - 72);
+  await expect(page.locator('#mapPointDetails')).toBeVisible();
+  const handleBox = await page
+    .getByRole('button', { name: 'Свернуть карточку точки' })
+    .boundingBox();
+  await swipe(handleBox, handleBox.y + 72);
+  await expect(sheet).toBeHidden();
+});
