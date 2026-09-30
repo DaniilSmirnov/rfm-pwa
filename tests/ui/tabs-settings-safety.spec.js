@@ -11,7 +11,7 @@ test.describe('Today tab and settings flows', () => {
 
   test('moves settings and diagnostics to a separate screen in More', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
     await expect(page.getByRole('heading', { name: 'Настройки и диагностика' })).toBeVisible();
     await expect(page.locator('#settingsSection')).toBeVisible();
@@ -24,7 +24,7 @@ test.describe('Today tab and settings flows', () => {
 
   test('switches the app theme from settings and remembers it after reload', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
     await page.getByRole('button', { name: '☾ Тёмная' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -36,7 +36,7 @@ test.describe('Today tab and settings flows', () => {
 
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
     await page.getByRole('button', { name: '☀ Светлая' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -45,7 +45,7 @@ test.describe('Today tab and settings flows', () => {
 
   test('keeps safety rules out of settings', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
     await expect(page.getByRole('button', { name: 'Открыть правила безопасности' })).toHaveCount(0);
     await expect(
@@ -123,7 +123,7 @@ test.describe('Today tab and settings flows', () => {
     const lightPanel = await page
       .locator('.safety-main-rules')
       .evaluate(element => getComputedStyle(element).backgroundColor);
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
     await page.getByRole('button', { name: '☾ Тёмная' }).click();
     await page.getByRole('button', { name: 'Карта' }).click();
