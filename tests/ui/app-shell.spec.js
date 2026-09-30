@@ -8,7 +8,7 @@ const release = {
 };
 
 async function openRaceManagement(page) {
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
 }
 
@@ -17,7 +17,7 @@ test.describe('app shell and catalog', () => {
     await openApp(page);
     await expect(page).toHaveTitle('Rally Fans Map Offline');
     await expect(page.locator('.app-footer')).toBeHidden();
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await expect(page.locator('.app-footer')).toContainText(release.version);
     await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
   });
@@ -28,7 +28,7 @@ test.describe('app shell and catalog', () => {
     await expect(installPrompt).toBeVisible();
     await expect(installPrompt.getByRole('button')).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await expect(installPrompt).toBeHidden();
     await expect(installPrompt.getByRole('button')).toBeHidden();
   });
