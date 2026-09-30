@@ -1025,5 +1025,4 @@ describe('application components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
     expect(onBack).toHaveBeenCalledOnce();
   });
-
 });
