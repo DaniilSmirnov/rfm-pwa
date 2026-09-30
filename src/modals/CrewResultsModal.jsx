@@ -44,35 +44,40 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
     >
       <Dialog.Portal>
         <Dialog.Overlay className="crew-details-dialog-overlay" />
-        <Dialog.Content className="crew-details-dialog" aria-label="Детали экипажа">
+        <Dialog.Content className="crew-details-dialog" aria-labelledby="crewDetailsDialogTitle">
           <ScreenHeader title="Детали экипажа" onBack={onClose} />
+          <Dialog.Title asChild>
+            <span id="crewDetailsDialogTitle" className="sr-only">
+              Детали экипажа
+            </span>
+          </Dialog.Title>
 
           <div className="crew-details-profile">
-          <div className="crew-details-profile-copy">
-            <div className="crew-details-identity">
-              <strong>#{crewResult.crew?.number || '—'}</strong>
-              <Star
-                className="crew-details-star"
-                size={24}
-                fill="currentColor"
-                aria-label="Избранный экипаж"
-              />
+            <div className="crew-details-profile-copy">
+              <div className="crew-details-identity">
+                <strong>#{crewResult.crew?.number || '—'}</strong>
+                <Star
+                  className="crew-details-star"
+                  size={24}
+                  fill="currentColor"
+                  aria-label="Избранный экипаж"
+                />
+              </div>
+              <strong className="crew-details-name">{resultLabel(crewResult)}</strong>
+              <span className="crew-details-car">
+                {crewResult.crew?.car || 'Автомобиль не указан'}
+              </span>
+              <span className="crew-details-class">
+                {crewResult.discipline?.name || 'Зачёт не указан'}
+              </span>
             </div>
-            <strong className="crew-details-name">{resultLabel(crewResult)}</strong>
-            <span className="crew-details-car">
-              {crewResult.crew?.car || 'Автомобиль не указан'}
-            </span>
-            <span className="crew-details-class">
-              {crewResult.discipline?.name || 'Зачёт не указан'}
-            </span>
-          </div>
-          <div className="crew-details-car-image" aria-label="Фото автомобиля">
-            <span aria-hidden="true">RALLY</span>
-          </div>
-          <div className="crew-details-overall">
-            <strong>{overallStatus || `${crewResult.formattedFromLeader || '—'}`}</strong>
-            <span>к лидеру</span>
-          </div>
+            <div className="crew-details-car-image" aria-label="Фото автомобиля">
+              <span aria-hidden="true">RALLY</span>
+            </div>
+            <div className="crew-details-overall">
+              <strong>{overallStatus || `${crewResult.formattedFromLeader || '—'}`}</strong>
+              <span>к лидеру</span>
+            </div>
           </div>
 
           <div className="crew-details-tabs" role="tablist" aria-label="Детали результатов">
@@ -85,39 +90,39 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
           </div>
 
           <div className="crew-details-stages">
-          <div
-            className="crew-details-stage-table"
-            role="table"
-            aria-label="Результаты по спецучасткам"
-          >
-            <div className="crew-details-stage-row crew-details-stage-header" role="row">
-              <span role="columnheader">СУ</span>
-              <span role="columnheader">Место</span>
-              <span role="columnheader">Время</span>
-              <span role="columnheader">Отставание</span>
-            </div>
-            {stageResults.length ? (
-              <div role="rowgroup">
-                {stageResults.map(({ view, result }) => {
-                  const status = retirementLabel(result);
-                  return (
-                    <div className="crew-details-stage-row" role="row" key={view.key}>
-                      <span role="cell">{view.name.replace(/^Спецучасток\s*/i, 'СУ')}</span>
-                      <span role="cell">{result ? view.results.indexOf(result) + 1 : '—'}</span>
-                      <span className={status ? 'retired' : ''} role="cell">
-                        {status || result?.formattedTime || '—'}
-                      </span>
-                      <span className={status ? 'retired' : ''} role="cell">
-                        {status || gapFromLeader(result, view.results)}
-                      </span>
-                    </div>
-                  );
-                })}
+            <div
+              className="crew-details-stage-table"
+              role="table"
+              aria-label="Результаты по спецучасткам"
+            >
+              <div className="crew-details-stage-row crew-details-stage-header" role="row">
+                <span role="columnheader">СУ</span>
+                <span role="columnheader">Место</span>
+                <span role="columnheader">Время</span>
+                <span role="columnheader">Отставание</span>
               </div>
-            ) : (
-              <p className="muted crew-details-empty">Данные по спецучасткам пока недоступны.</p>
-            )}
-          </div>
+              {stageResults.length ? (
+                <div role="rowgroup">
+                  {stageResults.map(({ view, result }) => {
+                    const status = retirementLabel(result);
+                    return (
+                      <div className="crew-details-stage-row" role="row" key={view.key}>
+                        <span role="cell">{view.name.replace(/^Спецучасток\s*/i, 'СУ')}</span>
+                        <span role="cell">{result ? view.results.indexOf(result) + 1 : '—'}</span>
+                        <span className={status ? 'retired' : ''} role="cell">
+                          {status || result?.formattedTime || '—'}
+                        </span>
+                        <span className={status ? 'retired' : ''} role="cell">
+                          {status || gapFromLeader(result, view.results)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="muted crew-details-empty">Данные по спецучасткам пока недоступны.</p>
+              )}
+            </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -432,6 +437,10 @@ export default function CrewResultsModal({
                 data-search={`${crew.number || ''} ${resultLabel(result)} ${crew.car || ''} ${result?.discipline?.name || ''}`.toLocaleLowerCase(
                   'ru',
                 )}
+                onClick={event => {
+                  if (event.target.closest('.crew-result-star')) return;
+                  setSelectedCrew(result);
+                }}
               >
                 <div className="crew-result-card-leading">
                   <span className="crew-result-card-place">{retired ? '—' : place}</span>

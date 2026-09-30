@@ -324,6 +324,7 @@
     align-items: stretch;
     border-bottom: 1px solid #e5e6e8;
     background: transparent;
+    cursor: pointer;
   }
   .crew-result-card.retired {
     background: transparent;

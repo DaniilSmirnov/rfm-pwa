@@ -174,7 +174,7 @@ export function nextRaceDownloadSuggestion(pkg, catalog, now = new Date()) {
   return packageRaceId(pkg) === Number(next.id) ? null : next;
 }
 
-export default function TodayView({ app, onMap, onResults }) {
+export default function TodayView({ app, onMap, onResults, onRaces }) {
   const [now, setNow] = useState(() => new Date());
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
   useEffect(() => {
@@ -224,9 +224,9 @@ export default function TodayView({ app, onMap, onResults }) {
       <Button
         className="button primary today-storage-recommendation-action"
         type="button"
-        onClick={() => void app.deleteRace(previousPackage.id)}
+        onClick={onRaces}
       >
-        Удалить предыдущий Rally Pack
+        Управление картами
       </Button>
     </Notice>
   );
