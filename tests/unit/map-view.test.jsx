@@ -12,7 +12,7 @@ vi.mock('../../src/db.js', () => ({
 afterEach(cleanup);
 
 describe('MapView enhancements', () => {
-  it('keeps map tools popover callbacks and focus behavior accessible', () => {
+  it('keeps separate map tools and favorites panels accessible', () => {
     const app = {
       currentPackage: null,
       packages: [],
@@ -59,6 +59,18 @@ describe('MapView enhancements', () => {
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Скачать офлайн-карту' }));
     expect(app.downloadMap).toHaveBeenCalledOnce();
+
+    const favoritesTrigger = screen.getByRole('button', { name: 'Избранное' });
+    fireEvent.click(favoritesTrigger);
+    const favoritesDrawer = document.getElementById('mapFavoritesDrawer');
+    expect(favoritesDrawer.hidden).toBe(false);
+    expect(favoritesTrigger.getAttribute('aria-expanded')).toBe('true');
+    expect(drawer.hidden).toBe(true);
+    expect(within(favoritesDrawer).getByText('ИЗБРАННЫЕ ТОЧКИ')).toBeTruthy();
+
+    fireEvent.click(trigger);
+    expect(drawer.hidden).toBe(false);
+    expect(favoritesDrawer.hidden).toBe(true);
 
     fireEvent.pointerDown(document.body);
     expect(drawer.hidden).toBe(true);
