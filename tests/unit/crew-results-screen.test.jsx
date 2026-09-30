@@ -71,7 +71,9 @@ describe('inline results screen', () => {
   it('opens all stage results in the crew details modal', () => {
     renderResults();
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
-    expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
+    const dialog = screen.getByRole('dialog', { name: 'Детали экипажа' });
+    expect(dialog).toBeTruthy();
+    expect(within(dialog).getByRole('heading', { name: 'Детали экипажа' })).toBeTruthy();
     expect(screen.getByText('СУ 1')).toBeTruthy();
     expect(screen.getByText('00:00:50')).toBeTruthy();
   });
