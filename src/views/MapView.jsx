@@ -47,7 +47,12 @@ export default function MapView({
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
   const pointSheetRef = useRef(null);
-  const pointSheetGesture = useRef({ startY: null, suppressClick: false });
+  const pointSheetGesture = useRef({
+    startY: null,
+    startScrollTop: 0,
+    suppressClick: false,
+    resetTimer: null,
+  });
   const selectedPointRef = useRef(app.selectedPoint);
   selectedPointRef.current = app.selectedPoint;
   const pkg = app.currentPackage;
@@ -92,7 +97,14 @@ export default function MapView({
     );
     if (interactiveTarget && !handleTarget) return;
     const source = event.touches?.[0] || event;
-    pointSheetGesture.current = { startY: source.clientY, suppressClick: false };
+    if (pointSheetGesture.current.resetTimer != null)
+      window.clearTimeout(pointSheetGesture.current.resetTimer);
+    pointSheetGesture.current = {
+      startY: source.clientY,
+      startScrollTop: pointSheetRef.current?.scrollTop || 0,
+      suppressClick: false,
+      resetTimer: null,
+    };
     handleTarget?.setPointerCapture?.(event.pointerId);
     if (!handleTarget) event.currentTarget.setPointerCapture?.(event.pointerId);
   };
@@ -104,8 +116,20 @@ export default function MapView({
     if (startY == null) return;
     const delta = source.clientY - startY;
     if (Math.abs(delta) < 36) return;
+    if (
+      delta > 0 &&
+      pointDetailsOpen &&
+      (pointSheetRef.current?.scrollTop > 0 || pointSheetGesture.current.startScrollTop > 0)
+    )
+      return;
     event.preventDefault?.();
     pointSheetGesture.current.suppressClick = true;
+    if (pointSheetGesture.current.resetTimer != null)
+      window.clearTimeout(pointSheetGesture.current.resetTimer);
+    pointSheetGesture.current.resetTimer = window.setTimeout(() => {
+      pointSheetGesture.current.suppressClick = false;
+      pointSheetGesture.current.resetTimer = null;
+    }, 500);
     if (delta > 0) {
       if (pointDetailsOpen) setPointDetailsOpen(false);
       else app.showPoint?.(null);
@@ -113,7 +137,14 @@ export default function MapView({
   };
   const cancelPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
-    pointSheetGesture.current = { startY: null, suppressClick: false };
+    if (pointSheetGesture.current.resetTimer != null)
+      window.clearTimeout(pointSheetGesture.current.resetTimer);
+    pointSheetGesture.current = {
+      startY: null,
+      startScrollTop: 0,
+      suppressClick: false,
+      resetTimer: null,
+    };
   };
   useEffect(() => {
     if (!app.selectedPoint) return undefined;
@@ -516,6 +547,19 @@ export default function MapView({
             onTouchStart={beginPointSheetGesture}
             onTouchEnd={endPointSheetGesture}
             onTouchCancel={cancelPointSheetGesture}
+            onClickCapture={event => {
+              if (!pointSheetGesture.current.suppressClick) return;
+              event.preventDefault();
+              event.stopPropagation();
+              if (pointSheetGesture.current.resetTimer != null)
+                window.clearTimeout(pointSheetGesture.current.resetTimer);
+              pointSheetGesture.current = {
+                startY: null,
+                startScrollTop: 0,
+                suppressClick: false,
+                resetTimer: null,
+              };
+            }}
           >
             <Button
               className="map-point-sheet-handle"

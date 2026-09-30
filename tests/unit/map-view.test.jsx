@@ -135,10 +135,16 @@ describe('MapView enhancements', () => {
     fireEvent.touchEnd(photoLink, { changedTouches: [{ clientY: 260 }] });
     expect(document.getElementById('mapPointDetails').hidden).toBe(false);
 
+    const sheet = screen.getByRole('dialog');
+    Object.defineProperty(sheet, 'scrollTop', { configurable: true, value: 24, writable: true });
+    fireEvent.touchStart(sheet, { touches: [{ clientY: 140 }] });
+    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] });
+    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
+    sheet.scrollTop = 0;
+
     // Gestures must work from the whole sheet, and collapse in two steps.
     fireEvent.click(screen.getByRole('button', { name: 'Свернуть карточку точки' }));
     expect(document.getElementById('mapPointDetails').hidden).toBe(true);
-    const sheet = screen.getByRole('dialog');
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 230 }] });
     expect(document.getElementById('mapPointDetails').hidden).toBe(true);
@@ -153,6 +159,16 @@ describe('MapView enhancements', () => {
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] });
     expect(document.getElementById('mapPointDetails').hidden).toBe(true);
     expect(app.showPoint).not.toHaveBeenCalledWith(null);
+    const compactHandleAfterSwipe = within(sheet).getByRole('button', {
+      name: 'Развернуть карточку точки',
+    });
+    fireEvent.click(compactHandleAfterSwipe);
+    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
+    fireEvent.click(compactHandleAfterSwipe);
+    expect(document.getElementById('mapPointDetails').hidden).toBe(false);
+    fireEvent.touchStart(sheet, { touches: [{ clientY: 140 }] });
+    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] });
+    expect(document.getElementById('mapPointDetails').hidden).toBe(true);
     fireEvent.touchStart(sheet, { touches: [{ clientY: 260 }] });
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 380 }] });
     expect(app.showPoint).toHaveBeenCalledWith(null);
