@@ -76,16 +76,6 @@ export default function MoreSectionView({ sectionId, app, onBack, onOpenResults 
 
   return (
     <section className="more-section-view" aria-label={title || 'Раздел гонки'}>
-      <header className="more-section-header">
-        <Button className="button compact" type="button" onClick={onBack}>
-          ← Ещё
-        </Button>
-        <div>
-          <p className="more-section-kicker">{pkg?.name || 'Текущая гонка'}</p>
-          <h2>{title || 'Раздел гонки'}</h2>
-        </div>
-      </header>
-
       {!pkg ? (
         <EmptyState>Сначала выбери гонку в шапке, чтобы открыть её разделы.</EmptyState>
       ) : sectionId === 'eventInfo' ? (
