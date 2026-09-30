@@ -12,6 +12,7 @@ import {
   savePackage,
 } from '../db.js';
 import { requestCrewResultsBackgroundRefresh } from '../app/runtime.js';
+import { asmgRaceIdForPackage } from '../app/asmg-race-map.js';
 import {
   crewResultClasses,
   crewResultViews,
@@ -32,9 +33,7 @@ const resultLabel = result =>
 const subscriptionKey = (raceId, crewId) => `${raceId}:${crewId}`;
 
 export default function CrewResults({ pkg, open = false, onOpen, onClose, standalone = false }) {
-  const asmgRaceId = String(
-    pkg?.asmgRaceId ?? pkg?.original?.asmg_id ?? pkg?.original?.asmgId ?? '55',
-  );
+  const asmgRaceId = asmgRaceIdForPackage(pkg);
   const [raceId, setRaceId] = useState(asmgRaceId);
   const [data, setData] = useState(() =>
     pkg?.crewResults?.eventResults
