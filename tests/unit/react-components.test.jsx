@@ -893,6 +893,7 @@ describe('application components', () => {
   });
 
   it('mounts the app, switches tabs, opens settings, and reveals diagnostics by logo taps', async () => {
+    history.replaceState({}, '', '/');
     window.scrollTo = vi.fn();
     HTMLElement.prototype.scrollIntoView = vi.fn();
     const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
