@@ -51,6 +51,13 @@ describe('shared UI primitives', () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
+  it('forwards refs to the native button for Radix asChild triggers', () => {
+    const ref = React.createRef();
+    render(<Button ref={ref}>Tools</Button>);
+    const button = screen.getByRole('button', { name: 'Tools' });
+    expect(ref.current).toBe(button);
+  });
+
   it('renders action groups, badges, and panels with chosen semantics', () => {
     render(
       <>
