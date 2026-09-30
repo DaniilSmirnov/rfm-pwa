@@ -28,9 +28,9 @@ export function useEdgeSwipeBack(onBack, enabled = true) {
   }, [enabled, onBack]);
 }
 
-export default function ScreenHeader({ title, onBack }) {
+export default function ScreenHeader({ title, onBack, safeArea = true }) {
   return (
-    <header className="screen-header" aria-label={title}>
+    <header className={`screen-header${safeArea ? "" : " screen-header-no-safe-area"}`} aria-label={title}>
       <Button
         className="screen-header-back"
         type="button"
