@@ -1,6 +1,21 @@
 import { test, expect } from '@playwright/test';
 import { openApp, openMapWithAcceptedSafety } from './helpers.js';
 
+test('uses the same orange icon-only active state for every tab', async ({ page }) => {
+  const tabs = ['Сегодня', 'Карта', 'Результаты', 'Ещё'];
+  let activeColor = null;
+
+  for (const label of tabs) {
+    const button = page.locator('.bottom-tabbar').getByRole('button', { name: label });
+    await button.click();
+    await expect(button).toHaveClass(/active/);
+    await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    const iconColor = await button.locator('svg').evaluate(node => getComputedStyle(node).color);
+    activeColor ??= iconColor;
+    expect(iconColor).toBe(activeColor);
+  }
+});
+
 test('switches between offline-first main tabs', async ({ page }) => {
   await openApp(page);
   await expect(page.getByRole('navigation', { name: 'Основная навигация' })).toBeVisible();
