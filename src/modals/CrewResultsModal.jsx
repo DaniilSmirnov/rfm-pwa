@@ -4,7 +4,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import SearchField from '../components/SearchField.jsx';
 import Button from '../components/Button.jsx';
 import SelectField from '../components/SelectField.jsx';
-import { ArrowLeft, ChevronRight, Filter, Star } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
@@ -18,6 +18,23 @@ function gapFromLeader(result, rows) {
 function retirementLabel(result) {
   if (!result?.goingOff && !result?.goingOffAfterSu) return '';
   return result.reasonGoingOff || (result.goingOffAfterSu ? 'Сход после спецучастка' : 'Сход');
+}
+
+function retirementDetails(result, views, resultLabel) {
+  const reason = retirementLabel(result);
+  if (!reason) return null;
+  const crewId = crewIdOf(result, resultLabel);
+  const stage = views
+    .slice(1)
+    .map(view => ({
+      view,
+      result: view.results.find(item => crewIdOf(item, resultLabel) === crewId),
+    }))
+    .find(item => retirementLabel(item.result));
+  return {
+    reason,
+    place: stage?.view?.name || 'Место схода не указано',
+  };
 }
 
 function crewIdOf(result, resultLabel) {
@@ -415,9 +432,6 @@ export default function CrewResultsModal({
             value={query}
             onChange={event => onQueryChange(event.target.value)}
           />
-          <Button className="button crew-results-filter" aria-label="Фильтры">
-            <Filter size={18} aria-hidden="true" />
-          </Button>
         </div>
       </div>
       <div className="crew-results-mobile-list">
@@ -425,7 +439,7 @@ export default function CrewResultsModal({
           rankedRows.map(({ result }) => {
             const id = crewIdOf(result, resultLabel);
             const crew = result.crew || {};
-            const retired = retirementLabel(result);
+            const retirement = retirementDetails(result, views, resultLabel);
             const subscribed = subscriptions.some(
               item => item.key === subscriptionKey(data.eventId, id),
             );
@@ -433,7 +447,7 @@ export default function CrewResultsModal({
             return (
               <article
                 key={id}
-                className={`crew-result-card ${retired ? 'retired' : ''}`}
+                className="crew-result-card"
                 data-crew-row
                 data-search={`${crew.number || ''} ${resultLabel(result)} ${crew.car || ''} ${result?.discipline?.name || ''}`.toLocaleLowerCase(
                   'ru',
@@ -445,22 +459,31 @@ export default function CrewResultsModal({
                   onClick={() => setSelectedCrew(result)}
                   aria-label={`Открыть результаты экипажа ${resultLabel(result)}`}
                 >
-                  <span className="crew-result-card-place">{retired ? '—' : place}</span>
+                  <span className="crew-result-card-place">{retirement ? '—' : place}</span>
                   <span className="crew-result-card-copy">
                     <strong>
                       №{crew.number || '—'} {resultLabel(result)}
                     </strong>
                     <small>{crew.car || 'Автомобиль не указан'}</small>
-                    <small>{retired || result?.discipline?.name || 'Зачёт не указан'}</small>
+                    <small>{result?.discipline?.name || 'Зачёт не указан'}</small>
                   </span>
                   <span className="crew-result-card-time">
-                    {retired || result.formattedTime || '—'}
-                    {!retired && <small>{gapFromLeader(result, selectedClassResults)}</small>}
+                    {retirement ? (
+                      <>
+                        <strong>{retirement.reason}</strong>
+                        <small>{retirement.place}</small>
+                      </>
+                    ) : (
+                      <>
+                        {result.formattedTime || '—'}
+                        <small>{gapFromLeader(result, selectedClassResults)}</small>
+                      </>
+                    )}
                   </span>
                   <ChevronRight size={18} aria-hidden="true" />
                 </Button>
                 <Button
-                  className={`button crew-result-star ${subscribed ? 'active' : ''}`}
+                  className={`crew-result-star ${subscribed ? 'active' : ''}`}
                   aria-label={`${subscribed ? 'Отписаться от экипажа' : 'Следить за экипажем'}: ${resultLabel(result)}`}
                   onClick={() => void onToggleSubscription(result)}
                 >
