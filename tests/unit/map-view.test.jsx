@@ -49,6 +49,7 @@ describe('MapView enhancements', () => {
     const drawer = document.getElementById('mapToolsDrawer');
     expect(drawer.hidden).toBe(false);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(within(drawer).getByText('ИНСТРУМЕНТЫ КАРТЫ')).toBeTruthy();
 
     fireEvent.click(trigger);
     expect(drawer.hidden).toBe(true);
