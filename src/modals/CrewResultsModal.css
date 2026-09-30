@@ -111,7 +111,7 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    background: #f3f4f5;
+    background: transparent;
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
@@ -229,7 +229,7 @@
     top: 0;
     z-index: 2;
     padding: 10px 0;
-    background: var(--surface, #fff);
+    background: transparent;
   }
   .crew-results-inline .crew-results-table-wrap {
     max-height: min(65vh, 720px);
@@ -243,7 +243,7 @@
     font-size: 11px;
   }
   .crew-stage-details td {
-    background: rgba(100, 116, 139, 0.07);
+    background: transparent;
   }
   .crew-stage-details ol {
     display: grid;
@@ -270,7 +270,7 @@
     top: 0;
     z-index: 3;
     padding: 4px 0 12px;
-    background: var(--surface, #fff);
+    background: transparent;
   }
   .crew-results-class-chips {
     display: flex;
@@ -319,15 +319,25 @@
   }
   .crew-result-card {
     position: relative;
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: stretch;
     border-bottom: 1px solid #e5e6e8;
-    background: var(--surface, #fff);
+    background: transparent;
   }
   .crew-result-card.retired {
-    background: #fff6e3;
+    background: transparent;
+  }
+  .crew-result-card-leading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 58px;
   }
   .crew-result-card-main {
     display: grid;
-    grid-template-columns: 30px minmax(0, 1fr) minmax(84px, 34%) 18px;
+    grid-template-columns: minmax(0, 1fr) minmax(84px, 34%) 18px;
     gap: 8px;
     align-items: center;
     width: 100%;
@@ -344,7 +354,7 @@
     color: #50555d;
     font-size: 14px;
     font-variant-numeric: tabular-nums;
-    text-align: center;
+    text-align: right;
   }
   .crew-result-card-copy {
     min-width: 0;
@@ -382,9 +392,6 @@
     font-weight: 600;
   }
   .crew-result-star {
-    position: absolute;
-    top: 8px;
-    left: 4px;
     display: grid;
     place-items: center;
     width: 24px;
@@ -393,19 +400,22 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: #f2b900;
+    color: var(--brand-orange);
+    box-shadow: none;
+  }
+  .crew-result-star:hover,
+  .crew-result-star:focus-visible {
+    background: transparent;
+    color: var(--brand-orange);
   }
   .crew-result-card.retired .crew-result-card-time {
-    color: var(--brand-orange, #b27300);
+    color: var(--brand-orange);
     font-weight: 400;
     white-space: normal;
     overflow-wrap: anywhere;
   }
   .crew-result-star.active {
-    color: #e8aa00;
-  }
-  .crew-result-card:has(.crew-result-star) .crew-result-card-main {
-    padding-left: 34px;
+    color: var(--brand-orange);
   }
   .crew-results-mobile .crew-results-empty {
     padding: 30px 10px;
@@ -425,15 +435,18 @@
   :root[data-theme='dark'] .crew-results-mobile-controls,
   :root[data-theme='dark'] .crew-result-card,
   :root[data-theme='dark'] .crew-details-dialog {
-    background: var(--surface, #111418);
+    background: transparent;
     color: #f5f7fa;
+  }
+  :root[data-theme='dark'] .crew-details-dialog {
+    background: #111418;
   }
   :root[data-theme='dark'] .crew-result-card,
   :root[data-theme='dark'] .crew-results-mobile-list {
     border-color: #30353d;
   }
   :root[data-theme='dark'] .crew-result-card.retired {
-    background: #352a16;
+    background: transparent;
   }
   :root[data-theme='dark'] .crew-results-class-chips button {
     border-color: #30353d;
@@ -530,7 +543,7 @@
     text-align: right;
   }
   .crew-details-overall strong {
-    color: #df2630;
+    color: var(--brand-orange);
     font-size: 17px;
     font-variant-numeric: tabular-nums;
   }
@@ -553,8 +566,8 @@
     font-size: 12px;
   }
   .crew-details-tabs button.active {
-    border-color: #e52b2f;
-    background: #e52b2f;
+    border-color: var(--brand-orange);
+    background: var(--brand-orange);
     color: #fff;
   }
   .crew-details-tabs button.disabled {
@@ -593,7 +606,7 @@
     text-align: right;
   }
   .crew-details-stage-row .retired {
-    color: #df2630;
+    color: var(--brand-orange);
     font-size: 10px;
     font-weight: 700;
   }
