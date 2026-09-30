@@ -16,7 +16,7 @@ for (const theme of ['light', 'dark']) {
     await expect(drawer).toBeVisible();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#downloadMapBtn')).toBeEnabled();
-    await expect(drawer).toHaveCSS('position', 'static');
+    await expect(drawer).toHaveCSS('position', 'absolute');
 
     await page.locator('.map-screen > .map').click({ position: { x: 20, y: 300 } });
     await expect(drawer).toBeHidden();
