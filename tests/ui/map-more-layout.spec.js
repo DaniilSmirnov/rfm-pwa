@@ -85,7 +85,7 @@ for (const theme of ['light', 'dark']) {
     await selectMapPoint(page);
     await expect(page.locator('#pointActions')).toBeVisible();
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
-    await page.getByRole('button', { name: 'Меню', exact: true }).click();
+    await page.getByRole('button', { name: 'Ещё', exact: true }).click();
     const gaps = await page.locator('.more-menu-grid').evaluateAll(groups =>
       groups.flatMap(group => {
         const rows = [...group.querySelectorAll('.more-menu-row')];

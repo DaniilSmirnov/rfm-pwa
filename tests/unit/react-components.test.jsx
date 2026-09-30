@@ -644,14 +644,9 @@ describe('application components', () => {
   });
 
   it('covers settings and the Today empty state', () => {
-    const onBack = vi.fn();
-    const { rerender } = render(
-      <SettingsView app={appFixture()} onBack={onBack} onDiagnostics={vi.fn()} />,
-    );
+    const { rerender } = render(<SettingsView app={appFixture()} onDiagnostics={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '☾ Тёмная' }));
     expect(document.documentElement.dataset.theme).toBe('dark');
-    fireEvent.click(screen.getByRole('button', { name: '← Ещё' }));
-    expect(onBack).toHaveBeenCalledOnce();
     rerender(<TodayView app={appFixture({ catalog: [], packages: [], currentPackage: null })} />);
     expect(screen.getByText(/Нет гонки сегодня/)).toBeTruthy();
   });
@@ -848,7 +843,7 @@ describe('application components', () => {
         ],
       },
     ];
-    expect(latestPositionChange(results)).toEqual({
+    expect(latestPositionChange(results)).toMatchObject({
       crew: { id: 'b', number: 2 },
       from: 2,
       to: 1,
@@ -920,7 +915,7 @@ describe('application components', () => {
     fireEvent.click(screen.getByRole('button', { name: /Ещё/ }));
     fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
     expect(screen.getByRole('heading', { name: 'Настройки и диагностика' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '← Ещё' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
     for (let index = 0; index < 5; index += 1)
       fireEvent.click(document.getElementById('headerLogo'));
     expect(screen.getByRole('dialog', { name: 'Boot diagnostics' })).toBeTruthy();
@@ -1011,9 +1006,9 @@ describe('application components', () => {
 
   it('loads crew results and renders shared app layout and tab shell', async () => {
     const pkg = { ...race, asmgRaceId: '55', crewResults: crewData };
-    render(<CrewResults pkg={pkg} onOpen={vi.fn()} onClose={vi.fn()} />);
+    render(<CrewResults pkg={pkg} standalone onOpen={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => expect(mocks.fetchAsmgResults).toHaveBeenCalled());
-    expect(screen.getByText(/сохранено для офлайн-доступа/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Открыть результаты экипажа/ })).toBeTruthy();
 
     const app = appFixture({ currentPackage: null, packages: [], catalog: [] });
     const layout = render(

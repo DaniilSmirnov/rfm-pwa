@@ -21,7 +21,6 @@ describe('spectator map symbols', () => {
     ['Неизвестная точка', 'location'],
   ])('keeps the meaning of %s', (name, kind) => expect(pointMarkerKind({}, name)).toBe(kind));
 
-
   it('does not classify arbitrary numbers containing 90 as spectator points', () => {
     expect(pointMarkerKind({}, 'СУ 90')).toBe('location');
     expect(pointMarkerKind({}, '190')).toBe('location');

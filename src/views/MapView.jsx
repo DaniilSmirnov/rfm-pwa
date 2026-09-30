@@ -229,7 +229,7 @@ export default function MapView({
     const onDocumentClick = event => {
       if (
         sheet?.contains(event.target) ||
-        event.target.closest?.('.point-row, [data-point-opener]') ||
+        event.target.closest?.('.point-row, [data-point-opener], .map-race-label, .map-point') ||
         event.target.closest?.('#mapPointSheetBackdrop')
       ) {
         return;

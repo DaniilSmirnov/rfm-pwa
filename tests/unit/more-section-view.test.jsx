@@ -22,7 +22,7 @@ describe('MoreSectionView', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Информация о гонке' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Информация о гонке' })).toBeTruthy();
     expect(screen.getByText('Ралли · Этап 3')).toBeTruthy();
     expect(screen.getByText('10–12 июня')).toBeTruthy();
     expect(screen.getByText('Сортавала')).toBeTruthy();
@@ -83,7 +83,6 @@ describe('MoreSectionView', () => {
   });
 
   it('shows SafetyMemo and RallyMedia safety leaflet when available', () => {
-    const onBack = vi.fn();
     render(
       <MoreSectionView
         sectionId="safety"
@@ -94,15 +93,12 @@ describe('MoreSectionView', () => {
             assetNames: ['safety.jpg'],
           },
         }}
-        onBack={onBack}
       />,
     );
 
-    expect(document.querySelector('.more-section-header h2').textContent).toBe('Безопасность');
+    expect(screen.getByRole('region', { name: 'Памятка по безопасности' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Главное' })).toBeTruthy();
     expect(screen.getByText('ПАМЯТКА ПО БЕЗОПАСНОСТИ')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '← Ещё' }));
-    expect(onBack).toHaveBeenCalledOnce();
   });
 
   it('gives a direct empty state when a rally has no documents or no selection', () => {

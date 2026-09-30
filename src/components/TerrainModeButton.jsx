@@ -30,7 +30,9 @@ export default function TerrainModeButton({ initialMode = 'hillshade', onModeCha
       disabled={busy}
       onClick={() => void toggleMode()}
     >
-      <span className="terrain-mode-icon" aria-hidden="true">{is3d ? '3D' : '2D'}</span>
+      <span className="terrain-mode-icon" aria-hidden="true">
+        {is3d ? '3D' : '2D'}
+      </span>
     </Button>
   );
 }

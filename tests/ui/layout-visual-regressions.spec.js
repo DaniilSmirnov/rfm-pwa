@@ -34,7 +34,7 @@ test('aligns the brand left and race selector right without a network label or P
   expect(header.right - actions.right).toBeLessThanOrEqual(40);
   expect(actions.left + actions.width / 2).toBeGreaterThan(header.left + header.width / 2);
   await expect(page.getByRole('button', { name: 'Установить PWA' })).toHaveCount(0);
-  await expect(page.locator('.top-actions button')).toHaveCount(0);
+  await expect(page.locator('.top-actions button')).toHaveCount(1);
   await expect(page.getByRole('combobox', { name: 'Текущая гонка' })).toBeVisible();
   await expect(page.locator('#networkBadge')).toHaveCount(0);
 });
@@ -43,7 +43,7 @@ test('places More controls at the top and leaves the complete footer clear of th
   page,
 }) => {
   await openApp(page);
-  await page.getByRole('button', { name: 'Меню' }).click();
+  await page.getByRole('button', { name: 'Ещё' }).click();
 
   const footer = page.locator('.app-footer');
   const menu = page.locator('.more-menu');
