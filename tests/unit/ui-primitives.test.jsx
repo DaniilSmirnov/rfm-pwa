@@ -124,8 +124,42 @@ describe('shared UI primitives', () => {
     expect(select.className).toBe('select-field stage-filter');
     expect(select.value).toBe('ss1');
     expect(ref.current).toBe(select);
-    fireEvent.change(select, { target: { value: 'ss2' } });
+    fireEvent.click(select);
+    const option = screen.getByRole('option', { name: 'SS2' });
+    fireEvent.pointerDown(option, { button: 0 });
+    fireEvent.pointerUp(option, { button: 0 });
+    fireEvent.click(option);
     expect(onChange).toHaveBeenCalledOnce();
+  });
+
+  it('supports Radix keyboard selection, dismissal, and controlled updates', () => {
+    const onChange = vi.fn();
+    render(
+      <SelectField aria-label="Stage" value="ss1" onChange={onChange}>
+        <option value="ss1">SS1</option>
+        <option value="ss2">SS2</option>
+      </SelectField>,
+    );
+    const trigger = screen.getByRole('combobox', { name: 'Stage' });
+    expect(trigger.value).toBe('ss1');
+
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    expect(screen.getByRole('option', { name: 'SS2' })).toBeTruthy();
+    const option = screen.getByRole('option', { name: 'SS2' });
+    fireEvent.pointerDown(option, { button: 0 });
+    fireEvent.pointerUp(option, { button: 0 });
+    fireEvent.click(option);
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ target: { value: 'ss2' } }));
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    cleanup();
+    render(
+      <SelectField aria-label="Stage" value="ss2" onChange={onChange}>
+        <option value="ss1">SS1</option>
+        <option value="ss2">SS2</option>
+      </SelectField>,
+    );
+    expect(screen.getByRole('combobox', { name: 'Stage' }).value).toBe('ss2');
   });
 
   it('preserves details behavior and renders a React SVG icon', () => {
