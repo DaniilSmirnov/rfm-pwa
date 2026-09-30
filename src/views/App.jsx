@@ -1,6 +1,6 @@
 import '../components/SharedControls.css';
 import '../components/AppShell.css';
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Button from '../components/Button.jsx';
 import { CalendarDays, CircleEllipsis, Map, Trophy } from 'lucide-react';
 import { useRfmApp } from '../hooks/useRfmApp.js';
@@ -26,6 +26,7 @@ import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { selectedPackage } from '../app/rally-context.js';
 import RacesView from './RacesView.jsx';
 import MoreSectionView, { moreSectionTitles } from './MoreSectionView.jsx';
+import { useEdgeSwipeBack } from '../components/ScreenHeader.jsx';
 
 const tabs = [
   { key: 'today', label: 'Сегодня', Icon: CalendarDays },
@@ -199,28 +200,7 @@ export default function App() {
         }[moreScreen] || 'Раздел гонки'
       : null;
 
-  useEffect(() => {
-    if (!screenHeaderTitle) return undefined;
-    let start = null;
-    const onTouchStart = event => {
-      const touch = event.changedTouches[0];
-      if (touch && touch.clientX <= 48) start = { x: touch.clientX, y: touch.clientY };
-    };
-    const onTouchEnd = event => {
-      if (!start) return;
-      const touch = event.changedTouches[0];
-      const dx = touch.clientX - start.x;
-      const dy = touch.clientY - start.y;
-      start = null;
-      if (dx >= 60 && Math.abs(dy) <= 80) returnToMoreMenu();
-    };
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchend', onTouchEnd, { passive: true });
-    return () => {
-      document.removeEventListener('touchstart', onTouchStart);
-      document.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [returnToMoreMenu, screenHeaderTitle]);
+  useEdgeSwipeBack(returnToMoreMenu, Boolean(screenHeaderTitle));
 
   const openCrewResults = () => setCrewResultsOpen(true);
   const screenContent =
