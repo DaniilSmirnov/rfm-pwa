@@ -7,7 +7,7 @@ import { baseStyle } from './map/style.js';
 import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
 import { TerrainModeControl } from './map/terrain-control.js';
 import { installRouteDirections } from './map/route-direction.js';
-import { pointMarkerKind, createPointMarkerContent } from './map/point-marker.js';
+import { createPointMarkerContent, pointWithMarkerIcon } from './map/point-marker.js';
 import BasemapPopup from './components/BasemapPopup.jsx';
 
 let activeMap = null;
@@ -197,6 +197,7 @@ function installRacePointLabels(map, points, onPointClick, { alwaysVisible = fal
 
   const labels = (points?.features || [])
     .filter(f => f?.geometry?.type === 'Point' && Array.isArray(f.geometry.coordinates))
+    .map(f => pointWithMarkerIcon(f))
     .map(f => ({ feature: f, name: featureName(f.properties), coords: f.geometry.coordinates }))
     .filter(x => x.name);
 
@@ -204,7 +205,7 @@ function installRacePointLabels(map, points, onPointClick, { alwaysVisible = fal
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'map-label map-race-label';
-    createPointMarkerContent(el, item.name, pointMarkerKind(item.feature.properties, item.name));
+    createPointMarkerContent(el, item.name, item.feature.properties.markerIcon);
     el.title = item.name;
     if (onPointClick)
       el.addEventListener('click', e => {
