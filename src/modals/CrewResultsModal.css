@@ -84,8 +84,9 @@
     min-height: 0;
     flex: 1;
     overflow: auto;
-    border: 1px solid #e4e6e8;
-    border-radius: var(--radius-sm);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     overscroll-behavior: contain;
   }
 }
@@ -111,7 +112,7 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    background: #f3f4f5;
+    background: var(--surface);
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
@@ -208,7 +209,7 @@
 }
 @layer theme {
   :root[data-theme='dark'] .crew-results-table th {
-    background: #1d2127;
+    background: var(--surface);
   }
 }
 @layer theme {
@@ -229,7 +230,7 @@
     top: 0;
     z-index: 2;
     padding: 10px 0;
-    background: var(--surface, #fff);
+    background: transparent;
   }
   .crew-results-inline .crew-results-table-wrap {
     max-height: min(65vh, 720px);
@@ -270,7 +271,7 @@
     top: 0;
     z-index: 3;
     padding: 4px 0 12px;
-    background: var(--surface, #fff);
+    background: transparent;
   }
   .crew-results-class-chips {
     display: flex;
@@ -295,8 +296,8 @@
     font-weight: 700;
   }
   .crew-results-class-chips button.active {
-    border-color: var(--brand-orange, #ef3124);
-    background: var(--brand-orange, #ef3124);
+    border-color: var(--brand-orange);
+    background: var(--brand-orange);
     color: #fff;
   }
   .crew-results-search-row {
@@ -578,7 +579,7 @@
     font-size: 22px;
   }
   .crew-details-star {
-    color: #d71920;
+    color: var(--brand-orange);
   }
   .crew-details-name,
   .crew-details-car {
@@ -624,7 +625,7 @@
     text-align: right;
   }
   .crew-details-overall strong {
-    color: #df2630;
+    color: var(--brand-orange);
     font-size: 17px;
     font-variant-numeric: tabular-nums;
   }
@@ -647,8 +648,8 @@
     font-size: 12px;
   }
   .crew-details-tabs button.active {
-    border-color: #e52b2f;
-    background: #e52b2f;
+    border-color: var(--brand-orange);
+    background: var(--brand-orange);
     color: #fff;
   }
   .crew-details-tabs button.disabled {
@@ -687,7 +688,7 @@
     text-align: right;
   }
   .crew-details-stage-row .retired {
-    color: #df2630;
+    color: var(--brand-orange);
     font-size: 10px;
     font-weight: 700;
   }
@@ -716,7 +717,8 @@
   }
 }
 @layer theme {
-  :root[data-theme='dark'] .crew-results-inline .crew-results-toolbar {
-    background: var(--surface, #111418);
+  :root[data-theme='dark'] .crew-results-inline .crew-results-toolbar,
+  :root[data-theme='dark'] .crew-results-mobile-controls {
+    background: transparent;
   }
 }
