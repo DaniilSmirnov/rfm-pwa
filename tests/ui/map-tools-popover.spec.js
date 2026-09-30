@@ -26,9 +26,18 @@ for (const theme of ['light', 'dark']) {
     await expect(drawer).toBeHidden();
     await expect(favoritesDrawer.getByText('ИЗБРАННЫЕ ТОЧКИ')).toBeVisible();
 
+    const carTrigger = page.getByRole('button', { name: 'Моя машина' });
+    await carTrigger.click();
+    const carDrawer = page.locator('#mapCarDrawer');
+    await expect(carDrawer).toBeVisible();
+    await expect(carTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(favoritesDrawer).toBeHidden();
+    await expect(carDrawer.getByText('ГДЕ МАШИНА?')).toBeVisible();
+
     await trigger.click();
     await expect(drawer).toBeVisible();
     await expect(favoritesDrawer).toBeHidden();
+    await expect(carDrawer).toBeHidden();
 
     await page.locator('.map-screen > .map').click({ position: { x: 20, y: 300 } });
     await expect(drawer).toBeHidden();
