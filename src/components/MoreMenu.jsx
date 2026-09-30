@@ -40,13 +40,13 @@ const destinations = [
     description: 'Карты организатора, памятки и файлы гонки',
     Icon: FileText,
   },
-  {
-    id: 'safety',
-    title: 'Безопасность',
-    description: 'Правила поведения зрителей и памятка по безопасности',
-    Icon: ShieldCheck,
-  },
 ];
+const safetyDestination = {
+  id: 'safety',
+  title: 'Правила и рекомендации',
+  description: 'Правила поведения зрителей и памятка по безопасности',
+  Icon: ShieldCheck,
+};
 
 export default function MoreMenu({
   app,
@@ -58,27 +58,9 @@ export default function MoreMenu({
   onDiagnostics,
 }) {
   const pkg = app?.currentPackage;
-  const summary = pkg?.summary || {};
 
   return (
     <section className="more-menu" aria-label="Дополнительные разделы">
-      <header className="more-menu-heading">
-        <div>
-          <p className="more-menu-eyebrow">ЕЩЁ</p>
-          <h2>Информация и управление</h2>
-          <p className="more-menu-description">
-            Материалы текущей гонки, Rally Pack и настройки приложения.
-          </p>
-        </div>
-        {pkg && (
-          <div className="more-current-race" aria-label="Текущая гонка">
-            <span>ТЕКУЩАЯ ГОНКА</span>
-            <strong>{pkg.name}</strong>
-            {summary.dates && <small>{summary.dates}</small>}
-          </div>
-        )}
-      </header>
-
       <section className="more-menu-group" aria-labelledby="more-race-title">
         <h3 id="more-race-title">Гонка</h3>
         <div className="more-menu-grid">
@@ -107,19 +89,52 @@ export default function MoreMenu({
         )}
       </section>
 
-      <section className="more-menu-group" aria-labelledby="more-manage-title">
-        <h3 id="more-manage-title">Управление</h3>
-        <div className="more-menu-grid more-menu-management">
-          <Button className="more-menu-row" type="button" onClick={onRaces}>
+      <section className="more-menu-group" aria-labelledby="more-offline-title">
+        <h3 id="more-offline-title">Офлайн</h3>
+        <div className="more-menu-grid">
+          <Button
+            className="more-menu-row"
+            type="button"
+            aria-label="Гонки и Rally Pack"
+            onClick={onRaces}
+          >
             <BookOpenText className="more-menu-icon" aria-hidden="true" size={20} />
             <span className="more-menu-copy">
-              <strong>Гонки и Rally Pack</strong>
-              <small>Каталог, скачивание, обновление и хранение пакетов</small>
+              <strong>Rally Pack</strong>
+              <small>Скачанные гонки, обновление и офлайн-карты</small>
             </span>
             <span className="more-menu-chevron" aria-hidden="true">
               ›
             </span>
           </Button>
+        </div>
+      </section>
+
+      <section className="more-menu-group" aria-labelledby="more-safety-title">
+        <h3 id="more-safety-title">Безопасность</h3>
+        <div className="more-menu-grid">
+          <Button
+            className="more-menu-row"
+            type="button"
+            onClick={() => onOpenSection?.(safetyDestination.id)}
+            aria-label={safetyDestination.title}
+            disabled={!pkg}
+          >
+            <ShieldCheck className="more-menu-icon" aria-hidden="true" size={20} />
+            <span className="more-menu-copy">
+              <strong>{safetyDestination.title}</strong>
+              <small>{safetyDestination.description}</small>
+            </span>
+            <span className="more-menu-chevron" aria-hidden="true">
+              ›
+            </span>
+          </Button>
+        </div>
+      </section>
+
+      <section className="more-menu-group" aria-labelledby="more-manage-title">
+        <h3 id="more-manage-title">Приложение</h3>
+        <div className="more-menu-grid more-menu-management">
           <Button
             className="more-menu-row"
             type="button"

@@ -15,11 +15,12 @@ test.describe('ASMG crew results', () => {
   test('opens results only on demand, filters both views by class, and searches crews', async ({
     page,
   }) => {
-    const dialog = page.locator('.crew-results-dialog');
+    const results = page.locator('.results-tab-screen');
     const dialogClass = page.locator('#crewResultsDialogClass');
-    await expect(dialog).not.toBeVisible();
+    await expect(results).toHaveCount(0);
     await openAllResults(page);
-    await expect(dialog).toBeVisible();
+    await expect(results).toBeVisible();
+    await expect(results.locator('.crew-results-inline')).toBeVisible();
     await expect(page.locator('#crewResultsStage')).toHaveValue('overall');
     await dialogClass.selectOption('Абсолют');
 
@@ -39,13 +40,13 @@ test.describe('ASMG crew results', () => {
     await page.locator('#crewResultsSearch').fill('40');
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText('Жигунов Андрей / Аксаков Алексей');
-    await page.getByRole('button', { name: 'Закрыть результаты' }).click();
-    await expect(dialog).not.toBeVisible();
+    await page.getByRole('button', { name: 'Сегодня' }).click();
+    await expect(results).toHaveCount(0);
   });
 
   test('shows cumulative time and selected-stage time in the table', async ({ page }) => {
     await openAllResults(page);
-    await expect(page.locator('.crew-results-dialog')).toBeVisible();
+    await expect(page.locator('.crew-results-inline')).toBeVisible();
     const firstRow = page.locator('[data-crew-row]').first();
     await expect(firstRow).toContainText('00:14:50:0');
     await expect(page.locator('#crewResultsTimeHeading')).toContainText('Общий итог');
@@ -57,7 +58,7 @@ test.describe('ASMG crew results', () => {
 
   test('stores a followed crew so the service worker can refresh it offline', async ({ page }) => {
     await openAllResults(page);
-    await expect(page.locator('.crew-results-dialog')).toBeVisible();
+    await expect(page.locator('.crew-results-inline')).toBeVisible();
     const row = page.locator('[data-crew-row]').first();
     await row.getByRole('button', { name: /Следить за экипажем/ }).click();
     await expect(row.getByRole('button', { name: /Отписаться от экипажа/ })).toBeVisible();

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { openApp, raceFixture, secondRace } from './helpers.js';
+import { openApp, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
 
 const release = {
   ...JSON.parse(readFileSync(new URL('../../version.json', import.meta.url), 'utf8')),
@@ -19,7 +19,7 @@ test.describe('app shell and catalog', () => {
     await expect(page.locator('.app-footer')).toBeHidden();
     await page.getByRole('button', { name: 'Ещё' }).click();
     await expect(page.locator('.app-footer')).toContainText(release.version);
-    await expect(page.locator('.header-brand')).toContainText('Rally Fans Map');
+    await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
   });
 
   test('shows browser PWA installation CTA on Today only', async ({ page }) => {
@@ -33,10 +33,14 @@ test.describe('app shell and catalog', () => {
     await expect(installPrompt.getByRole('button')).toBeHidden();
   });
 
-  test('shows online network badge', async ({ page }) => {
+  test('shows the race selector instead of a network badge', async ({ page }) => {
     await openApp(page);
-    await expect(page.locator('#networkBadge')).toHaveText('онлайн');
-    await expect(page.locator('#networkBadge')).toHaveClass(/online/);
+    await seedFixtureRace(page);
+    await page.getByRole('button', { name: 'Сегодня' }).click();
+    await page.reload();
+    await expect(page.getByRole('combobox', { name: 'Текущая гонка' })).toBeVisible();
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
+    await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
   });
 
   test('shows only closest race by default', async ({ page }) => {

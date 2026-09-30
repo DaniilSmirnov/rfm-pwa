@@ -106,7 +106,7 @@ test.describe('production service worker lifecycle', () => {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await openSettings(page);
     await expect(page.getByRole('heading', { name: 'Настройки и диагностика' })).toBeVisible();
-    await expect(page.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
   });
 
   test('reopens the application from cache after the last page is closed and the browser goes offline', async ({
@@ -126,7 +126,7 @@ test.describe('production service worker lifecycle', () => {
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
     await openSettings(reopened);
     await expect(reopened.getByRole('heading', { name: 'Настройки и диагностика' })).toBeVisible();
-    await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(reopened.locator('#networkBadge')).toHaveCount(0);
   });
 
   test('preserves the selected theme after an offline cold start', async ({ page, context }) => {
@@ -141,7 +141,7 @@ test.describe('production service worker lifecycle', () => {
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(reopened.locator('#networkBadge')).toHaveCount(0);
     await expect(reopened.locator('html')).toHaveAttribute('data-theme', 'dark');
     await openSettings(reopened);
     await expect(reopened.getByRole('button', { name: '☾ Тёмная' })).toHaveAttribute(

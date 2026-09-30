@@ -440,7 +440,8 @@ export async function openApp(page, options = {}) {
   await installAppMocks(page, options);
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
-  await page.getByRole('button', { name: 'Гонки' }).click();
+  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await page.waitForFunction(
     () =>
       document.querySelector('#catalogStatus')?.textContent?.includes('гонок') ||
@@ -448,6 +449,11 @@ export async function openApp(page, options = {}) {
       document.querySelector('#catalogStatus')?.textContent?.includes('Офлайн'),
   );
   await page.getByRole('button', { name: 'Сегодня' }).click();
+}
+
+export async function openRaceManagement(page) {
+  await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+  await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
 }
 
 export async function openMapWithAcceptedSafety(page) {
@@ -556,10 +562,8 @@ export async function seedFixtureRace(page) {
   );
   await page.getByRole('button', { name: 'Карта', exact: true }).click();
   await page.locator('.race-page').waitFor({ state: 'visible' });
-  await page.waitForFunction(() =>
-    Boolean(
-      document.querySelector('#crewResultsOpen') &&
-        !document.querySelector('#crewResultsOpen').hidden,
-    ),
-  );
+  await page
+    .locator('.race-page h2')
+    .filter({ hasText: raceFixture.name })
+    .waitFor({ state: 'visible' });
 }

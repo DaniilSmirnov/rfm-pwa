@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp } from './helpers.js';
+import { openApp, seedFixtureRace } from './helpers.js';
 
 async function getBounds(page, selector) {
   return page.locator(selector).evaluate(element => {
@@ -15,10 +15,13 @@ async function getBounds(page, selector) {
   });
 }
 
-test('aligns the brand left and network status right without a PWA install button', async ({
+test('aligns the brand left and race selector right without a network label or PWA install button', async ({
   page,
 }) => {
   await openApp(page);
+  await seedFixtureRace(page);
+  await page.getByRole('button', { name: 'Сегодня' }).click();
+  await page.reload();
 
   const header = await getBounds(page, '.topbar');
   const brand = await getBounds(page, '.header-brand');
@@ -29,10 +32,11 @@ test('aligns the brand left and network status right without a PWA install butto
   expect(brand.left).toBeLessThan(header.left + header.width / 2);
   expect(brand.right).toBeLessThanOrEqual(actions.left);
   expect(header.right - actions.right).toBeLessThanOrEqual(40);
-  expect(actions.left).toBeGreaterThan(header.left + header.width / 2);
+  expect(actions.left + actions.width / 2).toBeGreaterThan(header.left + header.width / 2);
   await expect(page.getByRole('button', { name: 'Установить PWA' })).toHaveCount(0);
   await expect(page.locator('.top-actions button')).toHaveCount(0);
-  await expect(page.locator('#networkBadge')).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Текущая гонка' })).toBeVisible();
+  await expect(page.locator('#networkBadge')).toHaveCount(0);
 });
 
 test('places More controls at the top and leaves the complete footer clear of the fixed tab bar', async ({

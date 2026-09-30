@@ -7,7 +7,7 @@ import MoreMenu from '../../src/components/MoreMenu.jsx';
 describe('MoreMenu', () => {
   afterEach(cleanup);
 
-  it('shows the active rally and routes rally sections through the shared callback', () => {
+  it('groups race, offline, safety, and app sections from the design', () => {
     const onOpenSection = vi.fn();
     render(
       <MoreMenu
@@ -18,13 +18,22 @@ describe('MoreMenu', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Текущая гонка').textContent).toContain('Ралли Карелия');
-    expect(screen.getByLabelText('Текущая гонка').textContent).toContain('10–12 июня');
+    expect(screen.getByRole('heading', { name: 'Гонка' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Офлайн' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Безопасность' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Приложение' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Гонки и Rally Pack' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Полное расписание' }));
     fireEvent.click(screen.getByRole('button', { name: 'Участники' }));
     fireEvent.click(screen.getByRole('button', { name: 'Документы и материалы' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Правила и рекомендации' }));
 
-    expect(onOpenSection.mock.calls).toEqual([['schedule'], ['participants'], ['documents']]);
+    expect(onOpenSection.mock.calls).toEqual([
+      ['schedule'],
+      ['participants'],
+      ['documents'],
+      ['safety'],
+    ]);
   });
 
   it('keeps management destinations and disables rally-specific links without a rally', () => {
@@ -34,7 +43,7 @@ describe('MoreMenu', () => {
 
     expect(screen.getByRole('button', { name: 'Информация о гонке' }).disabled).toBe(true);
     expect(screen.getByText('Выбери гонку в шапке, чтобы открыть её материалы.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Гонки и Rally Pack/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Гонки и Rally Pack' }));
     fireEvent.click(screen.getByRole('button', { name: 'Настройки и диагностика' }));
     fireEvent.click(screen.getByRole('button', { name: 'Уведомления' }));
 

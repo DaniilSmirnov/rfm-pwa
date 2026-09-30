@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { installAppMocks } from './helpers.js';
+import { installAppMocks, openRaceManagement } from './helpers.js';
 
 const endpoint = 'https://push.example.test/subscription/123';
 const subscriptionJson = { endpoint, keys: { p256dh: 'test-key', auth: 'test-auth' } };
@@ -42,7 +42,7 @@ async function openPushApp(
   );
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
-  await page.getByRole('button', { name: 'Гонки' }).click();
+  await openRaceManagement(page);
   await page.waitForFunction(() =>
     document.querySelector('#catalogStatus')?.textContent?.includes('гонок'),
   );

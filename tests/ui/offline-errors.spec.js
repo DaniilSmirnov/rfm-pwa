@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   openApp,
+  openRaceManagement,
   installAppMocks,
   openMapWithAcceptedSafety,
   raceFixture,
@@ -11,47 +12,47 @@ import {
 test.describe('offline, import and failure states', () => {
   test('shows API health failure', async ({ page }) => {
     await openApp(page, { healthStatus: 503 });
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('API недоступен');
   });
 
   test('shows catalog failure after healthy proxy', async ({ page }) => {
     await openApp(page, { catalogStatus: 500 });
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('API недоступен');
   });
 
-  test('updates network badge when connectivity disappears after launch', async ({ page }) => {
+  test('keeps the header focused on race selection when connectivity disappears', async ({
+    page,
+  }) => {
     await openApp(page);
-    await expect(page.locator('#networkBadge')).toHaveText('онлайн');
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
 
     await page.evaluate(() => {
       window.__rfmTestOnline = false;
       window.dispatchEvent(new Event('offline'));
     });
 
-    await expect(page.locator('#networkBadge')).toHaveText('офлайн');
-    await expect(page.locator('#networkBadge')).toHaveClass(/offline/);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('Офлайн');
   });
 
   test('shows offline catalog state when navigator is offline', async ({ page }) => {
     await openApp(page, { online: false });
-    await expect(page.locator('#networkBadge')).toHaveText('офлайн');
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
+    await openRaceManagement(page);
     await expect(page.locator('#catalogStatus')).toContainText('Офлайн');
   });
 
   test('shows no-nearby-races message without search', async ({ page }) => {
     await openApp(page, { catalog: [secondRace] });
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#catalogList')).toContainText('Нет гонок в пределах недели');
   });
 
   test('manual GeoJSON import creates saved package', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     const data = {
       name: 'Imported Test',
       type: 'FeatureCollection',
@@ -75,7 +76,7 @@ test.describe('offline, import and failure states', () => {
 
   test('invalid manual JSON shows an error dialog', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     const dialogPromise = page.waitForEvent('dialog');
     await page.locator('#racesFileInput').setInputFiles({
       name: 'bad.json',
@@ -92,7 +93,7 @@ test.describe('offline, import and failure states', () => {
     await seedFixtureRace(page);
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.locator('#packageList')).toContainText(raceFixture.name);
   });
 
@@ -104,6 +105,7 @@ test.describe('offline, import and failure states', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова', {
       timeout: 20_000,
@@ -119,6 +121,7 @@ test.describe('offline, import and failure states', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова', {
       timeout: 20_000,
@@ -139,6 +142,7 @@ test.describe('offline, import and failure states', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.locator('#downloadMapBtn').click();
     await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова', {
       timeout: 20_000,

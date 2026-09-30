@@ -1,15 +1,9 @@
 import React from 'react';
+import { ChevronDown, MapPin } from 'lucide-react';
 import packageMeta from '../../package.json';
-import Badge from './Badge.jsx';
 import './AppShell.css';
 
-export default function AppHeader({
-  online,
-  onLogoClick,
-  currentPackage,
-  packages = [],
-  onSelectRally,
-}) {
+export default function AppHeader({ onLogoClick, currentPackage, packages = [], onSelectRally }) {
   return (
     <header className="topbar">
       <div className="header-brand">
@@ -20,15 +14,17 @@ export default function AppHeader({
           alt=""
           onClick={onLogoClick}
         />
-        <div>
-          <div className="brand-small">Rally Fans Map</div>
-          <h1>OFFLINE</h1>
-        </div>
+        <span className="header-wordmark">RALLY FANS MAP</span>
       </div>
       <div className="top-actions">
         {packages.length > 0 && (
           <label className="current-rally-select">
-            <span className="sr-only">Текущая гонка</span>
+            <MapPin aria-hidden="true" size={19} className="current-rally-pin" />
+            <span className="current-rally-copy">
+              <span className="sr-only">Текущая гонка</span>
+              <strong>{currentPackage?.name || 'Выбрать гонку'}</strong>
+              <small>{currentPackage?.summary?.dates || currentPackage?.dates || ''}</small>
+            </span>
             <select
               aria-label="Текущая гонка"
               value={currentPackage?.id || ''}
@@ -41,11 +37,9 @@ export default function AppHeader({
                 </option>
               ))}
             </select>
+            <ChevronDown aria-hidden="true" size={16} className="current-rally-chevron" />
           </label>
         )}
-        <Badge id="networkBadge" variant={online ? 'online' : 'offline'}>
-          {online ? 'онлайн' : 'офлайн'}
-        </Badge>
       </div>
     </header>
   );

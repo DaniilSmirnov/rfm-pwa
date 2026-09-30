@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import MapView from '../../src/views/MapView.jsx';
 import { getCrewSubscriptions } from '../../src/db.js';
 
@@ -38,6 +38,11 @@ describe('MapView enhancements', () => {
           ],
         },
       },
+      packages: [
+        { id: 'race-1', name: 'Rally' },
+        { id: 8, name: 'Пермь' },
+      ],
+      selectPackage: vi.fn(),
       mapUi: { disabled: false, button: 'Скачать офлайн-карту', status: 'Не скачана' },
       downloadMap: vi.fn(),
       deleteOfflineMap: vi.fn(),
@@ -77,6 +82,23 @@ describe('MapView enhancements', () => {
         }}
       />,
     );
+    expect(screen.getByRole('button', { name: 'Инструменты карты' })).toBeTruthy();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Гонка на карте' }), {
+      target: { value: '8' },
+    });
+    expect(app.selectPackage).toHaveBeenCalledWith(8);
+    expect(
+      screen.getByRole('button', { name: 'Инструменты карты' }).getAttribute('aria-controls'),
+    ).toBe('mapToolsDrawer');
+    expect(screen.getByRole('button', { name: 'Показать где я' }).getAttribute('id')).toBe(
+      'locateBtn',
+    );
+    expect(document.getElementById('mapToolsDrawer').hidden).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Показать детали' }));
+    expect(
+      screen.getByRole('button', { name: 'Скрыть детали' }).getAttribute('aria-controls'),
+    ).toBe('mapPointDetails');
     expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
     expect(screen.getByText('700 м')).toBeTruthy();
@@ -137,6 +159,8 @@ describe('MapView enhancements', () => {
     };
     render(<MapView app={app} mapContent={<span>Карта</span>} />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
+
     const followed = await screen.findByRole('region', { name: 'Избранные экипажи' });
     expect(followed.textContent).toContain('2. № 8 · Иванов Иван');
     expect(followed.textContent).toContain('отставание 00:00:10:0');
@@ -184,6 +208,8 @@ describe('MapView enhancements', () => {
         mapContent={<span>Карта</span>}
       />,
     );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Показать детали' }));
 
     expect(await screen.findByRole('region', { name: 'Следующие экипажи на этапе' })).toBeTruthy();
     expect(

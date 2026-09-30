@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { openApp, openMapWithAcceptedSafety, seedFixtureRace } from './helpers.js';
+import {
+  openApp,
+  openMapWithAcceptedSafety,
+  openRaceManagement,
+  seedFixtureRace,
+} from './helpers.js';
 
 test.describe('basic UI contracts', () => {
   test('main controls have accessible names', async ({ page }) => {
@@ -8,7 +13,7 @@ test.describe('basic UI contracts', () => {
     await expect(installPrompt.getByRole('button')).toBeVisible();
     await page.getByRole('button', { name: 'Ещё' }).click();
     await expect(page.getByRole('button', { name: /Настройки и диагностика/ })).toBeVisible();
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.getByPlaceholder('Название гонки или этап…')).toBeVisible();
     await expect(page.getByLabel('Найти скачанную гонку')).toBeVisible();
     await expect(page.getByRole('region', { name: 'Установка PWA' })).toBeHidden();
@@ -17,7 +22,7 @@ test.describe('basic UI contracts', () => {
 
   test('search fields expose placeholders', async ({ page }) => {
     await openApp(page);
-    await page.getByRole('button', { name: 'Гонки' }).click();
+    await openRaceManagement(page);
     await expect(page.getByPlaceholder('Название гонки или этап…')).toHaveAttribute(
       'placeholder',
       /гонки или этап/,
@@ -47,6 +52,8 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await expect(page.locator('#downloadMapBtnTop')).toBeEnabled();
+    await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await expect(page.locator('#downloadMapBtn')).toBeEnabled();
   });
 
@@ -54,8 +61,10 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
+    await page.getByRole('button', { name: 'Показать детали' }).click();
     for (const id of [
       'googleMapsBtn',
       'yandexMapsBtn',
@@ -72,8 +81,10 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
     await page.getByText('ГДЕ СМОТРЕТЬ?').click();
     await page.locator('.point-row').first().locator('.point-row-copy').click();
+    await page.getByRole('button', { name: 'Показать детали' }).click();
     const compass = page.locator('#spectatorCompass');
     await expect(compass).toBeVisible();
     await compass.locator('summary').click();

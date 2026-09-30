@@ -162,6 +162,10 @@ function raceDate(offsetDays = 0) {
   return `${day}.${month}.${date.getUTCFullYear()}`;
 }
 const todayDate = raceDate();
+function todayAtUtc(hour) {
+  const [day, month, year] = todayDate.split('.').map(Number);
+  return new Date(Date.UTC(year, month - 1, day, hour));
+}
 
 const race = {
   id: 7,
@@ -353,6 +357,7 @@ beforeEach(() => {
   mocks.hasSafetyConsent.mockReturnValue(true);
 });
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
   document.body.classList.remove('modal-open');
 });
@@ -399,7 +404,8 @@ describe('application components', () => {
         <PwaInstallPrompt />
       </>,
     );
-    expect(screen.getByText('офлайн')).toBeTruthy();
+    expect(document.querySelector('#networkBadge')).toBeNull();
+    expect(screen.getByText('RALLY FANS MAP')).toBeTruthy();
     expect(screen.getByText(/Companion v/)).toBeTruthy();
     expect(screen.getByText('Карелия')).toBeTruthy();
     expect(screen.getByRole('searchbox', { name: 'Найти гонку или этап' })).toBeTruthy();
@@ -497,7 +503,7 @@ describe('application components', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
     expect(onSettings).toHaveBeenCalledOnce();
-    expect(screen.getByText('Офлайн')).toBeTruthy();
+    expect(screen.getByText('Офлайн', { selector: 'span' })).toBeTruthy();
     expect(screen.getByText('РУЧНОЙ ИМПОРТ')).toBeTruthy();
   });
 
@@ -780,6 +786,8 @@ describe('application components', () => {
   });
 
   it('keeps an explicitly live stage visible after its scheduled start time', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(todayAtUtc(12));
     const pkg = {
       original: {
         schedule: [
@@ -796,12 +804,10 @@ describe('application components', () => {
         ],
       },
     };
-    const active = nextProgramItem(pkg, new Date('2026-09-29T15:00:00.000Z'));
+    const active = nextProgramItem(pkg, todayAtUtc(15));
     expect(active.event.text).toBe('Старт СУ 1');
     expect(currentScheduledCrew(pkg).row.crewNumber).toBe(12);
-    expect(countdownLabel(pkg, new Date('2026-09-29T05:00:00.000Z'), 2)).toContain(
-      'До старта 0 дн. 2 ч.',
-    );
+    expect(countdownLabel(pkg, todayAtUtc(5), 2)).toContain('До старта 0 дн. 2 ч.');
 
     const livePackage = {
       ...race,
@@ -849,6 +855,8 @@ describe('application components', () => {
   });
 
   it('offers an upcoming catalog race and marks a downloaded race finished yesterday', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(todayAtUtc(12));
     const upcoming = { id: 8, name: 'Следующая гонка', dates: raceDate(1) };
     const { rerender } = render(
       <TodayView
