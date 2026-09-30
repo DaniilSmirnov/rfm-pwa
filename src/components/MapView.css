@@ -793,7 +793,27 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+  }
+
+  .map-tools-drawer > .favorites-panel,
+  .map-tools-drawer > .car-panel {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .map-tools-drawer > .favorites-panel > .muted,
+  .car-panel-head .muted {
+    margin: 0;
+  }
+
+  .car-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
   }
   .map-point-sheet {
     position: absolute;
@@ -1047,8 +1067,46 @@
 
 /* MapLibre's vendor stylesheet is unlayered, so its control offsets must be too. */
 .map-screen .maplibregl-ctrl-top-right {
-  top: calc(126px + var(--safe-top));
-  right: max(4px, var(--safe-right));
+  top: auto;
+  right: max(14px, var(--safe-right));
+  bottom: calc(132px + var(--safe-bottom));
+  display: grid;
+  gap: 8px;
+}
+
+.map-screen .maplibregl-ctrl-top-right .maplibregl-ctrl {
+  margin: 0;
+}
+
+.map-screen .maplibregl-ctrl-group {
+  display: grid;
+  gap: 8px;
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.map-screen .maplibregl-ctrl-group button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background-color: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 10px #18263020;
+}
+
+.map-screen .maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--line);
+}
+
+.map-screen .maplibregl-ctrl-group button:hover {
+  background-color: var(--surface-raised);
+}
+
+.map-screen:has(.map-point-sheet) .maplibregl-ctrl-top-right {
+  bottom: calc(318px + var(--safe-bottom));
 }
 .map-screen .maplibregl-ctrl-bottom-left,
 .map-screen .maplibregl-ctrl-bottom-right {
