@@ -406,7 +406,7 @@ export default function MapView({
           hidden={!toolsOpen}
         >
           <div className="map-tools-heading">
-            <strong>Инструменты карты</strong>
+            <div className="block-title">ИНСТРУМЕНТЫ КАРТЫ</div>
             <OfflineMapActions app={app} />
           </div>
           <div className="map-export-actions">
@@ -452,7 +452,9 @@ export default function MapView({
           hidden={!favoritesOpen}
         >
           <div className="map-tools-heading">
-            <strong>Избранное</strong>
+            <div id="favoritesTitle" className="block-title">
+              ИЗБРАННЫЕ ТОЧКИ
+            </div>
           </div>
           {app.favorites.length === 0 && followedResults.length === 0 && (
             <div className="map-favorites-empty" role="status">
@@ -462,18 +464,11 @@ export default function MapView({
             </div>
           )}
           <section className="favorites-panel" aria-labelledby="favoritesTitle">
-            <SectionHeader className="compact-section-head">
-              <div>
-                <div id="favoritesTitle" className="block-title">
-                  ИЗБРАННЫЕ ТОЧКИ
-                </div>
-                <p id="favoritesStatus" className="muted small">
-                  {app.favorites.length
-                    ? `${app.favorites.length} сохранено для этой гонки.`
-                    : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
-                </p>
-              </div>
-            </SectionHeader>
+            <p id="favoritesStatus" className="muted small">
+              {app.favorites.length
+                ? `${app.favorites.length} сохранено для этой гонки.`
+                : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
+            </p>
             <div id="favoritesList" className="favorites-list">
               {favoritesContent}
             </div>
@@ -516,24 +511,21 @@ export default function MapView({
           hidden={!carOpen}
         >
           <div className="map-tools-heading">
-            <strong>Моя машина</strong>
+            <div id="carTitle" className="block-title">
+              ГДЕ МАШИНА?
+            </div>
           </div>
           <section className="car-panel" aria-labelledby="carTitle">
-            <SectionHeader className="compact-section-head">
-              <div>
-                <div id="carTitle" className="block-title">
-                  ГДЕ МАШИНА?
-                </div>
-                <p id="carStatus" className="muted small">
-                  {app.carPoint
-                    ? `Сохранено ${app.carPoint.savedAt ? new Date(app.carPoint.savedAt).toLocaleString() : ''}`
-                    : 'Сохрани текущие GPS-координаты машины.'}
-                </p>
-              </div>
+            <div className="car-panel-head">
+              <p id="carStatus" className="muted small">
+                {app.carPoint
+                  ? `Сохранено ${app.carPoint.savedAt ? new Date(app.carPoint.savedAt).toLocaleString() : ''}`
+                  : 'Сохрани текущие GPS-координаты машины.'}
+              </p>
               <Button id="saveCarBtn" className="button" type="button" onClick={app.saveCar}>
                 {app.carPoint ? 'Обновить координаты машины' : 'Запомнить машину'}
               </Button>
-            </SectionHeader>
+            </div>
             {app.carPoint && (
               <div id="carPointCard" className="car-point-card">
                 <div className="point-row-copy">
