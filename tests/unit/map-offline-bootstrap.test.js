@@ -209,11 +209,11 @@ describe('offline map overlay bootstrap', () => {
       .find(marker => marker.getElement().classList.contains('map-race-label'))
       ?.getElement();
     expect(raceLabel).toBeTruthy();
-    expect(raceLabel.style.display).toBe('block');
+    expect(raceLabel.style.display).toBe('flex');
 
     map.zoom = 18;
     map.handlers.get('zoom')();
-    expect(raceLabel.style.display).toBe('block');
+    expect(raceLabel.style.display).toBe('flex');
   });
 
   it('renders Yandex special-stage lines as a dedicated yellow offline overlay', () => {

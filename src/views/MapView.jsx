@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Layers, MapPin, ChevronDown, ArrowRight, Star, ParkingSquare } from 'lucide-react';
 import ActionGroup from '../components/ActionGroup.jsx';
 import Button from '../components/Button.jsx';
 import {
@@ -46,6 +47,7 @@ export default function MapView({
   const pkg = app.currentPackage;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
+  const liveStage = stages.find(stage => stage.mapStatusKind === 'live');
   const selectedDetails =
     pkg && app.selectedPoint ? pointFeatureDetails(pkg, app.selectedPoint) : null;
   const scheduledCrews =
@@ -118,9 +120,16 @@ export default function MapView({
   return (
     <Panel id="mapSection" className="map-card legacy-map map-screen">
       <header className="map-floating-header">
-        <div className="map-rally-picker">
-          <span className="map-brand">RALLY FANS MAP</span>
-          {app.packages?.length > 1 ? (
+        <span className="map-brand" aria-label="Rally Fans Map">
+          RALLY
+        </span>
+        <label className="current-rally-select map-rally-picker">
+          <MapPin aria-hidden="true" size={20} className="current-rally-pin" />
+          <span className="current-rally-copy">
+            <strong id="mapTitle">{pkg?.name || 'КАРТА РАЛЛИ'}</strong>
+            <small>{pkg?.summary?.dates || pkg?.dates || ''}</small>
+          </span>
+          {app.packages?.length > 0 && (
             <select
               aria-label="Гонка на карте"
               value={pkg?.id || ''}
@@ -129,19 +138,19 @@ export default function MapView({
                 if (selected) void app.selectPackage(selected.id);
               }}
             >
+              {!pkg && <option value="">Выбрать гонку</option>}
               {app.packages.map(item => (
                 <option key={item.id} value={item.id}>
                   {item.name}
                 </option>
               ))}
             </select>
-          ) : (
-            <strong id="mapTitle">{pkg?.name || 'КАРТА РАЛЛИ'}</strong>
           )}
-          <span id="mapSubtitle" className="map-subtitle">
-            {app.mapSubtitle}
-          </span>
-        </div>
+          <ChevronDown aria-hidden="true" size={16} />
+        </label>
+        <span id="mapSubtitle" className="sr-only">
+          {app.mapSubtitle}
+        </span>
       </header>
       <div className="map" aria-label="offline rally map">
         {mapContent}
@@ -149,12 +158,20 @@ export default function MapView({
       <Button
         id="mapToolsToggle"
         className="map-tools-toggle"
+        aria-label={toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
         aria-expanded={toolsOpen}
         aria-controls="mapToolsDrawer"
         onClick={() => setToolsOpen(open => !open)}
       >
-        {toolsOpen ? 'Закрыть инструменты' : 'Инструменты карты'}
+        <Layers aria-hidden="true" size={21} />
       </Button>
+      {liveStage && (
+        <div className="map-live-stage" aria-label="Активный спецучасток">
+          <span aria-hidden="true" />
+          <strong>{liveStage.name}</strong>
+          <small>{liveStage.mapStatus}</small>
+        </div>
+      )}
       <div className="map-locate-control">
         <Button
           id="locateBtn"
@@ -384,7 +401,7 @@ export default function MapView({
           id="pointActions"
           className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''}`}
         >
-          <div className="point-actions-copy">
+          <div className={`point-actions-copy ${selectedDetails?.photo ? 'has-photo' : ''}`}>
             {selectedDetails?.photo && (
               <a
                 className="map-point-sheet-photo-link"
@@ -399,22 +416,33 @@ export default function MapView({
                 />
               </a>
             )}
-            <div className="eyebrow">ВЫБРАННАЯ ТОЧКА</div>
+
             <strong id="pointName">{app.selectedPoint.name}</strong>
             <span className="map-point-sheet-meta">
               {pointStageDistance
                 ? `${pointStageDistance.stage.name} · ${formatDistance(pointStageDistance.distance.fromStart)} от старта`
                 : 'Точка на карте'}
             </span>
-            <Button
-              className="button map-point-details-toggle"
-              aria-expanded={pointDetailsOpen}
-              aria-controls="mapPointDetails"
-              onClick={() => setPointDetailsOpen(open => !open)}
-            >
-              {pointDetailsOpen ? 'Скрыть детали' : 'Показать детали'}
-            </Button>
+            {selectedDetails?.rating && (
+              <span className="map-point-summary">
+                <Star size={14} aria-hidden="true" /> {selectedDetails.rating}
+              </span>
+            )}
+            {selectedDetails?.walking && (
+              <span className="map-point-summary map-point-walking">
+                <ParkingSquare size={14} aria-hidden="true" /> {selectedDetails.walking}
+              </span>
+            )}
           </div>
+          <Button
+            className="button map-point-details-toggle"
+            aria-expanded={pointDetailsOpen}
+            aria-controls="mapPointDetails"
+            onClick={() => setPointDetailsOpen(open => !open)}
+          >
+            {pointDetailsOpen ? 'Скрыть детали' : 'Показать детали'}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Button>
           <div id="mapPointDetails" className="map-point-sheet-details" hidden={!pointDetailsOpen}>
             <span id="pointCoords" className="muted">
               {coordinateText(app.selectedPoint)}

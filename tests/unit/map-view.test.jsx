@@ -20,6 +20,7 @@ describe('MapView enhancements', () => {
         original: {
           schedule: [
             { location: 'СУ 1', date: '29.09.2026', events: [{ text: 'Дорога закрыта' }] },
+            { location: 'СУ 2', date: '29.09.2026', events: [{ text: 'СУ идёт' }] },
           ],
         },
         geojson: {
@@ -82,6 +83,7 @@ describe('MapView enhancements', () => {
         }}
       />,
     );
+    expect(within(screen.getByLabelText('Активный спецучасток')).getByText('LIVE')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Инструменты карты' })).toBeTruthy();
     fireEvent.change(screen.getByRole('combobox', { name: 'Гонка на карте' }), {
       target: { value: '8' },
@@ -95,13 +97,15 @@ describe('MapView enhancements', () => {
     );
     expect(document.getElementById('mapToolsDrawer').hidden).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Инструменты карты' }));
+    expect(document.querySelector('.map-point-summary').textContent).toContain('4.8 / 5');
+    expect(document.querySelector('.point-actions-copy').textContent).toContain('700 м');
     fireEvent.click(screen.getByRole('button', { name: 'Показать детали' }));
     expect(
       screen.getByRole('button', { name: 'Скрыть детали' }).getAttribute('aria-controls'),
     ).toBe('mapPointDetails');
     expect(screen.getByText('Закрыт')).toBeTruthy();
     expect(screen.getByText('у трассы')).toBeTruthy();
-    expect(screen.getByText('700 м')).toBeTruthy();
+    expect(within(document.getElementById('mapPointDetails')).getByText('700 м')).toBeTruthy();
     expect(screen.getByText('Вид на прыжок')).toBeTruthy();
     expect(screen.getByText('Оценка точки: 4.8 / 5')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Фото: Зрительская зона' }).getAttribute('src')).toBe(
