@@ -47,6 +47,7 @@ export default function MapView({
   const [compassOpen, setCompassOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
+  const [pointSheetDragProgress, setPointSheetDragProgress] = useState(0);
   const [pointSheetPoint, setPointSheetPoint] = useState(app.selectedPoint);
   const [pointSheetClosing, setPointSheetClosing] = useState(false);
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
@@ -127,8 +128,19 @@ export default function MapView({
     if (interactiveTarget && !handleTarget) return;
     const source = event.touches?.[0] || event;
     pointSheetGesture.current = { startY: source.clientY, suppressClick: false };
+    setPointSheetDragProgress(pointDetailsOpen ? 1 : 0);
     handleTarget?.setPointerCapture?.(event.pointerId);
     if (!handleTarget) event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const movePointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
+    const startY = pointSheetGesture.current.startY;
+    const source = event.touches?.[0] || event;
+    if (startY == null) return;
+    const delta = source.clientY - startY;
+    const progress = pointDetailsOpen ? 1 - delta / 220 : -delta / 220;
+    setPointSheetDragProgress(Math.max(0, Math.min(1, progress)));
+    if (Math.abs(delta) > 4) event.preventDefault?.();
   };
   const endPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
@@ -141,9 +153,14 @@ export default function MapView({
     event.preventDefault?.();
     pointSheetGesture.current.suppressClick = true;
     if (delta > 0) {
-      if (pointDetailsOpen) setPointDetailsOpen(false);
-      else app.showPoint?.(null);
-    } else setPointDetailsOpen(true);
+      if (pointDetailsOpen) {
+        setPointDetailsOpen(false);
+        setPointSheetDragProgress(0);
+      } else app.showPoint?.(null);
+    } else {
+      setPointDetailsOpen(true);
+      setPointSheetDragProgress(1);
+    }
   };
   const cancelPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
@@ -561,7 +578,8 @@ export default function MapView({
           <aside
             ref={pointSheetRef}
             id="pointActions"
-            className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''} ${pointSheetClosing ? 'is-closing' : ''}`}
+            className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''} ${pointSheetClosing ? 'is-closing' : ''} ${pointSheetGesture.current.startY != null ? 'is-dragging' : ''}`}
+            style={{ '--point-sheet-progress': pointSheetDragProgress }}
             role="dialog"
             aria-modal={pointDetailsOpen ? 'true' : undefined}
             aria-labelledby="pointName"
@@ -569,6 +587,7 @@ export default function MapView({
             onPointerUp={endPointSheetGesture}
             onPointerCancel={cancelPointSheetGesture}
             onTouchStart={beginPointSheetGesture}
+            onTouchMove={movePointSheetGesture}
             onTouchEnd={endPointSheetGesture}
             onTouchCancel={cancelPointSheetGesture}
           >
@@ -588,14 +607,11 @@ export default function MapView({
                 setPointDetailsOpen(open => !open);
               }}
             >
-              <span className="map-point-sheet-grabber" aria-hidden="true" />
+              <span id="pointName">{pointSheetPoint.name || 'Точка на карте'}</span>
               <span className="sr-only">
                 {pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'}
               </span>
             </Button>
-            <div className="map-point-sheet-header">
-              <strong id="pointName">{pointSheetPoint.name || 'Точка на карте'}</strong>
-            </div>
             <div className={`point-actions-copy ${selectedDetails?.photo ? 'has-photo' : ''}`}>
               {selectedDetails?.photo && (
                 <a
