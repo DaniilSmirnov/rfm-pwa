@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 import { openApp, openMapWithAcceptedSafety, seedFixtureRace } from './helpers.js';
 
 for (const theme of ['light', 'dark']) {
-  test(`map tools and favorites drawers preserve switching and dismissal (${theme})`, async ({ page }) => {
+  test(`map tools and favorites drawers preserve switching and dismissal (${theme})`, async ({
+    page,
+  }) => {
     await openApp(page);
     await seedFixtureRace(page);
     await openMapWithAcceptedSafety(page);

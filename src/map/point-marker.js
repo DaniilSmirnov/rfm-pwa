@@ -33,8 +33,7 @@ export function createPointMarkerContent(element, name, kind) {
   } else if (kind === 'finish') {
     icon.innerHTML =
       '<svg class="map-point-svg map-point-finish-flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v18M6 4h11v9H6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 5h3v3H7zm6 0h3v3h-3zm-3 3h3v3h-3zm6 0h1v3h-1z" fill="currentColor"/></svg>';
-  } else
-    icon.textContent = { parking: 'P', closure: '!', location: '•' }[kind];
+  } else icon.textContent = { parking: 'P', closure: '!', location: '•' }[kind];
   const label = document.createElement('span');
   label.className = 'map-point-label';
   label.textContent = name;

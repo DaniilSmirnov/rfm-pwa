@@ -16,7 +16,9 @@ describe('spectator map symbols', () => {
   it('renders communication, start and finish with dedicated svg icons', () => {
     const communication = document.createElement('button');
     createPointMarkerContent(communication, 'Пост связи', 'communication');
-    expect(communication.querySelector('.map-point-symbol').classList.contains('is-communication')).toBe(true);
+    expect(
+      communication.querySelector('.map-point-symbol').classList.contains('is-communication'),
+    ).toBe(true);
     expect(communication.querySelector('.map-point-svg')).toBeTruthy();
 
     const passport = document.createElement('button');
