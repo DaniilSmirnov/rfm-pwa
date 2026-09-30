@@ -369,12 +369,16 @@
   }
 
   .crew-result-card-time.is-retired {
+    color: var(--brand-orange);
+    font-weight: 400;
     white-space: normal;
   }
 
+  .crew-result-card-retirement-label,
   .crew-result-card-retirement-reason {
     overflow-wrap: anywhere;
     color: var(--brand-orange);
+    font-weight: 400;
     line-height: 1.2;
   }
 
