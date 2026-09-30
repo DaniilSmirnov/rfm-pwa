@@ -89,7 +89,9 @@ export default function MapView({
     if (!event.target.closest?.('.map-point-sheet-handle, .point-actions-copy')) return;
     const source = event.touches?.[0] || event;
     pointSheetGesture.current = { startY: source.clientY, suppressClick: false };
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    event.target
+      .closest?.('.map-point-sheet-handle, .point-actions-copy')
+      ?.setPointerCapture?.(event.pointerId);
   };
   const endPointSheetGesture = event => {
     if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;

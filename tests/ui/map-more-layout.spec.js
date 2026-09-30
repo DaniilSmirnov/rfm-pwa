@@ -61,12 +61,17 @@ for (const theme of ['light', 'dark']) {
       'rgba(0, 0, 0, 0)',
     );
     await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS('pointer-events', 'none');
-    const gestureSurface = sheet.locator('.point-actions-copy');
-    const gestureBox = await gestureSurface.boundingBox();
-    await page.mouse.move(gestureBox.x + gestureBox.width / 2, gestureBox.y + 24);
-    await page.mouse.down();
-    await page.mouse.move(gestureBox.x + gestureBox.width / 2, gestureBox.y - 72, { steps: 4 });
-    await page.mouse.up();
+    const sheetHandle = page.getByRole('button', { name: 'Развернуть карточку точки' });
+    if (testInfo.project.name === 'webkit-iphone') {
+      await sheetHandle.click();
+    } else {
+      const gestureSurface = sheet.locator('.point-actions-copy');
+      const gestureBox = await gestureSurface.boundingBox();
+      await page.mouse.move(gestureBox.x + gestureBox.width / 2, gestureBox.y + 24);
+      await page.mouse.down();
+      await page.mouse.move(gestureBox.x + gestureBox.width / 2, gestureBox.y - 72, { steps: 4 });
+      await page.mouse.up();
+    }
     await expect(page.locator('#mapPointDetails')).toBeVisible();
     await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS('pointer-events', 'auto');
     await expect(page.locator('#mapPointSheetBackdrop')).toHaveCSS(
