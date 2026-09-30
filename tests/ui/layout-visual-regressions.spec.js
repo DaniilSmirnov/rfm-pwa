@@ -43,7 +43,7 @@ test('places More controls at the top and leaves the complete footer clear of th
   page,
 }) => {
   await openApp(page);
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
 
   const footer = page.locator('.app-footer');
   const menu = page.locator('.more-menu');
