@@ -463,16 +463,16 @@ export default function MapView({
               <span>Добавляй точки и экипажи в избранное — они появятся здесь.</span>
             </div>
           )}
-          <section className="favorites-panel" aria-labelledby="favoritesTitle">
-            <p id="favoritesStatus" className="muted small">
-              {app.favorites.length
-                ? `${app.favorites.length} сохранено для этой гонки.`
-                : 'Добавляй точки в избранное, чтобы они были всегда под рукой.'}
-            </p>
-            <div id="favoritesList" className="favorites-list">
-              {favoritesContent}
-            </div>
-          </section>
+          {app.favorites.length > 0 && (
+            <section className="favorites-panel" aria-labelledby="favoritesTitle">
+              <p id="favoritesStatus" className="muted small">
+                {`${app.favorites.length} сохранено для этой гонки.`}
+              </p>
+              <div id="favoritesList" className="favorites-list">
+                {favoritesContent}
+              </div>
+            </section>
+          )}
           {followedResults.length > 0 && (
             <section className="map-followed-crews" aria-label="Избранные экипажи">
               <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
