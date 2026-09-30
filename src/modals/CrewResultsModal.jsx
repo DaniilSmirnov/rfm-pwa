@@ -459,7 +459,7 @@ export default function CrewResultsModal({
                   onClick={() => setSelectedCrew(result)}
                   aria-label={`Открыть результаты экипажа ${resultLabel(result)}`}
                 >
-                  <span className="crew-result-card-place">{retirement ? '—' : place}</span>
+                  <span className="crew-result-card-place">{place}</span>
                   <span className="crew-result-card-copy">
                     <strong>
                       №{crew.number || '—'} {resultLabel(result)}
