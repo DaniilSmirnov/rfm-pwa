@@ -23,7 +23,9 @@ function retirementLabel(result) {
 }
 
 function sentenceCase(value) {
-  const normalized = String(value || '').toLocaleLowerCase('ru').trim();
+  const normalized = String(value || '')
+    .toLocaleLowerCase('ru')
+    .trim();
   return normalized ? normalized[0].toLocaleUpperCase('ru') + normalized.slice(1) : '';
 }
 
@@ -38,10 +40,9 @@ function cleanRetirementReason(result, views, resultLabel) {
     [crew?.pilot?.firstName, crew?.pilot?.lastName].filter(Boolean).join(' '),
     [crew?.navigator?.lastName, crew?.navigator?.firstName].filter(Boolean).join(' '),
     [crew?.navigator?.firstName, crew?.navigator?.lastName].filter(Boolean).join(' '),
-    ...views.slice(1).flatMap(view => [
-      view?.name,
-      String(view?.name || '').replace(/^Спецучасток\s*/i, 'СУ '),
-    ]),
+    ...views
+      .slice(1)
+      .flatMap(view => [view?.name, String(view?.name || '').replace(/^Спецучасток\s*/i, 'СУ ')]),
   ].filter(Boolean);
 
   let cleaned = reason;
@@ -390,7 +391,8 @@ export default function CrewResultsModal({
                                   </span>
                                   <span>
                                     {stageResult.goingOff || stageResult.goingOffAfterSu
-                                      ? retirementDetails(stageResult, views, resultLabel)?.reason || 'Сход'
+                                      ? retirementDetails(stageResult, views, resultLabel)
+                                          ?.reason || 'Сход'
                                       : stageResult.formattedTime || 'Время пока недоступно'}
                                     <small>
                                       От лидера: {gapFromLeader(stageResult, view.results)}

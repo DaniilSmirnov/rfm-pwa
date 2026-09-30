@@ -5,12 +5,7 @@ const TEMPORARY_ASMG_RACE_IDS = [
 ];
 
 export function asmgRaceIdForPackage(pkg) {
-  const raceName = [
-    pkg?.name,
-    pkg?.title,
-    pkg?.original?.name,
-    pkg?.original?.title,
-  ]
+  const raceName = [pkg?.name, pkg?.title, pkg?.original?.name, pkg?.original?.title]
     .filter(Boolean)
     .join(' ');
 

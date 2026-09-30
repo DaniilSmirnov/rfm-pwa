@@ -116,27 +116,31 @@ describe('ASMG results adapter', () => {
     const stages = [
       {
         specialStage: { name: 'СУ 1', distance: '10' },
-        results: [{
-          time: 120000,
-          crew: {
-            id: 7,
-            number: 27,
-            car: 'Skoda Fabia RS Rally2',
-            pilot: { firstName: 'Иван', lastName: 'Иванов' },
-            navigator: { firstName: 'Петр', lastName: 'Петров' },
+        results: [
+          {
+            time: 120000,
+            crew: {
+              id: 7,
+              number: 27,
+              car: 'Skoda Fabia RS Rally2',
+              pilot: { firstName: 'Иван', lastName: 'Иванов' },
+              navigator: { firstName: 'Петр', lastName: 'Петров' },
+            },
+            discipline: { name: 'R5' },
           },
-          discipline: { name: 'R5' },
-        }],
+        ],
       },
       {
         specialStage: { name: 'СУ 2', distance: '10' },
-        results: [{
-          time: 0,
-          goingOff: true,
-          reasonGoingOff: 'Поломка',
-          crew: { id: 7, number: 27 },
-          discipline: {},
-        }],
+        results: [
+          {
+            time: 0,
+            goingOff: true,
+            reasonGoingOff: 'Поломка',
+            crew: { id: 7, number: 27 },
+            discipline: {},
+          },
+        ],
       },
     ];
 
