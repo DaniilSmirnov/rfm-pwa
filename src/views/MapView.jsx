@@ -405,7 +405,7 @@ export default function MapView({
           aria-label="Инструменты карты"
           hidden={!toolsOpen}
         >
-          <div className="map-tools-heading">
+          <div className="map-tools-heading map-tools-heading-stacked">
             <div className="block-title">ИНСТРУМЕНТЫ КАРТЫ</div>
             <OfflineMapActions app={app} />
           </div>
