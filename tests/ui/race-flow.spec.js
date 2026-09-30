@@ -174,7 +174,7 @@ test.describe('saved race user flows', () => {
     expect(xml).toContain('<name>Смотровая точка</name>');
   });
 
-  test('renders rally point list', async ({ page }) => {
+  test('renders rally points on the map', async ({ page }) => {
     await openMap(page);
     await expect(
       page.locator('.map-race-label').filter({ hasText: 'Смотровая точка' }),
