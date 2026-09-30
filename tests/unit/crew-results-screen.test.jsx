@@ -122,7 +122,9 @@ describe('inline results screen', () => {
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
     expect(screen.getByRole('dialog', { name: 'Детали экипажа' })).toBeTruthy();
     expect(
-      within(screen.getByRole('dialog', { name: 'Детали экипажа' })).getByText('Поломка'),
-    ).toBeTruthy();
+      within(screen.getByRole('dialog', { name: 'Детали экипажа' }))
+        .getAllByText('Поломка')
+        .map(element => element.textContent),
+    ).toHaveLength(2);
   });
 });
