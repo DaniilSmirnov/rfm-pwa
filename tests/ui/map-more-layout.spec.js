@@ -44,6 +44,7 @@ for (const theme of ['light', 'dark']) {
     await selectMapPoint(page);
     const sheet = page.locator('#pointActions');
     await expect(sheet).toBeVisible();
+    await expect(sheet.locator('.map-point-sheet-grabber')).toBeVisible();
     await expect(sheet.locator('img')).toBeVisible();
     await expect(sheet).toContainText('350 м от парковки');
     await expect(page.locator('#mapPointDetails')).toBeHidden();

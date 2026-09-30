@@ -673,6 +673,7 @@ export default function MapView({
                 setPointDetailsOpen(open => !open);
               }}
             >
+              <span className="map-point-sheet-grabber" aria-hidden="true" />
               <MarqueeTitle>{pointSheetPoint.name || 'Точка на карте'}</MarqueeTitle>
               <span className="sr-only">
                 {pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'}
