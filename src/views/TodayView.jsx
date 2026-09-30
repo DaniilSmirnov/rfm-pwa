@@ -171,7 +171,7 @@ export function nextRaceDownloadSuggestion(pkg, catalog, now = new Date()) {
   return packageRaceId(pkg) === Number(next.id) ? null : next;
 }
 
-export default function TodayView({ app, onMap, onResults }) {
+export default function TodayView({ app, onMap, onResults, onRaces }) {
   const [now, setNow] = useState(() => new Date());
   const [crewSubscriptions, setCrewSubscriptions] = useState([]);
   useEffect(() => {
@@ -218,6 +218,11 @@ export default function TodayView({ app, onMap, onResults }) {
         У тебя скачан предыдущий Rally Pack «{previousPackage.name}». Если он больше не нужен
         офлайн, удали его, чтобы освободить место.
       </span>
+      {onRaces && (
+        <Button className="button compact today-storage-link" onClick={onRaces}>
+          Управлять сохранёнными гонками
+        </Button>
+      )}
     </Notice>
   );
   const summary = todaySummary(todayPackage, now);
