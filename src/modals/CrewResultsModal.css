@@ -448,6 +448,9 @@
   :root[data-theme='dark'] .crew-result-card.retired {
     background: transparent;
   }
+  :root[data-theme='dark'] .crew-result-card-time {
+    color: #f5f7fa;
+  }
   :root[data-theme='dark'] .crew-results-class-chips button {
     border-color: #30353d;
     background: #1d2127;

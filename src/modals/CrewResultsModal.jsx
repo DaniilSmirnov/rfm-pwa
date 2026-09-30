@@ -42,11 +42,12 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
         if (!open) onClose();
       }}
     >
-      <Dialog.Overlay className="crew-details-dialog-overlay" />
-      <Dialog.Content className="crew-details-dialog" aria-label="Детали экипажа">
-        <ScreenHeader title="Детали экипажа" onBack={onClose} />
+      <Dialog.Portal>
+        <Dialog.Overlay className="crew-details-dialog-overlay" />
+        <Dialog.Content className="crew-details-dialog" aria-label="Детали экипажа">
+          <ScreenHeader title="Детали экипажа" onBack={onClose} />
 
-        <div className="crew-details-profile">
+          <div className="crew-details-profile">
           <div className="crew-details-profile-copy">
             <div className="crew-details-identity">
               <strong>#{crewResult.crew?.number || '—'}</strong>
@@ -72,18 +73,18 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
             <strong>{overallStatus || `${crewResult.formattedFromLeader || '—'}`}</strong>
             <span>к лидеру</span>
           </div>
-        </div>
+          </div>
 
-        <div className="crew-details-tabs" role="tablist" aria-label="Детали результатов">
-          <Button className="active" role="tab" aria-selected="true">
-            По СУ
-          </Button>
-          <Button className="disabled" role="tab" aria-selected="false" disabled>
-            График позиции
-          </Button>
-        </div>
+          <div className="crew-details-tabs" role="tablist" aria-label="Детали результатов">
+            <Button className="active" role="tab" aria-selected="true">
+              По СУ
+            </Button>
+            <Button className="disabled" role="tab" aria-selected="false" disabled>
+              График позиции
+            </Button>
+          </div>
 
-        <div className="crew-details-stages">
+          <div className="crew-details-stages">
           <div
             className="crew-details-stage-table"
             role="table"
@@ -117,8 +118,9 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
               <p className="muted crew-details-empty">Данные по спецучасткам пока недоступны.</p>
             )}
           </div>
-        </div>
-      </Dialog.Content>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
     </Dialog.Root>
   );
 }
