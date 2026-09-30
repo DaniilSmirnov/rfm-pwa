@@ -41,8 +41,10 @@ test('switches between offline-first main tabs', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Гонки и Rally Pack' })).toBeVisible();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await expect(page.getByLabel('Управление гонками')).toBeVisible();
+  await expect(page.locator('.topbar')).toHaveCount(0);
+  await expect(page.locator('.screen-header')).toContainText('Управление гонками');
   await expect(page.getByLabel('Удалять автоматически по завершению гонки')).not.toBeChecked();
-  await page.getByRole('button', { name: 'Назад' }).click();
+  await page.locator('.screen-header-back').click();
   await expect(page.getByRole('button', { name: 'Настройки и диагностика' })).toBeVisible();
   await expect(page).toHaveURL(/\?tab=more$/);
   await page.getByRole('button', { name: 'Меню', exact: true }).click();
