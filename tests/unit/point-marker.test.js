@@ -27,7 +27,7 @@ describe('spectator map symbols', () => {
 
     const start = document.createElement('button');
     createPointMarkerContent(start, 'Старт', 'start');
-    expect(start.querySelector('.map-point-flag-left')).toBeTruthy();
+    expect(start.querySelector('.map-point-flag')).toBeTruthy();
 
     const finish = document.createElement('button');
     createPointMarkerContent(finish, 'Финиш', 'finish');
