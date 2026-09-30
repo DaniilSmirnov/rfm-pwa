@@ -1,45 +1,37 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  Settings,
-  MapPin,
-  ChevronDown,
-  Star,
-  ParkingSquare,
-  Car,
-} from "lucide-react";
-import packageMeta from "../../package.json";
-import ActionGroup from "../components/ActionGroup.jsx";
-import Button from "../components/Button.jsx";
-import SelectField from "../components/SelectField.jsx";
+import React, { useEffect, useRef, useState } from 'react';
+import { Settings, MapPin, ChevronDown, Star, ParkingSquare, Car } from 'lucide-react';
+import packageMeta from '../../package.json';
+import ActionGroup from '../components/ActionGroup.jsx';
+import Button from '../components/Button.jsx';
+import SelectField from '../components/SelectField.jsx';
 import {
   googleMapsDirections,
   yandexNavigatorLink,
   yandexWebFallback,
   coordinateText,
   openCustomSchemeWithFallback,
-} from "../navigation.js";
-import { isFavoritePoint } from "../app/local-points.js";
-import { formatDistance } from "../app/geo.js";
+} from '../navigation.js';
+import { isFavoritePoint } from '../app/local-points.js';
+import { formatDistance } from '../app/geo.js';
 import {
   stageMapStatuses,
   pointFeatureDetails,
   scheduledStageCrews,
   formatRallyTimeOfDay,
   stagePointResults,
-} from "../app/map-details.js";
-import { mapsMeLink } from "../navigation.js";
-import OfflineMapActions from "../components/OfflineMapActions.jsx";
-import Panel from "../components/Panel.jsx";
-import CollapsibleSection from "../components/CollapsibleSection.jsx";
-import ElevationProfile from "../components/ElevationProfile.jsx";
-import CompassReadout from "../components/CompassReadout.jsx";
-import { getCrewSubscriptions } from "../db.js";
-import { BRAND_ORANGE } from "../app/design-tokens.js";
-import { crewName, overallCrewResults } from "../app/crew-results.js";
-import "../components/MapView.css";
+} from '../app/map-details.js';
+import { mapsMeLink } from '../navigation.js';
+import OfflineMapActions from '../components/OfflineMapActions.jsx';
+import Panel from '../components/Panel.jsx';
+import CollapsibleSection from '../components/CollapsibleSection.jsx';
+import ElevationProfile from '../components/ElevationProfile.jsx';
+import CompassReadout from '../components/CompassReadout.jsx';
+import { getCrewSubscriptions } from '../db.js';
+import { BRAND_ORANGE } from '../app/design-tokens.js';
+import { crewName, overallCrewResults } from '../app/crew-results.js';
+import '../components/MapView.css';
 
-const mapsMeFallbackForPoint = (point) =>
-  `https://maps.me/${point.lat},${point.lon}`;
+const mapsMeFallbackForPoint = point => `https://maps.me/${point.lat},${point.lon}`;
 
 function MarqueeTitle({ children }) {
   const viewportRef = useRef(null);
@@ -57,16 +49,13 @@ function MarqueeTitle({ children }) {
     };
     measure();
 
-    const observer =
-      typeof ResizeObserver === "undefined"
-        ? null
-        : new ResizeObserver(measure);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
     observer?.observe(viewport);
     observer?.observe(text);
-    window.addEventListener("resize", measure);
+    window.addEventListener('resize', measure);
     return () => {
       observer?.disconnect();
-      window.removeEventListener("resize", measure);
+      window.removeEventListener('resize', measure);
     };
   }, [children]);
 
@@ -74,8 +63,8 @@ function MarqueeTitle({ children }) {
   return (
     <span
       ref={viewportRef}
-      className={`map-point-sheet-title${overflowing ? " is-overflowing" : ""}`}
-      style={{ "--map-title-distance": `${distance}px` }}
+      className={`map-point-sheet-title${overflowing ? ' is-overflowing' : ''}`}
+      style={{ '--map-title-distance': `${distance}px` }}
     >
       <span ref={textRef}>{children}</span>
     </span>
@@ -106,13 +95,10 @@ export default function MapView({
   selectedPointRef.current = app.selectedPoint;
   pointSheetPointRef.current = pointSheetPoint;
   const pkg = app.currentPackage;
-  const favorite = Boolean(
-    pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id),
-  );
+  const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
-  const liveStage = stages.find((stage) => stage.mapStatusKind === "live");
-  const selectedDetails =
-    pkg && pointSheetPoint ? pointFeatureDetails(pkg, pointSheetPoint) : null;
+  const liveStage = stages.find(stage => stage.mapStatusKind === 'live');
+  const selectedDetails = pkg && pointSheetPoint ? pointFeatureDetails(pkg, pointSheetPoint) : null;
   const scheduledCrews =
     pkg && pointStageDistance
       ? scheduledStageCrews(
@@ -124,14 +110,12 @@ export default function MapView({
       : [];
   const nextStageCrews = scheduledCrews.slice(0, 3);
   const pointStageResults =
-    pkg && pointStageDistance
-      ? stagePointResults(pkg, pointStageDistance.stage?.name)
-      : null;
+    pkg && pointStageDistance ? stagePointResults(pkg, pointStageDistance.stage?.name) : null;
   useEffect(() => {
     let alive = true;
     Promise.resolve()
       .then(() => getCrewSubscriptions())
-      .then((items) => {
+      .then(items => {
         if (alive) setCrewSubscriptions(Array.isArray(items) ? items : []);
       })
       .catch(() => {});
@@ -164,24 +148,20 @@ export default function MapView({
   }, [app.selectedPoint]);
   useEffect(() => {
     if (!toolsOpen && !favoritesOpen && !carOpen) return undefined;
-    const toolsTrigger = document.getElementById("mapToolsToggle");
-    const favoritesTrigger = document.getElementById("mapFavoritesToggle");
-    const carTrigger = document.getElementById("mapCarToggle");
-    const toolsDrawer = document.getElementById("mapToolsDrawer");
-    const favoritesDrawer = document.getElementById("mapFavoritesDrawer");
-    const carDrawer = document.getElementById("mapCarDrawer");
-    const activeTrigger = toolsOpen
-      ? toolsTrigger
-      : favoritesOpen
-        ? favoritesTrigger
-        : carTrigger;
+    const toolsTrigger = document.getElementById('mapToolsToggle');
+    const favoritesTrigger = document.getElementById('mapFavoritesToggle');
+    const carTrigger = document.getElementById('mapCarToggle');
+    const toolsDrawer = document.getElementById('mapToolsDrawer');
+    const favoritesDrawer = document.getElementById('mapFavoritesDrawer');
+    const carDrawer = document.getElementById('mapCarDrawer');
+    const activeTrigger = toolsOpen ? toolsTrigger : favoritesOpen ? favoritesTrigger : carTrigger;
     const closePanels = () => {
       setToolsOpen(false);
       setFavoritesOpen(false);
       setCarOpen(false);
       requestAnimationFrame(() => activeTrigger?.focus());
     };
-    const handlePointerDown = (event) => {
+    const handlePointerDown = event => {
       const target = event.target;
       if (
         toolsDrawer?.contains(target) ||
@@ -195,25 +175,24 @@ export default function MapView({
       }
       closePanels();
     };
-    const handleKeyDown = (event) => {
-      if (event.key !== "Escape") return;
+    const handleKeyDown = event => {
+      if (event.key !== 'Escape') return;
       event.preventDefault();
       closePanels();
     };
-    document.addEventListener("pointerdown", handlePointerDown, true);
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDown, true);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [toolsOpen, favoritesOpen, carOpen]);
   useEffect(() => setPointDetailsOpen(false), [app.selectedPoint]);
-  const beginPointSheetGesture = (event) => {
-    if (event.type.startsWith("pointer") && event.pointerType === "touch")
-      return;
-    const handleTarget = event.target.closest?.(".map-point-sheet-handle");
+  const beginPointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
+    const handleTarget = event.target.closest?.('.map-point-sheet-handle');
     const interactiveTarget = event.target.closest?.(
-      "button:not(.map-point-sheet-handle), a, input, select, textarea, summary",
+      'button:not(.map-point-sheet-handle), a, input, select, textarea, summary',
     );
     if (interactiveTarget && !handleTarget) return;
     const source = event.touches?.[0] || event;
@@ -225,9 +204,8 @@ export default function MapView({
     handleTarget?.setPointerCapture?.(event.pointerId);
     if (!handleTarget) event.currentTarget.setPointerCapture?.(event.pointerId);
   };
-  const movePointSheetGesture = (event) => {
-    if (event.type.startsWith("pointer") && event.pointerType === "touch")
-      return;
+  const movePointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
     const startY = pointSheetGesture.current.startY;
     const source = event.touches?.[0] || event;
     if (startY == null) return;
@@ -236,9 +214,8 @@ export default function MapView({
     setPointSheetDragProgress(Math.max(0, Math.min(1, progress)));
     if (Math.abs(delta) > 4) event.preventDefault?.();
   };
-  const endPointSheetGesture = (event) => {
-    if (event.type.startsWith("pointer") && event.pointerType === "touch")
-      return;
+  const endPointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
     const startY = pointSheetGesture.current.startY;
     const source = event.changedTouches?.[0] || event;
     pointSheetGesture.current.startY = null;
@@ -257,9 +234,8 @@ export default function MapView({
       setPointSheetDragProgress(1);
     }
   };
-  const cancelPointSheetGesture = (event) => {
-    if (event.type.startsWith("pointer") && event.pointerType === "touch")
-      return;
+  const cancelPointSheetGesture = event => {
+    if (event.type.startsWith('pointer') && event.pointerType === 'touch') return;
     pointSheetGesture.current = { startY: null, suppressClick: false };
   };
   useEffect(() => {
@@ -268,21 +244,16 @@ export default function MapView({
     const previousFocus = document.activeElement;
     const closePoint = () => app.showPoint?.(null);
     const focusable = () =>
-      [
-        ...(sheet?.querySelectorAll(
-          "button, a, input, select, textarea, [tabindex]",
-        ) || []),
-      ].filter(
-        (node) =>
-          !node.disabled && !node.closest("[hidden]") && node.tabIndex >= 0,
+      [...(sheet?.querySelectorAll('button, a, input, select, textarea, [tabindex]') || [])].filter(
+        node => !node.disabled && !node.closest('[hidden]') && node.tabIndex >= 0,
       );
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") {
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
         event.preventDefault();
         closePoint();
         return;
       }
-      if (event.key !== "Tab" || !sheet) return;
+      if (event.key !== 'Tab' || !sheet) return;
       if (!pointDetailsOpen) return;
       const items = focusable();
       if (!items.length) return;
@@ -296,11 +267,11 @@ export default function MapView({
         first.focus();
       }
     };
-    const onDocumentClick = (event) => {
+    const onDocumentClick = event => {
       if (
         sheet?.contains(event.target) ||
-        event.target.closest?.(".point-row, [data-point-opener]") ||
-        event.target.closest?.("#mapPointSheetBackdrop")
+        event.target.closest?.('.point-row, [data-point-opener]') ||
+        event.target.closest?.('#mapPointSheetBackdrop')
       ) {
         return;
       }
@@ -309,61 +280,50 @@ export default function MapView({
         if (selectedPointRef.current === pointAtClick) closePoint();
       }, 0);
     };
-    if (pointDetailsOpen) document.body.classList.add("modal-open");
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("click", onDocumentClick);
+    if (pointDetailsOpen) document.body.classList.add('modal-open');
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('click', onDocumentClick);
     if (pointDetailsOpen)
-      requestAnimationFrame(() =>
-        sheet?.querySelector(".map-point-sheet-handle")?.focus(),
-      );
+      requestAnimationFrame(() => sheet?.querySelector('.map-point-sheet-handle')?.focus());
     return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("click", onDocumentClick);
-      document.body.classList.remove("modal-open");
-      if (previousFocus && typeof previousFocus.focus === "function")
-        previousFocus.focus();
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('click', onDocumentClick);
+      document.body.classList.remove('modal-open');
+      if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
     };
   }, [app.selectedPoint, app.showPoint, pointDetailsOpen]);
-  const raceKey = String(pkg?.raceId || pkg?.original?.id || pkg?.id || "");
-  const asmgKey = String(
-    pkg?.asmgRaceId || pkg?.original?.asmg_id || pkg?.original?.asmgId || "",
-  );
+  const raceKey = String(pkg?.raceId || pkg?.original?.id || pkg?.id || '');
+  const asmgKey = String(pkg?.asmgRaceId || pkg?.original?.asmg_id || pkg?.original?.asmgId || '');
   const followed = crewSubscriptions
-    .filter(
-      (item) =>
-        item.raceId === raceKey || (asmgKey && item.asmgRaceId === asmgKey),
-    )
-    .map((item) => ({ id: item.crewId, number: item.number, name: item.name }));
+    .filter(item => item.raceId === raceKey || (asmgKey && item.asmgRaceId === asmgKey))
+    .map(item => ({ id: item.crewId, number: item.number, name: item.name }));
   const overallResults = overallCrewResults(pkg?.crewResults?.eventResults);
   const followedResults = followed
-    .map((favorite) => ({
+    .map(favorite => ({
       favorite,
-      position: overallResults.findIndex((result) =>
+      position: overallResults.findIndex(result =>
         [result.crew?.id, result.crew?.number].some(
-          (value) => String(value) === String(favorite.id || favorite.number),
+          value => String(value) === String(favorite.id || favorite.number),
         ),
       ),
     }))
-    .filter((item) => item.position >= 0)
-    .map((item) => ({ ...item, result: overallResults[item.position] }));
+    .filter(item => item.position >= 0)
+    .map(item => ({ ...item, result: overallResults[item.position] }));
   const followedEtas = followedResults
-    .map((item) => ({
+    .map(item => ({
       ...item,
-      scheduled: scheduledCrews.find((crew) =>
-        [crew.id, crew.number].some((value) =>
+      scheduled: scheduledCrews.find(crew =>
+        [crew.id, crew.number].some(value =>
           [item.favorite.id, item.favorite.number].some(
-            (favoriteId) => String(value) === String(favoriteId),
+            favoriteId => String(value) === String(favoriteId),
           ),
         ),
       ),
     }))
-    .filter((item) => item.scheduled?.eta);
-  const openYandex = (point) =>
-    openCustomSchemeWithFallback(
-      yandexNavigatorLink(point),
-      yandexWebFallback(point),
-    );
-  const copyPoint = async (point) => {
+    .filter(item => item.scheduled?.eta);
+  const openYandex = point =>
+    openCustomSchemeWithFallback(yandexNavigatorLink(point), yandexWebFallback(point));
+  const copyPoint = async point => {
     const text = coordinateText(point);
     try {
       await navigator.clipboard.writeText(text);
@@ -378,30 +338,28 @@ export default function MapView({
         <span className="map-brand" aria-label="Rally Fans Map">
           <img
             className="map-brand-logo"
-            src={`/rfm/icon.png?v=${String(packageMeta.version).replace(/\D/g, "")}`}
+            src={`/rfm/icon.png?v=${String(packageMeta.version).replace(/\D/g, '')}`}
             alt="Rally Fans Map"
           />
         </span>
         <label className="current-rally-select map-rally-picker">
           <MapPin aria-hidden="true" size={20} className="current-rally-pin" />
           <span className="current-rally-copy">
-            <strong id="mapTitle">{pkg?.name || "КАРТА РАЛЛИ"}</strong>
-            <small>{pkg?.summary?.dates || pkg?.dates || ""}</small>
+            <strong id="mapTitle">{pkg?.name || 'КАРТА РАЛЛИ'}</strong>
+            <small>{pkg?.summary?.dates || pkg?.dates || ''}</small>
           </span>
           {app.packages?.length > 0 && (
             <SelectField
               aria-label="Гонка на карте"
               className="map-rally-field"
-              value={pkg?.id || ""}
-              onChange={(event) => {
-                const selected = app.packages.find(
-                  (item) => String(item.id) === event.target.value,
-                );
+              value={pkg?.id || ''}
+              onChange={event => {
+                const selected = app.packages.find(item => String(item.id) === event.target.value);
                 if (selected) void app.selectPackage(selected.id);
               }}
             >
               {!pkg && <option value="">Выбрать гонку</option>}
-              {app.packages.map((item) => (
+              {app.packages.map(item => (
                 <option key={item.id} value={item.id}>
                   {item.name}
                 </option>
@@ -425,7 +383,7 @@ export default function MapView({
           aria-expanded={toolsOpen}
           aria-controls="mapToolsDrawer"
           onClick={() => {
-            setToolsOpen((open) => !open);
+            setToolsOpen(open => !open);
             setFavoritesOpen(false);
             setCarOpen(false);
           }}
@@ -439,7 +397,7 @@ export default function MapView({
           aria-expanded={favoritesOpen}
           aria-controls="mapFavoritesDrawer"
           onClick={() => {
-            setFavoritesOpen((open) => !open);
+            setFavoritesOpen(open => !open);
             setToolsOpen(false);
             setCarOpen(false);
           }}
@@ -453,7 +411,7 @@ export default function MapView({
           aria-expanded={carOpen}
           aria-controls="mapCarDrawer"
           onClick={() => {
-            setCarOpen((open) => !open);
+            setCarOpen(open => !open);
             setToolsOpen(false);
             setFavoritesOpen(false);
           }}
@@ -476,11 +434,7 @@ export default function MapView({
           >
             <img className="rfm-icon" src="/assets/location.svg" alt="" />
           </Button>
-          <span
-            id="geoStatus"
-            className={`map-locate-status ${app.geoClass}`}
-            aria-live="polite"
-          >
+          <span id="geoStatus" className={`map-locate-status ${app.geoClass}`} aria-live="polite">
             {app.geoStatus}
           </span>
         </div>
@@ -498,17 +452,10 @@ export default function MapView({
           <div className="map-export-actions">
             <div>
               <div className="block-title">ЭКСПОРТ ОФЛАЙН</div>
-              <p className="muted small">
-                Экспортирует текущую гонку без обращения к серверу.
-              </p>
+              <p className="muted small">Экспортирует текущую гонку без обращения к серверу.</p>
             </div>
             <ActionGroup>
-              <Button
-                id="exportGpxBtn"
-                className="button"
-                disabled={!pkg}
-                onClick={app.exportGpx}
-              >
+              <Button id="exportGpxBtn" className="button" disabled={!pkg} onClick={app.exportGpx}>
                 GPX
               </Button>
               <Button
@@ -524,7 +471,7 @@ export default function MapView({
           <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
           <div className="legend">
             <span>
-              <i style={{ background: "#f3f5f7" }} />
+              <i style={{ background: '#f3f5f7' }} />
               RallyFansMap
             </span>
             <span>
@@ -532,7 +479,7 @@ export default function MapView({
               Yandex Constructor
             </span>
             <span>
-              <i style={{ background: "#4da3ff" }} />
+              <i style={{ background: '#4da3ff' }} />
               вы
             </span>
           </div>
@@ -553,16 +500,11 @@ export default function MapView({
             <div className="map-favorites-empty" role="status">
               <Star aria-hidden="true" size={28} />
               <strong>Пока ничего нет</strong>
-              <span>
-                Добавляй точки и экипажи в избранное — они появятся здесь.
-              </span>
+              <span>Добавляй точки и экипажи в избранное — они появятся здесь.</span>
             </div>
           )}
           {app.favorites.length > 0 && (
-            <section
-              className="favorites-panel"
-              aria-labelledby="favoritesTitle"
-            >
+            <section className="favorites-panel" aria-labelledby="favoritesTitle">
               <p id="favoritesStatus" className="muted small">
                 {`${app.favorites.length} сохранено для этой гонки.`}
               </p>
@@ -572,36 +514,28 @@ export default function MapView({
             </section>
           )}
           {followedResults.length > 0 && (
-            <section
-              className="map-followed-crews"
-              aria-label="Избранные экипажи"
-            >
+            <section className="map-followed-crews" aria-label="Избранные экипажи">
               <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
               {followedResults.map(({ favorite, position, result }) => {
                 const stage = pkg.crewResults?.eventResults?.at(-1);
-                const stageResult = stage?.results?.find((row) =>
+                const stageResult = stage?.results?.find(row =>
                   [row.crew?.id, row.crew?.number].some(
-                    (value) =>
-                      String(value) === String(favorite.id || favorite.number),
+                    value => String(value) === String(favorite.id || favorite.number),
                   ),
                 );
                 return (
-                  <article
-                    className="map-followed-crew"
-                    key={favorite.id || favorite.number}
-                  >
+                  <article className="map-followed-crew" key={favorite.id || favorite.number}>
                     <strong>
-                      {position + 1}. №{" "}
-                      {result.crew?.number || favorite.number || "—"} ·{" "}
+                      {position + 1}. № {result.crew?.number || favorite.number || '—'} ·{' '}
                       {crewName(result.crew) || favorite.name}
                     </strong>
                     <span>
-                      {result.formattedTime} ·{" "}
-                      {result.formattedFromLeader === "00:00:00:0"
-                        ? "лидер"
+                      {result.formattedTime} ·{' '}
+                      {result.formattedFromLeader === '00:00:00:0'
+                        ? 'лидер'
                         : `отставание ${result.formattedFromLeader}`}
                       {stage?.specialStage?.name &&
-                        ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || "результат не опубликован"}`}
+                        ` · ${stage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`}
                     </span>
                   </article>
                 );
@@ -625,18 +559,11 @@ export default function MapView({
             <div className="car-panel-head">
               <p id="carStatus" className="muted small">
                 {app.carPoint
-                  ? `Сохранено ${app.carPoint.savedAt ? new Date(app.carPoint.savedAt).toLocaleString() : ""}`
-                  : "Сохрани текущие GPS-координаты машины."}
+                  ? `Сохранено ${app.carPoint.savedAt ? new Date(app.carPoint.savedAt).toLocaleString() : ''}`
+                  : 'Сохрани текущие GPS-координаты машины.'}
               </p>
-              <Button
-                id="saveCarBtn"
-                className="button"
-                type="button"
-                onClick={app.saveCar}
-              >
-                {app.carPoint
-                  ? "Обновить координаты машины"
-                  : "Запомнить машину"}
+              <Button id="saveCarBtn" className="button" type="button" onClick={app.saveCar}>
+                {app.carPoint ? 'Обновить координаты машины' : 'Запомнить машину'}
               </Button>
             </div>
             {app.carPoint && (
@@ -682,11 +609,7 @@ export default function MapView({
                   <Button
                     id="carGoogleBtn"
                     className="button compact"
-                    onClick={() =>
-                      (window.location.href = googleMapsDirections(
-                        app.carPoint,
-                      ))
-                    }
+                    onClick={() => (window.location.href = googleMapsDirections(app.carPoint))}
                   >
                     Google Maps
                   </Button>
@@ -714,7 +637,7 @@ export default function MapView({
         <>
           <Button
             id="mapPointSheetBackdrop"
-            className={`map-point-sheet-backdrop ${pointDetailsOpen ? "is-interactive" : ""}`}
+            className={`map-point-sheet-backdrop ${pointDetailsOpen ? 'is-interactive' : ''}`}
             type="button"
             aria-label="Закрыть карточку точки"
             tabIndex={pointDetailsOpen ? 0 : -1}
@@ -723,10 +646,10 @@ export default function MapView({
           <aside
             ref={pointSheetRef}
             id="pointActions"
-            className={`point-actions map-point-sheet ${pointDetailsOpen ? "is-expanded" : ""} ${pointSheetClosing ? "is-closing" : ""} ${pointSheetGesture.current.startY != null ? "is-dragging" : ""}`}
-            style={{ "--point-sheet-progress": pointSheetDragProgress }}
+            className={`point-actions map-point-sheet ${pointDetailsOpen ? 'is-expanded' : ''} ${pointSheetClosing ? 'is-closing' : ''} ${pointSheetGesture.current.startY != null ? 'is-dragging' : ''}`}
+            style={{ '--point-sheet-progress': pointSheetDragProgress }}
             role="dialog"
-            aria-modal={pointDetailsOpen ? "true" : undefined}
+            aria-modal={pointDetailsOpen ? 'true' : undefined}
             aria-labelledby="pointName"
             onPointerDown={beginPointSheetGesture}
             onPointerUp={endPointSheetGesture}
@@ -742,31 +665,23 @@ export default function MapView({
               aria-expanded={pointDetailsOpen}
               aria-controls="mapPointDetails"
               aria-label={
-                pointDetailsOpen
-                  ? "Свернуть карточку точки"
-                  : "Развернуть карточку точки"
+                pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'
               }
               onClick={() => {
                 if (pointSheetGesture.current.suppressClick) {
                   pointSheetGesture.current.suppressClick = false;
                   return;
                 }
-                setPointDetailsOpen((open) => !open);
+                setPointDetailsOpen(open => !open);
               }}
             >
               <span className="map-point-sheet-grabber" aria-hidden="true" />
-              <MarqueeTitle>
-                {pointSheetPoint.name || "Точка на карте"}
-              </MarqueeTitle>
+              <MarqueeTitle>{pointSheetPoint.name || 'Точка на карте'}</MarqueeTitle>
               <span className="sr-only">
-                {pointDetailsOpen
-                  ? "Свернуть карточку точки"
-                  : "Развернуть карточку точки"}
+                {pointDetailsOpen ? 'Свернуть карточку точки' : 'Развернуть карточку точки'}
               </span>
             </Button>
-            <div
-              className={`point-actions-copy ${selectedDetails?.photo ? "has-photo" : ""}`}
-            >
+            <div className={`point-actions-copy ${selectedDetails?.photo ? 'has-photo' : ''}`}>
               {selectedDetails?.photo && (
                 <a
                   className="map-point-sheet-photo-link"
@@ -785,7 +700,7 @@ export default function MapView({
               <span className="map-point-sheet-meta">
                 {pointStageDistance
                   ? `${pointStageDistance.stage.name} · ${formatDistance(pointStageDistance.distance.fromStart)} от старта`
-                  : "Точка на карте"}
+                  : 'Точка на карте'}
               </span>
               {selectedDetails?.rating && (
                 <span className="map-point-summary">
@@ -794,8 +709,7 @@ export default function MapView({
               )}
               {selectedDetails?.walking && (
                 <span className="map-point-summary map-point-walking">
-                  <ParkingSquare size={14} aria-hidden="true" />{" "}
-                  {selectedDetails.walking}
+                  <ParkingSquare size={14} aria-hidden="true" /> {selectedDetails.walking}
                 </span>
               )}
             </div>
@@ -810,7 +724,7 @@ export default function MapView({
               <span id="pointStageDistance" className="muted small">
                 {pointStageDistance
                   ? `${pointStageDistance.stage.name}: ${formatDistance(pointStageDistance.distance.fromStart)} от старта · ${formatDistance(pointStageDistance.distance.toFinish)} до финиша`
-                  : ""}
+                  : ''}
               </span>
               {(selectedDetails?.parking || selectedDetails?.walking) && (
                 <dl className="map-point-access">
@@ -830,73 +744,54 @@ export default function MapView({
               )}
               {(selectedDetails?.description || selectedDetails?.rating) && (
                 <div className="map-point-description">
-                  {selectedDetails.description && (
-                    <p>{selectedDetails.description}</p>
-                  )}
-                  {selectedDetails.rating && (
-                    <p>Оценка точки: {selectedDetails.rating}</p>
-                  )}
+                  {selectedDetails.description && <p>{selectedDetails.description}</p>}
+                  {selectedDetails.rating && <p>Оценка точки: {selectedDetails.rating}</p>}
                 </div>
               )}
               {nextStageCrews.length > 0 && (
-                <section
-                  className="map-point-next-crews"
-                  aria-label="Следующие экипажи на этапе"
-                >
-                  <strong>
-                    Следующие старты на {pointStageDistance.stage.name}
-                  </strong>
+                <section className="map-point-next-crews" aria-label="Следующие экипажи на этапе">
+                  <strong>Следующие старты на {pointStageDistance.stage.name}</strong>
                   <ol>
-                    {nextStageCrews.map((crew) => (
+                    {nextStageCrews.map(crew => (
                       <li key={crew.id}>
-                        {crew.number ? `№ ${crew.number}` : crew.name} · старт{" "}
-                        {crew.time}
+                        {crew.number ? `№ ${crew.number}` : crew.name} · старт {crew.time}
                         {crew.eta &&
                           ` · ориентировочное прибытие около ${formatRallyTimeOfDay(crew.eta, pkg)}`}
                       </li>
                     ))}
                   </ol>
                   <small>
-                    {nextStageCrews.some((crew) => crew.eta)
-                      ? "Старт опубликован организатором. Прибытие рассчитано по среднему темпу экипажей с результатом на этом СУ; оценка дана без live GPS."
-                      : "Время старта опубликовано организатором. Данных о темпе на этом СУ пока нет, ETA не рассчитывается."}
+                    {nextStageCrews.some(crew => crew.eta)
+                      ? 'Старт опубликован организатором. Прибытие рассчитано по среднему темпу экипажей с результатом на этом СУ; оценка дана без live GPS.'
+                      : 'Время старта опубликовано организатором. Данных о темпе на этом СУ пока нет, ETA не рассчитывается.'}
                   </small>
                 </section>
               )}
               {pointStageResults && (
-                <section
-                  className="map-point-stage-results"
-                  aria-label="Результаты этапа у точки"
-                >
+                <section className="map-point-stage-results" aria-label="Результаты этапа у точки">
                   <strong>Обстановка на {pointStageDistance.stage.name}</strong>
                   <p>
-                    По опубликованному протоколу СУ завершили экипажей:{" "}
+                    По опубликованному протоколу СУ завершили экипажей:{' '}
                     {pointStageResults.completedCount}.
                   </p>
                   {pointStageResults.bestResult && (
                     <p>
-                      Лучший результат: №{" "}
-                      {pointStageResults.bestResult.crew?.number || "—"}{" "}
-                      {crewName(pointStageResults.bestResult.crew)} ·{" "}
-                      {pointStageResults.bestResult.formattedTime ||
-                        "время не отформатировано"}
+                      Лучший результат: № {pointStageResults.bestResult.crew?.number || '—'}{' '}
+                      {crewName(pointStageResults.bestResult.crew)} ·{' '}
+                      {pointStageResults.bestResult.formattedTime || 'время не отформатировано'}
                     </p>
                   )}
                   <small>
-                    Отдельные отметки времени прохождения этой зрительской точки
-                    не опубликованы.
+                    Отдельные отметки времени прохождения этой зрительской точки не опубликованы.
                   </small>
                 </section>
               )}
               {followedEtas.length > 0 && (
-                <section
-                  className="map-favorite-etas"
-                  aria-label="Оценка избранных экипажей"
-                >
+                <section className="map-favorite-etas" aria-label="Оценка избранных экипажей">
                   <strong>Избранные экипажи · оценка у точки</strong>
                   {followedEtas.map(({ favorite, scheduled }) => (
                     <p key={favorite.id || favorite.number}>
-                      № {scheduled.number || favorite.number} · около{" "}
+                      № {scheduled.number || favorite.number} · около{' '}
                       {formatRallyTimeOfDay(scheduled.eta, pkg)}
                     </p>
                   ))}
@@ -905,10 +800,10 @@ export default function MapView({
               <ActionGroup className="point-buttons">
                 <Button
                   id="favoritePointBtn"
-                  className={`button ${favorite ? "downloaded" : ""}`}
+                  className={`button ${favorite ? 'downloaded' : ''}`}
                   onClick={() => app.toggleFavorite(pointSheetPoint)}
                 >
-                  {favorite ? "★ В избранном" : "☆ В избранное"}
+                  {favorite ? '★ В избранном' : '☆ В избранное'}
                 </Button>
                 <Button
                   id="mapsMeBtn"
@@ -932,10 +827,7 @@ export default function MapView({
                 <Button
                   id="googleMapsBtn"
                   className="button"
-                  onClick={() =>
-                    (window.location.href =
-                      googleMapsDirections(pointSheetPoint))
-                  }
+                  onClick={() => (window.location.href = googleMapsDirections(pointSheetPoint))}
                 >
                   Google Maps
                 </Button>
@@ -963,7 +855,7 @@ export default function MapView({
               <CollapsibleSection
                 id="spectatorCompass"
                 open={compassOpen}
-                onToggle={(event) => setCompassOpen(event.currentTarget.open)}
+                onToggle={event => setCompassOpen(event.currentTarget.open)}
                 className="spectator-compass"
                 bodyClassName="spectator-compass-body"
                 summary={
@@ -974,8 +866,8 @@ export default function MapView({
                 }
               >
                 <p className="muted small">
-                  Показывает направление и расстояние до выбранной точки прямо
-                  по положению телефона.
+                  Показывает направление и расстояние до выбранной точки прямо по положению
+                  телефона.
                 </p>
                 <Button
                   id="compassEnableBtn"
@@ -983,7 +875,7 @@ export default function MapView({
                   type="button"
                   onClick={app.enableCompass}
                 >
-                  {app.compassEnabled ? "Компас включён" : "Включить компас"}
+                  {app.compassEnabled ? 'Компас включён' : 'Включить компас'}
                 </Button>
                 <CompassReadout point={pointSheetPoint} userPos={app.userPos} />
               </CollapsibleSection>
