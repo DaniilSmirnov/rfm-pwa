@@ -1,5 +1,5 @@
 import './RacesView.css';
-import React from 'react';
+import React, { useEffect } from 'react';
 import Button from '../components/Button.jsx';
 import CatalogList from '../components/CatalogList.jsx';
 import CatalogSection from '../components/CatalogSection.jsx';
@@ -8,6 +8,12 @@ import Panel from '../components/Panel.jsx';
 import SearchField from '../components/SearchField.jsx';
 
 export default function RacesView({ app, onOpenRace, onBack }) {
+  const { refreshPackages } = app;
+
+  useEffect(() => {
+    void Promise.resolve(refreshPackages?.()).catch(() => {});
+  }, [refreshPackages]);
+
   return (
     <section className="races-screen" aria-label="Управление гонками">
       <Panel className="races-preferences">
