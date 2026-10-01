@@ -519,6 +519,12 @@
     background: #1d2127;
     color: #f5f7fa;
   }
+  :root[data-theme='dark'] .crew-results-class-chips button.active,
+  :root[data-theme='dark'] .crew-results-class-chips button.active:hover {
+    border-color: var(--brand-orange, #f05217);
+    background: var(--brand-orange, #f05217);
+    color: #fff;
+  }
 }
 
 @layer modals {
