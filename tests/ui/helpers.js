@@ -438,6 +438,28 @@ export async function installAppMocks(page, options = {}) {
 
 export async function openApp(page, options = {}) {
   await installAppMocks(page, options);
+  if (options.standalone !== false) {
+    await page.addInitScript(() => {
+      const original = window.matchMedia.bind(window);
+      window.matchMedia = query => {
+        if (query.includes('display-mode: standalone')) {
+          return {
+            matches: true,
+            media: query,
+            onchange: null,
+            addListener() {},
+            removeListener() {},
+            addEventListener() {},
+            removeEventListener() {},
+            dispatchEvent() {
+              return true;
+            },
+          };
+        }
+        return original(query);
+      };
+    });
+  }
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
   await page.getByRole('button', { name: 'Меню' }).click();

@@ -50,14 +50,14 @@ export async function refreshPushUi({ updateStatus = true } = {}) {
   if (isIOSDevice() && !isStandalonePwa()) {
     if (updateStatus)
       setPushStatus(
-        'Сейчас приложение открыто в браузере. Установи PWA на экран «Домой», затем включи уведомления.',
+        'Сейчас приложение открыто в браузере. Установи приложение на экран «Домой», затем включи уведомления.',
       );
     return {
       supported: true,
       requiresInstall: true,
       active: false,
       testVisible: false,
-      label: 'Сначала установить PWA',
+      label: 'Сначала установить приложение',
     };
   }
   const sub = await getPushSubscription().catch(() => null);
@@ -218,7 +218,7 @@ export async function sendTestPush() {
     const data = await res.json();
     if (!res.ok || !data?.ok)
       throw new Error(data?.error || `Push service HTTP ${data?.status || res.status}`);
-    setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть PWA.', 'geo-ok');
+    setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть приложение.', 'geo-ok');
   } catch (e) {
     setPushStatus(`Тестовый push: ${e.message}`, 'geo-error');
   }

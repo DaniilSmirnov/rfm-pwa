@@ -10,14 +10,12 @@ import {
 test.describe('basic UI contracts', () => {
   test('main controls have accessible names', async ({ page }) => {
     await openApp(page);
-    const installPrompt = page.getByRole('region', { name: 'Установка PWA' });
-    await expect(installPrompt.getByRole('button')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Установка приложения' })).toBeHidden();
     await page.getByRole('button', { name: 'Меню' }).click();
     await expect(page.getByRole('button', { name: /Настройки и диагностика/ })).toBeVisible();
     await openRaceManagement(page);
     await expect(page.getByPlaceholder('Название гонки или этап…')).toBeVisible();
     await expect(page.getByLabel('Найти скачанную гонку')).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Установка PWA' })).toBeHidden();
     await expect(page.getByLabel('Удалять автоматически по завершению гонки')).not.toBeChecked();
   });
 
