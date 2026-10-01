@@ -69,7 +69,9 @@ test.describe('ASMG crew results', () => {
     await openAllResults(page);
     await expect(page.locator('.crew-results-inline')).toBeVisible();
     const row = page.locator('[data-crew-row]').first();
-    await row.getByRole('button', { name: /Следить за экипажем/ }).click();
+    const favorite = row.getByRole('button', { name: /Следить за экипажем/ });
+    await expect(favorite).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await favorite.click();
     await expect(row.getByRole('button', { name: /Отписаться от экипажа/ })).toBeVisible();
     const saved = await page.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {
