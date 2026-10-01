@@ -81,6 +81,7 @@ describe('inline results screen', () => {
     expect(screen.getByText('СУ 1')).toBeTruthy();
     expect(screen.getByText('00:00:50')).toBeTruthy();
     expect(within(dialog).getByRole('contentinfo', { name: 'Результаты от ASMG' })).toBeTruthy();
+    expect(within(dialog).getByText('Результаты от')).toBeTruthy();
   });
 
   it('replaces invalid crew times with an information label', () => {
