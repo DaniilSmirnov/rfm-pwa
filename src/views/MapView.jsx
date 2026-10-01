@@ -10,6 +10,7 @@ import {
   yandexWebFallback,
   coordinateText,
   openCustomSchemeWithFallback,
+  mapsMeLink,
 } from '../navigation.js';
 import { isFavoritePoint } from '../app/local-points.js';
 import { formatDistance } from '../app/geo.js';
@@ -20,7 +21,6 @@ import {
   formatRallyTimeOfDay,
   stagePointResults,
 } from '../app/map-details.js';
-import { mapsMeLink } from '../navigation.js';
 import OfflineMapActions from '../components/OfflineMapActions.jsx';
 import Panel from '../components/Panel.jsx';
 import CollapsibleSection from '../components/CollapsibleSection.jsx';
@@ -54,6 +54,8 @@ export default function MapView({
   const pointSheetPointRef = useRef(app.selectedPoint);
   const pointSheetGesture = useRef({ startY: null, suppressClick: false });
   const selectedPointRef = useRef(app.selectedPoint);
+  const selectedPoint = app.selectedPoint;
+  const showPoint = app.showPoint;
   selectedPointRef.current = app.selectedPoint;
   pointSheetPointRef.current = pointSheetPoint;
   const pkg = app.currentPackage;
@@ -198,10 +200,10 @@ export default function MapView({
     pointSheetGesture.current = { startY: null, suppressClick: false };
   };
   useEffect(() => {
-    if (!app.selectedPoint) return undefined;
+    if (!selectedPoint) return undefined;
     const sheet = pointSheetRef.current;
     const previousFocus = document.activeElement;
-    const closePoint = () => app.showPoint?.(null);
+    const closePoint = () => showPoint?.(null);
     const focusable = () =>
       [...(sheet?.querySelectorAll('button, a, input, select, textarea, [tabindex]') || [])].filter(
         node => !node.disabled && !node.closest('[hidden]') && node.tabIndex >= 0,
@@ -250,7 +252,7 @@ export default function MapView({
       document.body.classList.remove('modal-open');
       if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
     };
-  }, [app.selectedPoint, app.showPoint, pointDetailsOpen]);
+  }, [selectedPoint, showPoint, pointDetailsOpen]);
   const raceKey = String(pkg?.raceId || pkg?.original?.id || pkg?.id || '');
   const asmgKey = String(pkg?.asmgRaceId || pkg?.original?.asmg_id || pkg?.original?.asmgId || '');
   const followed = crewSubscriptions

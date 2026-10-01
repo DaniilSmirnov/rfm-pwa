@@ -11,10 +11,13 @@ import { ChevronRight, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
-  if (result?.formattedFromLeader) return result.formattedFromLeader;
+  if (result?.formattedFromLeader) return crewTimeLabel(result.formattedFromLeader);
+  const resultTime = Number(result?.time);
+  if (!Number.isFinite(resultTime)) return 'Нет информации';
   const leader = rows.find(row => !row?.goingOff && !row?.goingOffAfterSu && Number(row?.time) > 0);
   if (!leader || leader === result) return 'лидер';
-  const difference = Math.max(0, Number(result?.time) - Number(leader.time));
+  const difference = Math.max(0, resultTime - Number(leader.time));
+  if (!Number.isFinite(difference)) return 'Нет информации';
   return `+${(difference / 1000).toFixed(1)} с`;
 }
 
@@ -24,7 +27,7 @@ function retirementLabel(result) {
 
 function crewTimeLabel(value) {
   const text = String(value ?? '').trim();
-  return text && !text.includes('NaN') ? text : 'нет информации';
+  return text && !text.includes('NaN') ? text : 'Нет информации';
 }
 
 function crewIdOf(result, resultLabel) {
@@ -273,15 +276,28 @@ export default function CrewResultsModal({
       </div>
       <div className="crew-results-table-wrap">
         <table className="crew-results-table">
+          <colgroup>
+            <col className="crew-results-col-place" />
+            <col className="crew-results-col-name" />
+            <col className="crew-results-col-car" />
+            <col className="crew-results-col-time" />
+            <col className="crew-results-col-subscription" />
+          </colgroup>
           <thead>
             <tr>
-              <th scope="col">Место</th>
-              <th scope="col">Экипаж</th>
-              <th scope="col">Автомобиль / зачёт</th>
-              <th scope="col" id="crewResultsTimeHeading">
+              <th className="crew-results-place" scope="col">
+                Место
+              </th>
+              <th className="crew-results-name" scope="col">
+                Экипаж
+              </th>
+              <th className="crew-results-car" scope="col">
+                Автомобиль / зачёт
+              </th>
+              <th className="crew-results-time" scope="col" id="crewResultsTimeHeading">
                 {activeView?.name || 'Время'}
               </th>
-              <th scope="col">
+              <th className="crew-results-subscription" scope="col">
                 <span className="sr-only">Подписка</span>
               </th>
             </tr>
@@ -327,7 +343,7 @@ export default function CrewResultsModal({
                           {expandedCrew === id ? 'Скрыть СУ' : 'По СУ'}
                         </Button>
                       </td>
-                      <td>
+                      <td className="crew-results-car">
                         {crew.car || 'Автомобиль не указан'}
                         <small>{result?.discipline?.name || 'Зачёт не указан'}</small>
                       </td>
@@ -340,7 +356,7 @@ export default function CrewResultsModal({
                         )}
                         <small>От лидера: {gapFromLeader(result, selectedClassResults)}</small>
                       </td>
-                      <td>
+                      <td className="crew-results-subscription">
                         <Button
                           className={`button compact crew-subscribe-button ${subscribed ? 'downloaded' : ''}`}
                           type="button"

@@ -93,6 +93,7 @@
   .crew-results-table {
     width: 100%;
     min-width: 720px;
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: 13px;
     text-align: left;
@@ -115,6 +116,45 @@
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
+  }
+}
+@layer modals {
+  .crew-results-col-place {
+    width: 64px;
+  }
+  .crew-results-col-name {
+    width: 25%;
+  }
+  .crew-results-col-car {
+    width: 28%;
+  }
+  .crew-results-col-time {
+    width: 190px;
+  }
+  .crew-results-col-subscription {
+    width: 120px;
+  }
+  .crew-results-table th.crew-results-place,
+  .crew-results-table td.crew-results-place {
+    text-align: center;
+  }
+  .crew-results-table th.crew-results-name,
+  .crew-results-table td.crew-results-name,
+  .crew-results-table th.crew-results-car,
+  .crew-results-table td.crew-results-car {
+    text-align: left;
+  }
+  .crew-results-table th.crew-results-time,
+  .crew-results-table td.crew-results-time {
+    text-align: right;
+  }
+  .crew-results-table th.crew-results-subscription,
+  .crew-results-table td.crew-results-subscription {
+    text-align: center;
+  }
+  .crew-results-table td.crew-results-name,
+  .crew-results-table td.crew-results-car {
+    overflow-wrap: anywhere;
   }
 }
 @layer modals {
@@ -630,7 +670,10 @@
   }
   .crew-details-stage-row {
     display: grid;
-    grid-template-columns: 1.1fr 0.8fr 1.25fr 1.35fr;
+    grid-template-columns: minmax(48px, 1.1fr) minmax(48px, 0.8fr) minmax(80px, 1.25fr) minmax(
+        96px,
+        1.35fr
+      );
     gap: 8px;
     align-items: center;
     min-height: 38px;

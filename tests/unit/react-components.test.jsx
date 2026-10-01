@@ -247,6 +247,7 @@ function appFixture(overrides = {}) {
       [
         'setCatalogQuery',
         'setPackageQuery',
+        'refreshPackages',
         'loadCatalog',
         'clearAll',
         'importFiles',
@@ -436,6 +437,7 @@ describe('application components', () => {
     };
     const app = appFixture({ packages: [pkg] });
     render(<RacesView app={app} />);
+    expect(app.refreshPackages).toHaveBeenCalledWith();
     expect(screen.getByLabelText('Удалять автоматически по завершению гонки').checked).toBe(false);
     expect(screen.getByText('Sortavala Rally')).toBeTruthy();
     expect(screen.queryByText(/hero\.jpg|тайлов/i)).toBeNull();
@@ -912,7 +914,7 @@ describe('application components', () => {
     const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
     mocks.useRfmApp.mockReturnValue(app);
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Ещё/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Меню/ }));
     fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
     expect(screen.getByRole('heading', { name: 'Настройки и диагностика' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Назад' }));

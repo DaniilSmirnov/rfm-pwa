@@ -1,4 +1,5 @@
 import { normalizePoint } from '../navigation.js';
+import { readJsonStorage, removeStorage, writeJsonStorage } from './storage.js';
 
 export const FAVORITES_KEY = 'rfm-favorite-points-v1';
 export const CAR_POINT_KEY = 'rfm-car-point-v1';
@@ -9,12 +10,8 @@ export function pointKey(point) {
 }
 
 export function loadFavoritesStore() {
-  try {
-    const value = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '{}');
-    return value && typeof value === 'object' ? value : {};
-  } catch {
-    return {};
-  }
+  const value = readJsonStorage(FAVORITES_KEY, {});
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
 export function favoritesForPackage(packageId) {
@@ -26,7 +23,7 @@ export function removePackageFavorites(packageId) {
   const store = loadFavoritesStore();
   delete store[String(packageId || '')];
   try {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(store));
+    writeJsonStorage(FAVORITES_KEY, store);
   } catch {}
 }
 
@@ -46,27 +43,23 @@ export function setFavoritePoint(point, enabled, packageId) {
   if (enabled) list.push({ key, ...normalized, savedAt: new Date().toISOString() });
   if (list.length) store[id] = list;
   else delete store[id];
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify(store));
+  writeJsonStorage(FAVORITES_KEY, store);
 }
 
 export function loadCarPoint() {
-  try {
-    const value = JSON.parse(localStorage.getItem(CAR_POINT_KEY) || 'null');
-    return value && Number.isFinite(Number(value.lat)) && Number.isFinite(Number(value.lon))
-      ? value
-      : null;
-  } catch {
-    return null;
-  }
+  const value = readJsonStorage(CAR_POINT_KEY, null);
+  return value && Number.isFinite(Number(value.lat)) && Number.isFinite(Number(value.lon))
+    ? value
+    : null;
 }
 
 export function saveCarPoint(point) {
   const normalized = normalizePoint(point);
   const value = { ...normalized, name: 'Машина', savedAt: new Date().toISOString() };
-  localStorage.setItem(CAR_POINT_KEY, JSON.stringify(value));
+  writeJsonStorage(CAR_POINT_KEY, value);
   return value;
 }
 
 export function deleteCarPoint() {
-  localStorage.removeItem(CAR_POINT_KEY);
+  removeStorage(CAR_POINT_KEY);
 }

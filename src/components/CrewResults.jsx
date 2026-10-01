@@ -1,5 +1,5 @@
 import './CrewResults.css';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import CrewResultsModal from '../modals/CrewResultsModal.jsx';
 import {
   deleteCrewSubscription,
@@ -56,6 +56,46 @@ export default function CrewResults({ pkg, open = false, onClose, standalone = f
     [activeView, query, className],
   );
 
+  const loadResults = useCallback(
+    async (id, { automatic = false } = {}) => {
+      if (!id) return;
+      if (!automatic) setStatus('Загружаю результаты из ASMG…');
+      try {
+        const next = await fetchAsmgResults(id);
+        const snapshot = {
+          eventId: next.eventId,
+          eventResults: next.eventResults,
+          tournamentTitle: next.tournamentTitle || '',
+        };
+        const updatedPackage = {
+          ...pkg,
+          asmgRaceId: id,
+          crewResults: { ...snapshot, updatedAt: next.updatedAt || new Date().toISOString() },
+        };
+        await savePackage(updatedPackage);
+        setData(snapshot);
+        setStageKey('overall');
+        setClassName('');
+        setQuery('');
+        setStatus(
+          `${next.tournamentTitle ? `${next.tournamentTitle} · ` : ''}${next.eventResults.length} спецучастка · сохранено для офлайн-доступа.`,
+        );
+        window.dispatchEvent(
+          new CustomEvent('rfm:crew-results-updated', {
+            detail: { packageId: pkg.id, results: updatedPackage.crewResults },
+          }),
+        );
+      } catch (error) {
+        setStatus(
+          automatic
+            ? `Нет новых данных. ${error.message || error} Если результаты уже загружались, проверь, что для этой гонки сохранена последняя версия приложения.`
+            : `${error.message || error} Проверь номер гонки и подключение.`,
+        );
+      }
+    },
+    [pkg],
+  );
+
   useEffect(() => {
     let cancelled = false;
     const saved = pkg?.crewResults;
@@ -91,44 +131,7 @@ export default function CrewResults({ pkg, open = false, onClose, standalone = f
       cancelled = true;
       window.removeEventListener('rfm:periodic-update', update);
     };
-  }, [pkg?.id]);
-
-  async function loadResults(id, { automatic = false } = {}) {
-    if (!id) return;
-    if (!automatic) setStatus('Загружаю результаты АСМГ…');
-    try {
-      const next = await fetchAsmgResults(id);
-      const snapshot = {
-        eventId: next.eventId,
-        eventResults: next.eventResults,
-        tournamentTitle: next.tournamentTitle || '',
-      };
-      const updatedPackage = {
-        ...pkg,
-        asmgRaceId: id,
-        crewResults: { ...snapshot, updatedAt: next.updatedAt || new Date().toISOString() },
-      };
-      await savePackage(updatedPackage);
-      setData(snapshot);
-      setStageKey('overall');
-      setClassName('');
-      setQuery('');
-      setStatus(
-        `${next.tournamentTitle ? `${next.tournamentTitle} · ` : ''}${next.eventResults.length} спецучастка · сохранено для офлайн-доступа.`,
-      );
-      window.dispatchEvent(
-        new CustomEvent('rfm:crew-results-updated', {
-          detail: { packageId: pkg.id, results: updatedPackage.crewResults },
-        }),
-      );
-    } catch (error) {
-      setStatus(
-        automatic
-          ? `Нет новых данных. ${error.message || error} Если результаты уже загружались, проверь, что для этой гонки сохранена последняя версия приложения.`
-          : `${error.message || error} Проверь номер гонки и подключение.`,
-      );
-    }
-  }
+  }, [pkg?.id, pkg?.crewResults, asmgRaceId, loadResults]);
 
   async function toggleSubscription(result) {
     const crewId = String(result?.crew?.id || result?.crew?.number || resultLabel(result));

@@ -85,12 +85,27 @@ describe('inline results screen', () => {
   });
 
   it('replaces invalid crew times with an information label', () => {
-    const invalidTime = { ...overall[0], formattedTime: 'NaN:NaN:NaN:NaN' };
+    const invalidTime = {
+      ...overall[0],
+      formattedTime: 'NaN:NaN:NaN:NaN',
+      formattedFromLeader: 'NaN:NaN:NaN:NaN',
+    };
     renderResults({ visible: [invalidTime], selectedClassResults: [invalidTime] });
     fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
     const dialog = screen.getByRole('dialog', { name: 'Детали экипажа' });
-    expect(within(dialog).getAllByText('нет информации').length).toBeGreaterThan(0);
+    expect(within(dialog).getAllByText('Нет информации').length).toBeGreaterThan(0);
     expect(within(dialog).queryByText(/NaN/)).toBeNull();
+  });
+
+  it('keeps result table cells aligned with their column headers', () => {
+    renderResults({ open: true, standalone: false });
+    const table = screen.getByRole('table');
+    expect(table.querySelector('col.crew-results-col-place')).toBeTruthy();
+    expect(table.querySelector('col.crew-results-col-time')).toBeTruthy();
+    expect(table.querySelector('th.crew-results-time')).toBeTruthy();
+    expect(table.querySelector('td.crew-results-time')).toBeTruthy();
+    expect(table.querySelector('th.crew-results-subscription')).toBeTruthy();
+    expect(table.querySelector('td.crew-results-subscription')).toBeTruthy();
   });
 
   it('toggles the favorite state from the crew details card', () => {

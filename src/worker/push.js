@@ -5,6 +5,7 @@ import {
   readJson,
   fetchWithTimeout,
   json,
+  mapWithConcurrency,
 } from './http.js';
 
 function pushEndpointAllowed(endpoint) {
@@ -136,7 +137,7 @@ async function clearReminderPrefix(store, prefix) {
   let cursor;
   do {
     const page = await store.list({ prefix, cursor });
-    await Promise.all(page.keys.map(k => store.delete(k.name)));
+    await mapWithConcurrency(page.keys, 20, key => store.delete(key.name));
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
 }
@@ -151,19 +152,17 @@ async function runDueReminders(env, now = Date.now()) {
     removed = 0;
   do {
     const page = await env.PUSH_SUBSCRIPTIONS.list({ prefix: 'reminder:', cursor, limit: 1000 });
-    for (const key of page.keys) {
-      checked++;
+    const results = await mapWithConcurrency(page.keys, 20, async key => {
       const job = await env.PUSH_SUBSCRIPTIONS.get(key.name, 'json');
       if (!job) {
         await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-        continue;
+        return { checked: 1 };
       }
-      if (Number(job.dueAt) > now) continue;
+      if (Number(job.dueAt) > now) return { checked: 1 };
       const endpoint = job?.subscription?.endpoint;
       if (!pushEndpointAllowed(endpoint)) {
         await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-        removed++;
-        continue;
+        return { checked: 1, removed: 1 };
       }
       try {
         const hash = await subscriptionHash(endpoint);
@@ -184,18 +183,24 @@ async function runDueReminders(env, now = Date.now()) {
           Math.max(1800, Number(job.ttlSeconds) || 21600),
         );
         if (result.ok) {
-          sent++;
           await env.PUSH_SUBSCRIPTIONS.delete(key.name);
+          return { checked: 1, sent: 1 };
         } else {
-          failed++;
           if ([404, 410].includes(result.status)) {
             await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-            removed++;
+            return { checked: 1, failed: 1, removed: 1 };
           }
+          return { checked: 1, failed: 1 };
         }
       } catch {
-        failed++;
+        return { checked: 1, failed: 1 };
       }
+    });
+    for (const result of results) {
+      checked += result?.checked || 0;
+      sent += result?.sent || 0;
+      failed += result?.failed || 0;
+      removed += result?.removed || 0;
     }
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
@@ -419,13 +424,12 @@ async function handlePushApi(request, env, url, ctx) {
     const failedStatuses = {};
     do {
       const page = await env.PUSH_SUBSCRIPTIONS.list({ prefix: 'sub:', cursor });
-      for (const key of page.keys) {
+      const results = await mapWithConcurrency(page.keys, 20, async key => {
         const record = await env.PUSH_SUBSCRIPTIONS.get(key.name, 'json');
         const endpoint = record?.subscription?.endpoint;
         if (!pushEndpointAllowed(endpoint)) {
           await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-          removed++;
-          continue;
+          return { removed: 1 };
         }
         try {
           const hash = await subscriptionHash(endpoint);
@@ -442,23 +446,28 @@ async function handlePushApi(request, env, url, ctx) {
           );
 
           const result = await sendEmptyPush(endpoint, env, ttlSeconds);
-          if (result.ok) sent++;
+          if (result.ok) return { sent: 1 };
           else {
-            failed++;
             const statusKey = result.error
               ? `error:${result.error}`
               : String(result.status || 'unknown');
-            failedStatuses[statusKey] = (failedStatuses[statusKey] || 0) + 1;
             await env.PUSH_SUBSCRIPTIONS.delete(`pending:${hash}`);
             if ([404, 410].includes(result.status)) {
               await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-              removed++;
+              return { failed: 1, removed: 1, statusKey };
             }
+            return { failed: 1, statusKey };
           }
         } catch {
-          failed++;
-          failedStatuses.exception = (failedStatuses.exception || 0) + 1;
+          return { failed: 1, statusKey: 'exception' };
         }
+      });
+      for (const result of results) {
+        sent += result?.sent || 0;
+        failed += result?.failed || 0;
+        removed += result?.removed || 0;
+        if (result?.statusKey)
+          failedStatuses[result.statusKey] = (failedStatuses[result.statusKey] || 0) + 1;
       }
       cursor = page.list_complete ? undefined : page.cursor;
     } while (cursor);

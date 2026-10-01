@@ -1,4 +1,37 @@
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+const DEFAULT_JSON_LIMIT = 256 * 1024;
+
+function contentLength(request) {
+  const value = Number(request?.headers?.get?.('content-length'));
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+async function readLimitedText(source, maxBytes) {
+  const reader = source?.getReader?.();
+  if (!reader) return null;
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
+      total += chunk.byteLength;
+      if (total > maxBytes) return null;
+      chunks.push(chunk);
+    }
+  } finally {
+    reader.releaseLock?.();
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return decoder.decode(bytes);
+}
 
 export function bytesToBase64Url(bytes) {
   let binary = '';
@@ -15,12 +48,40 @@ export async function sha256Base64Url(value) {
   return bytesToBase64Url(await crypto.subtle.digest('SHA-256', encoder.encode(value)));
 }
 
-export async function readJson(request) {
+export async function readJson(request, { maxBytes = DEFAULT_JSON_LIMIT } = {}) {
   try {
-    return await request.json();
+    if (contentLength(request) > maxBytes) return null;
+    const text = await readLimitedText(request?.body, maxBytes);
+    if (text == null) return null;
+    return JSON.parse(text);
   } catch {
     return null;
   }
+}
+
+export async function readResponseText(response, { maxBytes = 5 * 1024 * 1024 } = {}) {
+  try {
+    const length = Number(response?.headers?.get?.('content-length'));
+    if (Number.isFinite(length) && length > maxBytes) return null;
+    return await readLimitedText(response?.body, maxBytes);
+  } catch {
+    return null;
+  }
+}
+
+export async function mapWithConcurrency(items, limit, mapper) {
+  const values = Array.from(items || []);
+  const results = new Array(values.length);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < values.length) {
+      const index = cursor++;
+      results[index] = await mapper(values[index], index);
+    }
+  };
+  const workers = Math.min(Math.max(1, Number(limit) || 1), values.length);
+  await Promise.all(Array.from({ length: workers }, worker));
+  return results;
 }
 
 export function commonHeaders(extra = {}) {
