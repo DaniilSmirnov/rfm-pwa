@@ -461,14 +461,18 @@
 
 @layer modals {
   .crew-details-dialog {
+    position: fixed;
     inset: 0;
     width: 100vw;
+    height: 100dvh;
     max-height: none;
     padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
       calc(20px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    z-index: 100003;
     border-radius: 0;
     background: #f8f8f8;
     box-shadow: none;
+    overflow: auto;
   }
   .crew-details-profile,
   .crew-details-tabs,
