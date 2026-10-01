@@ -660,6 +660,8 @@
   }
   .crew-details-footer {
     display: flex;
+    align-items: center;
+    gap: 5px;
     justify-content: center;
     width: min(100%, 760px);
     margin: 14px auto 0;
@@ -667,6 +669,12 @@
   .crew-details-footer-logo {
     width: 72px;
     height: 18px;
+  }
+  .asmg-results-prefix {
+    color: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
   }
 }
 
