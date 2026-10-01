@@ -430,12 +430,16 @@ export default function CrewResultsModal({
             value={query}
             onChange={event => onQueryChange(event.target.value)}
           />
-          <div className="asmg-results-brand" aria-label="Результаты ASMG">
-            <span className="asmg-results-logo" aria-hidden="true">
-              ASMG
-            </span>
+          <a
+            className="asmg-results-brand"
+            href="https://asmg.ru/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Открыть сайт ASMG"
+          >
+            <img className="asmg-results-logo" src="https://asmg.ru/favicon.ico" alt="ASMG" />
             <span>Результаты ASMG</span>
-          </div>
+          </a>
         </div>
       </div>
       <div className="crew-results-mobile-list">
