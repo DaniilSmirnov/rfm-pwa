@@ -218,7 +218,10 @@ export async function sendTestPush() {
     const data = await res.json();
     if (!res.ok || !data?.ok)
       throw new Error(data?.error || `Push service HTTP ${data?.status || res.status}`);
-    setPushStatus('Тестовый push запланирован через 10 секунд. Можно свернуть приложение.', 'geo-ok');
+    setPushStatus(
+      'Тестовый push запланирован через 10 секунд. Можно свернуть приложение.',
+      'geo-ok',
+    );
   } catch (e) {
     setPushStatus(`Тестовый push: ${e.message}`, 'geo-error');
   }

@@ -1,6 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { installAppMocks, openApp, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
+import {
+  installAppMocks,
+  openApp,
+  raceFixture,
+  secondRace,
+  seedFixtureRace,
+} from './helpers.js';
 
 const release = {
   ...JSON.parse(readFileSync(new URL('../../version.json', import.meta.url), 'utf8')),
@@ -22,20 +28,23 @@ test.describe('app shell and catalog', () => {
     await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
   });
 
-  test('blocks browser launches with a full-screen application installation gate', async ({ page }) => {
-    await installAppMocks(page);
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+  test(
+    'blocks browser launches with a full-screen application installation gate',
+    async ({ page }) => {
+      await installAppMocks(page);
+      await page.goto('/');
+      await page.waitForLoadState('domcontentloaded');
 
-    const installPrompt = page.getByRole('dialog', { name: 'Установка приложения' });
-    await expect(installPrompt).toBeVisible();
-    await expect(installPrompt).toHaveCSS('position', 'fixed');
-    await expect(installPrompt.getByRole('button', { name: 'Как установить' })).toBeVisible();
-    await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
-    await installPrompt.getByRole('button', { name: 'Как установить' }).click();
-    await expect(installPrompt.getByRole('heading', { name: 'Как установить?' })).toBeVisible();
-    await expect(installPrompt).toContainText('Chrome');
-  });
+      const installPrompt = page.getByRole('dialog', { name: 'Установка приложения' });
+      await expect(installPrompt).toBeVisible();
+      await expect(installPrompt).toHaveCSS('position', 'fixed');
+      await expect(installPrompt.getByRole('button', { name: 'Как установить' })).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
+      await installPrompt.getByRole('button', { name: 'Как установить' }).click();
+      await expect(installPrompt.getByRole('heading', { name: 'Как установить?' })).toBeVisible();
+      await expect(installPrompt).toContainText('Chrome');
+    },
+  );
 
   test('shows the race selector instead of a network badge', async ({ page }) => {
     await openApp(page);
