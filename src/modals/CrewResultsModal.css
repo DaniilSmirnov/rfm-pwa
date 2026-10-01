@@ -335,8 +335,8 @@
     font-weight: 700;
   }
   .crew-results-class-chips button.active {
-    border-color: var(--brand-orange, #ef3124);
-    background: var(--brand-orange, #ef3124);
+    border-color: var(--brand-orange, #f05217);
+    background: var(--brand-orange, #f05217);
     color: #fff;
   }
   .crew-results-search-row {

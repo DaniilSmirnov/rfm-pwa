@@ -59,6 +59,17 @@ describe('inline results screen', () => {
     expect(screen.getByRole('searchbox', { name: 'Поиск экипажа' })).toBeTruthy();
   });
 
+  it('highlights the selected result class with the active style', () => {
+    renderResults({ classes: ['A', 'N4'], className: 'N4' });
+    const selectedClass = screen.getByRole('button', { name: 'N4' });
+    const otherClass = screen.getByRole('button', { name: 'A' });
+
+    expect(selectedClass.classList.contains('active')).toBe(true);
+    expect(selectedClass.getAttribute('aria-pressed')).toBe('true');
+    expect(otherClass.classList.contains('active')).toBe(false);
+    expect(otherClass.getAttribute('aria-pressed')).toBe('false');
+  });
+
   it('prioritizes followed crews without changing their protocol places', () => {
     renderResults({ subscriptions: [{ crewId: '2', key: '55:2' }] });
     const cards = screen.getAllByRole('article');
