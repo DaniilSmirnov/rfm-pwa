@@ -46,6 +46,10 @@ test.describe('ASMG crew results', () => {
     await openAllResults(page);
     await expect(page.locator('.crew-results-inline')).toBeVisible();
     await expect(page.getByText('Результаты ASMG')).toBeVisible();
+    const asmgLink = page.getByRole('link', { name: 'Открыть сайт ASMG' });
+    await expect(asmgLink).toHaveAttribute('href', 'https://asmg.ru/');
+    await expect(asmgLink).toHaveAttribute('target', '_blank');
+    await expect(asmgLink.locator('svg')).toHaveAttribute('aria-label', 'ASMG');
     await expect(page.getByRole('button', { name: 'Фильтры' })).toHaveCount(0);
     const firstRow = page.locator('[data-crew-row]').first();
     await expect(firstRow).toContainText('00:14:50:0');
@@ -57,6 +61,7 @@ test.describe('ASMG crew results', () => {
     await expect(dialog).toContainText('00:14:50:0');
     const favorite = dialog.getByRole('button', { name: 'Добавить экипаж в избранное' });
     await expect(favorite).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(favorite).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await favorite.click();
     await expect(
       dialog.getByRole('button', { name: 'Удалить экипаж из избранного' }),
@@ -71,6 +76,7 @@ test.describe('ASMG crew results', () => {
     const row = page.locator('[data-crew-row]').first();
     const favorite = row.getByRole('button', { name: /Следить за экипажем/ });
     await expect(favorite).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(favorite).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await favorite.click();
     await expect(row.getByRole('button', { name: /Отписаться от экипажа/ })).toBeVisible();
     const saved = await page.evaluate(async () => {

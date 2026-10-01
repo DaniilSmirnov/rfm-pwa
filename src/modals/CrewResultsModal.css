@@ -324,6 +324,7 @@
     color: var(--text, #181b1f);
     font-size: 11px;
     font-weight: 700;
+    text-decoration: none;
     white-space: nowrap;
   }
   .asmg-results-logo {
@@ -331,12 +332,8 @@
     width: 34px;
     height: 34px;
     place-items: center;
-    border-radius: 9px;
-    background: var(--brand-orange, #ef3124);
-    color: #fff;
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: -0.05em;
+    background: transparent;
+    color: inherit;
   }
   .crew-results-mobile-list {
     border-top: 1px solid #e5e6e8;
@@ -425,13 +422,13 @@
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: var(--brand-orange, #ef3124);
+    background: transparent;
     color: #fff;
     box-shadow: none;
   }
   .crew-result-star:hover,
   .crew-result-star:focus-visible {
-    background: var(--brand-orange, #ef3124);
+    background: transparent;
     color: #fff;
   }
   .crew-result-card.retired .crew-result-card-time {
@@ -538,13 +535,13 @@
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: var(--brand-orange, #ef3124);
+    background: transparent;
     color: #fff;
   }
   .crew-details-star:hover,
   .crew-details-star:focus-visible,
   .crew-details-star.active {
-    background: var(--brand-orange, #ef3124);
+    background: transparent;
     color: #fff;
   }
   .crew-details-name,
