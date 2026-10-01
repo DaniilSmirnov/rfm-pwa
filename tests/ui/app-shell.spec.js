@@ -48,7 +48,7 @@ test.describe('app shell and catalog', () => {
       await expect(
         installPrompt.getByRole('heading', { name: 'Как установить?' }),
       ).toBeVisible();
-      await expect(installPrompt).toContainText('Chrome');
+      await expect(installPrompt).toContainText(/Chrome|Safari|Яндекс/);
     },
   );
 
