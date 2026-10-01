@@ -35,13 +35,19 @@ test.describe('app shell and catalog', () => {
       await page.goto('/');
       await page.waitForLoadState('domcontentloaded');
 
-      const installPrompt = page.getByRole('dialog', { name: 'Установка приложения' });
+      const installPrompt = page.getByRole('dialog', {
+        name: 'Установка приложения',
+      });
       await expect(installPrompt).toBeVisible();
       await expect(installPrompt).toHaveCSS('position', 'fixed');
-      await expect(installPrompt.getByRole('button', { name: 'Как установить' })).toBeVisible();
+      await expect(
+        installPrompt.getByRole('button', { name: 'Как установить' }),
+      ).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
       await installPrompt.getByRole('button', { name: 'Как установить' }).click();
-      await expect(installPrompt.getByRole('heading', { name: 'Как установить?' })).toBeVisible();
+      await expect(
+        installPrompt.getByRole('heading', { name: 'Как установить?' }),
+      ).toBeVisible();
       await expect(installPrompt).toContainText('Chrome');
     },
   );
@@ -66,7 +72,9 @@ test.describe('app shell and catalog', () => {
   test('catalog search reveals races outside week window', async ({ page }) => {
     await openApp(page);
     await openRaceManagement(page);
-    await page.getByPlaceholder('Название гонки или этап…').fill('Пермь');
+    await page
+      .getByPlaceholder('Название гонки или этап…')
+      .fill('Пермь');
     await expect(page.locator('#catalogList')).toContainText(secondRace.name);
     await expect(page.locator('#catalogList')).toContainText('Пермь');
   });
@@ -74,7 +82,9 @@ test.describe('app shell and catalog', () => {
   test('catalog search can find by race name', async ({ page }) => {
     await openApp(page);
     await openRaceManagement(page);
-    await page.getByPlaceholder('Название гонки или этап…').fill('Far Future');
+    await page
+      .getByPlaceholder('Название гонки или этап…')
+      .fill('Far Future');
     await expect(page.locator('.catalog-row')).toHaveCount(1);
     await expect(page.locator('.catalog-row')).toContainText(secondRace.name);
   });
@@ -82,14 +92,18 @@ test.describe('app shell and catalog', () => {
   test('catalog search shows empty state', async ({ page }) => {
     await openApp(page);
     await openRaceManagement(page);
-    await page.getByPlaceholder('Название гонки или этап…').fill('does-not-exist');
+    await page
+      .getByPlaceholder('Название гонки или этап…')
+      .fill('does-not-exist');
     await expect(page.locator('#catalogList')).toContainText('Ничего не найдено');
   });
 
   test('manual import section is available', async ({ page }) => {
     await openApp(page);
     await openRaceManagement(page);
-    await expect(page.getByText('Импортировать гонку из файла')).toBeVisible();
+    await expect(
+      page.getByText('Импортировать гонку из файла'),
+    ).toBeVisible();
     await expect(page.locator('label[for="racesFileInput"]')).toContainText(
       'Выбрать JSON или GeoJSON',
     );
@@ -99,7 +113,9 @@ test.describe('app shell and catalog', () => {
     await openApp(page);
     await page.getByRole('button', { name: 'Карта' }).click();
     await expect(page.locator('#downloadMapBtn')).toBeDisabled();
-    await expect(page.locator('#mapSubtitle')).toContainText('Выбери сохранённую гонку');
+    await expect(page.locator('#mapSubtitle')).toContainText(
+      'Выбери сохранённую гонку',
+    );
   });
 
   test('opens the race catalog from More', async ({ page }) => {
@@ -117,7 +133,9 @@ test.describe('app shell and catalog', () => {
     await expect(page.locator('#bootDiagnosticsModal')).toBeVisible();
     await page.locator('#bootDiagnosticsRefreshPackages').click();
     await page.locator('#bootDiagnosticsRefresh').click();
-    await expect(page.locator('#bootDiagnosticsMeta')).toContainText('Локальные данные:');
+    await expect(page.locator('#bootDiagnosticsMeta')).toContainText(
+      'Локальные данные:',
+    );
     await expect(page.locator('#bootDiagnosticsMeta')).toContainText('rallyfans-offline');
     await expect(page.locator('#bootDiagnosticsExport')).toBeVisible();
   });
