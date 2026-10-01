@@ -560,20 +560,38 @@ test.describe('PWA migration safety', () => {
         const request = tx.objectStore('packages').get('race-901');
         request.onsuccess = () =>
           resolve({
-            name: request.result?.namºïN­¢G§²ÚîÆ­yÝ
-    await page.evaluate(() => window.scrollTo(0, 250));
-    const before = await page.evaluate(() => window.scrollY);
-    expect(before).toBeGreaterThan(0);
-    await page.getByRole('button', { name: 'Ð¡ÐµÐ³Ð¾Ð´Ð½Ñ' }).click();
-    await page.getByRole('button', { name: 'ÐšÐ°Ñ€Ñ‚Ð°' }).click();
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeCloseTo(before, 0);
-  });
+            name: request.result?.name,
+            favorites: localStorage.getItem('rfm-favorite-points-v1'),
+          });
+        request.onerror = () => reject(request.error);
+      });
+    });
 
-  test('disables page pinch zoom', async ({ page }) => {
-    await openApp(page);
-    await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
-      'content',
-      /user-scalable=no/,
-    );
+    await registerHarnessWorker(page, '/migration-test/sw-upgrade-v2.js');
+    await expect
+      .poll(() => page.evaluate(() => fetch('/__sw-version').then(r => r.text())))
+      .toBe('v2');
+
+    const after = await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open('rallyfans-offline');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('packages', 'readonly');
+        const request = tx.objectStore('packages').get('race-901');
+        request.onsuccess = () =>
+          resolve({
+            name: request.result?.name,
+            favorites: localStorage.getItem('rfm-favorite-points-v1'),
+          });
+        request.onerror = () => reject(request.error);
+      });
+    });
+
+    expect(after).toEqual(before);
+    expect(after.name).toBe('Offline Migration Rally');
+    expect(after.favorites).toContain('Offline spectator point');
   });
 });
