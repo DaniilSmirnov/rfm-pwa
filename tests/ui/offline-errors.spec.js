@@ -213,14 +213,16 @@ test.describe('standalone launch detection', () => {
     await installAppMocks(page);
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
-    const installPrompt = page.getByRole('region', { name: 'Установка PWA' });
+    const installPrompt = page.getByRole('dialog', { name: 'Установка приложения' });
     await expect(installPrompt).toBeHidden();
     await expect(installPrompt.getByRole('button')).toBeHidden();
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'app');
   });
 
   test('browser launch is explicitly marked as browser context', async ({ page }) => {
-    await openApp(page);
+    await installAppMocks(page);
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('html')).toHaveAttribute('data-pwa-installed', 'false');
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
   });

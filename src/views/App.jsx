@@ -264,7 +264,7 @@ export default function App() {
         onLogoClick={handleLogoClick}
         pointElevation={pointElevation}
         pointStageDistance={pointStageDistance}
-        installPrompt={<PwaInstallPrompt active={tab === 'today'} />}
+        installPrompt={<PwaInstallPrompt />}
         screenContent={screenContent}
         updateMessage={updateMessage}
         onSelectRally={id => {

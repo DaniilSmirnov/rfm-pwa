@@ -73,7 +73,7 @@ export async function ensureMapLibre() {
   }
   const maplibregl = await mapLibrePromise;
   if (typeof maplibregl.supported === 'function' && !maplibregl.supported())
-    throw new Error('WebGL2 недоступен в этом браузере/PWA');
+    throw new Error('WebGL2 недоступен в этом браузере или приложении');
   return maplibregl;
 }
 

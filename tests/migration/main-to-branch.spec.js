@@ -262,6 +262,26 @@ test('migrates installed PWA from current main to branch without losing persiste
   page,
   context,
 }) => {
+  await page.addInitScript(() => {
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = query => {
+      if (query.includes('display-mode: standalone')) {
+        return {
+          matches: true,
+          media: query,
+          onchange: null,
+          addListener() {},
+          removeListener() {},
+          addEventListener() {},
+          removeEventListener() {},
+          dispatchEvent() {
+            return true;
+          },
+        };
+      }
+      return original(query);
+    };
+  });
   const reset = await page.request.post('/__migration/reset');
   expect(reset.ok()).toBe(true);
 

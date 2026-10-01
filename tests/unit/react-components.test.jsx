@@ -316,10 +316,10 @@ beforeEach(() => {
     installedLaunch: false,
     promptAvailable: false,
     instructions: {
-      title: 'Добавь приложение',
-      text: 'На главный экран',
+      title: 'Установка в Chrome',
+      text: 'Открой меню Chrome',
       action: 'Как установить',
-      steps: ['Открой меню'],
+      steps: ['Открой меню Chrome ⋮', 'Выбери установку', 'Открой приложение'],
     },
   });
   mocks.subscribePwaInstall.mockReturnValue(() => {});
@@ -406,12 +406,42 @@ describe('application components', () => {
       </>,
     );
     expect(document.querySelector('#networkBadge')).toBeNull();
-    expect(screen.getByText('RALLY FANS MAP')).toBeTruthy();
+    expect(document.querySelector('.header-wordmark')?.textContent).toBe('RALLY FANS MAP');
     expect(screen.getByText(/Companion v/)).toBeTruthy();
     expect(screen.getByText('Карелия')).toBeTruthy();
     expect(screen.getByRole('searchbox', { name: 'Найти гонку или этап' })).toBeTruthy();
-    expect(screen.getByText('Добавь приложение')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Установка приложения' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Установи приложение' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Как установить' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Как установить?' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Как установить' }));
+    expect(screen.getByRole('heading', { name: 'Как установить?' })).toBeTruthy();
     await waitFor(() => expect(mocks.subscribePwaInstall).toHaveBeenCalled());
+  });
+
+  it('uses the native browser installation prompt when it is available', async () => {
+    mocks.getPwaInstallSnapshot.mockReturnValue({
+      installedLaunch: false,
+      promptAvailable: true,
+      instructions: {
+        title: 'Установи Rally Fans Map Offline',
+        text: 'Установи приложение',
+        action: 'Установить приложение',
+        steps: [],
+      },
+    });
+    mocks.requestPwaInstall.mockResolvedValue({
+      installed: true,
+      prompted: true,
+      choice: { outcome: 'accepted' },
+    });
+
+    render(<PwaInstallPrompt />);
+    await fireEvent.click(screen.getByRole('button', { name: 'Установить приложение' }));
+
+    expect(mocks.requestPwaInstall).toHaveBeenCalledWith({
+      onInstructions: expect.any(Function),
+    });
   });
 
   it('covers catalog empty and downloaded/progress rendering', () => {

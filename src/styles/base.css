@@ -225,18 +225,8 @@
   }
 }
 @layer base {
-  html[data-pwa-installed='true'] .pwa-install-prompt {
-    display: none !important;
-  }
-}
-@layer base {
   main {
     padding-bottom: calc(92px + var(--safe-bottom));
-  }
-}
-@layer base {
-  body:not([data-active-tab='today']) .pwa-install-prompt {
-    display: none !important;
   }
 }
 @layer base {
