@@ -50,6 +50,7 @@ test.describe('ASMG crew results', () => {
     await firstRow.getByRole('button', { name: /Открыть результаты экипажа/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Детали экипажа' });
     await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveCSS('z-index', '100003');
     await expect(dialog).toContainText('СУ 2 · Пуйккола');
     await expect(dialog).toContainText('00:14:50:0');
   });
