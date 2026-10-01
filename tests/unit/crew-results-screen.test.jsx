@@ -82,6 +82,15 @@ describe('inline results screen', () => {
     expect(screen.getByText('00:00:50')).toBeTruthy();
   });
 
+  it('toggles the favorite state from the crew details card', () => {
+    const onToggleSubscription = vi.fn();
+    renderResults({ onToggleSubscription });
+    fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
+    const favorite = screen.getByRole('button', { name: 'Добавить экипаж в избранное' });
+    fireEvent.click(favorite);
+    expect(onToggleSubscription).toHaveBeenCalledWith(overall[0]);
+  });
+
   it('opens crew details when the result card itself is clicked', () => {
     renderResults();
     fireEvent.click(screen.getAllByRole('article')[0]);
