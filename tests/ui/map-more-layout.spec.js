@@ -85,7 +85,7 @@ for (const theme of ['light', 'dark']) {
     await selectMapPoint(page);
     await expect(page.locator('#pointActions')).toBeVisible();
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
-    await page.getByRole('button', { name: 'Меню', exact: true }).click();
+    await page.getByRole('button', { name: 'Ещё', exact: true }).click();
     const gaps = await page.locator('.more-menu-grid').evaluateAll(groups =>
       groups.flatMap(group => {
         const rows = [...group.querySelectorAll('.more-menu-row')];
@@ -117,13 +117,7 @@ test('supports real touch swipes on the mobile point sheet', async ({ page }, te
     },
   });
   await openMapWithAcceptedSafety(page);
-  await page.getByRole('button', { name: 'Инструменты карты' }).click();
-  await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-  await page
-    .locator('.point-row')
-    .filter({ hasText: 'Смотровая точка' })
-    .locator('.point-row-copy')
-    .click();
+  await selectMapPoint(page);
   const sheet = page.locator('#pointActions');
   await expect(sheet).toBeVisible();
   const cdp = await page.context().newCDPSession(page);

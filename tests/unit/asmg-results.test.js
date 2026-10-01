@@ -116,27 +116,31 @@ describe('ASMG results adapter', () => {
     const stages = [
       {
         specialStage: { name: 'СУ 1', distance: '10' },
-        results: [{
-          time: 120000,
-          crew: {
-            id: 7,
-            number: 27,
-            car: 'Skoda Fabia RS Rally2',
-            pilot: { firstName: 'Иван', lastName: 'Иванов' },
-            navigator: { firstName: 'Петр', lastName: 'Петров' },
+        results: [
+          {
+            time: 120000,
+            crew: {
+              id: 7,
+              number: 27,
+              car: 'Skoda Fabia RS Rally2',
+              pilot: { firstName: 'Иван', lastName: 'Иванов' },
+              navigator: { firstName: 'Петр', lastName: 'Петров' },
+            },
+            discipline: { name: 'R5' },
           },
-          discipline: { name: 'R5' },
-        }],
+        ],
       },
       {
         specialStage: { name: 'СУ 2', distance: '10' },
-        results: [{
-          time: 0,
-          goingOff: true,
-          reasonGoingOff: 'Поломка',
-          crew: { id: 7, number: 27 },
-          discipline: {},
-        }],
+        results: [
+          {
+            time: 0,
+            goingOff: true,
+            reasonGoingOff: 'Поломка',
+            crew: { id: 7, number: 27 },
+            discipline: {},
+          },
+        ],
       },
     ];
 
@@ -156,39 +160,45 @@ describe('ASMG results adapter', () => {
     const stages = [
       {
         specialStage: { name: 'СУ 1', distance: '8' },
-        results: [{
-          time: 120000,
-          crew: {
-            id: 8,
-            number: 28,
-            pilot: { firstName: 'Иван', lastName: 'Иванов' },
-            navigator: { firstName: 'Петр', lastName: 'Петров' },
-            car: 'Toyota Yaris',
+        results: [
+          {
+            time: 120000,
+            crew: {
+              id: 8,
+              number: 28,
+              pilot: { firstName: 'Иван', lastName: 'Иванов' },
+              navigator: { firstName: 'Петр', lastName: 'Петров' },
+              car: 'Toyota Yaris',
+            },
+            discipline: { name: 'Rally2' },
           },
-          discipline: { name: 'Rally2' },
-        }],
+        ],
       },
       {
         specialStage: { name: 'СУ 2', distance: '8' },
-        results: [{
-          time: 0,
-          goingOffAfterSu: true,
-          reasonGoingOff: 'Петров — сход после СУ 2',
-          crew: { id: 8, number: 28, pilot: { lastName: 'Иванов' } },
-          discipline: {},
-        }],
+        results: [
+          {
+            time: 0,
+            goingOffAfterSu: true,
+            reasonGoingOff: 'Петров — сход после СУ 2',
+            crew: { id: 8, number: 28, pilot: { lastName: 'Иванов' } },
+            discipline: {},
+          },
+        ],
       },
     ];
 
-    expect(overallCrewResults(stages)).toMatchObject([{
-      goingOffAfterSu: true,
-      crew: {
-        car: 'Toyota Yaris',
-        pilot: { firstName: 'Иван', lastName: 'Иванов' },
-        navigator: { firstName: 'Петр', lastName: 'Петров' },
+    expect(overallCrewResults(stages)).toMatchObject([
+      {
+        goingOffAfterSu: true,
+        crew: {
+          car: 'Toyota Yaris',
+          pilot: { firstName: 'Иван', lastName: 'Иванов' },
+          navigator: { firstName: 'Петр', lastName: 'Петров' },
+        },
+        discipline: { name: 'Rally2' },
       },
-      discipline: { name: 'Rally2' },
-    }]);
+    ]);
   });
 
   it('builds the cumulative leaderboard from stage times and uses it as the default view', () => {

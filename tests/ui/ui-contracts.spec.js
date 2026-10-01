@@ -12,7 +12,7 @@ test.describe('basic UI contracts', () => {
     await openApp(page);
     const installPrompt = page.getByRole('region', { name: 'Установка PWA' });
     await expect(installPrompt.getByRole('button')).toBeVisible();
-    await page.getByRole('button', { name: 'Меню' }).click();
+    await page.getByRole('button', { name: 'Ещё' }).click();
     await expect(page.getByRole('button', { name: /Настройки и диагностика/ })).toBeVisible();
     await openRaceManagement(page);
     await expect(page.getByPlaceholder('Название гонки или этап…')).toBeVisible();

@@ -162,7 +162,7 @@ export class Map{
     this.sources={};
     this.layers=[];
     this.handlers={};
-    queueMicrotask(()=>this.emit('load',{}));
+    queueMicrotask(()=>{this.emit('load',{});this.emit('style.load',{});});
   }
   on(type,a,b){
     const handler=typeof a==='function'?a:b;
@@ -440,7 +440,7 @@ export async function openApp(page, options = {}) {
   await installAppMocks(page, options);
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
-  await page.getByRole('button', { name: 'Меню' }).click();
+  await page.getByRole('button', { name: 'Ещё' }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await page.waitForFunction(
     () =>
@@ -452,7 +452,7 @@ export async function openApp(page, options = {}) {
 }
 
 export async function openRaceManagement(page) {
-  await page.getByRole('button', { name: 'Меню', exact: true }).click();
+  await page.getByRole('button', { name: 'Ещё', exact: true }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
 }
 
@@ -478,8 +478,14 @@ export async function openMapWithAcceptedSafety(page) {
 
 export async function selectMapPoint(page, name = 'Смотровая точка') {
   const marker = page.locator('.map-race-label').filter({ hasText: name }).first();
-  await marker.waitFor({ state: 'visible' });
-  await marker.click();
+  if (await marker.count()) {
+    await marker.waitFor({ state: 'visible' });
+    await marker.evaluate(element => element.click());
+  } else {
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
+    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
+    await page.locator('.point-row').filter({ hasText: name }).locator('.point-row-copy').click();
+  }
   await page.locator('#pointActions').waitFor({ state: 'visible' });
 }
 

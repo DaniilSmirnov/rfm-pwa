@@ -23,7 +23,7 @@ test.describe('ASMG crew results', () => {
     await expect(page.getByRole('button', { name: 'Все' })).toBeVisible();
 
     const rows = page.locator('[data-crew-row]');
-    await expect(rows).toHaveCount(4);
+    await expect(rows).toHaveCount(5);
     await expect(rows.first()).toContainText('Гожев Руслан / Коломиец Денис');
     await expect(rows.first()).toContainText('Skoda Fabia Rally2 Evo');
     await expect(rows.first()).toContainText('Абсолют');

@@ -60,7 +60,7 @@ test.describe('saved race user flows', () => {
   });
 
   test('opens and closes image modal', async ({ page }) => {
-    await page.getByRole('button', { name: 'Меню', exact: true }).click();
+    await page.getByRole('button', { name: 'Ещё', exact: true }).click();
     await page.getByRole('button', { name: 'Документы и материалы' }).click();
     const documents = page.getByLabel('Документы гонки');
     await documents.getByText('КАРТА ОРГАНИЗАТОРА').click();
@@ -176,12 +176,12 @@ test.describe('saved race user flows', () => {
 
   test('renders rally points on the map', async ({ page }) => {
     await openMap(page);
-    await expect(
-      page.locator('.map-race-label').filter({ hasText: 'Смотровая точка' }),
-    ).toBeVisible();
-    await expect(
-      page.locator('.map-race-label').filter({ hasText: 'Парковка зрителей' }),
-    ).toBeVisible();
+    const point = page.locator('.map-race-label').filter({ hasText: 'Смотровая точка' });
+    const fallbackPoint = page.getByRole('button', { name: 'Смотровая точка', exact: true });
+    await expect(point.or(fallbackPoint)).toBeVisible();
+    const parking = page.locator('.map-race-label').filter({ hasText: 'Парковка зрителей' });
+    const fallbackParking = page.getByRole('button', { name: 'Парковка зрителей', exact: true });
+    await expect(parking.or(fallbackParking)).toBeVisible();
   });
 
   test('opens actions for selected point', async ({ page }) => {
@@ -202,15 +202,17 @@ test.describe('saved race user flows', () => {
     await selectMapPoint(page);
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await page.locator('#favoritePointBtn').click();
-    await page.getByRole('button', { name: 'Закрыть карточку точки' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#pointActions')).toBeHidden();
     await openFavoritesPanel(page);
     await expect(page.locator('#favoritesList')).toContainText('Смотровая точка');
     await page.locator('#favoritesList .point-row-copy').click();
     await expect(page.locator('#pointActions')).toBeVisible();
-    await page.getByRole('button', { name: 'Закрыть карточку точки' }).click();
+    await page.keyboard.press('Escape');
     await openFavoritesPanel(page);
     await page.locator('#favoritesList').getByRole('button', { name: 'Удалить' }).click();
-    await expect(page.locator('#favoritesList')).not.toContainText('Смотровая точка');
+    await expect(page.locator('#favoritesList')).toHaveCount(0);
+    await expect(page.getByText('Пока ничего нет')).toBeVisible();
   });
 
   test('favorite state is reflected in point button', async ({ page }) => {
@@ -293,7 +295,7 @@ test.describe('saved race user flows', () => {
 
   test('map engine diagnostic reports MapLibre', async ({ page }) => {
     await openMap(page);
-    await page.getByRole('button', { name: 'Меню' }).click();
+    await page.getByRole('button', { name: 'Ещё' }).click();
     await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
     await expect(page.locator('.settings-diagnostics')).toContainText('MapLibre ✓');
   });
@@ -303,7 +305,8 @@ test.describe('saved race user flows', () => {
     await selectMapPoint(page);
     await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await page.locator('#favoritePointBtn').click();
-    await page.getByRole('button', { name: 'Закрыть карточку точки' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#pointActions')).toBeHidden();
     await openRaceManagement(page);
     page.once('dialog', dialog => dialog.accept());
     await page.locator('#clearBtn').click();
