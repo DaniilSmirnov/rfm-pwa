@@ -250,7 +250,16 @@ export function useRfmApp() {
   useEffect(() => {
     let alive = true;
     bootstrapRuntime().then(sw => {
-      if (alive) swRef.current = sw;
+      if (!alive) return;
+      swRef.current = sw;
+      // Bootstrap can activate a newer service worker and trigger a page
+      // reload. Refresh once after bootstrap as well, so the first branch
+      // render cannot keep a stale empty package list from the old shell.
+      void runtimeRef.current.refreshPackages(runtimeRef.current.currentPackageId).catch(error =>
+        markBoot('saved-data-post-bootstrap-refresh-failed', {
+          message: String(error?.message || error),
+        }),
+      );
     });
     runtimeRef.current
       .refreshPackages()

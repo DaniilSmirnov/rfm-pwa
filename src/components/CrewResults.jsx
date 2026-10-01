@@ -59,7 +59,7 @@ export default function CrewResults({ pkg, open = false, onClose, standalone = f
   const loadResults = useCallback(
     async (id, { automatic = false } = {}) => {
       if (!id) return;
-      if (!automatic) setStatus('Загружаю результаты АСМГ…');
+      if (!automatic) setStatus('Загружаю результаты из ASMG…');
       try {
         const next = await fetchAsmgResults(id);
         const snapshot = {

@@ -1,6 +1,9 @@
 import { geometryBounds } from '../normalize.js';
 
 const MAX_LATITUDE = 85.05112878;
+const BOUNDS_PADDING_FACTOR = 0.22;
+const MIN_LONGITUDE_PADDING = 0.05;
+const MIN_LATITUDE_PADDING = 0.04;
 
 export function clampLat(lat) {
   return Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, lat));
@@ -20,8 +23,10 @@ export function bufferedBounds(featureCollection) {
   if (!bounds) return null;
   const dx = Math.max(bounds.maxLon - bounds.minLon, 0.02);
   const dy = Math.max(bounds.maxLat - bounds.minLat, 0.02);
-  const padLon = Math.max(0.05, dx * 0.22);
-  const padLat = Math.max(0.04, dy * 0.22);
+  // Leave enough room around the route for edge markers and touch panning,
+  // while keeping the tile plan bounded for long rallies.
+  const padLon = Math.max(MIN_LONGITUDE_PADDING, dx * BOUNDS_PADDING_FACTOR);
+  const padLat = Math.max(MIN_LATITUDE_PADDING, dy * BOUNDS_PADDING_FACTOR);
   return {
     minLon: bounds.minLon - padLon,
     maxLon: bounds.maxLon + padLon,
