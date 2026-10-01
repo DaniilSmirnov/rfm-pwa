@@ -45,6 +45,8 @@ test.describe('ASMG crew results', () => {
   test('opens a crew modal with stage-by-stage times', async ({ page }) => {
     await openAllResults(page);
     await expect(page.locator('.crew-results-inline')).toBeVisible();
+    await expect(page.getByText('Результаты ASMG')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Фильтры' })).toHaveCount(0);
     const firstRow = page.locator('[data-crew-row]').first();
     await expect(firstRow).toContainText('00:14:50:0');
     await firstRow.getByRole('button', { name: /Открыть результаты экипажа/ }).click();
@@ -53,13 +55,23 @@ test.describe('ASMG crew results', () => {
     await expect(dialog).toHaveCSS('z-index', '100003');
     await expect(dialog).toContainText('СУ 2 · Пуйккола');
     await expect(dialog).toContainText('00:14:50:0');
+    const favorite = dialog.getByRole('button', { name: 'Добавить экипаж в избранное' });
+    await expect(favorite).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await favorite.click();
+    await expect(
+      dialog.getByRole('button', { name: 'Удалить экипаж из избранного' }),
+    ).toBeVisible();
+    await dialog.getByRole('button', { name: 'Удалить экипаж из избранного' }).click();
+    await expect(dialog.getByRole('button', { name: 'Добавить экипаж в избранное' })).toBeVisible();
   });
 
   test('stores a followed crew so the service worker can refresh it offline', async ({ page }) => {
     await openAllResults(page);
     await expect(page.locator('.crew-results-inline')).toBeVisible();
     const row = page.locator('[data-crew-row]').first();
-    await row.getByRole('button', { name: /Следить за экипажем/ }).click();
+    const favorite = row.getByRole('button', { name: /Следить за экипажем/ });
+    await expect(favorite).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await favorite.click();
     await expect(row.getByRole('button', { name: /Отписаться от экипажа/ })).toBeVisible();
     const saved = await page.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {

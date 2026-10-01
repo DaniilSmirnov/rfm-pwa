@@ -6,7 +6,7 @@ import Button from '../components/Button.jsx';
 import ScreenHeader, { useEdgeSwipeBack } from '../components/ScreenHeader.jsx';
 import SelectField from '../components/SelectField.jsx';
 import { formatRetirementReason } from '../app/crew-results.js';
-import { ChevronRight, Filter, Star } from 'lucide-react';
+import { ChevronRight, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
@@ -25,7 +25,14 @@ function crewIdOf(result, resultLabel) {
   return String(result?.crew?.id || result?.crew?.number || resultLabel(result));
 }
 
-function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
+function CrewDetailsDialog({
+  crewResult,
+  views,
+  resultLabel,
+  onClose,
+  subscribed,
+  onToggleSubscription,
+}) {
   useEdgeSwipeBack(onClose, Boolean(crewResult));
   if (!crewResult) return null;
   const crewId = crewIdOf(crewResult, resultLabel);
@@ -56,12 +63,17 @@ function CrewDetailsDialog({ crewResult, views, resultLabel, onClose }) {
             <div className="crew-details-profile-copy">
               <div className="crew-details-identity">
                 <strong>#{crewResult.crew?.number || '—'}</strong>
-                <Star
-                  className="crew-details-star"
-                  size={24}
-                  fill="currentColor"
-                  aria-label="Избранный экипаж"
-                />
+                <Button
+                  className={`crew-details-star ${subscribed ? 'active' : ''}`}
+                  type="button"
+                  aria-pressed={subscribed}
+                  aria-label={
+                    subscribed ? 'Удалить экипаж из избранного' : 'Добавить экипаж в избранное'
+                  }
+                  onClick={() => void onToggleSubscription(crewResult)}
+                >
+                  <Star size={20} fill={subscribed ? 'currentColor' : 'none'} aria-hidden="true" />
+                </Button>
               </div>
               <strong className="crew-details-name">{resultLabel(crewResult)}</strong>
               <span className="crew-details-car">
@@ -176,6 +188,10 @@ export default function CrewResultsModal({
         }),
     [visible, followedIds, resultLabel],
   );
+  const selectedCrewId = selectedCrew ? crewIdOf(selectedCrew, resultLabel) : null;
+  const selectedCrewSubscribed = selectedCrew
+    ? subscriptions.some(item => item.key === subscriptionKey(data.eventId, selectedCrewId))
+    : false;
 
   const content = (
     <>
@@ -414,9 +430,12 @@ export default function CrewResultsModal({
             value={query}
             onChange={event => onQueryChange(event.target.value)}
           />
-          <Button className="button crew-results-filter" aria-label="Фильтры">
-            <Filter size={18} aria-hidden="true" />
-          </Button>
+          <div className="asmg-results-brand" aria-label="Результаты ASMG">
+            <span className="asmg-results-logo" aria-hidden="true">
+              ASMG
+            </span>
+            <span>Результаты ASMG</span>
+          </div>
         </div>
       </div>
       <div className="crew-results-mobile-list">
@@ -487,6 +506,8 @@ export default function CrewResultsModal({
         crewResult={selectedCrew}
         views={views}
         resultLabel={resultLabel}
+        subscribed={selectedCrewSubscribed}
+        onToggleSubscription={onToggleSubscription}
         onClose={() => setSelectedCrew(null)}
       />
     </section>
