@@ -80,6 +80,16 @@ describe('inline results screen', () => {
     expect(within(dialog).getByRole('heading', { name: 'Детали экипажа' })).toBeTruthy();
     expect(screen.getByText('СУ 1')).toBeTruthy();
     expect(screen.getByText('00:00:50')).toBeTruthy();
+    expect(within(dialog).getByText('Результаты от ASMG')).toBeTruthy();
+  });
+
+  it('replaces invalid crew times with an information label', () => {
+    const invalidTime = { ...overall[0], formattedTime: 'NaN:NaN:NaN:NaN' };
+    renderResults({ visible: [invalidTime], selectedClassResults: [invalidTime] });
+    fireEvent.click(screen.getByRole('button', { name: /Открыть результаты экипажа Alpha/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Детали экипажа' });
+    expect(within(dialog).getAllByText('нет информации').length).toBeGreaterThan(0);
+    expect(within(dialog).queryByText(/NaN/)).toBeNull();
   });
 
   it('toggles the favorite state from the crew details card', () => {
