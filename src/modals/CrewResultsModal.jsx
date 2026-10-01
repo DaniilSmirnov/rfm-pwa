@@ -21,6 +21,11 @@ function retirementLabel(result) {
   return formatRetirementReason(result);
 }
 
+function crewTimeLabel(value) {
+  const text = String(value ?? '').trim();
+  return text && !text.includes('NaN') ? text : 'нет информации';
+}
+
 function crewIdOf(result, resultLabel) {
   return String(result?.crew?.id || result?.crew?.number || resultLabel(result));
 }
@@ -87,7 +92,7 @@ function CrewDetailsDialog({
               <span aria-hidden="true">RALLY</span>
             </div>
             <div className="crew-details-overall">
-              <strong>{overallStatus || `${crewResult.formattedFromLeader || '—'}`}</strong>
+              <strong>{overallStatus || crewTimeLabel(crewResult.formattedFromLeader)}</strong>
               <span>к лидеру</span>
             </div>
           </div>
@@ -122,7 +127,7 @@ function CrewDetailsDialog({
                         <span role="cell">{view.name.replace(/^Спецучасток\s*/i, 'СУ')}</span>
                         <span role="cell">{result ? view.results.indexOf(result) + 1 : '—'}</span>
                         <span className={status ? 'retired' : ''} role="cell">
-                          {status || result?.formattedTime || '—'}
+                          {status || crewTimeLabel(result?.formattedTime)}
                         </span>
                         <span className={status ? 'retired' : ''} role="cell">
                           {status || gapFromLeader(result, view.results)}
@@ -136,6 +141,7 @@ function CrewDetailsDialog({
               )}
             </div>
           </div>
+          <footer className="crew-details-footer">Результаты от ASMG</footer>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -324,7 +330,7 @@ export default function CrewResultsModal({
                       <td className="crew-results-time">
                         {retired
                           ? formatRetirementReason(result)
-                          : result.formattedTime || 'Время пока недоступно'}
+                          : crewTimeLabel(result.formattedTime)}
                         {result.formattedTimePenalty && (
                           <small>Штраф {result.formattedTimePenalty}</small>
                         )}
@@ -357,7 +363,7 @@ export default function CrewResultsModal({
                                   <span>
                                     {stageResult.goingOff || stageResult.goingOffAfterSu
                                       ? formatRetirementReason(stageResult)
-                                      : stageResult.formattedTime || 'Время пока недоступно'}
+                                      : crewTimeLabel(stageResult.formattedTime)}
                                     <small>
                                       От лидера: {gapFromLeader(stageResult, view.results)}
                                     </small>
@@ -465,7 +471,7 @@ export default function CrewResultsModal({
                 />
               </g>
             </svg>
-            <span>Результаты ASMG</span>
+            <span>Результаты от ASMG</span>
           </a>
         </div>
       </div>
@@ -521,7 +527,7 @@ export default function CrewResultsModal({
                     <small>{retired || result?.discipline?.name || 'Зачёт не указан'}</small>
                   </span>
                   <span className="crew-result-card-time">
-                    {retired || result.formattedTime || '—'}
+                    {retired || crewTimeLabel(result.formattedTime)}
                     {!retired && <small>{gapFromLeader(result, selectedClassResults)}</small>}
                   </span>
                   <ChevronRight size={18} aria-hidden="true" />
