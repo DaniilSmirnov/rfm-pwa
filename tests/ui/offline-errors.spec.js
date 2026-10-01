@@ -220,7 +220,9 @@ test.describe('standalone launch detection', () => {
   });
 
   test('browser launch is explicitly marked as browser context', async ({ page }) => {
-    await openApp(page);
+    await installAppMocks(page);
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('html')).toHaveAttribute('data-pwa-installed', 'false');
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
   });
