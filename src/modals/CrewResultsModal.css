@@ -314,6 +314,30 @@
     width: 44px;
     padding: 0;
   }
+  .asmg-results-brand {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 0 4px;
+    color: var(--text, #181b1f);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .asmg-results-logo {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--brand-orange, #ef3124);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+  }
   .crew-results-mobile-list {
     border-top: 1px solid #e5e6e8;
   }
@@ -395,19 +419,20 @@
   .crew-result-star {
     display: grid;
     place-items: center;
-    width: 24px;
-    height: 24px;
-    min-height: 24px;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
     padding: 0;
     border: 0;
-    background: transparent;
-    color: var(--brand-orange);
+    border-radius: 50%;
+    background: var(--brand-orange, #ef3124);
+    color: #fff;
     box-shadow: none;
   }
   .crew-result-star:hover,
   .crew-result-star:focus-visible {
-    background: transparent;
-    color: var(--brand-orange);
+    background: var(--brand-orange, #ef3124);
+    color: #fff;
   }
   .crew-result-card.retired .crew-result-card-time {
     color: var(--brand-orange);
@@ -416,7 +441,7 @@
     overflow-wrap: anywhere;
   }
   .crew-result-star.active {
-    color: var(--brand-orange);
+    color: #fff;
   }
   .crew-results-mobile .crew-results-empty {
     padding: 30px 10px;
@@ -466,8 +491,8 @@
     width: 100vw;
     height: 100dvh;
     max-height: none;
-    padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
-      calc(20px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    padding: 0 max(12px, env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
     z-index: 100003;
     border-radius: 0;
     background: #f8f8f8;
@@ -505,7 +530,22 @@
     font-size: 22px;
   }
   .crew-details-star {
-    color: #d71920;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--brand-orange, #ef3124);
+    color: #fff;
+  }
+  .crew-details-star:hover,
+  .crew-details-star:focus-visible,
+  .crew-details-star.active {
+    background: var(--brand-orange, #ef3124);
+    color: #fff;
   }
   .crew-details-name,
   .crew-details-car {
