@@ -7,7 +7,7 @@ import DownloadedRacesList from '../components/DownloadedRacesList.jsx';
 import Panel from '../components/Panel.jsx';
 import SearchField from '../components/SearchField.jsx';
 
-export default function RacesView({ app, onOpenRace }) {
+export default function RacesView({ app, onOpenRace, onBack }) {
   return (
     <section className="races-screen" aria-label="Управление гонками">
       <Panel className="races-preferences">

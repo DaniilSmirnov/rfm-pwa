@@ -162,7 +162,7 @@ export class Map{
     this.sources={};
     this.layers=[];
     this.handlers={};
-    queueMicrotask(()=>this.emit('load',{}));
+    queueMicrotask(()=>{this.emit('load',{});this.emit('style.load',{});});
   }
   on(type,a,b){
     const handler=typeof a==='function'?a:b;
@@ -440,7 +440,8 @@ export async function openApp(page, options = {}) {
   await installAppMocks(page, options);
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
-  await page.getByRole('button', { name: 'Гонки' }).click();
+  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await page.waitForFunction(
     () =>
       document.querySelector('#catalogStatus')?.textContent?.includes('гонок') ||
@@ -448,6 +449,11 @@ export async function openApp(page, options = {}) {
       document.querySelector('#catalogStatus')?.textContent?.includes('Офлайн'),
   );
   await page.getByRole('button', { name: 'Сегодня' }).click();
+}
+
+export async function openRaceManagement(page) {
+  await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+  await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
 }
 
 export async function openMapWithAcceptedSafety(page) {
@@ -470,9 +476,34 @@ export async function openMapWithAcceptedSafety(page) {
   await gate.waitFor({ state: 'hidden' });
 }
 
-export async function seedFixtureRace(page) {
+export async function selectMapPoint(page, name = 'Смотровая точка') {
+  const marker = page.locator('.map-race-label').filter({ hasText: name }).first();
+  if (await marker.count()) {
+    await marker.waitFor({ state: 'visible' });
+    await marker.evaluate(element => element.click());
+  } else {
+    await page.getByRole('button', { name: 'Инструменты карты' }).click();
+    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
+    await page.locator('.point-row').filter({ hasText: name }).locator('.point-row-copy').click();
+  }
+  await page.locator('#pointActions').waitFor({ state: 'visible' });
+}
+
+export async function openFavoritesPanel(page) {
+  const trigger = page.getByRole('button', { name: 'Избранное' });
+  await trigger.click();
+  await page.locator('#mapFavoritesDrawer').waitFor({ state: 'visible' });
+}
+
+export async function openCarPanel(page) {
+  const trigger = page.getByRole('button', { name: 'Моя машина' });
+  await trigger.click();
+  await page.locator('#mapCarDrawer').waitFor({ state: 'visible' });
+}
+
+export async function seedFixtureRace(page, { pointProperties = {} } = {}) {
   await page.evaluate(
-    async ({ race, results }) => {
+    async ({ race, results, pointProperties }) => {
       const request = indexedDB.open('rallyfans-offline', 3);
       request.onupgradeneeded = () => {
         const db = request.result;
@@ -498,7 +529,7 @@ export async function seedFixtureRace(page) {
             .map(Number);
           return {
             type: 'Feature',
-            properties: { kind: 'race-point', name: point.name },
+            properties: { ...pointProperties, kind: 'race-point', name: point.name },
             geometry: { type: 'Point', coordinates: [lon, lat] },
           };
         })
@@ -552,14 +583,12 @@ export async function seedFixtureRace(page) {
       db.close();
       window.dispatchEvent(new Event('rfm:refresh-local-data'));
     },
-    { race: raceFixture, results: asmgResultsFixture },
+    { race: raceFixture, results: asmgResultsFixture, pointProperties },
   );
   await page.getByRole('button', { name: 'Карта', exact: true }).click();
   await page.locator('.race-page').waitFor({ state: 'visible' });
-  await page.waitForFunction(() =>
-    Boolean(
-      document.querySelector('#crewResultsOpen') &&
-        !document.querySelector('#crewResultsOpen').hidden,
-    ),
-  );
+  await page
+    .locator('.race-page h2')
+    .filter({ hasText: raceFixture.name })
+    .waitFor({ state: 'visible' });
 }

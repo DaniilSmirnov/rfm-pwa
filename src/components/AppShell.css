@@ -16,18 +16,21 @@
     padding-right: max(var(--space-4), calc(var(--space-4) + var(--safe-right)));
     padding-bottom: var(--space-3);
     padding-left: max(var(--space-4), calc(var(--space-4) + var(--safe-left)));
-    background: #000;
-    color: #fff;
+    min-height: 68px;
+    background: #fff;
+    color: #17191b;
+    border-bottom: 1px solid #e9eaec;
   }
 }
 @layer views {
-  .topbar h1 {
-    margin: 0;
+  .header-wordmark {
+    color: #101214;
     font:
-      italic 700 18px/1 'RF Dewi Expanded Italic',
+      italic 900 15px/1 'RF Dewi Expanded Italic',
       Arial,
       sans-serif;
-    letter-spacing: 0.04em;
+    letter-spacing: -0.035em;
+    white-space: nowrap;
   }
 }
 @layer views {
@@ -62,108 +65,10 @@
   }
 }
 @layer views {
-  .more-menu {
-    padding: 18px var(--space-3) var(--space-2);
-  }
-}
-@layer views {
-  .more-menu-row {
-    margin: 0 0 14px;
-    padding: 18px;
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    background: #fff;
-  }
-}
-@layer views {
-  .more-menu-row {
-    display: grid;
-    width: 100%;
-    gap: 5px;
-    margin: var(--space-2) 0 0;
-    padding: 13px;
-    border: 1px solid #e4e4e4;
-    border-radius: 13px;
-    background: #fafafa;
-    color: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-}
-@layer views {
-  .more-menu-row span {
-    color: #777;
-    font-size: 13px;
-  }
-}
-@layer views {
-  .more-menu {
-    display: grid;
-    gap: 10px;
-  }
-}
-@layer views {
-  .more-menu-row strong {
-    font:
-      700 16px/1.1 'RF Dewi Expanded Bold',
-      Arial,
-      sans-serif;
-  }
-}
-@layer views {
   #reactShell {
     width: var(--page);
     max-width: 100%;
     margin: 0 auto;
-  }
-}
-@layer views {
-  .more-menu {
-    padding: 18px var(--space-3) var(--space-2);
-  }
-}
-@layer views {
-  .more-menu {
-    display: grid;
-    gap: 10px;
-  }
-}
-@layer views {
-  .more-menu-row {
-    display: grid;
-    gap: 5px;
-    padding: 17px 18px;
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    background: #fff;
-    color: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-}
-@layer views {
-  .more-menu-row strong {
-    font:
-      700 16px/1.1 'RF Dewi Expanded Bold',
-      Arial,
-      sans-serif;
-  }
-}
-@layer views {
-  .more-menu-row span {
-    color: #777;
-    font-size: 13px;
-  }
-}
-@layer theme {
-  :root[data-theme='dark'] .more-menu-row {
-    background: #171a1f;
-    border-color: #30353d;
-  }
-}
-@layer theme {
-  :root[data-theme='dark'] .more-menu-row span {
-    color: #aeb5be;
   }
 }
 @layer views {
@@ -179,6 +84,60 @@
   .top-actions {
     grid-column: 2;
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .current-rally-select {
+    position: relative;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 9px;
+    width: clamp(190px, 34vw, 285px);
+    min-height: 44px;
+    padding: 5px 10px;
+    border: 1px solid #e4e6e8;
+    border-radius: 12px;
+    background: #f8f9fa;
+    cursor: pointer;
+  }
+  .current-rally-pin {
+    color: var(--brand-orange);
+  }
+  .current-rally-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .current-rally-copy strong,
+  .current-rally-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .current-rally-copy strong {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  .current-rally-copy small {
+    color: #626a70;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+  .current-rally-chevron {
+    color: #30363a;
+  }
+  .current-rally-select > .select-field {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
   }
 }
 @layer views {
@@ -206,6 +165,30 @@
       height: 38px;
       border-radius: 9px;
     }
+    .header-wordmark {
+      font-size: 11px;
+    }
+    .current-rally-select {
+      width: min(48vw, 220px);
+      gap: 6px;
+      padding-inline: 7px;
+    }
+    .current-rally-copy strong {
+      font-size: 11px;
+    }
+    .current-rally-copy small {
+      font-size: 9px;
+    }
+  }
+}
+@layer responsive {
+  @media (max-width: 380px) {
+    .header-wordmark {
+      display: none;
+    }
+    .current-rally-select {
+      width: min(55vw, 220px);
+    }
   }
 }
 @layer responsive {
@@ -217,8 +200,20 @@
 }
 @layer theme {
   :root[data-theme='dark'] .topbar {
-    background: #0b0d10;
+    background: #111418;
     color: #fff;
+    border-bottom-color: #2b2f36;
+  }
+  :root[data-theme='dark'] .header-wordmark {
+    color: #fff;
+  }
+  :root[data-theme='dark'] .current-rally-select {
+    background: #1a1e23;
+    border-color: #30353d;
+  }
+  :root[data-theme='dark'] .current-rally-copy small,
+  :root[data-theme='dark'] .current-rally-chevron {
+    color: #b4bbc3;
   }
 }
 @layer theme {
@@ -244,11 +239,6 @@
     padding-bottom: calc(96px + var(--safe-bottom));
   }
 }
-@layer views {
-  .more-menu {
-    padding-bottom: calc(var(--space-5) + var(--safe-bottom));
-  }
-}
 
 @layer views {
   body:not([data-active-tab='more']) .app-footer {
@@ -263,8 +253,50 @@
     display: none;
   }
   body[data-active-tab='today'] main,
-  body[data-active-tab='races'] main,
+  body[data-active-tab='results'] main,
   body[data-active-tab='more'] main {
     display: none;
+  }
+}
+
+@layer views {
+  .results-tab-screen {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 18px 16px calc(28px + var(--safe-bottom));
+  }
+  .results-tab-screen > h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+  }
+  .results-tab-screen > p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+}
+
+@layer views {
+  .current-rally-select:focus-within {
+    outline: 2px solid var(--brand-orange);
+    outline-offset: 3px;
+  }
+}
+
+@layer views {
+  .bottom-tabbar > button[aria-current='page'],
+  .bottom-tabbar > button[aria-current='page']:hover,
+  .bottom-tabbar > button[aria-current='page']:focus,
+  .bottom-tabbar > button[aria-current='page']:focus-visible {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--brand-orange);
+  }
+
+  .bottom-tabbar > button[aria-current='page'] svg,
+  .bottom-tabbar > button[aria-current='page'] b {
+    color: inherit;
   }
 }

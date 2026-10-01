@@ -11,7 +11,8 @@ describe('terrain mode control', () => {
     const root = control.onAdd(map);
     const button = root.querySelector('button');
 
-    expect(button.querySelector('svg')).toBeTruthy();
+    expect(button.querySelector('.terrain-mode-icon')?.textContent).toBe('2D');
+    expect(button.querySelector('.terrain-mode-icon')).toBeTruthy();
     expect(button.dataset.mode).toBe('hillshade');
     await act(async () => {
       fireEvent.click(button);
@@ -20,6 +21,7 @@ describe('terrain mode control', () => {
 
     expect(onModeChange).toHaveBeenCalledWith('3d', map);
     expect(button.dataset.mode).toBe('3d');
+    expect(button.querySelector('.terrain-mode-icon')?.textContent).toBe('3D');
     expect(button.getAttribute('aria-pressed')).toBe('true');
 
     await act(async () => {
@@ -29,6 +31,7 @@ describe('terrain mode control', () => {
 
     expect(onModeChange).toHaveBeenLastCalledWith('hillshade', map);
     expect(button.dataset.mode).toBe('hillshade');
+    expect(button.querySelector('.terrain-mode-icon')?.textContent).toBe('2D');
     expect(button.getAttribute('aria-pressed')).toBe('false');
   });
 
@@ -61,7 +64,7 @@ describe('terrain mode control', () => {
     const root = control.onAdd({});
     const unmount = vi.spyOn(control.reactRoot, 'unmount');
     const container = root;
-    expect(container.querySelector('button svg')).toBeTruthy();
+    expect(container.querySelector('.terrain-mode-icon')?.textContent).toBe('2D');
 
     control.onRemove();
 

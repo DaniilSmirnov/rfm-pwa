@@ -1,0 +1,96 @@
+{
+  "event": "БЕЛЫЕ НОЧИ",
+  "series": "КУБОК",
+  "year": 2026,
+  "date": "2026-06-27",
+  "stages": [
+    {
+      "number": 1,
+      "name": "ВЯЛИМЯКИ",
+      "section": 1,
+      "road_closes_at": "08:30",
+      "first_zero_at": "09:10",
+      "first_crew_at": "09:28",
+      "last_crew_at": "10:40",
+      "last_crew_time_approximate": true,
+      "road_opens_at": "12:30"
+    },
+    {
+      "number": 2,
+      "name": "КЕТРОВААРА",
+      "section": 1,
+      "road_closes_at": "09:00",
+      "first_zero_at": "09:43",
+      "first_crew_at": "10:01",
+      "last_crew_at": "11:14",
+      "last_crew_time_approximate": true,
+      "road_opens_at": "13:00"
+    },
+    {
+      "number": 3,
+      "name": "ВЯЛИМЯКИ",
+      "section": 1,
+      "road_closes_at": "08:30",
+      "first_zero_at": "10:44",
+      "first_crew_at": "11:02",
+      "last_crew_at": "12:15",
+      "last_crew_time_approximate": true,
+      "road_opens_at": "12:30"
+    },
+    {
+      "number": 4,
+      "name": "КЕТРОВААРА",
+      "section": 1,
+      "road_closes_at": "09:00",
+      "first_zero_at": "11:17",
+      "first_crew_at": "11:35",
+      "last_crew_at": "12:50",
+      "last_crew_time_approximate": true,
+      "road_opens_at": "13:00"
+    },
+    {
+      "number": 5,
+      "name": "ЭЛИСЕНВААРА",
+      "section": 2,
+      "road_closes_at": "14:05",
+      "first_zero_at": "14:39",
+      "first_crew_at": "15:07",
+      "last_crew_at": "16:20",
+      "last_crew_time_approximate": true,
+      "road_opens_at": "18:05"
+    },
+    {
+      "number": 6,
+      "name": "ЭСТЕРЛО",
+      "section": 2,
+      "road_closes_at": "14:25",
+      "first_zero_at": "15:07",
+      "first_crew_at": "15:25",
+      "last_crew_at": "16:38",
+      "last_crew_time_approximate": true,
+      "road_opens_at": "18:25"
+    },
+    {
+      "number": 7,
+      "name": "ЭЛИСЕНВААРА",
+      "section": 2,
+      "road_closes_at": "14:05",
+      "first_zero_at": "16:20",
+      "first_crew_at": "16:38",
+      "last_crew_at": "17:55",
+      "last_crew_time_approximate": true,
+      "road_opens_at": "18:05"
+    },
+    {
+      "number": 8,
+      "name": "ЭСТЕРЛО",
+      "section": 2,
+      "road_closes_at": "14:25",
+      "first_zero_at": "16:42",
+      "first_crew_at": "16:56",
+      "last_crew_at": "18:15",
+      "last_crew_time_approximate": true,
+      "road_opens_at": "18:25"
+    }
+  ]
+}

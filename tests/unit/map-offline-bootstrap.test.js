@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderMap, selectStageOnMap, clearStageOnMap } from '../../src/map.js';
+import { BRAND_ORANGE } from '../../src/app/design-tokens.js';
 
 class FakeMap {
   static last = null;
@@ -201,6 +202,7 @@ describe('offline map overlay bootstrap', () => {
 
     expect(pointLayer).toMatchObject({ minzoom: 0, maxzoom: 24 });
     expect(routeLayer).toMatchObject({ minzoom: 0, maxzoom: 24 });
+    expect(routeLayer.paint['line-color']).toBe(BRAND_ORANGE);
     expect(routeCasing).toMatchObject({ minzoom: 0, maxzoom: 24 });
     expect(map.sources.get('rfm-lines')?.data.features).toHaveLength(1);
     expect(map.sources.get('rfm-lines')?.data.features[0].properties.name).toBe('SS1');
@@ -209,14 +211,14 @@ describe('offline map overlay bootstrap', () => {
       .find(marker => marker.getElement().classList.contains('map-race-label'))
       ?.getElement();
     expect(raceLabel).toBeTruthy();
-    expect(raceLabel.style.display).toBe('block');
+    expect(raceLabel.style.display).toBe('flex');
 
     map.zoom = 18;
     map.handlers.get('zoom')();
-    expect(raceLabel.style.display).toBe('block');
+    expect(raceLabel.style.display).toBe('flex');
   });
 
-  it('renders Yandex special-stage lines as a dedicated yellow offline overlay', () => {
+  it('renders Yandex special-stage lines with the brand orange overlay', () => {
     installMapLibre();
     const container = document.createElement('div');
 
@@ -248,7 +250,7 @@ describe('offline map overlay bootstrap', () => {
     expect(yandexLayer).toMatchObject({
       minzoom: 0,
       maxzoom: 24,
-      paint: { 'line-color': '#ffd21e', 'line-opacity': 1 },
+      paint: { 'line-color': BRAND_ORANGE, 'line-opacity': 1 },
     });
     expect(yandexCasing).toMatchObject({ minzoom: 0, maxzoom: 24 });
     expect(

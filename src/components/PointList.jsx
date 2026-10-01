@@ -52,6 +52,7 @@ export default function PointList({ app }) {
         return (
           <article
             className="point-row"
+            data-point-opener="true"
             data-point-index={index}
             key={`${point.lat}:${point.lon}:${point.name}`}
             onClick={() => app.showPoint(point)}

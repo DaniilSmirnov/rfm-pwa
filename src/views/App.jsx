@@ -1,8 +1,8 @@
 import '../components/SharedControls.css';
 import '../components/AppShell.css';
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Button from '../components/Button.jsx';
-import { CalendarDays, CircleEllipsis, Flag, Map } from 'lucide-react';
+import { CalendarDays, CircleEllipsis, Map, Trophy } from 'lucide-react';
 import { useRfmApp } from '../hooks/useRfmApp.js';
 import { resizeActiveMap } from '../map.js';
 import { syncWalletPassesForPackage } from '../app/wallet-client.js';
@@ -23,17 +23,24 @@ import RaceMedia from '../components/RaceMedia.jsx';
 import CrewResults from '../components/CrewResults.jsx';
 import BootDiagnostics from '../modals/BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
-import { raceHasFinished } from '../app/today-summary.js';
+import { selectedPackage } from '../app/rally-context.js';
 import RacesView from './RacesView.jsx';
+import MoreSectionView, { moreSectionTitles } from './MoreSectionView.jsx';
+import { useEdgeSwipeBack } from '../components/ScreenHeader.jsx';
 
 const tabs = [
   { key: 'today', label: 'Сегодня', Icon: CalendarDays },
   { key: 'map', label: 'Карта', Icon: Map },
-  { key: 'races', label: 'Гонки', Icon: Flag },
+  { key: 'results', label: 'Результаты', Icon: Trophy },
   { key: 'more', label: 'Ещё', Icon: CircleEllipsis },
 ];
 function readTab() {
-  return new URLSearchParams(location.search).get('tab') || 'today';
+  const requested = new URLSearchParams(location.search).get('tab');
+  if (requested === 'races') return 'more';
+  return ['today', 'map', 'results', 'more'].includes(requested) ? requested : 'today';
+}
+function readMoreScreen() {
+  return new URLSearchParams(location.search).get('tab') === 'races' ? 'races' : 'menu';
 }
 export default function App() {
   const app = useRfmApp();
@@ -43,13 +50,12 @@ export default function App() {
     [pkg, app.selectedPoint],
   );
   const [tab, setTab] = useState(readTab());
-  const [moreScreen, setMoreScreen] = useState('menu');
+  const [moreScreen, setMoreScreen] = useState(readMoreScreen);
   const [crewResultsOpen, setCrewResultsOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [pointElevation, setPointElevation] = useState('Высота: выбери точку.');
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [safetyAccepted, setSafetyAccepted] = useState(() => hasSafetyConsent(pkg));
-  const [clock, setClock] = useState(() => new Date());
   const [updateMessage, setUpdateMessage] = useState('');
   const scrollPositions = useRef({});
   const activeScrollKey = tab === 'more' ? `more:${moreScreen}` : tab;
@@ -61,7 +67,7 @@ export default function App() {
     url.searchParams.set('tab', next);
     history.pushState({ tab: next }, '', url);
     setTab(next);
-    if (next !== 'more') setMoreScreen('menu');
+    setMoreScreen('menu');
   };
 
   useEffect(() => {
@@ -74,11 +80,6 @@ export default function App() {
   }, [pkg?.id, pkg?.original?.safety_leaflet]);
 
   useEffect(() => {
-    const timer = setInterval(() => setClock(new Date()), 30000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
     const onUpdate = event => setUpdateMessage(event.detail?.message || 'Обновляю приложение…');
     window.addEventListener('rfm:service-worker-update', onUpdate);
     return () => window.removeEventListener('rfm:service-worker-update', onUpdate);
@@ -86,9 +87,9 @@ export default function App() {
 
   useEffect(() => {
     const update = () => {
-      const next = new URLSearchParams(location.search).get('tab') || 'today';
+      const next = readTab();
       scrollPositions.current[activeScrollKey] = window.scrollY;
-      setMoreScreen('menu');
+      setMoreScreen(readMoreScreen());
       setTab(next);
       restoreScrollKey.current = next;
     };
@@ -174,18 +175,50 @@ export default function App() {
     restoreScrollKey.current = 'more:menu';
     setMoreScreen('menu');
   };
+  const openRaces = () => {
+    scrollPositions.current[activeScrollKey] = window.scrollY;
+    restoreScrollKey.current = 'more:races';
+    const url = new URL(location.href);
+    url.searchParams.set('tab', 'more');
+    history.pushState({ tab: 'more' }, '', url);
+    setMoreScreen('races');
+    setTab('more');
+  };
+  const returnToMoreMenu = useCallback(() => {
+    setMoreScreen('menu');
+    const url = new URL(location.href);
+    url.searchParams.set('tab', 'more');
+    history.replaceState({ tab: 'more' }, '', url);
+  }, [activeScrollKey]);
+  const screenHeaderTitle =
+    tab === 'more' && moreScreen !== 'menu'
+      ? {
+          races: 'Управление гонками',
+          settings: 'Настройки и диагностика',
+          ...moreSectionTitles,
+        }[moreScreen] || 'Раздел гонки'
+      : null;
+
+  useEdgeSwipeBack(returnToMoreMenu, Boolean(screenHeaderTitle));
   const openCrewResults = () => setCrewResultsOpen(true);
   const screenContent =
     tab === 'today' ? (
-      <TodayView app={app} onMap={() => activate('map')} onResults={openCrewResults} />
-    ) : tab === 'races' ? (
-      <RacesView
+      <TodayView
         app={app}
-        onOpenRace={async id => {
-          await app.selectPackage(id);
-          activate('map');
-        }}
+        onMap={() => activate('map')}
+        onResults={() => activate('results')}
+        onRaces={openRaces}
       />
+    ) : tab === 'results' ? (
+      <section className="results-tab-screen">
+        <CrewResults
+          pkg={pkg}
+          open={crewResultsOpen}
+          onOpen={openCrewResults}
+          onClose={() => setCrewResultsOpen(false)}
+          standalone
+        />
+      </section>
     ) : tab === 'more' ? (
       moreScreen === 'settings' ? (
         <SettingsView
@@ -193,8 +226,33 @@ export default function App() {
           onBack={closeSettings}
           onDiagnostics={() => setDiagnosticsOpen(true)}
         />
+      ) : moreScreen === 'races' ? (
+        <RacesView
+          app={app}
+          onBack={returnToMoreMenu}
+          onOpenRace={async id => {
+            await app.selectPackage(id);
+            activate('map');
+          }}
+        />
+      ) : moreScreen !== 'menu' ? (
+        <MoreSectionView
+          sectionId={moreScreen}
+          app={app}
+          onBack={returnToMoreMenu}
+          onOpenResults={() => activate('results')}
+          onOpenDiagnostics={() => setDiagnosticsOpen(true)}
+        />
       ) : (
-        <MoreMenu onSettings={openSettings} />
+        <MoreMenu
+          app={app}
+          onSettings={openSettings}
+          onRaces={() => setMoreScreen('races')}
+          onOpenSection={setMoreScreen}
+          onNotifications={openSettings}
+          onTheme={openSettings}
+          onDiagnostics={() => setDiagnosticsOpen(true)}
+        />
       )
     ) : null;
 
@@ -209,11 +267,18 @@ export default function App() {
         installPrompt={<PwaInstallPrompt active={tab === 'today'} />}
         screenContent={screenContent}
         updateMessage={updateMessage}
+        onSelectRally={id => {
+          const selected = selectedPackage(app.packages, id);
+          if (selected) void app.selectPackage(selected.id);
+        }}
         mapContent={<RallyMap app={app} onRouteClick={setSelectedRoute} />}
         pointListContent={<PointList app={app} />}
         favoritesContent={<FavoritesList app={app} />}
         scheduleContent={pkg && <ScheduleList pkg={pkg} />}
         mediaContent={<RaceMedia pkg={pkg} />}
+        screenHeader={
+          screenHeaderTitle ? { title: screenHeaderTitle, onBack: returnToMoreMenu } : null
+        }
       />
       <BootDiagnostics open={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
       <AppFooter />
@@ -230,17 +295,6 @@ export default function App() {
           </Button>
         ))}
       </nav>
-
-      <CrewResults
-        pkg={
-          pkg && (!raceHasFinished(pkg, clock) || pkg.crewResults?.eventResults?.length)
-            ? pkg
-            : null
-        }
-        open={crewResultsOpen}
-        onOpen={openCrewResults}
-        onClose={() => setCrewResultsOpen(false)}
-      />
 
       {requiresSafety && <SafetyGate pkg={pkg} onAccept={acceptSafety} />}
     </>

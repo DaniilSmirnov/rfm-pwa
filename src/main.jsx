@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import './styles/base.css';
 import App from './views/App.jsx';
 import { applyTheme, loadThemePreference, resolveTheme } from './app/preferences.js';
+import { startErudaIfEnabled } from './app/eruda.js';
+
+void startErudaIfEnabled().catch(() => {});
 
 const systemTheme = window.matchMedia?.('(prefers-color-scheme: dark)');
 systemTheme?.addEventListener?.('change', event => {

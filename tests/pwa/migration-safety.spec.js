@@ -24,7 +24,28 @@ async function waitForAppWorker(page) {
 }
 
 async function openTab(page, label) {
+  if (label === 'Гонки') {
+    await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+    await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
+    return;
+  }
   await page.getByRole('button', { name: label, exact: true }).click();
+  if (label === 'Карта') {
+    const gate = page.locator('.safety-gate');
+    if (await gate.isVisible()) {
+      await gate.locator('.safety-gate-content').evaluate(node => {
+        node.scrollTop = node.scrollHeight;
+        node.dispatchEvent(new Event('scroll'));
+      });
+      await expect(gate.locator('.safety-accept')).toBeEnabled();
+      await gate.locator('.safety-accept').click();
+      await gate.waitFor({ state: 'hidden' });
+    }
+  }
+}
+
+async function openMapTools(page) {
+  await page.getByRole('button', { name: 'Инструменты карты' }).click();
 }
 
 async function seedSavedRace(
@@ -238,13 +259,16 @@ test.describe('PWA migration safety', () => {
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await expect(reopened.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(reopened.locator('#networkBadge')).toHaveCount(0);
     await openTab(reopened, 'Гонки');
     await expect(reopened.locator('#packageList')).toContainText('Offline Migration Rally');
     await openTab(reopened, 'Карта');
     await expect(reopened.locator('#raceDetails')).toBeVisible();
     await openTab(reopened, 'Карта');
-    await expect(reopened.locator('#pointList')).toContainText('Offline spectator point');
+    await expect(
+      reopened.locator('.map-race-label').filter({ hasText: 'Offline spectator point' }),
+    ).toBeVisible();
+    await reopened.getByRole('button', { name: 'Избранное' }).click();
     await expect(reopened.locator('#favoritesList')).toContainText('Offline spectator point');
   });
 
@@ -338,8 +362,10 @@ test.describe('PWA migration safety', () => {
     expect(heroImage.complete).toBe(true);
     expect(heroImage.naturalWidth).toBeGreaterThan(0);
 
+    await openTab(reopened, 'Ещё');
+    await reopened.getByRole('button', { name: 'Документы и материалы' }).click();
     const organizer = reopened
-      .locator('#raceMedia details')
+      .locator('.react-tab-content .race-material')
       .filter({ hasText: 'КАРТА ОРГАНИЗАТОРА' });
     await organizer.locator('summary').click();
     const mediaImage = organizer.locator('img').first();
@@ -369,6 +395,7 @@ test.describe('PWA migration safety', () => {
     const reopened = await context.newPage();
     await reopened.goto('/', { waitUntil: 'domcontentloaded' });
     await openTab(reopened, 'Карта');
+    await openMapTools(reopened);
 
     const geoDownloadPromise = reopened.waitForEvent('download');
     await reopened.locator('#exportGeoJsonBtn').click();
@@ -406,23 +433,25 @@ test.describe('PWA migration safety', () => {
     await openTab(page, 'Гонки');
     await page.locator('#packageList .downloaded-race-open').first().click();
     await expect(page.locator('#raceTitle')).toHaveText('Offline Migration Rally');
-    await expect(page.locator('#networkBadge')).toHaveText('онлайн');
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
 
     await context.setOffline(true);
 
-    await expect(page.locator('#networkBadge')).toHaveText('офлайн');
+    await expect(page.locator('#networkBadge')).toHaveCount(0);
     await openTab(page, 'Карта');
     await expect(page.locator('#raceDetails')).toBeVisible();
-    await expect(page.locator('#pointList')).toContainText('Offline spectator point');
-    await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
+    const spectatorPoint = page
+      .locator('.map-race-label')
+      .filter({ hasText: 'Offline spectator point' });
+    await expect(spectatorPoint).toBeVisible();
 
-    await page.getByText('ГДЕ СМОТРЕТЬ?').click();
-    await page
-      .locator('.point-row')
-      .filter({ hasText: 'Offline spectator point' })
-      .locator('.point-row-copy')
-      .click();
+    await page.getByRole('button', { name: 'Избранное' }).click();
+    await expect(page.locator('#favoritesList')).toContainText('Offline spectator point');
+    await page.getByRole('button', { name: 'Избранное' }).click();
+
+    await spectatorPoint.click();
     await expect(page.locator('#pointActions')).toBeVisible();
+    await page.getByRole('button', { name: 'Развернуть карточку точки' }).click();
     await expect(page.locator('#pointCoords')).toContainText('61.700000');
   });
 

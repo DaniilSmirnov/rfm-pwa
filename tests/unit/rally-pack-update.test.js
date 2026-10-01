@@ -57,6 +57,7 @@ describe('smart Rally Pack updates', () => {
       },
     });
     expect(updateCompatibility(current, fresh)).toEqual({ safe: false, reason: 'geometry' });
+    expect(rallyPackDiff(current, fresh).map(change => change.key)).toContain('map');
   });
   it('preserves downloaded map terrain and yandex snapshot for safe data update', () => {
     const current = pkg({

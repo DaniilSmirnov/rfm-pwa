@@ -1,10 +1,6 @@
 import './CrewResults.css';
 import React, { useEffect, useMemo, useState } from 'react';
-import Button from './Button.jsx';
 import CrewResultsModal from '../modals/CrewResultsModal.jsx';
-import SearchField from './SearchField.jsx';
-import SelectField from './SelectField.jsx';
-import SectionHeader from './SectionHeader.jsx';
 import {
   deleteCrewSubscription,
   getCrewSubscriptions,
@@ -12,6 +8,7 @@ import {
   savePackage,
 } from '../db.js';
 import { requestCrewResultsBackgroundRefresh } from '../app/runtime.js';
+import { asmgRaceIdForPackage } from '../app/asmg-race-map.js';
 import {
   crewResultClasses,
   crewResultViews,
@@ -31,11 +28,8 @@ const resultLabel = result =>
     .join(' / ') || `Экипаж № ${result?.crew?.number || '—'}`;
 const subscriptionKey = (raceId, crewId) => `${raceId}:${crewId}`;
 
-export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
-  const asmgRaceId = String(
-    pkg?.asmgRaceId ?? pkg?.original?.asmg_id ?? pkg?.original?.asmgId ?? '55',
-  );
-  const [raceId, setRaceId] = useState(asmgRaceId);
+export default function CrewResults({ pkg, open = false, onClose, standalone = false }) {
+  const asmgRaceId = asmgRaceIdForPackage(pkg);
   const [data, setData] = useState(() =>
     pkg?.crewResults?.eventResults
       ? {
@@ -45,12 +39,11 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
         }
       : null,
   );
-  const [status, setStatus] = useState(() =>
+  const [, setStatus] = useState(() =>
     pkg?.crewResults?.eventResults
       ? 'Показана сохранённая версия результатов.'
       : 'Загружаю результаты…',
   );
-  const [busy, setBusy] = useState(false);
   const [subscriptions, setSubscriptions] = useState([]);
   const [stageKey, setStageKey] = useState('overall');
   const [className, setClassName] = useState('');
@@ -63,9 +56,6 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
     [activeView, query, className],
   );
 
-  useEffect(() => {
-    setRaceId(asmgRaceId);
-  }, [asmgRaceId]);
   useEffect(() => {
     let cancelled = false;
     const saved = pkg?.crewResults;
@@ -105,7 +95,6 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
 
   async function loadResults(id, { automatic = false } = {}) {
     if (!id) return;
-    if (!automatic) setBusy(true);
     if (!automatic) setStatus('Загружаю результаты АСМГ…');
     try {
       const next = await fetchAsmgResults(id);
@@ -120,7 +109,6 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
         crewResults: { ...snapshot, updatedAt: next.updatedAt || new Date().toISOString() },
       };
       await savePackage(updatedPackage);
-      setRaceId(id);
       setData(snapshot);
       setStageKey('overall');
       setClassName('');
@@ -139,8 +127,6 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
           ? `Нет новых данных. ${error.message || error} Если результаты уже загружались, проверь, что для этой гонки сохранена последняя версия приложения.`
           : `${error.message || error} Проверь номер гонки и подключение.`,
       );
-    } finally {
-      if (!automatic) setBusy(false);
     }
   }
 
@@ -181,71 +167,9 @@ export default function CrewResults({ pkg, open = false, onOpen, onClose }) {
   const selectedClassResults = filterCrewResultsByClass(activeView?.results, className);
   return (
     <>
-      <section className="crew-results-section" hidden aria-labelledby="crewResultsTitle">
-        <SectionHeader>
-          <div>
-            <div id="crewResultsTitle" className="block-title">
-              РЕЗУЛЬТАТЫ ЭКИПАЖЕЙ
-            </div>
-            <p className="muted small">Открой таблицу, когда захочешь посмотреть результаты.</p>
-          </div>
-          <Button
-            className="button primary"
-            id="crewResultsOpen"
-            type="button"
-            hidden={!data}
-            onClick={onOpen}
-          >
-            Открыть результаты
-          </Button>
-        </SectionHeader>
-        {data && (
-          <div className="crew-results-class-filter" id="crewResultsClassFilter">
-            <label htmlFor="crewResultsClass">Класс</label>
-            <SelectField
-              id="crewResultsClass"
-              className="crew-results-stage"
-              value={className}
-              onChange={event => setClassName(event.target.value)}
-            >
-              <option value="">Все классы</option>
-              {classes.map(name => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </SelectField>
-          </div>
-        )}
-        <form
-          className="crew-results-controls"
-          onSubmit={event => {
-            event.preventDefault();
-            void loadResults(raceId);
-          }}
-        >
-          <label htmlFor="asmgRaceId">Номер гонки на АСМГ</label>
-          <div className="crew-results-load">
-            <SearchField
-              id="asmgRaceId"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={raceId}
-              onChange={event => setRaceId(event.target.value)}
-              aria-label="Номер гонки на АСМГ"
-            />
-            <Button className="button compact primary" type="submit" disabled={busy}>
-              {busy ? 'Загрузка…' : data ? 'Обновить' : 'Загрузить результаты'}
-            </Button>
-          </div>
-        </form>
-        <p className="muted small crew-results-status" aria-live="polite">
-          {status}
-        </p>
-      </section>
       <CrewResultsModal
         open={open}
+        standalone={standalone}
         onClose={onClose}
         data={data}
         views={views}

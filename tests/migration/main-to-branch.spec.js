@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+import { openMapWithAcceptedSafety } from '../ui/helpers.js';
 
 const branchRelease = {
   ...JSON.parse(readFileSync(new URL('../../version.json', import.meta.url), 'utf8')),
@@ -333,17 +334,20 @@ test('migrates installed PWA from current main to branch without losing persiste
   // controllerchange triggers an automatic reload in the app runtime. Once the
   // branch version and active worker are confirmed, wait for the restored UI
   // instead of racing that automatic navigation with a second reload.
-  await page.getByRole('button', { name: 'Гонки' }).click();
+  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');
-  await page.getByRole('button', { name: 'Карта' }).click();
+  await openMapWithAcceptedSafety(page);
+  await page.getByRole('button', { name: 'Моя машина' }).click();
   await expect(page.locator('#carPointCard')).toBeVisible();
   await expect(page.locator('#carCoords')).toContainText('61.710000');
 
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#networkBadge')).toHaveText('офлайн');
-  await page.getByRole('button', { name: 'Гонки' }).click();
+  await expect(page.locator('#networkBadge')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');
 });

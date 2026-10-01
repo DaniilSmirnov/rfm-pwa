@@ -15,51 +15,76 @@ test.describe('ASMG crew results', () => {
   test('opens results only on demand, filters both views by class, and searches crews', async ({
     page,
   }) => {
-    const dialog = page.locator('.crew-results-dialog');
-    const dialogClass = page.locator('#crewResultsDialogClass');
-    await expect(dialog).not.toBeVisible();
+    const results = page.locator('.results-tab-screen');
+    await expect(results).toHaveCount(0);
     await openAllResults(page);
-    await expect(dialog).toBeVisible();
-    await expect(page.locator('#crewResultsStage')).toHaveValue('overall');
-    await dialogClass.selectOption('Абсолют');
+    await expect(results).toBeVisible();
+    await expect(results.locator('.crew-results-inline')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Все' })).toBeVisible();
 
     const rows = page.locator('[data-crew-row]');
-    await expect(rows).toHaveCount(4);
+    await expect(rows).toHaveCount(5);
     await expect(rows.first()).toContainText('Гожев Руслан / Коломиец Денис');
     await expect(rows.first()).toContainText('Skoda Fabia Rally2 Evo');
     await expect(rows.first()).toContainText('Абсолют');
     await expect(rows.nth(2)).toContainText('Гаврилов Клим / Еникеев Кирилл');
 
-    await dialogClass.selectOption('R5');
+    await page.getByRole('button', { name: 'R5', exact: true }).click();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText('Сидоров Иван / Петров Павел');
-    await dialogClass.selectOption('');
+    await page.getByRole('button', { name: 'Все', exact: true }).click();
     await expect(rows).toHaveCount(5);
 
     await page.locator('#crewResultsSearch').fill('40');
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText('Жигунов Андрей / Аксаков Алексей');
-    await page.getByRole('button', { name: 'Закрыть результаты' }).click();
-    await expect(dialog).not.toBeVisible();
+    await page.getByRole('button', { name: 'Сегодня' }).click();
+    await expect(results).toHaveCount(0);
   });
 
-  test('shows cumulative time and selected-stage time in the table', async ({ page }) => {
+  test('opens a crew modal with stage-by-stage times', async ({ page }) => {
     await openAllResults(page);
-    await expect(page.locator('.crew-results-dialog')).toBeVisible();
+    await expect(page.locator('.crew-results-inline')).toBeVisible();
+    await expect(page.locator('.asmg-results-brand .asmg-results-prefix')).toHaveText(
+      'Результаты от',
+    );
+    await expect(page.locator('.asmg-results-brand svg')).toBeVisible();
+    const asmgLink = page.getByRole('link', { name: 'Открыть сайт ASMG' });
+    await expect(asmgLink).toHaveAttribute('href', 'https://asmg.ru/');
+    await expect(asmgLink).toHaveAttribute('target', '_blank');
+    await expect(asmgLink.locator('svg')).toHaveAttribute('aria-label', 'ASMG');
+    await expect(page.getByRole('button', { name: 'Фильтры' })).toHaveCount(0);
     const firstRow = page.locator('[data-crew-row]').first();
     await expect(firstRow).toContainText('00:14:50:0');
-    await expect(page.locator('#crewResultsTimeHeading')).toContainText('Общий итог');
-
-    await page.locator('#crewResultsStage').selectOption('0');
-    await expect(page.locator('#crewResultsTimeHeading')).toContainText('СУ 2 · Пуйккола');
-    await expect(firstRow).toContainText('00:14:50:0');
+    await firstRow.getByRole('button', { name: /Открыть результаты экипажа/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'Детали экипажа' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('.crew-details-footer .asmg-results-prefix')).toHaveText(
+      'Результаты от',
+    );
+    await expect(dialog.locator('.crew-details-footer svg')).toBeVisible();
+    await expect(dialog).toHaveCSS('z-index', '100003');
+    await expect(dialog).toContainText('СУ 2 · Пуйккола');
+    await expect(dialog).toContainText('00:14:50:0');
+    const favorite = dialog.getByRole('button', { name: 'Добавить экипаж в избранное' });
+    await expect(favorite).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(favorite).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await favorite.click();
+    await expect(
+      dialog.getByRole('button', { name: 'Удалить экипаж из избранного' }),
+    ).toBeVisible();
+    await dialog.getByRole('button', { name: 'Удалить экипаж из избранного' }).click();
+    await expect(dialog.getByRole('button', { name: 'Добавить экипаж в избранное' })).toBeVisible();
   });
 
   test('stores a followed crew so the service worker can refresh it offline', async ({ page }) => {
     await openAllResults(page);
-    await expect(page.locator('.crew-results-dialog')).toBeVisible();
+    await expect(page.locator('.crew-results-inline')).toBeVisible();
     const row = page.locator('[data-crew-row]').first();
-    await row.getByRole('button', { name: /Следить за экипажем/ }).click();
+    const favorite = row.getByRole('button', { name: /Следить за экипажем/ });
+    await expect(favorite).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(favorite).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await favorite.click();
     await expect(row.getByRole('button', { name: /Отписаться от экипажа/ })).toBeVisible();
     const saved = await page.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {

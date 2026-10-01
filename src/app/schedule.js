@@ -424,6 +424,9 @@ export function buildStageDescriptors(pkg) {
         date: String(item?.date || ''),
         time: String(event?.time || '').trim(),
         text: String(event?.text || '').trim(),
+        status: String(
+          event?.status || event?.state || item?.status || item?.state || item?.status_race || '',
+        ).trim(),
         kind: classified?.kind || null,
         at: at ? at.toISOString() : null,
       });

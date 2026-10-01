@@ -5,6 +5,43 @@ export const crewName = crew =>
   ]
     .filter(Boolean)
     .join(' / ');
+
+const crewMemberNameParts = crew =>
+  [crew?.pilot, crew?.navigator]
+    .flatMap(member => [member?.firstName, member?.lastName])
+    .map(value => String(value || '').trim())
+    .filter(Boolean);
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function formatRetirementReason(result) {
+  if (!result?.goingOff && !result?.goingOffAfterSu) return '';
+
+  const fallback = result.goingOffAfterSu ? 'Сход после спецучастка' : 'Сход';
+  let reason = String(result.reasonGoingOff || '').trim();
+  if (!reason) return fallback;
+
+  for (const namePart of crewMemberNameParts(result.crew)) {
+    reason = reason.replace(
+      new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(namePart)}(?![\\p{L}\\p{N}])`, 'giu'),
+      ' ',
+    );
+  }
+
+  reason = reason
+    .replace(/(?<![\p{L}\p{N}])(?:с[уu]|ss)\s*[-.]?\s*\d+(?![\p{L}\p{N}])/giu, ' ')
+    .replace(/[|/]+/g, ' ')
+    .replace(/\s*[-–—,:;]+\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!reason) return fallback;
+  const normalized = reason.toLocaleLowerCase('ru-RU');
+  return normalized.charAt(0).toLocaleUpperCase('ru-RU') + normalized.slice(1);
+}
+
 const resultSearchText = result =>
   [
     result?.crew?.number,
@@ -38,7 +75,7 @@ export function crewResultClasses(results) {
 
 export function filterCrewResultsByClass(results, className = '') {
   const source = Array.isArray(results) ? results : [];
-  return className
+  return className && className !== '__all__'
     ? source.filter(result => String(result?.discipline?.name || '').trim() === className)
     : source;
 }
@@ -93,8 +130,18 @@ export function overallCrewResults(stages) {
         goingOffAfterSu: false,
         reasonGoingOff: '',
       };
-      row.crew = crew;
-      row.discipline = result.discipline || row.discipline;
+      row.crew = {
+        ...row.crew,
+        ...crew,
+        pilot: { ...(row.crew?.pilot || {}), ...(crew.pilot || {}) },
+        navigator: { ...(row.crew?.navigator || {}), ...(crew.navigator || {}) },
+        car: crew.car || row.crew?.car,
+      };
+      row.discipline = {
+        ...(row.discipline || {}),
+        ...(result.discipline || {}),
+        name: result.discipline?.name || row.discipline?.name,
+      };
       if (!result.goingOff) {
         row.time += Number(result.time) || 0;
         row.timePenalty += Number(result.timePenalty) || 0;
@@ -108,7 +155,7 @@ export function overallCrewResults(stages) {
     }
   }
   const results = [...crews.values()]
-    .filter(result => result.time > 0 || result.goingOff)
+    .filter(result => result.time > 0 || result.goingOff || result.goingOffAfterSu)
     .map(result => {
       const time = result.time + result.timePenalty;
       return {
