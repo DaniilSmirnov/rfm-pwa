@@ -49,6 +49,7 @@ test.describe('ASMG crew results', () => {
     const asmgLink = page.getByRole('link', { name: 'Открыть сайт ASMG' });
     await expect(asmgLink).toHaveAttribute('href', 'https://asmg.ru/');
     await expect(asmgLink).toHaveAttribute('target', '_blank');
+    await expect(asmgLink.locator('svg')).toHaveAttribute('aria-label', 'ASMG');
     await expect(page.getByRole('button', { name: 'Фильтры' })).toHaveCount(0);
     const firstRow = page.locator('[data-crew-row]').first();
     await expect(firstRow).toContainText('00:14:50:0');
