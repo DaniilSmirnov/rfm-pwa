@@ -1,12 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
-import {
-  installAppMocks,
-  openApp,
-  raceFixture,
-  secondRace,
-  seedFixtureRace,
-} from './helpers.js';
+import { installAppMocks, openApp, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
 
 const release = {
   ...JSON.parse(readFileSync(new URL('../../version.json', import.meta.url), 'utf8')),
@@ -28,9 +22,9 @@ test.describe('app shell and catalog', () => {
     await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
   });
 
-  test(
-    'blocks browser launches with a full-screen application installation gate',
-    async ({ page }) => {
+  test('blocks browser launches with a full-screen application installation gate', async ({
+    page,
+  }) => {
       await installAppMocks(page);
       await page.goto('/');
       await page.waitForLoadState('domcontentloaded');
@@ -40,17 +34,12 @@ test.describe('app shell and catalog', () => {
       });
       await expect(installPrompt).toBeVisible();
       await expect(installPrompt).toHaveCSS('position', 'fixed');
-      await expect(
-        installPrompt.getByRole('button', { name: 'Как установить' }),
-      ).toBeVisible();
+      await expect(installPrompt.getByRole('button', { name: 'Как установить' })).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
       await installPrompt.getByRole('button', { name: 'Как установить' }).click();
-      await expect(
-        installPrompt.getByRole('heading', { name: 'Как установить?' }),
-      ).toBeVisible();
+      await expect(installPrompt.getByRole('heading', { name: 'Как установить?' })).toBeVisible();
       await expect(installPrompt).toContainText(/Chrome|Safari|Яндекс/);
-    },
-  );
+  });
 
   test('shows the race selector instead of a network badge', async ({ page }) => {
     await openApp(page);
@@ -72,9 +61,7 @@ test.describe('app shell and catalog', () => {
   test('catalog search reveals races outside week window', async ({ page }) => {
     await openApp(page);
     await openRaceManagement(page);
-    await page
-      .getByPlaceholder('Название гонки или этап…')
-      .fill('Пермь');
+    await page.getByPlaceholder('Название гонки или этап…').fill('Пермь');
     await expect(page.locator('#catalogList')).toContainText(secondRace.name);
     await expect(page.locator('#catalogList')).toContainText('Пермь');
   });
@@ -82,9 +69,7 @@ test.describe('app shell and catalog', () => {
   test('catalog search can find by race name', async ({ page }) => {
     await openApp(page);
     await openRaceManagement(page);
-    await page
-      .getByPlaceholder('Название гонки или этап…')
-      .fill('Far Future');
+    await page.getByPlaceholder('Название гонки или этап…').fill('Far Future');
     await expect(page.locator('.catalog-row')).toHaveCount(1);
     await expect(page.locator('.catalog-row')).toContainText(secondRace.name);
   });
@@ -92,18 +77,14 @@ test.describe('app shell and catalog', () => {
   test('catalog search shows empty state', async ({ page }) => {
     await openApp(page);
     await openRaceManagement(page);
-    await page
-      .getByPlaceholder('Название гонки или этап…')
-      .fill('does-not-exist');
+    await page.getByPlaceholder('Название гонки или этап…').fill('does-not-exist');
     await expect(page.locator('#catalogList')).toContainText('Ничего не найдено');
   });
 
   test('manual import section is available', async ({ page }) => {
     await openApp(page);
     await openRaceManagement(page);
-    await expect(
-      page.getByText('Импортировать гонку из файла'),
-    ).toBeVisible();
+    await expect(page.getByText('Импортировать гонку из файла')).toBeVisible();
     await expect(page.locator('label[for="racesFileInput"]')).toContainText(
       'Выбрать JSON или GeoJSON',
     );
@@ -113,9 +94,7 @@ test.describe('app shell and catalog', () => {
     await openApp(page);
     await page.getByRole('button', { name: 'Карта' }).click();
     await expect(page.locator('#downloadMapBtn')).toBeDisabled();
-    await expect(page.locator('#mapSubtitle')).toContainText(
-      'Выбери сохранённую гонку',
-    );
+    await expect(page.locator('#mapSubtitle')).toContainText('Выбери сохранённую гонку');
   });
 
   test('opens the race catalog from More', async ({ page }) => {
@@ -133,9 +112,7 @@ test.describe('app shell and catalog', () => {
     await expect(page.locator('#bootDiagnosticsModal')).toBeVisible();
     await page.locator('#bootDiagnosticsRefreshPackages').click();
     await page.locator('#bootDiagnosticsRefresh').click();
-    await expect(page.locator('#bootDiagnosticsMeta')).toContainText(
-      'Локальные данные:',
-    );
+    await expect(page.locator('#bootDiagnosticsMeta')).toContainText('Локальные данные:');
     await expect(page.locator('#bootDiagnosticsMeta')).toContainText('rallyfans-offline');
     await expect(page.locator('#bootDiagnosticsExport')).toBeVisible();
   });
