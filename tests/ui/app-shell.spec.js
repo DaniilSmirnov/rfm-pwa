@@ -25,20 +25,20 @@ test.describe('app shell and catalog', () => {
   test('blocks browser launches with a full-screen application installation gate', async ({
     page,
   }) => {
-      await installAppMocks(page);
-      await page.goto('/');
-      await page.waitForLoadState('domcontentloaded');
+    await installAppMocks(page);
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
 
-      const installPrompt = page.getByRole('dialog', {
-        name: 'Установка приложения',
-      });
-      await expect(installPrompt).toBeVisible();
-      await expect(installPrompt).toHaveCSS('position', 'fixed');
-      await expect(installPrompt.getByRole('button', { name: 'Как установить' })).toBeVisible();
-      await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
-      await installPrompt.getByRole('button', { name: 'Как установить' }).click();
-      await expect(installPrompt.getByRole('heading', { name: 'Как установить?' })).toBeVisible();
-      await expect(installPrompt).toContainText(/Chrome|Safari|Яндекс/);
+    const installPrompt = page.getByRole('dialog', {
+      name: 'Установка приложения',
+    });
+    await expect(installPrompt).toBeVisible();
+    await expect(installPrompt).toHaveCSS('position', 'fixed');
+    await expect(installPrompt.getByRole('button', { name: 'Как установить' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
+    await installPrompt.getByRole('button', { name: 'Как установить' }).click();
+    await expect(installPrompt.getByRole('heading', { name: 'Как установить?' })).toBeVisible();
+    await expect(installPrompt).toContainText(/Chrome|Safari|Яндекс/);
   });
 
   test('shows the race selector instead of a network badge', async ({ page }) => {
