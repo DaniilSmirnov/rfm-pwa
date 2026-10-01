@@ -45,6 +45,9 @@ test.describe('ASMG crew results', () => {
   test('opens a crew modal with stage-by-stage times', async ({ page }) => {
     await openAllResults(page);
     await expect(page.locator('.crew-results-inline')).toBeVisible();
+    await expect(page.locator('.asmg-results-brand .asmg-results-prefix')).toHaveText(
+      'Результаты от',
+    );
     await expect(page.locator('.asmg-results-brand svg')).toBeVisible();
     const asmgLink = page.getByRole('link', { name: 'Открыть сайт ASMG' });
     await expect(asmgLink).toHaveAttribute('href', 'https://asmg.ru/');
@@ -56,6 +59,9 @@ test.describe('ASMG crew results', () => {
     await firstRow.getByRole('button', { name: /Открыть результаты экипажа/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Детали экипажа' });
     await expect(dialog).toBeVisible();
+    await expect(dialog.locator('.crew-details-footer .asmg-results-prefix')).toHaveText(
+      'Результаты от',
+    );
     await expect(dialog.locator('.crew-details-footer svg')).toBeVisible();
     await expect(dialog).toHaveCSS('z-index', '100003');
     await expect(dialog).toContainText('СУ 2 · Пуйккола');
