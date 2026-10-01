@@ -14,14 +14,13 @@ import {
   cacheRaceAssets,
   enrichPackageWithYandex,
 } from '../rallyfans.js';
-import { yandexWebFallback, coordinateText } from '../navigation.js';
+import { geoJsonToGpx, safeFileName } from '../app/export.js';
 import {
   buildDownloadPlan,
   downloadOfflineMap,
   discardOfflineMapRevision,
 } from '../offline-map.js';
 import { buildTerrainDownloadPlan } from '../terrain-offline.js';
-import { safeFileName, geoJsonToGpx } from '../app/export.js';
 import {
   getPushSubscription,
   refreshPushUi,
@@ -44,7 +43,6 @@ import { downloadRallyPack } from '../app/rally-pack.js';
 import { rallyPackProgressText } from '../app/rally-pack-ui.js';
 import { processCachedRallyPackUpdates } from '../app/rally-pack-update.js';
 import { setupErrorTelemetry } from '../app/telemetry.js';
-import { raceWithinWeek, pickDefaultRace } from '../app/catalog-dates.js';
 import { markBoot } from '../app/boot-diagnostics.js';
 import { formatBytes } from '../app/format.js';
 import { loadSelectedRallyId, saveSelectedRallyId } from '../app/rally-context.js';
@@ -53,6 +51,9 @@ import { createConnectivityMonitor } from '../app/network-status.js';
 import { useGeoCompass } from './useGeoCompass.js';
 import { useCatalog } from './useCatalog.js';
 import { useRaceRetention } from './useRaceRetention.js';
+import { removeStorage } from '../app/storage.js';
+import { chooseVisiblePackages } from '../app/package-selection.js';
+import { downloadBlob, sharePointValue } from '../app/point-actions.js';
 
 let bootstrapPromise = null;
 let mapLibrePromise = null;
@@ -111,62 +112,6 @@ function bootstrapRuntime() {
     return sw;
   })();
   return bootstrapPromise;
-}
-
-function downloadBlob(filename, type, text) {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-async function sharePointValue(point) {
-  if (!point) return false;
-  const title = point.name || 'Точка RallyFans Map';
-  const coords = coordinateText(point);
-  const url = yandexWebFallback(point);
-  const data = { title, text: `${title}\n${coords}`, url };
-  try {
-    if (navigator.share) {
-      await navigator.share(data);
-      return true;
-    }
-  } catch (e) {
-    if (e?.name === 'AbortError') return false;
-  }
-  try {
-    await navigator.clipboard.writeText(`${title}\n${coords}\n${url}`);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function chooseVisiblePackages(packages, query) {
-  const q = String(query || '')
-    .trim()
-    .toLowerCase();
-  if (q)
-    return packages.filter(p =>
-      [
-        p.name,
-        p.summary?.stage,
-        p.summary?.dates,
-        p.summary?.city,
-        p.summary?.category,
-        p.summary?.status,
-      ].some(v =>
-        String(v || '')
-          .toLowerCase()
-          .includes(q),
-      ),
-    );
-  const near = pickDefaultRace(packages.filter(raceWithinWeek));
-  return near ? [near] : packages[0] ? [packages[0]] : [];
 }
 
 export function useRfmApp() {
@@ -474,7 +419,7 @@ export function useRfmApp() {
       await deleteAllPackages();
       await clearMapTiles();
       if ('caches' in window) await caches.delete('rfm-race-assets-v1');
-      localStorage.removeItem(FAVORITES_KEY);
+      removeStorage(FAVORITES_KEY);
     } catch (error) {
       markBoot('offline-data-clear-failed', { message: String(error?.message || error) });
       await refreshPackages().catch(() => {});

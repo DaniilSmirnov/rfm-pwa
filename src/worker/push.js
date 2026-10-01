@@ -152,19 +152,17 @@ async function runDueReminders(env, now = Date.now()) {
     removed = 0;
   do {
     const page = await env.PUSH_SUBSCRIPTIONS.list({ prefix: 'reminder:', cursor, limit: 1000 });
-    for (const key of page.keys) {
-      checked++;
+    const results = await mapWithConcurrency(page.keys, 20, async key => {
       const job = await env.PUSH_SUBSCRIPTIONS.get(key.name, 'json');
       if (!job) {
         await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-        continue;
+        return { checked: 1 };
       }
-      if (Number(job.dueAt) > now) continue;
+      if (Number(job.dueAt) > now) return { checked: 1 };
       const endpoint = job?.subscription?.endpoint;
       if (!pushEndpointAllowed(endpoint)) {
         await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-        removed++;
-        continue;
+        return { checked: 1, removed: 1 };
       }
       try {
         const hash = await subscriptionHash(endpoint);
@@ -185,18 +183,24 @@ async function runDueReminders(env, now = Date.now()) {
           Math.max(1800, Number(job.ttlSeconds) || 21600),
         );
         if (result.ok) {
-          sent++;
           await env.PUSH_SUBSCRIPTIONS.delete(key.name);
+          return { checked: 1, sent: 1 };
         } else {
-          failed++;
           if ([404, 410].includes(result.status)) {
             await env.PUSH_SUBSCRIPTIONS.delete(key.name);
-            removed++;
+            return { checked: 1, failed: 1, removed: 1 };
           }
+          return { checked: 1, failed: 1 };
         }
       } catch {
-        failed++;
+        return { checked: 1, failed: 1 };
       }
+    });
+    for (const result of results) {
+      checked += result?.checked || 0;
+      sent += result?.sent || 0;
+      failed += result?.failed || 0;
+      removed += result?.removed || 0;
     }
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);

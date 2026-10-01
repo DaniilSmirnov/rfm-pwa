@@ -74,31 +74,43 @@ export function openDb() {
   return opening;
 }
 
-async function withStore(name, mode, fn) {
+export function isRetryableDbError(error) {
+  return ['InvalidStateError', 'VersionError', 'NotFoundError'].includes(error?.name);
+}
+
+async function withStore(name, mode, fn, attempt = 0) {
   const db = await openDb();
-  return new Promise((resolve, reject) => {
-    let tx;
-    try {
-      tx = db.transaction(name, mode);
-    } catch (error) {
-      reject(error);
-      return;
-    }
-    const store = tx.objectStore(name);
-    let result;
-    try {
-      result = fn(store);
-    } catch (e) {
+  try {
+    return await new Promise((resolve, reject) => {
+      let tx;
       try {
-        tx.abort();
-      } catch {}
-      reject(e);
-      return;
+        tx = db.transaction(name, mode);
+      } catch (error) {
+        reject(error);
+        return;
+      }
+      const store = tx.objectStore(name);
+      let result;
+      try {
+        result = fn(store);
+      } catch (e) {
+        try {
+          tx.abort();
+        } catch {}
+        reject(e);
+        return;
+      }
+      tx.oncomplete = () => resolve(result?.result ?? result);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+    });
+  } catch (error) {
+    if (attempt === 0 && isRetryableDbError(error)) {
+      if (databasePromise) databasePromise = null;
+      return withStore(name, mode, fn, attempt + 1);
     }
-    tx.oncomplete = () => resolve(result?.result ?? result);
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
-  });
+    throw error;
+  }
 }
 
 export const savePackage = pkg => withStore(PACKAGE_STORE, 'readwrite', s => s.put(pkg));

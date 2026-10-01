@@ -1,30 +1,22 @@
+import { readJsonStorage, readStorage, writeJsonStorage, writeStorage } from './storage.js';
+
 const STAGE_PUSH_PREFS_KEY = 'rfm-stage-push-subscriptions-v1';
 const WALLET_STAGE_PREFS_KEY = 'rfm-wallet-stage-passes-v1';
 export const THEME_PREF_KEY = 'rfm-theme-v1';
 export const AUTO_DELETE_COMPLETED_RACES_KEY = 'rfm-auto-delete-completed-races-v1';
 
 export function loadAutoDeleteCompletedRaces(storage = globalThis.localStorage) {
-  try {
-    return storage?.getItem(AUTO_DELETE_COMPLETED_RACES_KEY) === 'true';
-  } catch {
-    return false;
-  }
+  return readStorage(AUTO_DELETE_COMPLETED_RACES_KEY, storage) === 'true';
 }
 
 export function saveAutoDeleteCompletedRaces(enabled, storage = globalThis.localStorage) {
-  try {
-    storage?.setItem(AUTO_DELETE_COMPLETED_RACES_KEY, enabled ? 'true' : 'false');
-  } catch {}
+  writeStorage(AUTO_DELETE_COMPLETED_RACES_KEY, enabled ? 'true' : 'false', storage);
   return Boolean(enabled);
 }
 
 export function loadThemePreference(storage = null) {
-  try {
-    const theme = (storage ?? globalThis.localStorage)?.getItem(THEME_PREF_KEY);
-    return theme === 'light' || theme === 'dark' ? theme : null;
-  } catch {
-    return null;
-  }
+  const theme = readStorage(THEME_PREF_KEY, storage ?? globalThis.localStorage);
+  return theme === 'light' || theme === 'dark' ? theme : null;
 }
 
 export function resolveTheme(preference, systemDark = false) {
@@ -48,19 +40,13 @@ export function saveThemePreference(
   root = globalThis.document?.documentElement,
 ) {
   if (theme !== 'light' && theme !== 'dark') return;
-  try {
-    (storage ?? globalThis.localStorage)?.setItem(THEME_PREF_KEY, theme);
-  } catch {}
+  writeStorage(THEME_PREF_KEY, theme, storage ?? globalThis.localStorage);
   applyTheme(theme, root);
 }
 
 export function loadStagePushPrefs() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(STAGE_PUSH_PREFS_KEY) || '{}');
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
+  const parsed = readJsonStorage(STAGE_PUSH_PREFS_KEY, {});
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
 }
 
 export function racePushPrefId(pkg) {
@@ -82,16 +68,12 @@ export function setStageSubscribed(pkg, stageKey, enabled) {
   else set.delete(stageKey);
   if (set.size) prefs[raceId] = [...set];
   else delete prefs[raceId];
-  localStorage.setItem(STAGE_PUSH_PREFS_KEY, JSON.stringify(prefs));
+  writeJsonStorage(STAGE_PUSH_PREFS_KEY, prefs);
 }
 
 export function loadWalletStagePrefs() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(WALLET_STAGE_PREFS_KEY) || '{}');
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
+  const parsed = readJsonStorage(WALLET_STAGE_PREFS_KEY, {});
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
 }
 
 export function walletStageKeys(pkg) {
@@ -107,5 +89,5 @@ export function setWalletStageAdded(pkg, stageKey) {
   const set = new Set(Array.isArray(prefs[raceId]) ? prefs[raceId] : []);
   set.add(stageKey);
   prefs[raceId] = [...set];
-  localStorage.setItem(WALLET_STAGE_PREFS_KEY, JSON.stringify(prefs));
+  writeJsonStorage(WALLET_STAGE_PREFS_KEY, prefs);
 }

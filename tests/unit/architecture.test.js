@@ -12,6 +12,26 @@ describe('architecture guardrails', () => {
     expect(lines('src/views/App.jsx')).toBeLessThan(500));
   it('keeps React application hook below 480 lines', () =>
     expect(lines('src/hooks/useRfmApp.js')).toBeLessThan(650));
+  it('keeps package selection and browser point effects outside the app hook', () => {
+    expect(read('src/hooks/useRfmApp.js')).toContain("from '../app/package-selection.js'");
+    expect(read('src/hooks/useRfmApp.js')).toContain("from '../app/point-actions.js'");
+    expect(read('src/hooks/useRfmApp.js')).not.toContain('document.createElement');
+  });
+  it('uses the safe storage boundary for app persistence', () => {
+    const sourceFiles = readdirSync('src', { recursive: true })
+      .filter(name => /\.(js|jsx)$/.test(name) && !name.endsWith('bootstrap.js'))
+      .map(name => `src/${name}`);
+    const directAccess = sourceFiles.filter(file =>
+      /localStorage\.(getItem|setItem|removeItem|clear)/.test(read(file)),
+    );
+    expect(directAccess).toEqual([]);
+  });
+  it('retries only recoverable IndexedDB lifecycle errors', async () => {
+    const { isRetryableDbError } = await import('../../src/db.js');
+    expect(isRetryableDbError({ name: 'InvalidStateError' })).toBe(true);
+    expect(isRetryableDbError({ name: 'VersionError' })).toBe(true);
+    expect(isRetryableDbError({ name: 'AbortError' })).toBe(false);
+  });
   it('keeps offline storage controls in a dedicated hook', () => {
     expect(lines('src/hooks/useOfflineStorageControls.js')).toBeLessThan(140);
     expect(read('src/hooks/useRfmApp.js')).toContain('useOfflineStorageControls');
