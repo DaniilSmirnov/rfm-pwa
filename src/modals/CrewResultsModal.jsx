@@ -142,6 +142,7 @@ function CrewDetailsDialog({
             </div>
           </div>
           <footer className="crew-details-footer" aria-label="Результаты от ASMG">
+            <span className="asmg-results-prefix">Результаты от</span>
             <svg
               className="asmg-results-logo crew-details-footer-logo"
               viewBox="159 0 127 31"
@@ -476,6 +477,7 @@ export default function CrewResultsModal({
             rel="noreferrer"
             aria-label="Открыть сайт ASMG"
           >
+            <span className="asmg-results-prefix">Результаты от</span>
             <svg className="asmg-results-logo" viewBox="159 0 127 31" role="img" aria-label="ASMG">
               <clipPath id="asmg-results-logo-clip">
                 <rect x="159" y="0" width="127" height="31" />
