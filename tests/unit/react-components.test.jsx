@@ -914,7 +914,7 @@ describe('application components', () => {
     const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
     mocks.useRfmApp.mockReturnValue(app);
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Ещё/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Меню/ }));
     fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
     expect(screen.getByRole('heading', { name: 'Настройки и диагностика' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Назад' }));

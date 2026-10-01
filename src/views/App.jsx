@@ -32,7 +32,7 @@ const tabs = [
   { key: 'today', label: 'Сегодня', Icon: CalendarDays },
   { key: 'map', label: 'Карта', Icon: Map },
   { key: 'results', label: 'Результаты', Icon: Trophy },
-  { key: 'more', label: 'Ещё', Icon: CircleEllipsis },
+  { key: 'more', label: 'Меню', Icon: CircleEllipsis },
 ];
 function readTab() {
   const requested = new URLSearchParams(location.search).get('tab');

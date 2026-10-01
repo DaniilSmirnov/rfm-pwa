@@ -36,7 +36,7 @@ async function waitForWorker(page) {
 }
 
 async function openMoreTab(page) {
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
 }
 
 async function openSettings(page) {

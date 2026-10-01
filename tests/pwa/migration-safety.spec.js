@@ -25,7 +25,7 @@ async function waitForAppWorker(page) {
 
 async function openTab(page, label) {
   if (label === 'Гонки') {
-    await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+    await page.getByRole('button', { name: 'Меню', exact: true }).click();
     await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
     return;
   }
@@ -298,7 +298,7 @@ test.describe('PWA migration safety', () => {
       reopened.locator('.map-race-label').filter({ hasText: 'Offline spectator point' }),
     ).toBeVisible();
     expect(requests.some(url => url.includes('/api/basemap.pmtiles'))).toBe(false);
-    await openTab(reopened, 'Ещё');
+    await openTab(reopened, 'Меню');
     await reopened.getByRole('button', { name: /Настройки и диагностика/ }).click();
     await expect(reopened.locator('.settings-diagnostics')).toContainText('Состояние карты');
     await expect(reopened.locator('.settings-diagnostics')).toBeVisible();
@@ -362,7 +362,7 @@ test.describe('PWA migration safety', () => {
     expect(heroImage.complete).toBe(true);
     expect(heroImage.naturalWidth).toBeGreaterThan(0);
 
-    await openTab(reopened, 'Ещё');
+    await openTab(reopened, 'Меню');
     await reopened.getByRole('button', { name: 'Документы и материалы' }).click();
     const organizer = reopened
       .locator('.react-tab-content .race-material')
@@ -560,38 +560,20 @@ test.describe('PWA migration safety', () => {
         const request = tx.objectStore('packages').get('race-901');
         request.onsuccess = () =>
           resolve({
-            name: request.result?.name,
-            favorites: localStorage.getItem('rfm-favorite-points-v1'),
-          });
-        request.onerror = () => reject(request.error);
-      });
-    });
+            name: request.result?.nam��N��G����ƭy�
+    await page.evaluate(() => window.scrollTo(0, 250));
+    const before = await page.evaluate(() => window.scrollY);
+    expect(before).toBeGreaterThan(0);
+    await page.getByRole('button', { name: 'Сегодня' }).click();
+    await page.getByRole('button', { name: 'Карта' }).click();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeCloseTo(before, 0);
+  });
 
-    await registerHarnessWorker(page, '/migration-test/sw-upgrade-v2.js');
-    await expect
-      .poll(() => page.evaluate(() => fetch('/__sw-version').then(r => r.text())))
-      .toBe('v2');
-
-    const after = await page.evaluate(async () => {
-      const db = await new Promise((resolve, reject) => {
-        const request = indexedDB.open('rallyfans-offline');
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction('packages', 'readonly');
-        const request = tx.objectStore('packages').get('race-901');
-        request.onsuccess = () =>
-          resolve({
-            name: request.result?.name,
-            favorites: localStorage.getItem('rfm-favorite-points-v1'),
-          });
-        request.onerror = () => reject(request.error);
-      });
-    });
-
-    expect(after).toEqual(before);
-    expect(after.name).toBe('Offline Migration Rally');
-    expect(after.favorites).toContain('Offline spectator point');
+  test('disables page pinch zoom', async ({ page }) => {
+    await openApp(page);
+    await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+      'content',
+      /user-scalable=no/,
+    );
   });
 });
