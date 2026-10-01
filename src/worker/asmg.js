@@ -1,4 +1,4 @@
-import { commonHeaders, json } from './http.js';
+import { commonHeaders, json, readResponseText } from './http.js';
 
 const ASMG_ORIGIN = 'https://asmg.ru';
 
@@ -126,7 +126,9 @@ export async function proxyAsmgResults(request, url) {
   }
   if (!response.ok) return json({ ok: false, error: `ASMG HTTP ${response.status}` }, 502);
   try {
-    const results = parseAsmgResultsHtml(await response.text(), eventId);
+    const html = await readResponseText(response);
+    if (html == null) throw new Error('ASMG response is too large or unreadable');
+    const results = parseAsmgResultsHtml(html, eventId);
     results.updatedAt = new Date().toISOString();
     return new Response(JSON.stringify(results), {
       status: 200,

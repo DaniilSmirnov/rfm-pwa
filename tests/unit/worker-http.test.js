@@ -4,6 +4,8 @@ import {
   textToBase64Url,
   sha256Base64Url,
   readJson,
+  readResponseText,
+  mapWithConcurrency,
   commonHeaders,
   fetchWithTimeout,
   json,
@@ -36,6 +38,31 @@ describe('worker HTTP helpers', () => {
     expect(
       await readJson(new Request('https://x.test', { method: 'POST', body: 'bad' })),
     ).toBeNull());
+  it('rejects JSON bodies above the configured limit', async () => {
+    const request = new Request('https://x.test', {
+      method: 'POST',
+      body: JSON.stringify({ value: '1234567890' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    await expect(readJson(request, { maxBytes: 4 })).resolves.toBeNull();
+  });
+  it('limits upstream text before parsing', async () => {
+    await expect(readResponseText(new Response('12345'), { maxBytes: 4 })).resolves.toBeNull();
+    await expect(readResponseText(new Response('ok'), { maxBytes: 4 })).resolves.toBe('ok');
+  });
+  it('keeps bounded concurrency while preserving result order', async () => {
+    let active = 0;
+    let maximum = 0;
+    const result = await mapWithConcurrency([1, 2, 3, 4], 2, async value => {
+      active++;
+      maximum = Math.max(maximum, active);
+      await Promise.resolve();
+      active--;
+      return value * 2;
+    });
+    expect(maximum).toBeLessThanOrEqual(2);
+    expect(result).toEqual([2, 4, 6, 8]);
+  });
   it('adds security header', () =>
     expect(commonHeaders()['x-content-type-options']).toBe('nosniff'));
   it('reports current worker version header', () =>

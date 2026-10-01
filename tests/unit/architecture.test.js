@@ -21,6 +21,22 @@ describe('architecture guardrails', () => {
     expect(read('src/app/offline-diagnostics.js')).toMatch(/limit\s*=\s*12/);
   });
   it('keeps map controller below 700 lines', () => expect(lines('src/map.js')).toBeLessThan(700));
+  it('keeps MapLibre React mounting at explicit integration boundaries', () => {
+    const files = ['src/main.jsx', 'src/map.js', 'src/map/terrain-control.js'];
+    const roots = files.reduce(
+      (count, file) => count + (read(file).match(/createRoot\(/g) || []).length,
+      0,
+    );
+    expect(roots).toBe(3);
+    const allSource = ['src', 'tests'].flatMap(folder => {
+      const entries = readdirSync(folder, { recursive: true });
+      return entries.filter(name => /\.(js|jsx)$/.test(name)).map(name => `${folder}/${name}`);
+    });
+    const unauthorized = allSource.filter(
+      file => !files.includes(file) && /createRoot\(/.test(read(file)),
+    );
+    expect(unauthorized).toEqual([]);
+  });
   it('keeps basemap style isolated below 700 lines', () =>
     expect(lines('src/map/style.js')).toBeLessThan(1800));
   it('keeps Worker entrypoint below 100 lines', () =>
@@ -88,6 +104,9 @@ describe('architecture guardrails', () => {
     expect(read('src/views/SettingsView.jsx')).toContain("import './SettingsView.css'");
     expect(read('src/modals/SafetyGate.jsx')).toContain("import './SafetyGate.css'");
     expect(css).toContain('@layer base, components, views, modals, theme, responsive');
+    const base = read('src/styles/base.css');
+    expect(base.match(/body\[data-active-tab='today'\] \.legacy-more/g)).toHaveLength(1);
+    expect(read('src/components/SafetyMemo.jsx')).toContain("import './SafetyMemo.css'");
   });
 
   it('uses Vite for the client production bundle', () => {
@@ -196,6 +215,8 @@ describe('architecture guardrails', () => {
     expect(doc).toContain('Other `/api/*` endpoints are network-only');
     expect(read('src/offline-map.js')).toContain("from './tile-revision-downloader.js'");
     expect(read('src/terrain-offline.js')).toContain("from './tile-revision-downloader.js'");
+    expect(read('src/offline-map.js')).toContain("from './app/tile-grid.js'");
+    expect(read('src/terrain-offline.js')).toContain("from './app/tile-grid.js'");
   });
 
   it('updates offline map revisions through a staged metadata commit', () => {

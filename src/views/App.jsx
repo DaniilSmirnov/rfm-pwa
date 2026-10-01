@@ -77,7 +77,7 @@ export default function App() {
 
   useEffect(() => {
     setSafetyAccepted(hasSafetyConsent(pkg));
-  }, [pkg?.id, pkg?.original?.safety_leaflet]);
+  }, [pkg]);
 
   useEffect(() => {
     const onUpdate = event => setUpdateMessage(event.detail?.message || 'Обновляю приложение…');
@@ -136,7 +136,7 @@ export default function App() {
   useEffect(() => {
     if (pkg)
       syncWalletPassesForPackage(pkg).catch(e => console.warn('Wallet pass refresh failed', e));
-  }, [pkg?.id, pkg?.savedAt]);
+  }, [pkg]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,7 +153,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [app.selectedPoint, pkg?.terrain?.storageId]);
+  }, [app.selectedPoint, pkg?.terrain]);
 
   useEffect(() => setSelectedRoute(null), [pkg?.id]);
 
@@ -189,7 +189,7 @@ export default function App() {
     const url = new URL(location.href);
     url.searchParams.set('tab', 'more');
     history.replaceState({ tab: 'more' }, '', url);
-  }, [activeScrollKey]);
+  }, []);
   const screenHeaderTitle =
     tab === 'more' && moreScreen !== 'menu'
       ? {

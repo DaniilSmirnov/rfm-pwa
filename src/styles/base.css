@@ -168,32 +168,9 @@
   }
 }
 @layer base {
-  body[data-active-tab='map'] .react-tab-content {
-    display: none;
-  }
-}
-@layer base {
-  body[data-active-tab='today'] main {
-    display: none;
-  }
-}
-@layer base {
-  body[data-active-tab='today'] .legacy-more,
-  body[data-active-tab='today'] .legacy-map,
-  body[data-active-tab='map'] .legacy-more,
-  body[data-active-tab='more'] .legacy-map {
-    display: none !important;
-  }
-}
-@layer base {
   body[data-active-tab='map'] .react-tab-content,
   body[data-active-tab='more'] .today-screen,
   body[data-active-tab='more'] .today-empty {
-    display: none;
-  }
-}
-@layer base {
-  body[data-active-tab='today'] main {
     display: none;
   }
 }

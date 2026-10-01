@@ -1,9 +1,8 @@
 import './CompassReadout.css';
 import React, { useMemo, useSyncExternalStore } from 'react';
-import { bearingDegrees, compassDirection, distanceMeters } from '../app/geo.js';
+import { bearingDegrees, compassDirection, distanceMeters, formatDistance } from '../app/geo.js';
 import { normalizePoint } from '../navigation.js';
 import { getCompassHeading, subscribeCompassHeading } from '../hooks/compass-heading.js';
-import { formatDistance } from '../app/geo.js';
 export default function CompassReadout({ point, userPos }) {
   const heading = useSyncExternalStore(
     subscribeCompassHeading,

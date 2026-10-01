@@ -10,9 +10,9 @@ function MapLifecycle({ app, onRouteClick }) {
   const [engine, setEngine] = useState('loading');
   const [engineError, setEngineError] = useState('');
   const pkg = app.currentPackage;
+  const { carPoint, setMapDiag, showPoint, userPos } = app;
   const geojson = useMemo(() => {
-    const car = app.carPoint;
-    return car
+    return carPoint
       ? {
           ...pkg?.geojson,
           features: [
@@ -20,19 +20,19 @@ function MapLifecycle({ app, onRouteClick }) {
             {
               type: 'Feature',
               properties: { kind: 'local-car', name: '🚗 Машина' },
-              geometry: { type: 'Point', coordinates: [car.lon, car.lat] },
+              geometry: { type: 'Point', coordinates: [carPoint.lon, carPoint.lat] },
             },
           ],
         }
       : pkg?.geojson;
-  }, [pkg?.geojson, app.carPoint?.savedAt]);
+  }, [pkg?.geojson, carPoint]);
 
   useEffect(() => {
     let cancelled = false;
     if (!pkg) {
       setEngine('empty');
       setEngineError('');
-      app.setMapDiag('');
+      setMapDiag('');
       return undefined;
     }
     setEngine('loading');
@@ -44,13 +44,13 @@ function MapLifecycle({ app, onRouteClick }) {
         if (!cancelled) {
           setEngine('fallback');
           setEngineError(error.message);
-          app.setMapDiag(`Карта: SVG режим · ${error.message}`);
+          setMapDiag(`Карта: SVG режим · ${error.message}`);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [pkg?.id]);
+  }, [pkg, setMapDiag]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -59,33 +59,33 @@ function MapLifecycle({ app, onRouteClick }) {
       ? { ...pkg.offlineMap, raceId: pkg.offlineMap.storageId || pkg.id }
       : null;
     const terrain = pkg.terrain?.ready ? pkg.terrain : null;
-    app.setMapDiag(
+    setMapDiag(
       `MapLibre ✓ · WebGL ✓${offlineMap ? ` · локальная подложка ${offlineMap.tileCount || 0} тайлов` : ''}`,
     );
     try {
-      renderMap(container, geojson, app.userPos, app.showPoint, {
+      renderMap(container, geojson, userPos, showPoint, {
         offlineMap,
         terrain,
         routePackage: pkg,
         onRouteClick,
         onMapError: message => {
           reportClientError(new Error(message), 'map');
-          app.setMapDiag(`Ошибка карты: ${message}`);
+          setMapDiag(`Ошибка карты: ${message}`);
         },
       });
     } catch (error) {
       setEngine('fallback');
       setEngineError(error.message);
-      app.setMapDiag(`Карта: SVG режим · ${error.message}`);
+      setMapDiag(`Карта: SVG режим · ${error.message}`);
     }
     return () => {
       resizeActiveMap();
     };
-  }, [engine, pkg?.id, pkg?.offlineMap?.storageId, pkg?.terrain?.storageId, geojson, onRouteClick]);
+  }, [engine, pkg, setMapDiag, userPos, showPoint, geojson, onRouteClick]);
 
   useEffect(() => {
-    if (app.userPos) updateLiveUserPosition(app.userPos, { center: Boolean(app.userPos.__center) });
-  }, [app.userPos]);
+    if (userPos) updateLiveUserPosition(userPos, { center: Boolean(userPos.__center) });
+  }, [userPos]);
   if (!pkg) return <div className="empty">Выбери сохранённую гонку</div>;
   if (engine === 'fallback')
     return (
@@ -93,7 +93,7 @@ function MapLifecycle({ app, onRouteClick }) {
         <p className="muted small">
           Интерактивная карта недоступна: {engineError}. Показана схема гонки.
         </p>
-        <FallbackMap geojson={geojson} userPos={app.userPos} onPointClick={app.showPoint} />
+        <FallbackMap geojson={geojson} userPos={userPos} onPointClick={showPoint} />
       </>
     );
   if (engine === 'loading')

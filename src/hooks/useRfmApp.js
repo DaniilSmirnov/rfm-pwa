@@ -256,6 +256,7 @@ export function useRfmApp() {
     setCurrentPackage,
     refreshPackages,
   });
+  const { clearMapError } = offlineStorage;
 
   const raceRetention = useRaceRetention({
     packages,
@@ -264,6 +265,15 @@ export function useRfmApp() {
     setSelectedPoint,
     refreshPackages,
   });
+
+  const runtimeRef = useRef({});
+  runtimeRef.current = {
+    clearCatalog,
+    currentPackageId: currentPackage?.id,
+    loadCatalog,
+    refreshPackages,
+    setCatalogStatus,
+  };
 
   useEffect(() => {
     const refresh = () =>
@@ -280,7 +290,7 @@ export function useRfmApp() {
         const pkg = await getPackage(id);
         if (pkg) {
           setCurrentPackage(pkg);
-          offlineStorage.clearMapError();
+          clearMapError();
         }
         return pkg;
       } catch (error) {
@@ -289,7 +299,7 @@ export function useRfmApp() {
         return null;
       }
     },
-    [offlineStorage.clearMapError],
+    [clearMapError],
   );
 
   useEffect(() => {
@@ -297,19 +307,21 @@ export function useRfmApp() {
     bootstrapRuntime().then(sw => {
       if (alive) swRef.current = sw;
     });
-    refreshPackages().catch(error =>
-      markBoot('saved-data-load-failed', { message: String(error?.message || error) }),
-    );
-    loadCatalog();
+    runtimeRef.current
+      .refreshPackages()
+      .catch(error =>
+        markBoot('saved-data-load-failed', { message: String(error?.message || error) }),
+      );
+    runtimeRef.current.loadCatalog();
     const connectivity = createConnectivityMonitor({
       onChange: reachable => {
         connectivityRef.current = reachable;
         setOnline(reachable);
         if (reachable) {
-          loadCatalog();
+          runtimeRef.current.loadCatalog();
           requestRallyPackBackgroundRefresh(swRef.current);
         } else {
-          clearCatalog();
+          runtimeRef.current.clearCatalog();
         }
       },
     });
@@ -320,13 +332,15 @@ export function useRfmApp() {
         savePackage,
         scheduleRaceReminders,
       }).catch(() => null);
-      if (result?.applied || result?.pending) await refreshPackages(currentPackage?.id);
+      if (result?.applied || result?.pending)
+        await runtimeRef.current.refreshPackages(runtimeRef.current.currentPackageId);
     };
     const onBackground = event => {
       const detail = event.detail || {};
-      if (detail.status === 'success') setCatalogStatus('Офлайн-материалы готовы ✓');
+      if (detail.status === 'success')
+        runtimeRef.current.setCatalogStatus('Офлайн-материалы готовы ✓');
       if (detail.status === 'failure')
-        setCatalogStatus('Не удалось скачать часть офлайн-материалов.');
+        runtimeRef.current.setCatalogStatus('Не удалось скачать часть офлайн-материалов.');
     };
     window.addEventListener('rfm:periodic-update', onPeriodic);
     window.addEventListener('rfm:background-fetch', onBackground);
@@ -346,10 +360,10 @@ export function useRfmApp() {
     () => new Set(packages.filter(x => x.raceId != null).map(x => Number(x.raceId))),
     [packages],
   );
-  const favorites = useMemo(
-    () => (currentPackage ? favoritesForPackage(currentPackage.id) : []),
-    [currentPackage?.id, favoritesRevision],
-  );
+  const favorites = useMemo(() => {
+    void favoritesRevision;
+    return currentPackage ? favoritesForPackage(currentPackage.id) : [];
+  }, [currentPackage, favoritesRevision]);
 
   useEffect(() => {
     if (!currentPackage && visiblePackages[0]) setCurrentPackage(visiblePackages[0]);
