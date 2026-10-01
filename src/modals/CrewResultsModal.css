@@ -332,13 +332,8 @@
     width: 34px;
     height: 34px;
     place-items: center;
-    border-radius: 9px;
     background: transparent;
     color: inherit;
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: -0.05em;
-    object-fit: contain;
   }
   .crew-results-mobile-list {
     border-top: 1px solid #e5e6e8;
