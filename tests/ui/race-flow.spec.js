@@ -299,7 +299,9 @@ test.describe('saved race user flows', () => {
     await page.locator('#locateBtn').click();
     await expect(page.locator('#geoStatus')).toContainText('точность ±5 м');
     await expect(page.locator('.maplibregl-map')).toHaveCount(1);
-    await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
+    await expect
+      .poll(() => page.evaluate(() => window.__mapCreateCount))
+      .toBe(mapCount);
   });
 
   test('switches terrain mode without recreating the map', async ({ page }) => {
@@ -312,9 +314,9 @@ test.describe('saved race user flows', () => {
     await expect(terrainButton).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.maplibregl-map')).toHaveCount(1);
     await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
-    await expect.poll(() => page.evaluate(() => window.__mapTerrain?.source)).toBe(
-      'offline-terrain-3d',
-    );
+    await expect
+      .poll(() => page.evaluate(() => window.__mapTerrain?.source))
+      .toBe('offline-terrain-3d');
   });
 
   test('map engine diagnostic reports MapLibre', async ({ page }) => {

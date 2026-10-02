@@ -11,6 +11,8 @@ function MapLifecycle({ app, onRouteClick }) {
   const [engineError, setEngineError] = useState('');
   const pkg = app.currentPackage;
   const { carPoint, setMapDiag, showPoint, userPos } = app;
+  const userPosRef = useRef(userPos);
+  userPosRef.current = userPos;
   const geojson = useMemo(() => {
     return carPoint
       ? {
@@ -63,7 +65,7 @@ function MapLifecycle({ app, onRouteClick }) {
       `MapLibre ✓ · WebGL ✓${offlineMap ? ` · локальная подложка ${offlineMap.tileCount || 0} тайлов` : ''}`,
     );
     try {
-      renderMap(container, geojson, userPos, showPoint, {
+      renderMap(container, geojson, userPosRef.current, showPoint, {
         offlineMap,
         terrain,
         routePackage: pkg,
