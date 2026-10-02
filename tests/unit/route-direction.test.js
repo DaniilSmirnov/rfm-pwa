@@ -44,9 +44,7 @@ describe('stage route direction markers', () => {
 
     const image = map.addImage.mock.calls[0][1];
     const pixel = (x, y) =>
-      Array.from(
-        image.data.slice((y * image.width + x) * 4, (y * image.width + x + 1) * 4),
-      );
+      Array.from(image.data.slice((y * image.width + x) * 4, (y * image.width + x + 1) * 4));
 
     expect(pixel(10, 12)).toEqual([240, 82, 23, 255]);
     expect(pixel(56, 12)).toEqual([240, 82, 23, 255]);
