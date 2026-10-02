@@ -42,17 +42,7 @@ export function mobileBrowser() {
   return 'browser';
 }
 
-export function installInstructions({ promptAvailable = Boolean(deferredPrompt) } = {}) {
-  if (promptAvailable) {
-    return {
-      browser: null,
-      title: 'Установи Rally Fans Map Offline',
-      text: 'Сейчас приложение открыто в браузере. Установи приложение, чтобы запускать его отдельно и надёжнее использовать офлайн-режим и уведомления.',
-      steps: [],
-      action: 'Установить приложение',
-    };
-  }
-
+export function installInstructions() {
   const browser = mobileBrowser();
   const instructions = {
     safari: {
@@ -105,7 +95,7 @@ export function getPwaInstallSnapshot() {
     installedLaunch,
     browserMode: !installedLaunch,
     promptAvailable,
-    instructions: installInstructions({ promptAvailable }),
+    instructions: installInstructions(),
   };
 }
 

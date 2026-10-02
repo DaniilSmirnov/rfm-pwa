@@ -20,6 +20,7 @@ export default function AppLayout({
   screenContent,
   updateMessage,
   onSelectRally,
+  onOpenRaces,
   screenHeader,
 }) {
   return (
@@ -45,6 +46,7 @@ export default function AppLayout({
           mapContent={mapContent}
           pointsContent={pointListContent}
           favoritesContent={favoritesContent}
+          onOpenRaces={onOpenRaces}
         />
         <RaceDetails app={app} schedule={scheduleContent} media={mediaContent} />
       </main>
