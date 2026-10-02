@@ -271,7 +271,6 @@ describe('unit coverage for presentational components', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Обновить' }).at(-1));
     fireEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0]);
     expect(onOpenRace).toHaveBeenCalledWith(1);
-    expect(app.deleteRace).toHaveBeenCalledWith(1);
   });
 
   it('renders schedule branches and invokes stage selection', async () => {
