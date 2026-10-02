@@ -70,9 +70,7 @@ describe('AppScreens', () => {
   });
 
   it('renders every top-level and nested screen through the screen component', () => {
-    const { rerender } = render(
-      <AppScreens app={app} tab="today" moreScreen="menu" {...callbacks} />,
-    );
+    const { rerender } = render(<AppScreens app={app} tab="today" moreScreen="menu" {...callbacks} />);
     expect(screen.getByText('today view')).toBeTruthy();
 
     rerender(<AppScreens app={app} tab="results" moreScreen="menu" {...callbacks} />);
@@ -112,9 +110,7 @@ describe('AppScreens', () => {
 
 describe('composed screen components', () => {
   it('renders the dedicated today screen', () => {
-    render(
-      <TodayScreen app={app} onMap={vi.fn()} onResults={vi.fn()} onRaces={vi.fn()} />,
-    );
+    render(<TodayScreen app={app} onMap={vi.fn()} onResults={vi.fn()} onRaces={vi.fn()} />);
     expect(screen.getByText('today view')).toBeTruthy();
   });
 
@@ -144,9 +140,7 @@ describe('composed screen components', () => {
   });
 
   it('renders each more screen branch', () => {
-    const { rerender } = render(
-      <MoreScreen moreScreen="settings" app={app} {...callbacks} />,
-    );
+    const { rerender } = render(<MoreScreen moreScreen="settings" app={app} {...callbacks} />);
     expect(screen.getByText('settings screen')).toBeTruthy();
     rerender(<MoreScreen moreScreen="races" app={app} {...callbacks} />);
     expect(screen.getByText('races screen')).toBeTruthy();
