@@ -30,7 +30,6 @@ describe('normalizeGeolocationCoords', () => {
   });
 });
 
-
 describe('useGeoCompass', () => {
   const originalGeolocation = navigator.geolocation;
 
