@@ -293,6 +293,14 @@ test.describe('saved race user flows', () => {
     await expect(page.locator('#geoStatus')).toContainText('точность ±5 м');
   });
 
+  test('keeps the map instance stable while GPS position updates', async ({ page }) => {
+    await openMap(page);
+    const mapCount = await page.evaluate(() => window.__mapCreateCount);
+    await page.locator('#locateBtn').click();
+    await expect(page.locator('#geoStatus')).toContainText('точность ±5 м');
+    await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
+  });
+
   test('map engine diagnostic reports MapLibre', async ({ page }) => {
     await openMap(page);
     await page.getByRole('button', { name: 'Меню' }).click();
