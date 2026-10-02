@@ -6,11 +6,13 @@ import MoreScreen, { moreSectionTitles } from './MoreScreen.jsx';
 
 export function getScreenHeaderTitle(tab, moreScreen) {
   if (tab !== 'more' || moreScreen === 'menu') return null;
-  return {
-    races: 'Управление гонками',
-    settings: 'Настройки и диагностика',
-    ...moreSectionTitles,
-  }[moreScreen] || 'Раздел гонки';
+  return (
+    {
+      races: 'Управление гонками',
+      settings: 'Настройки и диагностика',
+      ...moreSectionTitles,
+    }[moreScreen] || 'Раздел гонки'
+  );
 }
 
 export default function AppScreens(props) {
