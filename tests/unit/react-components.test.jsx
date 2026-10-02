@@ -961,6 +961,17 @@ describe('application components', () => {
     expect(screen.queryByRole('img', { name: 'График перекрытий 1' })).toBeNull();
   });
 
+  it('shows the shared empty state on the results tab without downloaded races', () => {
+    const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
+    mocks.useRfmApp.mockReturnValue(app);
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Результаты/ }));
+    expect(screen.getByRole('region', { name: 'Нет скачанных гонок' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Перейти к скачиванию' }));
+    expect(screen.getByText('УПРАВЛЕНИЕ ГОНКАМИ')).toBeTruthy();
+  });
+
   it('mounts the app, switches tabs, opens settings, and reveals diagnostics by logo taps', async () => {
     window.scrollTo = vi.fn();
     HTMLElement.prototype.scrollIntoView = vi.fn();
