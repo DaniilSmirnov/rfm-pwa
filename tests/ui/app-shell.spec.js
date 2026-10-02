@@ -40,14 +40,12 @@ test.describe('app shell and catalog', () => {
     await expect(installPrompt).toContainText(/Chrome|Safari|Яндекс/);
   });
 
-  test('highlights the active navigation icon with an orange outline', async ({ page }) => {
+  test('keeps the active navigation icon free of a decorative outline', async ({ page }) => {
     await openApp(page);
     const activeTab = page.getByRole('button', { name: 'Сегодня' });
     const activeIcon = activeTab.locator('svg');
     await expect(activeTab).toHaveAttribute('aria-current', 'page');
-    await expect(activeIcon).toHaveClass(/bottom-tab-icon/);
-    await expect(activeIcon).toHaveCSS('outline-style', 'solid');
-    await expect(activeIcon).toHaveCSS('outline-color', 'rgb(240, 82, 23)');
+    await expect(activeIcon).toHaveCSS('outline-style', 'none');
   });
 
   test('shows the race selector instead of a network badge', async ({ page }) => {

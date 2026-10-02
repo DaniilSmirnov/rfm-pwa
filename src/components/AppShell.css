@@ -299,10 +299,4 @@
   .bottom-tabbar > button[aria-current='page'] b {
     color: inherit;
   }
-
-  .bottom-tabbar > button[aria-current='page'] .bottom-tab-icon {
-    outline: 2px solid currentColor;
-    outline-offset: 3px;
-    border-radius: 6px;
-  }
 }
