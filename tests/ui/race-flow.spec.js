@@ -293,6 +293,30 @@ test.describe('saved race user flows', () => {
     await expect(page.locator('#geoStatus')).toContainText('точность ±5 м');
   });
 
+  test('keeps the map instance stable while GPS position updates', async ({ page }) => {
+    await openMap(page);
+    const mapCount = await page.evaluate(() => window.__mapCreateCount);
+    await page.locator('#locateBtn').click();
+    await expect(page.locator('#geoStatus')).toContainText('точность ±5 м');
+    await expect(page.locator('.maplibregl-map')).toHaveCount(1);
+    await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
+  });
+
+  test('switches terrain mode without recreating the map', async ({ page }) => {
+    await seedFixtureRace(page, { terrainReady: true });
+    await openMap(page);
+    const mapCount = await page.evaluate(() => window.__mapCreateCount);
+    const terrainButton = page.getByRole('button', { name: 'Переключить на 3D-рельеф' });
+    await expect(terrainButton).toBeVisible();
+    await terrainButton.click();
+    await expect(terrainButton).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.maplibregl-map')).toHaveCount(1);
+    await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
+    await expect.poll(() => page.evaluate(() => window.__mapTerrain?.source)).toBe(
+      'offline-terrain-3d',
+    );
+  });
+
   test('map engine diagnostic reports MapLibre', async ({ page }) => {
     await openMap(page);
     await page.getByRole('button', { name: 'Меню' }).click();

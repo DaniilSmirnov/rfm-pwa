@@ -4,7 +4,7 @@ import { act, fireEvent, waitFor } from '@testing-library/react';
 import { TerrainModeControl } from '../../src/map/terrain-control.js';
 
 describe('terrain mode control', () => {
-  it('requests a full map style recreation when switching modes', async () => {
+  it('updates the mode through the map transition callback', async () => {
     const onModeChange = vi.fn(async () => {});
     const control = new TerrainModeControl({ onModeChange });
     const map = {};

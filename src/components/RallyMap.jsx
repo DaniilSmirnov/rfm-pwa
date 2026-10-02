@@ -81,7 +81,7 @@ function MapLifecycle({ app, onRouteClick }) {
     return () => {
       resizeActiveMap();
     };
-  }, [engine, pkg, setMapDiag, userPos, showPoint, geojson, onRouteClick]);
+  }, [engine, pkg, setMapDiag, showPoint, geojson, onRouteClick]);
 
   useEffect(() => {
     if (userPos) updateLiveUserPosition(userPos, { center: Boolean(userPos.__center) });

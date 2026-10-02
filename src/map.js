@@ -230,6 +230,46 @@ function installRacePointLabels(map, points, onPointClick, { alwaysVisible = fal
   map.on('zoom', update);
 }
 
+export function applyTerrainMode(map, mode) {
+  if (!map || typeof map.setTerrain !== 'function') return false;
+  const nextMode = mode === '3d' ? '3d' : 'hillshade';
+  try {
+    map.setTerrain(
+      nextMode === '3d' ? { source: 'offline-terrain-3d', exaggeration: 1.35 } : null,
+    );
+    if (map.getLayer?.('terrain-hillshade') && map.setLayoutProperty)
+      map.setLayoutProperty(
+        'terrain-hillshade',
+        'visibility',
+        nextMode === '3d' ? 'none' : 'visible',
+      );
+    const currentBearing = Number(map.getBearing?.());
+    map.easeTo?.({
+      bearing: nextMode === '3d' && Number.isFinite(currentBearing) ? currentBearing : 0,
+      pitch: nextMode === '3d' ? 70 : 0,
+      duration: 450,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isPositionWithinMapBounds(map, longitude, latitude) {
+  const bounds = map?.getMaxBounds?.();
+  if (!bounds) return true;
+  if (typeof bounds.contains === 'function') return Boolean(bounds.contains([longitude, latitude]));
+  const southWest = bounds.getSouthWest?.();
+  const northEast = bounds.getNorthEast?.();
+  if (!southWest || !northEast) return true;
+  return (
+    longitude >= southWest.lng &&
+    longitude <= northEast.lng &&
+    latitude >= southWest.lat &&
+    latitude <= northEast.lat
+  );
+}
+
 function renderMapLibre(container, fc, userPos, onPointClick, options = {}) {
   const maplibregl = window.maplibregl;
   if (!maplibregl) throw new Error('MapLibre is unavailable');
@@ -283,18 +323,8 @@ function renderMapLibre(container, fc, userPos, onPointClick, options = {}) {
         new TerrainModeControl({
           initialMode: terrainMode,
           onModeChange: nextMode => {
-            const center = map.getCenter?.();
-            const cameraState = {
-              center: center ? [center.lng, center.lat] : undefined,
-              zoom: map.getZoom?.(),
-              bearing: nextMode === '3d' ? map.getBearing?.() || -18 : 0,
-              pitch: nextMode === '3d' ? 70 : 0,
-            };
-            renderMapLibre(container, fc, userPos, onPointClick, {
-              ...options,
-              terrainMode: nextMode,
-              cameraState,
-            });
+            if (!applyTerrainMode(map, nextMode))
+              throw new Error('Не удалось переключить режим рельефа.');
           },
         }),
         'top-right',
@@ -540,7 +570,7 @@ export function updateLiveUserPosition(position, { center = false } = {}) {
         },
       });
     }
-    if (center)
+    if (center && isPositionWithinMapBounds(activeMap, longitude, latitude))
       activeMap.easeTo({
         center: [longitude, latitude],
         zoom: Math.max(activeMap.getZoom?.() || 0, 13),
