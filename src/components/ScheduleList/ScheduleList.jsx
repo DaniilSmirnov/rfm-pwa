@@ -8,14 +8,14 @@ import {
   setStageSubscribed,
   walletStageKeys,
   setWalletStageAdded,
-} from '../app/preferences.js';
+} from '../../app/preferences.js';
 import { isIOSDevice } from '../../app/pwa.js';
 import {
   getPushSubscription,
   setPushStatus,
   scheduleRaceReminders,
   enablePushNotifications,
-} from '../app/push-client.js';
+} from '../../app/push-client.js';
 import { syncWalletStage } from '../../app/wallet-client.js';
 
 const asArray = value =>

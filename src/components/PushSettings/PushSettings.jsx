@@ -7,7 +7,7 @@ import {
   getPushStatus,
   refreshPushUi,
   sendTestPush,
-} from '../app/push-client.js';
+} from '../../app/push-client.js';
 
 export default function PushSettings() {
   const [push, setPush] = useState({

@@ -6,7 +6,7 @@ import {
   crewResultClasses,
   filterCrewResultsByClass,
   overallCrewResults,
-} from '../app/crew-results.js';
+} from '../../views/ResultsScreen/logic/crew-results.js';
 
 export default function TodayLeaders({ pkg, onResults }) {
   const [snapshot, setSnapshot] = useState(pkg.crewResults);

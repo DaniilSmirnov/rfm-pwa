@@ -6,7 +6,7 @@ import {
   getCrewSubscriptions,
   saveCrewSubscription,
   savePackage,
-} from '../db.js';
+} from '../../db.js';
 import { requestCrewResultsBackgroundRefresh } from '../../app/runtime.js';
 import { asmgRaceIdForPackage } from '../../app/asmg-race-map.js';
 import {
@@ -15,7 +15,7 @@ import {
   fetchAsmgResults,
   filterCrewResultsByClass,
   visibleCrewResults,
-} from '../app/crew-results.js';
+} from '../../views/ResultsScreen/logic/crew-results.js';
 
 const resultLabel = result =>
   [

@@ -4,7 +4,7 @@ import {
   safetyCountdowns,
   safetyRules,
   stageGuides,
-} from '../app/safety-memo-content.js';
+} from '../../app/safety-memo-content.js';
 import './SafetyMemo.css';
 
 const illustration = name => `/assets/safety/${name}`;

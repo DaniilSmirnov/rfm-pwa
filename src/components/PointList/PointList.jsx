@@ -12,7 +12,7 @@ import {
   mapsMeWebFallback,
   coordinateText,
   openCustomSchemeWithFallback,
-} from '../navigation.js';
+} from '../../navigation.js';
 import '../../views/MapView/MapView.css';
 
 export default function PointList({ app }) {

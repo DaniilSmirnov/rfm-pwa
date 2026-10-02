@@ -12,7 +12,7 @@ import {
   coordinateText,
   openCustomSchemeWithFallback,
   mapsMeLink,
-} from '../navigation.js';
+} from '../../navigation.js';
 import { isFavoritePoint } from '../../app/local-points.js';
 import { formatDistance } from '../../app/geo.js';
 import {
@@ -21,7 +21,7 @@ import {
   scheduledStageCrews,
   formatRallyTimeOfDay,
   stagePointResults,
-} from '../app/map-details.js';
+} from './logic/map-details.js';
 import OfflineMapActions from '../../components/OfflineMapActions/OfflineMapActions.jsx';
 import EmptyScreenState from '../../components/EmptyScreenState/EmptyScreenState.jsx';
 import Panel from '../../components/Panel/Panel.jsx';
