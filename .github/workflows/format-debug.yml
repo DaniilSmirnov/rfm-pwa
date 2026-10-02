@@ -1,0 +1,17 @@
+name: Format debug
+
+on:
+  push:
+    branches: [di/fix-map-rendering]
+
+jobs:
+  format-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npx prettier --write src/map.js tests/unit/map-rendering.test.js
+      - run: git diff -- src/map.js tests/unit/map-rendering.test.js
