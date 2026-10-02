@@ -21,6 +21,7 @@ import MoreMenu from '../components/MoreMenu.jsx';
 import ScheduleList from '../components/ScheduleList.jsx';
 import RaceMedia from '../components/RaceMedia.jsx';
 import CrewResults from '../components/CrewResults.jsx';
+import EmptyScreenState from '../components/EmptyScreenState.jsx';
 import BootDiagnostics from '../modals/BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { selectedPackage } from '../app/rally-context.js';
@@ -211,13 +212,21 @@ export default function App() {
       />
     ) : tab === 'results' ? (
       <section className="results-tab-screen">
-        <CrewResults
-          pkg={pkg}
-          open={crewResultsOpen}
-          onOpen={openCrewResults}
-          onClose={() => setCrewResultsOpen(false)}
-          standalone
-        />
+        {app.packages?.length > 0 && pkg ? (
+          <CrewResults
+            pkg={pkg}
+            open={crewResultsOpen}
+            onOpen={openCrewResults}
+            onClose={() => setCrewResultsOpen(false)}
+            standalone
+          />
+        ) : (
+          <EmptyScreenState
+            className="results-empty-state"
+            description="Скачай Rally Pack в разделе управления гонками, чтобы открыть результаты."
+            onAction={openRaces}
+          />
+        )}
       </section>
     ) : tab === 'more' ? (
       moreScreen === 'settings' ? (

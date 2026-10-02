@@ -448,7 +448,9 @@ describe('application components', () => {
       />,
     );
 
-    expect(screen.getByRole('region', { name: 'Нет скачанных гонок' })).toBeTruthy();
+    expect(
+      document.querySelector('.map-empty-state[role="region"][aria-label="Нет скачанных гонок"]'),
+    ).toBeTruthy();
     expect(screen.queryByRole('combobox', { name: 'Гонка на карте' })).toBeNull();
     expect(screen.queryByText('Выбери сохранённую гонку')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Инструменты карты' })).toBeNull();
@@ -959,6 +961,21 @@ describe('application components', () => {
     expect(document.querySelector('.overlap-chart-scroll')).toBeTruthy();
     expect(screen.getAllByText('ВЯЛИМЯКИ')).toHaveLength(2);
     expect(screen.queryByRole('img', { name: 'График перекрытий 1' })).toBeNull();
+  });
+
+  it('shows the shared empty state on the results tab without downloaded races', () => {
+    const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
+    mocks.useRfmApp.mockReturnValue(app);
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Результаты/ }));
+    expect(
+      document.querySelector(
+        '.results-tab-screen [role="region"][aria-label="Нет скачанных гонок"]',
+      ),
+    ).toBeTruthy();
+    fireEvent.click(document.querySelector('.results-tab-screen').querySelector('button'));
+    expect(screen.getByText('УПРАВЛЕНИЕ ГОНКАМИ')).toBeTruthy();
   });
 
   it('mounts the app, switches tabs, opens settings, and reveals diagnostics by logo taps', async () => {

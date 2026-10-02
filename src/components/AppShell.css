@@ -265,6 +265,9 @@
     margin: 0 auto;
     padding: 18px 16px calc(28px + var(--safe-bottom));
   }
+  .results-tab-screen .results-empty-state {
+    min-height: calc(100dvh - 128px);
+  }
   .results-tab-screen > h2 {
     margin: 0 0 6px;
     font-size: 20px;
