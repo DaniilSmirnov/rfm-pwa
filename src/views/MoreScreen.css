@@ -1,0 +1,5 @@
+@layer views {
+  .app-screen-more {
+    display: contents;
+  }
+}

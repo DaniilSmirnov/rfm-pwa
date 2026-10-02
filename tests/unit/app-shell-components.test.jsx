@@ -4,8 +4,15 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import AppTabBar from '../../src/components/AppTabBar.jsx';
 import AppScreens, { getScreenHeaderTitle } from '../../src/views/AppScreens.jsx';
+import TodayScreen from '../../src/views/TodayScreen.jsx';
+import ResultsScreen from '../../src/views/ResultsScreen.jsx';
+import MoreScreen from '../../src/views/MoreScreen.jsx';
 
-vi.mock('../../src/views/TodayView.jsx', () => ({ default: () => <div>today screen</div> }));
+vi.mock('../../src/views/TodayView.jsx', () => ({ default: () => <div>today view</div> }));
+vi.mock('../../src/views/TodayScreen.jsx', async () => {
+  const actual = await vi.importActual('../../src/views/TodayScreen.jsx');
+  return actual;
+});
 vi.mock('../../src/views/SettingsView.jsx', () => ({ default: () => <div>settings screen</div> }));
 vi.mock('../../src/views/RacesView.jsx', () => ({ default: () => <div>races screen</div> }));
 vi.mock('../../src/views/MoreSectionView.jsx', () => ({
@@ -108,5 +115,50 @@ describe('AppScreens', () => {
       <AppScreens app={app} tab="map" moreScreen="menu" {...callbacks} />,
     );
     expect(container.firstChild).toBeNull();
+  });
+});
+
+describe('composed screen components', () => {
+  it('renders the dedicated today screen', () => {
+    render(<TodayScreen app={app} onMap={vi.fn()} onResults={vi.fn()} onRaces={vi.fn()} />);
+    expect(screen.getByText('today view')).toBeTruthy();
+  });
+
+  it('renders downloaded and empty result states', () => {
+    const { rerender } = render(
+      <ResultsScreen
+        app={app}
+        crewResultsOpen={false}
+        onOpenCrewResults={vi.fn()}
+        onCloseCrewResults={vi.fn()}
+        onOpenRaces={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('results screen')).toBeTruthy();
+    const onOpenRaces = vi.fn();
+    rerender(
+      <ResultsScreen
+        app={{ packages: [], currentPackage: null }}
+        crewResultsOpen={false}
+        onOpenCrewResults={vi.fn()}
+        onCloseCrewResults={vi.fn()}
+        onOpenRaces={onOpenRaces}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'open races' }));
+    expect(onOpenRaces).toHaveBeenCalledOnce();
+  });
+
+  it('renders each more screen branch', () => {
+    const { rerender } = render(
+      <MoreScreen moreScreen="settings" app={app} {...callbacks} />,
+    );
+    expect(screen.getByText('settings screen')).toBeTruthy();
+    rerender(<MoreScreen moreScreen="races" app={app} {...callbacks} />);
+    expect(screen.getByText('races screen')).toBeTruthy();
+    rerender(<MoreScreen moreScreen="schedule" app={app} {...callbacks} />);
+    expect(screen.getByText('schedule screen')).toBeTruthy();
+    rerender(<MoreScreen moreScreen="menu" app={app} {...callbacks} />);
+    expect(screen.getByText('menu screen')).toBeTruthy();
   });
 });
