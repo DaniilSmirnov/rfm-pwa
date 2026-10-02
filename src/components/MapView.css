@@ -580,24 +580,6 @@
     color: #fff;
   }
 }
-@layer components {
-  .map-route-direction {
-    width: 18px;
-    height: 24px;
-    pointer-events: none;
-    filter: drop-shadow(0 1px 2px #111);
-  }
-}
-@layer components {
-  .map-route-direction::before {
-    content: '';
-    display: block;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, #fff 0 50%, var(--brand-orange) 50% 100%);
-    clip-path: polygon(50% 0, 100% 100%, 50% 70%, 0 100%);
-  }
-}
 .map-followed-crews {
   display: grid;
   gap: 0.55rem;
