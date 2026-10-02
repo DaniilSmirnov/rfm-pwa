@@ -7,7 +7,6 @@ import PushSettings from '../components/PushSettings.jsx';
 export default function SettingsView({ app, onBack, onDiagnostics }) {
   const [theme, setTheme] = useState(
     () =>
-      document.documentElement.dataset.theme ||
       resolveTheme(
         loadThemePreference(),
         window.matchMedia?.('(prefers-color-scheme: dark)').matches,

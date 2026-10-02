@@ -55,11 +55,6 @@ export default [
       'react-hooks/exhaustive-deps': 'warn',
       'react/jsx-uses-react': 'error',
       'react/jsx-uses-vars': 'error',
-    },
-  },
-  {
-    files: ['src/components/**/*.jsx', 'src/views/**/*.jsx', 'src/modals/**/*.jsx'],
-    rules: {
       'no-restricted-syntax': [
         'error',
         {
