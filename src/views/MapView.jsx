@@ -329,23 +329,26 @@ export default function MapView({
             </SelectField>
             <ChevronDown aria-hidden="true" size={16} />
           </label>
-        ) : (
-          <div className="map-empty-races" role="region" aria-label="Нет скачанных гонок">
-            <strong>Нет скачанных гонок</strong>
-            <p>Скачай Rally Pack в разделе управления гонками, чтобы открыть карту.</p>
-            <Button type="button" className="button primary" onClick={onOpenRaces}>
-              Перейти к скачиванию
-            </Button>
-          </div>
         )}
         <span id="mapSubtitle" className="sr-only">
           {app.mapSubtitle}
         </span>
       </header>
-      <div className="map" aria-label="offline rally map">
-        {mapContent}
-      </div>
-      <>
+      {hasRaces ? (
+        <div className="map" aria-label="offline rally map">
+          {mapContent}
+        </div>
+      ) : (
+        <div className="map-empty-state" role="region" aria-label="Нет скачанных гонок">
+          <strong>Нет скачанных гонок</strong>
+          <p>Скачай Rally Pack в разделе управления гонками, чтобы открыть карту.</p>
+          <Button type="button" className="button primary" onClick={onOpenRaces}>
+            Перейти к скачиванию
+          </Button>
+        </div>
+      )}
+      {hasRaces && (
+        <>
         <Button
           id="mapToolsToggle"
           className="map-tools-toggle"
@@ -602,7 +605,8 @@ export default function MapView({
             )}
           </section>
         </div>
-      </>
+        </>
+      )}
       {pointSheetPoint && (
         <>
           <Button
