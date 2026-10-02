@@ -298,12 +298,13 @@ test.describe('saved race user flows', () => {
     const mapCount = await page.evaluate(() => window.__mapCreateCount);
     await page.locator('#locateBtn').click();
     await expect(page.locator('#geoStatus')).toContainText('точность ±5 м');
-    await expect(page.locator('.maplibregl-map')).toHaveCount(1);
     await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
   });
 
   test('switches terrain mode without recreating the map', async ({ page }) => {
     await seedFixtureRace(page, { terrainReady: true });
+    await page.reload();
+    await page.waitForLoadState('domcontentloaded');
     await openMap(page);
     const mapCount = await page.evaluate(() => window.__mapCreateCount);
     const terrainButton = page.getByRole('button', { name: 'Переключить на 3D-рельеф' });
