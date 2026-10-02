@@ -17,11 +17,7 @@ describe('map rendering safeguards', () => {
       source: 'offline-terrain-3d',
       exaggeration: 1.35,
     });
-    expect(map.setLayoutProperty).toHaveBeenCalledWith(
-      'terrain-hillshade',
-      'visibility',
-      'none',
-    );
+    expect(map.setLayoutProperty).toHaveBeenCalledWith('terrain-hillshade', 'visibility', 'none');
     expect(map.easeTo).toHaveBeenCalledWith({ bearing: 12, pitch: 70, duration: 450 });
 
     expect(applyTerrainMode(map, 'hillshade')).toBe(true);
@@ -38,10 +34,7 @@ describe('map rendering safeguards', () => {
     const map = {
       getMaxBounds: () => ({
         contains: ([longitude, latitude]) =>
-          longitude >= 30.68 &&
-          longitude <= 30.71 &&
-          latitude >= 61.69 &&
-          latitude <= 61.72,
+          longitude >= 30.68 && longitude <= 30.71 && latitude >= 61.69 && latitude <= 61.72,
       }),
     };
 

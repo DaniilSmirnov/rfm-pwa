@@ -256,8 +256,7 @@ export function applyTerrainMode(map, mode) {
 export function isPositionWithinMapBounds(map, longitude, latitude) {
   const bounds = map?.getMaxBounds?.();
   if (!bounds) return true;
-  if (typeof bounds.contains === 'function')
-    return Boolean(bounds.contains([longitude, latitude]));
+  if (typeof bounds.contains === 'function') return Boolean(bounds.contains([longitude, latitude]));
   const southWest = bounds.getSouthWest?.();
   const northEast = bounds.getNorthEast?.();
   if (!southWest || !northEast) return true;
