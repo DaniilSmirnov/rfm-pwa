@@ -444,6 +444,24 @@ describe('application components', () => {
     });
   });
 
+  it('shows a download prompt on the map when no races are saved', () => {
+    const onOpenRaces = vi.fn();
+    render(
+      <MapView
+        app={appFixture({ currentPackage: null, packages: [] })}
+        mapContent={<div />}
+        pointsContent={<div />}
+        favoritesContent={<div />}
+        onOpenRaces={onOpenRaces}
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: 'Нет скачанных гонок' })).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: 'Гонка на карте' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Перейти к скачиванию' }));
+    expect(onOpenRaces).toHaveBeenCalledOnce();
+  });
+
   it('covers catalog empty and downloaded/progress rendering', () => {
     const app = appFixture({ visibleCatalog: [], catalogQuery: 'no match' });
     const { rerender } = render(<CatalogList app={app} />);

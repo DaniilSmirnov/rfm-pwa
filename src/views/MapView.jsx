@@ -40,6 +40,7 @@ export default function MapView({
   pointStageDistance,
   favoritesContent,
   mapContent,
+  onOpenRaces,
 }) {
   const [compassOpen, setCompassOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -59,6 +60,7 @@ export default function MapView({
   selectedPointRef.current = app.selectedPoint;
   pointSheetPointRef.current = pointSheetPoint;
   const pkg = app.currentPackage;
+  const hasRaces = app.packages?.length > 0;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
   const liveStage = stages.find(stage => stage.mapStatusKind === 'live');
@@ -303,13 +305,13 @@ export default function MapView({
             alt="Rally Fans Map"
           />
         </span>
-        <label className="current-rally-select map-rally-picker">
-          <MapPin aria-hidden="true" size={20} className="current-rally-pin" />
-          <span className="current-rally-copy">
-            <strong id="mapTitle">{pkg?.name || 'КАРТА РАЛЛИ'}</strong>
-            <small>{pkg?.summary?.dates || pkg?.dates || ''}</small>
-          </span>
-          {app.packages?.length > 0 && (
+        {hasRaces ? (
+          <label className="current-rally-select map-rally-picker">
+            <MapPin aria-hidden="true" size={20} className="current-rally-pin" />
+            <span className="current-rally-copy">
+              <strong id="mapTitle">{pkg?.name || 'КАРТА РАЛЛИ'}</strong>
+              <small>{pkg?.summary?.dates || pkg?.dates || ''}</small>
+            </span>
             <SelectField
               aria-label="Гонка на карте"
               className="map-rally-field"
@@ -319,16 +321,23 @@ export default function MapView({
                 if (selected) void app.selectPackage(selected.id);
               }}
             >
-              {!pkg && <option value="">Выбрать гонку</option>}
               {app.packages.map(item => (
                 <option key={item.id} value={item.id}>
                   {item.name}
                 </option>
               ))}
             </SelectField>
-          )}
-          <ChevronDown aria-hidden="true" size={16} />
-        </label>
+            <ChevronDown aria-hidden="true" size={16} />
+          </label>
+        ) : (
+          <div className="map-empty-races" role="region" aria-label="Нет скачанных гонок">
+            <strong>Нет скачанных гонок</strong>
+            <p>Скачай Rally Pack в разделе управления гонками, чтобы открыть карту.</p>
+            <Button type="button" className="button primary" onClick={onOpenRaces}>
+              Перейти к скачиванию
+            </Button>
+          </div>
+        )}
         <span id="mapSubtitle" className="sr-only">
           {app.mapSubtitle}
         </span>

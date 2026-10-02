@@ -271,7 +271,8 @@ export default function App() {
           const selected = selectedPackage(app.packages, id);
           if (selected) void app.selectPackage(selected.id);
         }}
-        mapContent={<RallyMap app={app} onRouteClick={setSelectedRoute} />}
+        onOpenRaces={openRaces}
+        mapContent={<RallyMap app={app} onRouteClick={setSelectedRoute} />
         pointListContent={<PointList app={app} />}
         favoritesContent={<FavoritesList app={app} />}
         scheduleContent={pkg && <ScheduleList pkg={pkg} />}

@@ -80,9 +80,9 @@ describe('PWA launch helpers', () => {
     }
   });
 
-  it('uses the native install action when beforeinstallprompt is available', () => {
+  it('keeps browser instructions when beforeinstallprompt is available', () => {
     const instructions = installInstructions({ promptAvailable: true });
-    expect(instructions.action).toBe('Установить приложение');
-    expect(instructions.steps).toEqual([]);
+    expect(instructions.action).toBe('Как установить');
+    expect(instructions.steps.length).toBeGreaterThan(0);
   });
 });
