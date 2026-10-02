@@ -137,13 +137,26 @@ describe('unit coverage for presentational components', () => {
       features: [
         {
           properties: { name: 'Маршрут', color: '#f00' },
-          geometry: { type: 'LineString', coordinates: [[30.68, 61.69], [30.7, 61.72]] },
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [30.68, 61.69],
+              [30.7, 61.72],
+            ],
+          },
         },
         {
           properties: { title: 'Зона' },
           geometry: {
             type: 'Polygon',
-            coordinates: [[[30.68, 61.69], [30.7, 61.69], [30.7, 61.72], [30.68, 61.69]]],
+            coordinates: [
+              [
+                [30.68, 61.69],
+                [30.7, 61.69],
+                [30.7, 61.72],
+                [30.68, 61.69],
+              ],
+            ],
           },
         },
         {
