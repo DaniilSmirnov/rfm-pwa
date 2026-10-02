@@ -1,0 +1,21 @@
+name: Temporary format debug
+
+on:
+  push:
+    branches:
+      - refactor/app-shell-components
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: |
+          for file in src/views/AppScreens.jsx src/views/SettingsView.jsx tests/unit/app-shell-components.test.jsx; do
+            echo "===== $file ====="
+            npx prettier "$file" | diff -u "$file" - || true
+          done

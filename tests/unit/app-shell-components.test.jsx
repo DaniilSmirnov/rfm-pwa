@@ -75,19 +75,29 @@ describe('AppScreens', () => {
     );
     expect(screen.getByText('today view')).toBeTruthy();
 
-    rerender(<AppScreens app={app} tab="results" moreScreen="menu" {...callbacks} />);
+    rerender(
+      <AppScreens app={app} tab="results" moreScreen="menu" {...callbacks} />,
+    );
     expect(screen.getByText('results screen')).toBeTruthy();
 
-    rerender(<AppScreens app={app} tab="more" moreScreen="settings" {...callbacks} />);
+    rerender(
+      <AppScreens app={app} tab="more" moreScreen="settings" {...callbacks} />,
+    );
     expect(screen.getByText('settings screen')).toBeTruthy();
 
-    rerender(<AppScreens app={app} tab="more" moreScreen="races" {...callbacks} />);
+    rerender(
+      <AppScreens app={app} tab="more" moreScreen="races" {...callbacks} />,
+    );
     expect(screen.getByText('races screen')).toBeTruthy();
 
-    rerender(<AppScreens app={app} tab="more" moreScreen="schedule" {...callbacks} />);
+    rerender(
+      <AppScreens app={app} tab="more" moreScreen="schedule" {...callbacks} />,
+    );
     expect(screen.getByText('schedule screen')).toBeTruthy();
 
-    rerender(<AppScreens app={app} tab="more" moreScreen="menu" {...callbacks} />);
+    rerender(
+      <AppScreens app={app} tab="more" moreScreen="menu" {...callbacks} />,
+    );
     expect(screen.getByText('menu screen')).toBeTruthy();
 
     rerender(
@@ -142,7 +152,9 @@ describe('composed screen components', () => {
   });
 
   it('renders each more screen branch', () => {
-    const { rerender } = render(<MoreScreen moreScreen="settings" app={app} {...callbacks} />);
+    const { rerender } = render(
+      <MoreScreen moreScreen="settings" app={app} {...callbacks} />,
+    );
     expect(screen.getByText('settings screen')).toBeTruthy();
     rerender(<MoreScreen moreScreen="races" app={app} {...callbacks} />);
     expect(screen.getByText('races screen')).toBeTruthy();
