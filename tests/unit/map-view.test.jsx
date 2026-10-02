@@ -56,7 +56,7 @@ describe('MapView enhancements', () => {
     fireEvent.click(trigger);
     expect(drawer.hidden).toBe(true);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(trigger.querySelector('svg').style.color).toBe('currentColor');
+    expect(trigger.querySelector('svg').style.color).toBe('');
 
     fireEvent.click(trigger);
     expect(drawer.hidden).toBe(false);
@@ -70,7 +70,7 @@ describe('MapView enhancements', () => {
     expect(favoritesDrawer.hidden).toBe(false);
     expect(favoritesTrigger.getAttribute('aria-expanded')).toBe('true');
     expect(favoritesTrigger.querySelector('svg').style.color).toBe(BRAND_ORANGE);
-    expect(trigger.querySelector('svg').style.color).toBe('currentColor');
+    expect(trigger.querySelector('svg').style.color).toBe('');
     expect(drawer.hidden).toBe(true);
     expect(within(favoritesDrawer).getByText('ИЗБРАННЫЕ ТОЧКИ')).toBeTruthy();
     expect(within(favoritesDrawer).getByText('Пока ничего нет')).toBeTruthy();
@@ -81,7 +81,7 @@ describe('MapView enhancements', () => {
     expect(carDrawer.hidden).toBe(false);
     expect(carTrigger.getAttribute('aria-expanded')).toBe('true');
     expect(carTrigger.querySelector('svg').style.color).toBe(BRAND_ORANGE);
-    expect(favoritesTrigger.querySelector('svg').style.color).toBe('currentColor');
+    expect(favoritesTrigger.querySelector('svg').style.color).toBe('');
     expect(favoritesDrawer.hidden).toBe(true);
     expect(within(carDrawer).getByText('ГДЕ МАШИНА?')).toBeTruthy();
 
