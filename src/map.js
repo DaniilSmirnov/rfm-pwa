@@ -234,9 +234,7 @@ export function applyTerrainMode(map, mode) {
   if (!map || typeof map.setTerrain !== 'function') return false;
   const nextMode = mode === '3d' ? '3d' : 'hillshade';
   try {
-    map.setTerrain(
-      nextMode === '3d' ? { source: 'offline-terrain-3d', exaggeration: 1.35 } : null,
-    );
+    map.setTerrain(nextMode === '3d' ? { source: 'offline-terrain-3d', exaggeration: 1.35 } : null);
     if (map.getLayer?.('terrain-hillshade') && map.setLayoutProperty)
       map.setLayoutProperty(
         'terrain-hillshade',

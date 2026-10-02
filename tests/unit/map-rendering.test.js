@@ -22,11 +22,7 @@ describe('map rendering safeguards', () => {
       'visibility',
       'none',
     );
-    expect(map.easeTo).toHaveBeenCalledWith({
-      bearing: 12,
-      pitch: 70,
-      duration: 450,
-    });
+    expect(map.easeTo).toHaveBeenCalledWith({ bearing: 12, pitch: 70, duration: 450 });
 
     expect(applyTerrainMode(map, 'hillshade')).toBe(true);
     expect(map.setTerrain).toHaveBeenLastCalledWith(null);
@@ -35,11 +31,7 @@ describe('map rendering safeguards', () => {
       'visibility',
       'visible',
     );
-    expect(map.easeTo).toHaveBeenLastCalledWith({
-      bearing: 0,
-      pitch: 0,
-      duration: 450,
-    });
+    expect(map.easeTo).toHaveBeenLastCalledWith({ bearing: 0, pitch: 0, duration: 450 });
   });
 
   it('does not recenter the map on a GPS position outside downloaded bounds', () => {

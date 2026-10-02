@@ -299,9 +299,7 @@ test.describe('saved race user flows', () => {
     await page.locator('#locateBtn').click();
     await expect(page.locator('#geoStatus')).toContainText('точность ±5 м');
     await expect(page.locator('.maplibregl-map')).toHaveCount(1);
-    await expect
-      .poll(() => page.evaluate(() => window.__mapCreateCount))
-      .toBe(mapCount);
+    await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
   });
 
   test('switches terrain mode without recreating the map', async ({ page }) => {
