@@ -57,7 +57,7 @@ export function useGeoCompass({ selectedPoint, setSelectedPoint, setNavStatus })
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 },
     );
-  }, [userPos]);
+  }, []);
 
   const saveCar = useCallback(() => {
     if (!navigator.geolocation) {
