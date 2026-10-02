@@ -92,8 +92,10 @@ test.describe('app shell and catalog', () => {
   test('offline map controls start disabled without selected package', async ({ page }) => {
     await openApp(page);
     await page.getByRole('button', { name: 'Карта' }).click();
-    await expect(page.locator('#downloadMapBtn')).toBeDisabled();
-    await expect(page.locator('#mapSubtitle')).toContainText('Выбери сохранённую гонку');
+    await expect(page.getByRole('region', { name: 'Нет скачанных гонок' })).toBeVisible();
+    await expect(page.locator('#downloadMapBtn')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Инструменты карты' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Избранное' })).toHaveCount(0);
   });
 
   test('opens the race catalog from More', async ({ page }) => {

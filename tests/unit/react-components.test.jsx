@@ -450,6 +450,11 @@ describe('application components', () => {
 
     expect(screen.getByRole('region', { name: 'Нет скачанных гонок' })).toBeTruthy();
     expect(screen.queryByRole('combobox', { name: 'Гонка на карте' })).toBeNull();
+    expect(screen.queryByText('Выбери сохранённую гонку')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Инструменты карты' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Избранное' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Моя машина' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Показать где я' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Перейти к скачиванию' }));
     expect(onOpenRaces).toHaveBeenCalledOnce();
   });
@@ -679,10 +684,16 @@ describe('application components', () => {
   it('renders RallyMap loading, fallback, and map lifecycle', async () => {
     const app = appFixture();
     const { rerender } = render(<RallyMap app={appFixture({ currentPackage: null })} />);
-    expect(screen.getByText('Выбери сохранённую гонку')).toBeTruthy();
+    expect(screen.queryByText('Выбери сохранённую гонку')).toBeNull();
     rerender(<RallyMap app={app} />);
     await waitFor(() => expect(mocks.renderMap).toHaveBeenCalled());
     expect(screen.getByLabelText('Карта ралли')).toBeTruthy();
+
+    mocks.renderMap.mockImplementationOnce(() => {
+      throw new Error('map failed');
+    });
+    rerender(<RallyMap app={appFixture()} />);
+    await waitFor(() => expect(screen.getByText(/Интерактивная карта недоступна/)).toBeTruthy());
   });
 
   it('covers settings and the Today empty state', () => {

@@ -86,7 +86,7 @@ function MapLifecycle({ app, onRouteClick }) {
   useEffect(() => {
     if (userPos) updateLiveUserPosition(userPos, { center: Boolean(userPos.__center) });
   }, [userPos]);
-  if (!pkg) return <div className="empty">Выбери сохранённую гонку</div>;
+  if (!pkg) return null;
   if (engine === 'fallback')
     return (
       <>
