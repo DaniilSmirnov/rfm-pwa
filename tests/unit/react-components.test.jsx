@@ -448,7 +448,11 @@ describe('application components', () => {
       />,
     );
 
-    expect(screen.getByRole('region', { name: 'Нет скачанных гонок' })).toBeTruthy();
+    expect(
+      document.querySelector(
+        '.results-tab-screen [role="region"][aria-label="Нет скачанных гонок"]',
+      ),
+    ).toBeTruthy();
     expect(screen.queryByRole('combobox', { name: 'Гонка на карте' })).toBeNull();
     expect(screen.queryByText('Выбери сохранённую гонку')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Инструменты карты' })).toBeNull();
