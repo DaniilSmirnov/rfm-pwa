@@ -25,7 +25,7 @@ vi.mock('../../src/app/preferences.js', () => ({
   setStageSubscribed: vi.fn((_pkg, key, subscribed) => {
     if (subscribed) scheduleSubscriptions.add(key);
     else scheduleSubscriptions.delete(key);
-  },
+  }),
   walletStageKeys: vi.fn(() => new Set()),
   setWalletStageAdded: vi.fn(),
 }));
