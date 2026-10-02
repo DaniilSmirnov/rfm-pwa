@@ -10,24 +10,21 @@ function directionPatternImage() {
   const width = 64;
   const height = 24;
   const data = new Uint8Array(width * height * 4);
-  const white = [255, 255, 255, 235];
-  const orange = [240, 82, 23, 235];
+  const white = [255, 255, 255, 255];
+  const orange = [240, 82, 23, 255];
+  const arrowTip = 56;
+  const arrowTailStart = 6;
+  const arrowTailEnd = 30;
+  const halfHeight = (height - 1) / 2;
 
-  for (const offset of [2, 34]) {
-    for (let x = offset; x <= offset + 30; x += 1) {
-      const relativeX = x - offset;
-      for (let y = 0; y < height; y += 1) {
-        const inShaft = relativeX < 14 && y >= 7 && y <= 16;
-        const headProgress = Math.max(0, Math.min(1, (relativeX - 14) / 16));
-        const inHead =
-          relativeX >= 14 &&
-          relativeX <= 30 &&
-          Math.abs(y - 12) <= Math.max(1, Math.round(headProgress * 11));
-        if (!inShaft && !inHead) continue;
-        const color = relativeX < 15 ? white : orange;
-        const index = (y * width + x) * 4;
-        data.set(color, index);
-      }
+  for (let y = 0; y < height; y += 1) {
+    const distanceFromCenter = Math.abs(y - halfHeight) / halfHeight;
+    const arrowEnd =
+      arrowTailEnd + Math.round((arrowTip - arrowTailEnd) * (1 - distanceFromCenter));
+
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      data.set(x >= arrowTailStart && x <= arrowEnd ? orange : white, index);
     }
   }
 
@@ -104,7 +101,7 @@ export function routeKilometreMarkers(geometry) {
         const lat =
           ((2 * Math.atan(Math.exp(mercatorY(a[1]) + dy * t)) - Math.PI / 2) * 180) / Math.PI;
         markers.push({ coordinates: [a[0] + (b[0] - a[0]) * t, lat], rotation, distance: next });
-        next += 1500;
+        next += ROUTE_DIRECTION_INTERVAL;
       }
       travelled += length;
     }
