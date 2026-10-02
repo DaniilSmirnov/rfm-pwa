@@ -359,7 +359,7 @@ export default function MapView({
               setCarOpen(false);
             }}
           >
-            <Settings aria-hidden="true" size={21} />
+            <Settings aria-hidden="true" size={21} color={toolsOpen ? BRAND_ORANGE : 'currentColor'} />
           </Button>
           <Button
             id="mapFavoritesToggle"
@@ -373,7 +373,7 @@ export default function MapView({
               setCarOpen(false);
             }}
           >
-            <Star aria-hidden="true" size={21} />
+            <Star aria-hidden="true" size={21} color={favoritesOpen ? BRAND_ORANGE : 'currentColor'} />
           </Button>
           <Button
             id="mapCarToggle"
@@ -387,7 +387,7 @@ export default function MapView({
               setFavoritesOpen(false);
             }}
           >
-            <Car aria-hidden="true" size={21} />
+            <Car aria-hidden="true" size={21} color={carOpen ? BRAND_ORANGE : 'currentColor'} />
           </Button>
           {liveStage && (
             <div className="map-live-stage" aria-label="Активный спецучасток">
