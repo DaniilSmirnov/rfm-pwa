@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 vi.mock('../../src/navigation.js', () => ({
   googleMapsDirections: vi.fn(() => 'https://maps.google.test'),
@@ -60,7 +60,7 @@ describe('unit coverage for presentational components', () => {
     const onSelect = vi.fn();
     const onLogo = vi.fn();
     const { rerender } = render(<AppHeader onLogoClick={onLogo} onSelectRally={onSelect} />);
-    fireEvent.click(screen.getByRole('img'));
+    fireEvent.click(document.getElementById('headerLogo'));
     expect(onLogo).toHaveBeenCalledOnce();
     rerender(
       <AppHeader
@@ -126,7 +126,7 @@ describe('unit coverage for presentational components', () => {
     expect(screen.getByText('Нужна геопозиция для расчёта направления.')).toBeTruthy();
     rerender(<CompassReadout point={point} userPos={{ latitude: 61.71, longitude: 30.7 }} />);
     expect(screen.getByText('Компас включён.')).toBeTruthy();
-    expect(screen.getByRole('img', { hidden: true })).toBeFalsy();
+    expect(document.getElementById('compassDisplay')).toBeTruthy();
     expect(screen.getByText(/Азимут/)).toBeTruthy();
   });
 
@@ -257,7 +257,7 @@ describe('unit coverage for presentational components', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Rally' }));
     fireEvent.click(screen.getByRole('button', { name: 'Обновляю…' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0]);
     expect(onOpenRace).toHaveBeenCalledWith(1);
     expect(app.downloadRace).toHaveBeenCalledWith(1);
     expect(app.deleteRace).toHaveBeenCalledWith(1);
