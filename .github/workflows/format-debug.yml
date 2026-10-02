@@ -1,0 +1,21 @@
+name: Format debug
+
+on:
+  push:
+    branches:
+      - di/test-100-unit-coverage
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npx prettier --write tests/unit/coverage-completion.test.jsx
+      - run: git diff -- tests/unit/coverage-completion.test.jsx
