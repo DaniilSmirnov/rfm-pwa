@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { normalizeGeolocationCoords, useGeoCompass } from '../../src/hooks/useGeoCompass.js';
