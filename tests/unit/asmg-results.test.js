@@ -7,7 +7,7 @@ import {
   overallCrewResults,
   sortCrewResults,
   visibleCrewResults,
-} from '../../src/app/crew-results.js';
+} from '../../src/views/ResultsScreen/logic/crew-results.js';
 
 function flightPage(data) {
   const chunk = `1:${JSON.stringify(data)}`;

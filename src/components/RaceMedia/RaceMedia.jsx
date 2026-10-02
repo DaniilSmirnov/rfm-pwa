@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Button from '../Button/Button.jsx';
 import { assetUrl } from '../../rallyfans.js';
 import { sanitizeRichHtml } from '../../app/sanitize.js';
-import { raceHasFinished } from '../../app/today-summary.js';
+import { raceHasFinished } from '../../views/TodayView/logic/today-summary.js';
 import ImageViewerModal from '../../modals/ImageViewerModal/ImageViewerModal.jsx';
 import CollapsibleSection from '../CollapsibleSection/CollapsibleSection.jsx';
 

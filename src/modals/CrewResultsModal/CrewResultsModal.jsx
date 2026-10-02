@@ -6,7 +6,7 @@ import Button from '../../components/Button/Button.jsx';
 import ScreenHeader, { useEdgeSwipeBack } from '../../components/ScreenHeader/ScreenHeader.jsx';
 import SelectField from '../../components/SelectField/SelectField.jsx';
 import AsmgLogo from '../../components/AsmgLogo/AsmgLogo.jsx';
-import { formatRetirementReason } from '../../app/crew-results.js';
+import { formatRetirementReason } from '../../views/ResultsScreen/logic/crew-results.js';
 import { ChevronRight, Star } from 'lucide-react';
 
 function gapFromLeader(result, rows) {

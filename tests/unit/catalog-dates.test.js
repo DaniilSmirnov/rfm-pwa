@@ -7,7 +7,7 @@ import {
   raceWithinWeek,
   pickDefaultRace,
   nextUpcomingRace,
-} from '../../src/app/catalog-dates.js';
+} from '../../src/views/TodayView/logic/catalog-dates.js';
 
 afterEach(() => vi.useRealTimers());
 

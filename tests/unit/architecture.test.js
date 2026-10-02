@@ -137,10 +137,10 @@ describe('architecture guardrails', () => {
         .map(name => `src/${folder}/${name}`),
     );
     for (const file of jsxFiles) {
-      const componentName = file.split('/').pop().replace(/\\.jsx$/, '');
+      const componentName = file.split('/').pop().replace(/\.jsx$/, '');
       expect(file.split('/').slice(-2, -1)[0]).toBe(componentName);
       expect(read(file)).toContain(`import './${componentName}.css'`);
-      expect(() => read(file.replace(/\\.jsx$/, '.css'))).not.toThrow();
+      expect(() => read(file.replace(/\.jsx$/, '.css'))).not.toThrow();
     }
   });
 

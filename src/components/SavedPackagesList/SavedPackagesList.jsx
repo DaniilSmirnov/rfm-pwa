@@ -3,7 +3,6 @@ import React from 'react';
 import Button from '../Button/Button.jsx';
 import EmptyState from '../EmptyState/EmptyState.jsx';
 import { formatBytes } from '../../app/format.js';
-import './SavedPackagesList.css';
 
 export default function SavedPackagesList({ app }) {
   if (!app.packages.length) return <EmptyState>Пока ничего не скачано.</EmptyState>;

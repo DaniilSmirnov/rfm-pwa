@@ -2,17 +2,17 @@ import './TodayView.css';
 import React, { useEffect, useState } from 'react';
 import Button from '../../components/Button/Button.jsx';
 import { assetUrl } from '../../rallyfans.js';
-import { todaySummary, raceHasFinished } from '../../app/today-summary.js';
-import { distanceFromTodayDays, nextUpcomingRace } from '../../app/catalog-dates.js';
+import { todaySummary, raceHasFinished } from './logic/today-summary.js';
+import { distanceFromTodayDays, nextUpcomingRace } from './logic/catalog-dates.js';
 import TodayLeaders from '../../components/TodayLeaders/TodayLeaders.jsx';
 import ScheduleList from '../../components/ScheduleList/ScheduleList.jsx';
 import Notice from '../../components/Notice/Notice.jsx';
 import { parseScheduleDateTime } from '../../app/schedule.js';
-import { crewName, overallCrewResults } from '../../app/crew-results.js';
+import { crewName, overallCrewResults } from '../ResultsScreen/logic/crew-results.js';
 import { getCrewSubscriptions } from '../../db.js';
 import OverlapSchedule from '../../components/OverlapSchedule/OverlapSchedule.jsx';
 import sortavalaOverlapSchedule from '../../data/sortavala-overlap-schedule.json';
-import { isSortavalaRace } from '../../app/overlap-schedule.js';
+import { isSortavalaRace } from './logic/overlap-schedule.js';
 
 const asArray = value =>
   Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];

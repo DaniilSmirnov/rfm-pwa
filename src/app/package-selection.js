@@ -1,4 +1,4 @@
-import { raceWithinWeek, pickDefaultRace } from './catalog-dates.js';
+import { raceWithinWeek, pickDefaultRace } from '../views/TodayView/logic/catalog-dates.js';
 
 export function chooseVisiblePackages(packages, query) {
   const q = String(query || '')

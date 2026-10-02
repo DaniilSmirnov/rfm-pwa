@@ -96,7 +96,7 @@ vi.mock('../../src/app/safety-consent.js', () => ({
   hasSafetyConsent: mocks.hasSafetyConsent,
   saveSafetyConsent: mocks.saveSafetyConsent,
 }));
-vi.mock('../../src/app/crew-results.js', async importOriginal => {
+vi.mock('../../src/views/ResultsScreen/logic/crew-results.js', async importOriginal => {
   const actual = await importOriginal();
   return { ...actual, fetchAsmgResults: mocks.fetchAsmgResults };
 });

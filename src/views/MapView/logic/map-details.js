@@ -4,7 +4,7 @@ import {
   parseScheduleDateTime,
   raceTimezone,
   stageIdentity,
-} from './schedule.js';
+} from '../../../app/schedule.js';
 
 const scalar = value => {
   if (typeof value === 'string' || typeof value === 'number') return String(value).trim();

@@ -1,6 +1,6 @@
 import React from 'react';
 import './OverlapSchedule.css';
-import { timeToMinutes } from '../../app/overlap-schedule.js';
+import { timeToMinutes } from '../../views/TodayView/logic/overlap-schedule.js';
 
 const START = 8 * 60;
 const END = 19 * 60;

@@ -30,8 +30,7 @@ import ElevationProfile from '../../components/ElevationProfile/ElevationProfile
 import CompassReadout from '../../components/CompassReadout/CompassReadout.jsx';
 import { getCrewSubscriptions } from '../../db.js';
 import { BRAND_ORANGE } from '../../app/design-tokens.js';
-import { crewName, overallCrewResults } from '../../app/crew-results.js';
-import './MapView.css';
+import { crewName, overallCrewResults } from '../ResultsScreen/logic/crew-results.js';
 const mapsMeFallbackForPoint = point => `https://maps.me/${point.lat},${point.lon}`;
 export default function MapView({
   app,

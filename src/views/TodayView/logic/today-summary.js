@@ -1,4 +1,4 @@
-import { parseScheduleDateTime, raceTimezone } from './schedule.js';
+import { parseScheduleDateTime, raceTimezone } from '../../../app/schedule.js';
 
 const asArray = value =>
   Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];

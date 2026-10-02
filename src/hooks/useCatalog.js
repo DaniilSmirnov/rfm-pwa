@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { checkApiHealth, fetchRaceCatalog } from '../rallyfans.js';
-import { raceWithinWeek, pickDefaultRace } from '../app/catalog-dates.js';
+import { raceWithinWeek, pickDefaultRace } from '../views/TodayView/logic/catalog-dates.js';
 import { markBoot } from '../app/boot-diagnostics.js';
 
 function chooseCatalog(catalog, query) {
