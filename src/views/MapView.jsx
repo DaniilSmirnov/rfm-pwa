@@ -432,7 +432,12 @@ export default function MapView({
                 <p className="muted small">Экспортирует текущую гонку без обращения к серверу.</p>
               </div>
               <ActionGroup>
-                <Button id="exportGpxBtn" className="button" disabled={!pkg} onClick={app.exportGpx}>
+                <Button
+                  id="exportGpxBtn"
+                  className="button"
+                  disabled={!pkg}
+                  onClick={app.exportGpx}
+                >
                   GPX
                 </Button>
                 <Button
