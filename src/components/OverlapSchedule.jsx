@@ -89,7 +89,13 @@ export default function OverlapSchedule({ schedule }) {
                     />
                   );
                 })}
-                <text x={LEFT} y={y + 38} className="overlap-time-label">
+                <text
+                  x={LEFT}
+                  y={y + 38}
+                  textLength={WIDTH}
+                  lengthAdjust="spacingAndGlyphs"
+                  className="overlap-time-label"
+                >
                   {stage.road_closes_at} перекрытие · 0: {stage.first_zero_at} · первый:{' '}
                   {stage.first_crew_at} · последний: {stage.last_crew_at} · {stage.road_opens_at}{' '}
                   открытие
