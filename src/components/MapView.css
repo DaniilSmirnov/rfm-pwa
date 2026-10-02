@@ -1369,35 +1369,8 @@
     position: absolute;
     z-index: 4;
     inset: 0;
-    display: grid;
-    align-content: center;
-    justify-items: center;
-    gap: 18px;
     padding: calc(84px + var(--safe-top)) max(20px, var(--safe-right))
       calc(96px + var(--safe-bottom)) max(20px, var(--safe-left));
-    box-sizing: border-box;
-    background: var(--surface);
-    color: var(--text);
-    text-align: center;
     pointer-events: auto;
-  }
-
-  .map-empty-state strong {
-    font-size: clamp(26px, 7vw, 36px);
-    line-height: 1.1;
-  }
-
-  .map-empty-state p {
-    max-width: 420px;
-    margin: 0;
-    color: var(--muted);
-    font-size: clamp(16px, 4.5vw, 20px);
-    line-height: 1.4;
-  }
-
-  .map-empty-state .button {
-    min-height: 52px;
-    padding: 12px 24px;
-    font-size: 16px;
   }
 }
