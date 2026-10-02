@@ -944,6 +944,8 @@ describe('application components', () => {
       screen.getByRole('img', { name: /Временная шкала перекрытия дорог: 8 спецучастков/ }),
     ).toBeTruthy();
     expect(screen.getByText('ГРАФИК ПЕРЕКРЫТИЙ · БЕЛЫЕ НОЧИ')).toBeTruthy();
+    expect(document.querySelector('.overlap-stage-labels')).toBeTruthy();
+    expect(document.querySelector('.overlap-chart-scroll')).toBeTruthy();
     expect(screen.getAllByText('ВЯЛИМЯКИ')).toHaveLength(2);
     expect(screen.queryByRole('img', { name: 'График перекрытий 1' })).toBeNull();
   });
