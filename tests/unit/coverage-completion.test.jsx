@@ -98,7 +98,13 @@ describe('unit coverage for presentational components', () => {
         app={{
           ...app,
           visibleCatalog: [
-            { id: 1, status_race: 'Скоро', stage_race: 'Этап 1', image: null, city_race: 'Карелия' },
+            {
+              id: 1,
+              status_race: 'Скоро',
+              stage_race: 'Этап 1',
+              image: null,
+              city_race: 'Карелия',
+            },
             { id: 2, date_race: '26.09.2026', name: 'Ралли 2', city_race_details: 'Сортавала' },
           ],
           downloadedIds: new Set([1]),
@@ -217,7 +223,11 @@ describe('unit coverage for presentational components', () => {
     const onOpenRace = vi.fn();
     const { rerender } = render(<DownloadedRacesList app={app} onOpenRace={onOpenRace} />);
     expect(screen.getByText('Скачанных гонок пока нет.')).toBeTruthy();
-    rerender(<DownloadedRacesList app={{ ...app, packages: [{ id: 1, name: 'Rally' }], packageQuery: 'missing' }} />);
+    rerender(
+      <DownloadedRacesList
+        app={{ ...app, packages: [{ id: 1, name: 'Rally' }], packageQuery: 'missing' }}
+      />,
+    );
     expect(screen.getByText('По этому запросу гонок не найдено.')).toBeTruthy();
     rerender(
       <DownloadedRacesList
@@ -251,7 +261,12 @@ describe('unit coverage for presentational components', () => {
         selectedStageKey="су-1"
         onStageSelect={onStageSelect}
         schedule={[
-          { date: '26.09.2026', location: 'СУ 1', coordinates: '61,30', events: [{ time: '10:00' }] },
+          {
+            date: '26.09.2026',
+            location: 'СУ 1',
+            coordinates: '61,30',
+            events: [{ time: '10:00' }],
+          },
           { location: 'Торжественное открытие', events: [{ text: 'Открытие' }] },
         ]}
       />,
@@ -262,9 +277,13 @@ describe('unit coverage for presentational components', () => {
     fireEvent.keyDown(stage, { key: ' ' });
     expect(onStageSelect).toHaveBeenCalledTimes(3);
     fireEvent.click(screen.getByRole('button', { name: 'Уведомлять' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Выключить уведомления' })).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Выключить уведомления' })).toBeTruthy(),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Выключить уведомления' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Включить уведомления' })).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Включить уведомления' })).toBeTruthy(),
+    );
   });
 
   it('covers edge-swipe back and header button', () => {
@@ -296,7 +315,9 @@ describe('unit coverage for presentational components', () => {
       time: 100,
       formattedTime: '00:10',
     };
-    rerender(<TodayLeaders pkg={{ id: 1, crewResults: { eventResults: [{ results: [result] }] } }} />);
+    rerender(
+      <TodayLeaders pkg={{ id: 1, crewResults: { eventResults: [{ results: [result] }] } }} />,
+    );
     expect(screen.getByText(/N4 · 1 место/)).toBeTruthy();
     fireEvent(
       window,
