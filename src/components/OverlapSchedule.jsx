@@ -16,6 +16,7 @@ export default function OverlapSchedule({ schedule }) {
   const height = chartTop + stages.length * rowHeight + 8;
   const ticks = Array.from({ length: 12 }, (_, index) => START + index * 60);
   const format = value => `${String(Math.floor(value / 60)).padStart(2, '0')}:00`;
+  const hasApproximateLastCrewTime = stages.some(stage => stage.last_crew_time_approximate);
 
   return (
     <section className="today-card today-overlap" aria-label="График перекрытий">
@@ -99,15 +100,15 @@ export default function OverlapSchedule({ schedule }) {
                   {stage.road_closes_at} перекрытие · 0: {stage.first_zero_at} · первый:{' '}
                   {stage.first_crew_at} · последний: {stage.last_crew_at} · {stage.road_opens_at}{' '}
                   открытие
-                  {stage.last_crew_time_approximate
-                    ? ' · время последнего экипажа ориентировочное'
-                    : ''}
                 </text>
               </g>
             );
           })}
         </svg>
       </div>
+      {hasApproximateLastCrewTime && (
+        <p className="overlap-approximation-note">Время последнего экипажа ориентировочное</p>
+      )}
       <div className="overlap-legend" aria-label="Обозначения графика">
         <span>
           <i className="closure" /> Перекрытие
