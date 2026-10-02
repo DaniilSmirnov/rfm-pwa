@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextRaceDownloadSuggestion } from '../../src/views/TodayView/TodayView.jsx';
+import { nextRaceDownloadSuggestion } from '../../src/views/TodayView/logic/today-view-data.js';
 
 describe('next race download suggestion', () => {
   const now = new Date(2026, 8, 30, 12, 0, 0);

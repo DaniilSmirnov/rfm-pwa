@@ -128,13 +128,14 @@ import AppLayout from '../../src/views/AppLayout/AppLayout.jsx';
 import MapView from '../../src/views/MapView/MapView.jsx';
 import RaceDetails from '../../src/views/RaceDetails/RaceDetails.jsx';
 import SettingsView from '../../src/views/SettingsView/SettingsView.jsx';
-import TodayView, {
+import TodayView from '../../src/views/TodayView/TodayView.jsx';
+import {
   countdownLabel,
   currentScheduledCrew,
   latestPositionChange,
   nextProgramItem,
   nextScheduledCrew,
-} from '../../src/views/TodayView/TodayView.jsx';
+} from '../../src/views/TodayView/logic/today-view-data.js';
 import App from '../../src/views/App/App.jsx';
 import BootDiagnostics from '../../src/modals/BootDiagnostics/BootDiagnostics.jsx';
 import CrewResultsModal from '../../src/modals/CrewResultsModal/CrewResultsModal.jsx';
