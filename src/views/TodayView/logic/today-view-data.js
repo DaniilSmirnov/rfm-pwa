@@ -3,14 +3,14 @@ import { overallCrewResults } from '../../ResultsScreen/logic/crew-results.js';
 import { nextUpcomingRace } from './catalog-dates.js';
 import { raceHasFinished } from './today-summary.js';
 
-const asArray = value =>
+export const asArray = value =>
   Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
 
 function scheduleMoment(item, event, pkg) {
   return parseScheduleDateTime(item?.date, event?.time || item?.time, pkg);
 }
 
-function explicitStageState(item, event) {
+export function explicitStageState(item, event) {
   const value = String(
     item?.status || item?.state || item?.status_race || event?.status || event?.state || '',
   ).toLocaleLowerCase('ru');
@@ -123,14 +123,14 @@ export function latestPositionChange(eventResults) {
   );
 }
 
-function updateSummary(pkg) {
+export function updateSummary(pkg) {
   const update = pkg?.pendingUpdate || pkg?.lastSmartUpdate;
   return update
     ? { update, changes: asArray(update.changes), pending: Boolean(pkg.pendingUpdate) }
     : null;
 }
 
-function offlineLabel(app, pkg, id) {
+export function offlineLabel(app, pkg, id) {
   const saved = app.downloadedIds?.has?.(id);
   const map = Boolean(pkg?.offlineMap?.ready);
   const terrain = Boolean(pkg?.terrain?.ready);
@@ -144,13 +144,13 @@ function offlineLabel(app, pkg, id) {
   };
 }
 
-function packageRaceId(pkg) {
+export function packageRaceId(pkg) {
   return Number(pkg?.raceId || pkg?.original?.id || pkg?.original?.raceId || pkg?.id);
 }
-function raceImage(race) {
+export function raceImage(race) {
   return race?.original?.image || race?.image || '';
 }
-function overlaps(race) {
+export function overlaps(race) {
   const value = race?.original?.overlap_schedule || race?.overlap_schedule;
   return Array.isArray(value) ? value.filter(Boolean) : value ? [value] : [];
 }
