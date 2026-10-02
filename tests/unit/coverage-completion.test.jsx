@@ -18,9 +18,14 @@ vi.mock('../../src/app/local-points.js', () => ({
   isFavoritePoint: vi.fn(() => false),
 }));
 
+const scheduleSubscriptions = vi.hoisted(() => new Set());
+
 vi.mock('../../src/app/preferences.js', () => ({
-  subscribedStageKeys: vi.fn(() => new Set()),
-  setStageSubscribed: vi.fn(),
+  subscribedStageKeys: vi.fn(() => scheduleSubscriptions),
+  setStageSubscribed: vi.fn((_pkg, key, subscribed) => {
+    if (subscribed) scheduleSubscriptions.add(key);
+    else scheduleSubscriptions.delete(key);
+  },
   walletStageKeys: vi.fn(() => new Set()),
   setWalletStageAdded: vi.fn(),
 }));
@@ -52,6 +57,7 @@ import TodayLeaders from '../../src/components/TodayLeaders.jsx';
 
 afterEach(() => {
   cleanup();
+  scheduleSubscriptions.clear();
   vi.clearAllMocks();
 });
 
@@ -69,7 +75,7 @@ describe('unit coverage for presentational components', () => {
         currentPackage={{ id: 1, name: 'Sortavala', summary: { dates: '26–27 сентября' } }}
         packages={[
           { id: 1, name: 'Sortavala', summary: { dates: '26–27 сентября' } },
-          { id: 2, raceId: 2 },
+          { id: 2, raceId: 2, name: 'Гонка 2' },
         ]}
       />,
     );
@@ -264,7 +270,7 @@ describe('unit coverage for presentational components', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Обновить' }).at(-1));
     fireEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0]);
     expect(onOpenRace).toHaveBeenCalledWith(1);
-    expect(app.downloadRace).toHaveBeenCalledWith(3);
+    expect(app.downloadRace).toHaveBeenCalledWith(1);
     expect(app.deleteRace).toHaveBeenCalledWith(1);
   });
 
