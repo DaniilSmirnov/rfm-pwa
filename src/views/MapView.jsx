@@ -22,6 +22,7 @@ import {
   stagePointResults,
 } from '../app/map-details.js';
 import OfflineMapActions from '../components/OfflineMapActions.jsx';
+import EmptyScreenState from '../components/EmptyScreenState.jsx';
 import Panel from '../components/Panel.jsx';
 import CollapsibleSection from '../components/CollapsibleSection.jsx';
 import ElevationProfile from '../components/ElevationProfile.jsx';
@@ -337,13 +338,11 @@ export default function MapView({
           {mapContent}
         </div>
       ) : (
-        <div className="map-empty-state" role="region" aria-label="Нет скачанных гонок">
-          <strong>Нет скачанных гонок</strong>
-          <p>Скачай Rally Pack в разделе управления гонками, чтобы открыть карту.</p>
-          <Button type="button" className="button primary" onClick={onOpenRaces}>
-            Перейти к скачиванию
-          </Button>
-        </div>
+        <EmptyScreenState
+          className="map-empty-state"
+          description="Скачай Rally Pack в разделе управления гонками, чтобы открыть карту."
+          onAction={onOpenRaces}
+        />
       )}
       {hasRaces && (
         <>
