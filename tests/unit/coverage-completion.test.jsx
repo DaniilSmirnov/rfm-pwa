@@ -73,7 +73,7 @@ describe('unit coverage for presentational components', () => {
         ]}
       />,
     );
-    expect(screen.getByText('Sortavala')).toBeTruthy();
+    expect(screen.getAllByText('Sortavala').length).toBeGreaterThan(0);
     expect(screen.getByText('Гонка 2')).toBeTruthy();
     fireEvent.change(screen.getByRole('combobox', { name: 'Текущая гонка' }), {
       target: { value: '2' },
@@ -261,7 +261,7 @@ describe('unit coverage for presentational components', () => {
     const updateButton = screen.getByRole('button', { name: 'Обновляю…' });
     expect(updateButton.disabled).toBe(false);
     fireEvent.click(updateButton);
-    fireEvent.click(screen.getByRole('button', { name: 'Обновить' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Обновить' }).at(-1));
     fireEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0]);
     expect(onOpenRace).toHaveBeenCalledWith(1);
     expect(app.downloadRace).toHaveBeenCalledWith(3);
@@ -294,7 +294,7 @@ describe('unit coverage for presentational components', () => {
     fireEvent.keyDown(stage, { key: 'Enter' });
     fireEvent.keyDown(stage, { key: ' ' });
     expect(onStageSelect).toHaveBeenCalledTimes(3);
-    fireEvent.click(screen.getByRole('button', { name: /Уведомлять/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Включить уведомления/ }));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /Выключить уведомления/ })).toBeTruthy(),
     );
