@@ -395,7 +395,11 @@ export default function MapView({
               setFavoritesOpen(false);
             }}
           >
-            <Car aria-hidden="true" size={21} style={{ color: carOpen ? BRAND_ORANGE : undefined }} />
+            <Car
+              aria-hidden="true"
+              size={21}
+              style={{ color: carOpen ? BRAND_ORANGE : undefined }}
+            />
           </Button>
           {liveStage && (
             <div className="map-live-stage" aria-label="Активный спецучасток">
