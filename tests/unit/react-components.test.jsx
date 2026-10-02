@@ -974,9 +974,7 @@ describe('application components', () => {
         '.results-tab-screen [role="region"][aria-label="Нет скачанных гонок"]',
       ),
     ).toBeTruthy();
-    fireEvent.click(
-      document.querySelector('.results-tab-screen').querySelector('button'),
-    );
+    fireEvent.click(document.querySelector('.results-tab-screen').querySelector('button'));
     expect(screen.getByText('УПРАВЛЕНИЕ ГОНКАМИ')).toBeTruthy();
   });
 
