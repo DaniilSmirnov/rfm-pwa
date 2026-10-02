@@ -29,9 +29,12 @@ export function useGeoCompass({ selectedPoint, setSelectedPoint, setNavStatus })
       setGeoStatus('Геолокация не поддерживается этим браузером.');
       return;
     }
-    if (geoWatchRef.current != null && userPos) {
-      setGeoStatus(`Геопозиция включена · точность ±${Math.round(userPos.accuracy || 0)} м`);
-      setGeoClass('geo-ok');
+    if (geoWatchRef.current != null) {
+      navigator.geolocation.clearWatch?.(geoWatchRef.current);
+      geoWatchRef.current = null;
+      setUserPos(null);
+      setGeoStatus('Геопозиция выключена.');
+      setGeoClass('');
       return;
     }
     setGeoStatus('Запрашиваю доступ к геопозиции…');
