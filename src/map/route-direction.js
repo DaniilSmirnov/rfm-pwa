@@ -18,8 +18,7 @@ function directionPatternImage() {
       const inShaft = x >= 4 && x <= 30 && y >= 9 && y <= 14;
       const progress = Math.max(0, Math.min(1, (x - 24) / 34));
       const headHalfHeight = Math.max(0.75, 12 * (1 - progress));
-      const inHead =
-        x >= 24 && x <= 58 && Math.abs(y - halfHeight) <= headHalfHeight;
+      const inHead = x >= 24 && x <= 58 && Math.abs(y - halfHeight) <= headHalfHeight;
 
       if (!inShaft && !inHead) continue;
       data.set(white, (y * width + x) * 4);
@@ -32,8 +31,9 @@ function directionPatternImage() {
 export function installRouteDirectionPatterns(map) {
   if (!map?.addImage || !map?.addLayer) return [];
 
-  if (!map.hasImage?.(ROUTE_DIRECTION_PATTERN_ID))
+  if (!map.hasImage?.(ROUTE_DIRECTION_PATTERN_ID)) {
     map.addImage(ROUTE_DIRECTION_PATTERN_ID, directionPatternImage(), { pixelRatio: 1 });
+  }
 
   const layers = [
     {
@@ -98,7 +98,11 @@ export function routeKilometreMarkers(geometry) {
         const t = (next - travelled) / length;
         const lat =
           ((2 * Math.atan(Math.exp(mercatorY(a[1]) + dy * t)) - Math.PI / 2) * 180) / Math.PI;
-        markers.push({ coordinates: [a[0] + (b[0] - a[0]) * t, lat], rotation, distance: next });
+        markers.push({
+          coordinates: [a[0] + (b[0] - a[0]) * t, lat],
+          rotation,
+          distance: next,
+        });
         next += ROUTE_DIRECTION_INTERVAL;
       }
       travelled += length;
@@ -122,10 +126,7 @@ export function installRouteDirections(map, maplibregl, collections, pkg = {}) {
         const el = document.createElement('div');
         el.className = 'map-route-direction';
         el.setAttribute('role', 'img');
-        el.setAttribute(
-          'aria-label',
-          `Направление движения: ${name}, ${point.distance / 1000} км`,
-        );
+        el.setAttribute('aria-label', `Направление движения: ${name}, ${point.distance / 1000} км`);
         markers.push(
           new maplibregl.Marker({
             element: el,

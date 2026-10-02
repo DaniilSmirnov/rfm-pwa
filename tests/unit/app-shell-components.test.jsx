@@ -20,7 +20,9 @@ vi.mock('../../src/views/MoreSectionView.jsx', () => ({
   moreSectionTitles: { schedule: 'Расписание' },
 }));
 vi.mock('../../src/components/MoreMenu.jsx', () => ({ default: () => <div>menu screen</div> }));
-vi.mock('../../src/components/CrewResults.jsx', () => ({ default: () => <div>results screen</div> }));
+vi.mock('../../src/components/CrewResults.jsx', () => ({
+  default: () => <div>results screen</div>,
+}));
 vi.mock('../../src/components/EmptyScreenState.jsx', () => ({
   default: ({ onAction }) => <button onClick={onAction}>open races</button>,
 }));
@@ -71,7 +73,7 @@ describe('AppScreens', () => {
     const { rerender } = render(
       <AppScreens app={app} tab="today" moreScreen="menu" {...callbacks} />,
     );
-    expect(screen.getByText('today screen')).toBeTruthy();
+    expect(screen.getByText('today view')).toBeTruthy();
 
     rerender(
       <AppScreens app={app} tab="results" moreScreen="menu" {...callbacks} />,

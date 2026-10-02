@@ -15,6 +15,7 @@ export function getScreenHeaderTitle(tab, moreScreen) {
 
 export default function AppScreens(props) {
   const { tab, moreScreen } = props;
+  if (!['today', 'results', 'more'].includes(tab)) return null;
   return (
     <div className="app-screens">
       {tab === 'today' && <TodayScreen {...props} />}
