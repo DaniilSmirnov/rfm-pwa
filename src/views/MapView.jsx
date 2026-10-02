@@ -1,3 +1,5 @@
+[36;1mnpx prettier src/views/MapView.jsx[0m
+shell: /usr/bin/bash -e {0}
 import React, { useEffect, useRef, useState } from 'react';
 import { Settings, MapPin, ChevronDown, Star, ParkingSquare, Car } from 'lucide-react';
 import packageMeta from '../../package.json';
@@ -30,9 +32,7 @@ import { getCrewSubscriptions } from '../db.js';
 import { BRAND_ORANGE } from '../app/design-tokens.js';
 import { crewName, overallCrewResults } from '../app/crew-results.js';
 import '../components/MapView.css';
-
 const mapsMeFallbackForPoint = point => `https://maps.me/${point.lat},${point.lon}`;
-
 export default function MapView({
   app,
   selectedRoute,
@@ -407,11 +407,7 @@ export default function MapView({
             >
               <img className="rfm-icon" src="/assets/location.svg" alt="" />
             </Button>
-            <span
-              id="geoStatus"
-              className={`map-locate-status ${app.geoClass}`}
-              aria-live="polite"
-            >
+            <span id="geoStatus" className={`map-locate-status ${app.geoClass}`} aria-live="polite">
               {app.geoStatus}
             </span>
           </div>
@@ -681,7 +677,6 @@ export default function MapView({
                   />
                 </a>
               )}
-
               <span className="map-point-sheet-meta">
                 {pointStageDistance
                   ? `${pointStageDistance.stage.name} · ${formatDistance(pointStageDistance.distance.fromStart)} от старта`
