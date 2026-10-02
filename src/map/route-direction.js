@@ -4,6 +4,76 @@ import { orientStageRoute } from './route-orientation.js';
 
 export const ROUTE_DIRECTION_INTERVAL = 750;
 
+export const ROUTE_DIRECTION_PATTERN_ID = 'rfm-route-direction-pattern';
+
+function directionPatternImage() {
+  const width = 64;
+  const height = 24;
+  const data = new Uint8Array(width * height * 4);
+  const white = [255, 255, 255, 235];
+  const orange = [240, 82, 23, 235];
+
+  for (const offset of [2, 34]) {
+    for (let x = offset; x <= offset + 30; x += 1) {
+      const relativeX = x - offset;
+      for (let y = 0; y < height; y += 1) {
+        const inShaft = relativeX < 14 && y >= 7 && y <= 16;
+        const headProgress = Math.max(0, Math.min(1, (relativeX - 14) / 16));
+        const inHead =
+          relativeX >= 14 &&
+          relativeX <= 30 &&
+          Math.abs(y - 12) <= Math.max(1, Math.round(headProgress * 11));
+        if (!inShaft && !inHead) continue;
+        const color = relativeX < 15 ? white : orange;
+        const index = (y * width + x) * 4;
+        data.set(color, index);
+      }
+    }
+  }
+
+  return { width, height, data };
+}
+
+export function installRouteDirectionPatterns(map) {
+  if (!map?.addImage || !map?.addLayer) return [];
+
+  if (!map.hasImage?.(ROUTE_DIRECTION_PATTERN_ID))
+    map.addImage(ROUTE_DIRECTION_PATTERN_ID, directionPatternImage(), { pixelRatio: 1 });
+
+  const layers = [
+    {
+      id: 'rfm-lines-direction',
+      source: 'rfm-lines',
+      width: ['interpolate', ['linear'], ['zoom'], 5, 3, 12, 6, 17, 9],
+    },
+    {
+      id: 'rfm-yandex-lines-direction',
+      source: 'rfm-yandex-lines',
+      width: ['interpolate', ['linear'], ['zoom'], 5, 4, 12, 7, 17, 10],
+    },
+  ];
+
+  return layers
+    .filter(layer => {
+      if (map.getLayer?.(layer.id)) return false;
+      map.addLayer({
+        id: layer.id,
+        type: 'line',
+        source: layer.source,
+        minzoom: 0,
+        maxzoom: 24,
+        layout: { 'line-cap': 'butt', 'line-join': 'miter' },
+        paint: {
+          'line-pattern': ROUTE_DIRECTION_PATTERN_ID,
+          'line-width': layer.width,
+          'line-opacity': 0.95,
+        },
+      });
+      return true;
+    })
+    .map(layer => layer.id);
+}
+
 const mercatorY = lat => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
 const valid = c =>
   Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1]) && Math.abs(c[1]) < 90;
