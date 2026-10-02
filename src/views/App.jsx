@@ -291,7 +291,12 @@ export default function App() {
             aria-current={tab === key ? 'page' : undefined}
             onClick={() => activate(key)}
           >
-            <Icon aria-hidden="true" size={21} strokeWidth={tab === key ? 2.4 : 1.8} />
+            <Icon
+              aria-hidden="true"
+              className="bottom-tab-icon"
+              size={21}
+              strokeWidth={tab === key ? 2.4 : 1.8}
+            />
             <b>{label}</b>
           </Button>
         ))}
