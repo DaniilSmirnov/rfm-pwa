@@ -412,36 +412,28 @@ describe('application components', () => {
     expect(screen.getByRole('searchbox', { name: 'Найти гонку или этап' })).toBeTruthy();
     expect(screen.getByRole('dialog', { name: 'Установка приложения' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Установи приложение' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Как установить' })).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'Как установить?' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Как установить' }));
+    expect(screen.queryByRole('button', { name: 'Как установить' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'Как установить?' })).toBeTruthy();
+    expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0);
     await waitFor(() => expect(mocks.subscribePwaInstall).toHaveBeenCalled());
   });
 
-  it('uses the native browser installation prompt when it is available', async () => {
+  it('shows browser installation instructions even when native install is available', () => {
     mocks.getPwaInstallSnapshot.mockReturnValue({
       installedLaunch: false,
       promptAvailable: true,
       instructions: {
-        title: 'Установи Rally Fans Map Offline',
-        text: 'Установи приложение',
-        action: 'Установить приложение',
-        steps: [],
+        title: 'Установка в Chrome',
+        text: 'Открой меню Chrome',
+        action: 'Как установить',
+        steps: ['Открой меню Chrome ⋮'],
       },
-    });
-    mocks.requestPwaInstall.mockResolvedValue({
-      installed: true,
-      prompted: true,
-      choice: { outcome: 'accepted' },
     });
 
     render(<PwaInstallPrompt />);
-    await fireEvent.click(screen.getByRole('button', { name: 'Установить приложение' }));
 
-    expect(mocks.requestPwaInstall).toHaveBeenCalledWith({
-      onInstructions: expect.any(Function),
-    });
+    expect(screen.getByRole('heading', { name: 'Как установить?' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Установить приложение' })).toBeNull();
   });
 
   it('covers catalog empty and downloaded/progress rendering', () => {

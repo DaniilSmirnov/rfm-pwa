@@ -1,15 +1,13 @@
 import './PwaInstallPrompt.css';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import packageMeta from '../../package.json';
-import Button from './Button.jsx';
-import { getPwaInstallSnapshot, requestPwaInstall, subscribePwaInstall } from '../app/pwa.js';
+import { getPwaInstallSnapshot, subscribePwaInstall } from '../app/pwa.js';
 
 const description =
   'Чтобы пользоваться Rally Fans Map офлайн и быстро получать доступ к картам и результатам, установи приложение на устройство.';
 
 export default function PwaInstallPrompt() {
-  const [snapshot, setSnapshot] = useState(getPwaInstallSnapshot);
-  const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [snapshot, setSnapshot] = React.useState(getPwaInstallSnapshot);
 
   useEffect(() => subscribePwaInstall(setSnapshot), []);
 
@@ -24,23 +22,6 @@ export default function PwaInstallPrompt() {
     }
     return () => document.body.classList.remove('modal-open');
   }, [snapshot.installedLaunch]);
-
-  useEffect(() => {
-    if (snapshot.promptAvailable) setInstructionsOpen(false);
-  }, [snapshot.promptAvailable]);
-
-  const activate = async () => {
-    if (snapshot.promptAvailable) {
-      const result = await requestPwaInstall({
-        onInstructions: () => setInstructionsOpen(true),
-      });
-      if (result.instructions || result.choice?.outcome !== 'accepted') {
-        setInstructionsOpen(true);
-      }
-      return;
-    }
-    setInstructionsOpen(value => !value);
-  };
 
   const instructions = snapshot.instructions;
   const visible = !snapshot.installedLaunch;
@@ -71,26 +52,20 @@ export default function PwaInstallPrompt() {
             <p>{description}</p>
           </div>
 
-          <Button className="button primary pwa-install-action" type="button" onClick={activate}>
-            {instructions.action}
-          </Button>
-
-          {instructionsOpen && (
-            <section className="pwa-install-help" aria-label={instructions.title}>
-              <div className="pwa-install-help-icon" aria-hidden="true">
-                i
-              </div>
-              <div>
-                <h2>Как установить?</h2>
-                <p>{instructions.text}</p>
-                <ol className="pwa-install-steps">
-                  {instructions.steps.map(step => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-              </div>
-            </section>
-          )}
+          <section className="pwa-install-help" aria-label={instructions.title}>
+            <div className="pwa-install-help-icon" aria-hidden="true">
+              i
+            </div>
+            <div>
+              <h2>Как установить?</h2>
+              <p>{instructions.text}</p>
+              <ol className="pwa-install-steps">
+                {instructions.steps.map(step => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          </section>
         </div>
       </div>
     </section>
