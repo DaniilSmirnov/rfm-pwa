@@ -449,9 +449,7 @@ describe('application components', () => {
     );
 
     expect(
-      document.querySelector(
-        '.map-empty-state[role="region"][aria-label="Нет скачанных гонок"]',
-      ),
+      document.querySelector('.map-empty-state[role="region"][aria-label="Нет скачанных гонок"]'),
     ).toBeTruthy();
     expect(screen.queryByRole('combobox', { name: 'Гонка на карте' })).toBeNull();
     expect(screen.queryByText('Выбери сохранённую гонку')).toBeNull();
