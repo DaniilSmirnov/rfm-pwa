@@ -122,7 +122,10 @@ export function installRouteDirections(map, maplibregl, collections, pkg = {}) {
         const el = document.createElement('div');
         el.className = 'map-route-direction';
         el.setAttribute('role', 'img');
-        el.setAttribute('aria-label', `Направление движения: ${name}, ${point.distance / 1000} км`);
+        el.setAttribute(
+          'aria-label',
+          `Направление движения: ${name}, ${point.distance / 1000} км`,
+        );
         markers.push(
           new maplibregl.Marker({
             element: el,
