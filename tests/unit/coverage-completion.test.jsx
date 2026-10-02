@@ -256,7 +256,9 @@ describe('unit coverage for presentational components', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Rally' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Обновляю…' }));
+    const updateButton = screen.getByRole('button', { name: 'Обновляю…' });
+    expect(updateButton.disabled).toBe(false);
+    fireEvent.click(updateButton);
     fireEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0]);
     expect(onOpenRace).toHaveBeenCalledWith(1);
     expect(app.downloadRace).toHaveBeenCalledWith(1);
@@ -276,7 +278,7 @@ describe('unit coverage for presentational components', () => {
         schedule={[
           {
             date: '26.09.2026',
-            location: 'СУ 1',
+            location: 'СУ 1 Сортавала',
             coordinates: '61,30',
             events: [{ time: '10:00' }],
           },
