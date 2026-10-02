@@ -39,11 +39,3 @@ describe('overlap schedule', () => {
     ).rejects.toThrow('503');
   });
 });
-
-describe('overlap schedule presentation constraints', () => {
-  it('keeps the long timing annotation inside the chart width', () => {
-    const source = '<text x={LEFT} y={y + 38} textLength={WIDTH} lengthAdjust="spacingAndGlyphs"';
-    expect(source).toContain('textLength={WIDTH}');
-    expect(source).toContain('lengthAdjust="spacingAndGlyphs"');
-  });
-});
