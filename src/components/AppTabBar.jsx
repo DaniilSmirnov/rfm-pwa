@@ -1,3 +1,4 @@
+import './AppTabBar.css';
 import React from 'react';
 import { CalendarDays, CircleEllipsis, Map, Trophy } from 'lucide-react';
 import Button from './Button.jsx';
@@ -11,7 +12,7 @@ export const tabs = [
 
 export default function AppTabBar({ activeTab, onActivate }) {
   return (
-    <nav className="bottom-tabbar" aria-label="Основная навигация">
+    <nav className="bottom-tabbar app-tab-bar" aria-label="Основная навигация">
       {tabs.map(({ key, label, Icon }) => (
         <Button
           key={key}

@@ -129,6 +129,20 @@ describe('architecture guardrails', () => {
     expect(read('src/components/SafetyMemo.jsx')).toContain("import './SafetyMemo.css'");
   });
 
+  it('keeps composed app screens paired with their own styles', () => {
+    const components = [
+      'src/components/AppTabBar',
+      'src/views/AppScreens',
+      'src/views/TodayScreen',
+      'src/views/ResultsScreen',
+      'src/views/MoreScreen',
+    ];
+    for (const component of components) {
+      expect(read(`${component}.jsx`)).toContain(`./${component.split('/').pop()}.css`);
+      expect(() => read(`${component}.css`)).not.toThrow();
+    }
+  });
+
   it('forbids direct DOM mutation in React UI files', () => {
     const uiFiles = ['components', 'views', 'modals'].flatMap(folder =>
       readdirSync(`src/${folder}`)
