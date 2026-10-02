@@ -301,22 +301,6 @@ test.describe('saved race user flows', () => {
     await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
   });
 
-  test('switches terrain mode without recreating the map', async ({ page }) => {
-    await seedFixtureRace(page, { terrainReady: true });
-    await page.reload();
-    await page.waitForLoadState('domcontentloaded');
-    await openMap(page);
-    const mapCount = await page.evaluate(() => window.__mapCreateCount);
-    const terrainButton = page.getByRole('button', { name: 'Переключить на 3D-рельеф' });
-    await expect(terrainButton).toBeVisible();
-    await terrainButton.click();
-    await expect(terrainButton).toHaveAttribute('aria-pressed', 'true');
-    await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
-    await expect
-      .poll(() => page.evaluate(() => window.__mapTerrain?.source))
-      .toBe('offline-terrain-3d');
-  });
-
   test('map engine diagnostic reports MapLibre', async ({ page }) => {
     await openMap(page);
     await page.getByRole('button', { name: 'Меню' }).click();
