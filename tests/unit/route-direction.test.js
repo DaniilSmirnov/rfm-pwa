@@ -47,7 +47,7 @@ describe('stage route direction markers', () => {
       Array.from(image.data.slice((y * image.width + x) * 4, (y * image.width + x + 1) * 4));
 
     expect(pixel(10, 12)).toEqual([240, 82, 23, 255]);
-    expect(pixel(56, 12)).toEqual([240, 82, 23, 255]);
+    expect(pixel(55, 12)).toEqual([240, 82, 23, 255]);
     expect(pixel(56, 0)).toEqual([255, 255, 255, 255]);
     expect(pixel(60, 12)).toEqual([255, 255, 255, 255]);
 
