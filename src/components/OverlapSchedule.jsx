@@ -77,6 +77,24 @@ export default function OverlapSchedule({ schedule }) {
                     className="overlap-closure"
                   />
                 )}
+                {close !== null && (
+                  <line
+                    x1={X(close)}
+                    x2={X(close)}
+                    y1={y + 3}
+                    y2={y + 25}
+                    className="overlap-boundary overlap-close"
+                  />
+                )}
+                {open !== null && (
+                  <line
+                    x1={X(open)}
+                    x2={X(open)}
+                    y1={y + 3}
+                    y2={y + 25}
+                    className="overlap-boundary overlap-open"
+                  />
+                )}
                 {markers.map(marker => {
                   const time = timeToMinutes(stage[marker.field]);
                   if (time === null) return null;
@@ -90,17 +108,6 @@ export default function OverlapSchedule({ schedule }) {
                     />
                   );
                 })}
-                <text
-                  x={LEFT}
-                  y={y + 38}
-                  textLength={WIDTH}
-                  lengthAdjust="spacingAndGlyphs"
-                  className="overlap-time-label"
-                >
-                  {stage.road_closes_at} перекрытие · 0: {stage.first_zero_at} · первый:{' '}
-                  {stage.first_crew_at} · последний: {stage.last_crew_at} · {stage.road_opens_at}{' '}
-                  открытие
-                </text>
               </g>
             );
           })}
@@ -112,6 +119,12 @@ export default function OverlapSchedule({ schedule }) {
       <div className="overlap-legend" aria-label="Обозначения графика">
         <span>
           <i className="closure" /> Перекрытие
+        </span>
+        <span>
+          <i className="boundary-close" /> Закрытие
+        </span>
+        <span>
+          <i className="boundary-open" /> Открытие
         </span>
         <span>
           <i className="zero" /> Нулевой экипаж
