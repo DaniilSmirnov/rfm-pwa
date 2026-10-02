@@ -4,13 +4,34 @@
     color: var(--muted, #777);
     font-size: 13px;
   }
+  .overlap-chart-layout {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    align-items: start;
+  }
+  .overlap-stage-labels {
+    padding-top: 38px;
+  }
+  .overlap-stage-label {
+    box-sizing: border-box;
+    height: 46px;
+    padding: 4px 8px 0 0;
+  }
+  .overlap-stage-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    min-width: 0;
+    white-space: nowrap;
+  }
   .overlap-chart-scroll {
+    min-width: 0;
     overflow-x: auto;
   }
   .overlap-chart {
     display: block;
     width: 100%;
-    min-width: 680px;
+    min-width: 640px;
     height: auto;
     overflow: visible;
   }
@@ -26,16 +47,25 @@
       sans-serif;
   }
   .overlap-stage-number {
+    color: #191919;
     fill: #191919;
     font:
       700 12px Arial,
       sans-serif;
   }
   .overlap-stage-name {
+    min-width: 0;
+    overflow: hidden;
+    color: #191919;
     fill: #191919;
     font:
       600 12px Arial,
       sans-serif;
+    text-overflow: ellipsis;
+  }
+  .overlap-stage-section {
+    display: block;
+    margin-top: 1px;
   }
   .overlap-track {
     stroke: #e8e8e8;
@@ -119,6 +149,7 @@
   }
   :root[data-theme='dark'] .overlap-stage-number,
   :root[data-theme='dark'] .overlap-stage-name {
+    color: #f5f7fa;
     fill: #f5f7fa;
   }
   :root[data-theme='dark'] .overlap-stage-section,
