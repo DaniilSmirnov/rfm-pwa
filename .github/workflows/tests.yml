@@ -30,8 +30,6 @@ jobs:
         run: npm run version:check
       - name: Lint JavaScript and JSX
         run: npm run lint
-      - name: Debug formatted MapView
-        run: npx prettier src/views/MapView.jsx
       - name: Verify code formatting
         run: npm run format:check
       - name: Build production artifact
