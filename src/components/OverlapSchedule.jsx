@@ -68,13 +68,7 @@ export default function OverlapSchedule({ schedule }) {
               ];
               return (
                 <g key={`${stage.number}-${index}`}>
-                  <line
-                    x1="0"
-                    x2={RIGHT}
-                    y1={y + 14}
-                    y2={y + 14}
-                    className="overlap-track"
-                  />
+                  <line x1="0" x2={RIGHT} y1={y + 14} y2={y + 14} className="overlap-track" />
                   {close !== null && open !== null && (
                     <rect
                       x={X(close)}
