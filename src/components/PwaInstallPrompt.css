@@ -91,7 +91,6 @@
   }
 }
 
-
 @layer modals {
   .pwa-install-help {
     display: grid;
@@ -166,6 +165,5 @@
     .pwa-install-copy p {
       margin-top: 14px;
     }
-
   }
 }
