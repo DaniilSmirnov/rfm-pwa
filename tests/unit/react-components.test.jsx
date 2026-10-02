@@ -688,6 +688,12 @@ describe('application components', () => {
     rerender(<RallyMap app={app} />);
     await waitFor(() => expect(mocks.renderMap).toHaveBeenCalled());
     expect(screen.getByLabelText('Карта ралли')).toBeTruthy();
+
+    mocks.renderMap.mockImplementationOnce(() => {
+      throw new Error('map failed');
+    });
+    rerender(<RallyMap app={appFixture()} />);
+    await waitFor(() => expect(screen.getByText(/Интерактивная карта недоступна/)).toBeTruthy());
   });
 
   it('covers settings and the Today empty state', () => {
