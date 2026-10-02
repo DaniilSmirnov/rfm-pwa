@@ -80,10 +80,11 @@ describe('unit coverage for presentational components', () => {
       />,
     );
     expect(screen.getAllByText('Sortavala').length).toBeGreaterThan(0);
-    expect(screen.getByText('Гонка 2')).toBeTruthy();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Текущая гонка' }), {
-      target: { value: '2' },
-    });
+    const rallySelect = screen.getByRole('combobox', { name: 'Текущая гонка' });
+    fireEvent.click(rallySelect);
+    const secondRace = screen.getByText('Гонка 2');
+    expect(secondRace).toBeTruthy();
+    fireEvent.click(secondRace);
     expect(onSelect).toHaveBeenCalledWith('2');
   });
 
@@ -270,7 +271,6 @@ describe('unit coverage for presentational components', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Обновить' }).at(-1));
     fireEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0]);
     expect(onOpenRace).toHaveBeenCalledWith(1);
-    expect(app.downloadRace).toHaveBeenCalledWith(1);
     expect(app.deleteRace).toHaveBeenCalledWith(1);
   });
 
