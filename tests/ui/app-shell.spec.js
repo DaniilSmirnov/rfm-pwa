@@ -34,12 +34,8 @@ test.describe('app shell and catalog', () => {
     });
     await expect(installPrompt).toBeVisible();
     await expect(installPrompt).toHaveCSS('position', 'fixed');
-    await expect(
-      installPrompt.getByRole('heading', { name: 'Как установить?' }),
-    ).toBeVisible();
-    await expect(
-      installPrompt.getByRole('button', { name: 'Как установить' }),
-    ).toHaveCount(0);
+    await expect(installPrompt.getByRole('heading', { name: 'Как установить?' })).toBeVisible();
+    await expect(installPrompt.getByRole('button', { name: 'Как установить' })).toHaveCount(0);
     await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
     await expect(installPrompt).toContainText(/Chrome|Safari|Яндекс/);
   });
