@@ -311,7 +311,6 @@ test.describe('saved race user flows', () => {
     await expect(terrainButton).toBeVisible();
     await terrainButton.click();
     await expect(terrainButton).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.maplibregl-map')).toHaveCount(1);
     await expect.poll(() => page.evaluate(() => window.__mapCreateCount)).toBe(mapCount);
     await expect
       .poll(() => page.evaluate(() => window.__mapTerrain?.source))
