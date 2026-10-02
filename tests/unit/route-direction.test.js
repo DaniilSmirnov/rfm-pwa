@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  installRouteDirectionPatterns,
   ROUTE_DIRECTION_INTERVAL,
+  ROUTE_DIRECTION_PATTERN_ID,
   routeKilometreMarkers,
 } from '../../src/map/route-direction.js';
 
@@ -17,6 +19,43 @@ describe('stage route direction markers', () => {
     expect(ROUTE_DIRECTION_INTERVAL).toBe(750);
     expect(markers.map(marker => marker.distance)).toEqual([750, 1500, 2250, 3000]);
     expect(markers.every(marker => marker.rotation === 0)).toBe(true);
+  });
+
+
+  it('renders direction arrows as a repeated pattern inside route layers', () => {
+    const map = {
+      addImage: vi.fn(),
+      addLayer: vi.fn(),
+      getLayer: vi.fn(() => null),
+    };
+
+    expect(installRouteDirectionPatterns(map)).toEqual([
+      'rfm-lines-direction',
+      'rfm-yandex-lines-direction',
+    ]);
+    expect(map.addImage).toHaveBeenCalledWith(
+      ROUTE_DIRECTION_PATTERN_ID,
+      expect.objectContaining({
+        width: 64,
+        height: 24,
+        data: expect.any(Uint8Array),
+      }),
+      { pixelRatio: 1 },
+    );
+    expect(map.addLayer.mock.calls[0][0].paint['line-pattern']).toBe(
+      ROUTE_DIRECTION_PATTERN_ID,
+    );
+    expect(map.addLayer.mock.calls[0][0].paint['line-width']).toEqual([
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      5,
+      3,
+      12,
+      6,
+      17,
+      9,
+    ]);
   });
 
   it('supports multiple route segments without resetting distance', () => {
