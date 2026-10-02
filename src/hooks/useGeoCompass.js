@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteCarPoint, loadCarPoint, saveCarPoint } from '../app/local-points.js';
-import { publishCompassHeading } from '../hooks/compass-heading.js';
+import { publishCompassHeading } from './compass-heading.js';
 
 export function normalizeGeolocationCoords(coords, extras = {}) {
   if (!coords) return null;

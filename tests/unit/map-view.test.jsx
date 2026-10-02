@@ -2,7 +2,7 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import MapView from '../../src/views/MapView.jsx';
+import MapView from '../../src/views/MapView/MapView.jsx';
 import { BRAND_ORANGE } from '../../src/app/design-tokens.js';
 import { getCrewSubscriptions } from '../../src/db.js';
 

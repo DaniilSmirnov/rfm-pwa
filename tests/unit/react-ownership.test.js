@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import FallbackMap from '../../src/components/FallbackMap.jsx';
+import FallbackMap from '../../src/components/FallbackMap/FallbackMap.jsx';
 import {
   getCompassHeading,
   publishCompassHeading,
@@ -15,7 +15,7 @@ describe('React ownership boundaries', () => {
   it('keeps install and update UI in React instead of service modules', () => {
     const pwa = source('../../src/app/pwa.js');
     const runtime = source('../../src/app/runtime.js');
-    const layout = source('../../src/views/AppLayout.jsx');
+    const layout = source('../../src/views/AppLayout/AppLayout.jsx');
     expect(pwa).not.toMatch(/getElementById|innerHTML|textContent/);
     expect(runtime).not.toMatch(/getElementById|innerHTML|textContent/);
     expect(layout).not.toMatch(/id=["'](?:crewResults|updateBanner|updateText)["']/);

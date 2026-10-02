@@ -2,28 +2,28 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import AppTabBar from '../../src/components/AppTabBar.jsx';
-import AppScreens, { getScreenHeaderTitle } from '../../src/views/AppScreens.jsx';
-import TodayScreen from '../../src/views/TodayScreen.jsx';
-import ResultsScreen from '../../src/views/ResultsScreen.jsx';
-import MoreScreen from '../../src/views/MoreScreen.jsx';
+import AppTabBar from '../../src/components/AppTabBar/AppTabBar.jsx';
+import AppScreens, { getScreenHeaderTitle } from '../../src/views/AppScreens/AppScreens.jsx';
+import TodayScreen from '../../src/views/TodayScreen/TodayScreen.jsx';
+import ResultsScreen from '../../src/views/ResultsScreen/ResultsScreen.jsx';
+import MoreScreen from '../../src/views/MoreScreen/MoreScreen.jsx';
 
-vi.mock('../../src/views/TodayView.jsx', () => ({ default: () => <div>today view</div> }));
-vi.mock('../../src/views/TodayScreen.jsx', async () => {
-  const actual = await vi.importActual('../../src/views/TodayScreen.jsx');
+vi.mock('../../src/views/TodayView/TodayView.jsx', () => ({ default: () => <div>today view</div> }));
+vi.mock('../../src/views/TodayScreen/TodayScreen.jsx', async () => {
+  const actual = await vi.importActual('../../src/views/TodayScreen/TodayScreen.jsx');
   return actual;
 });
-vi.mock('../../src/views/SettingsView.jsx', () => ({ default: () => <div>settings screen</div> }));
-vi.mock('../../src/views/RacesView.jsx', () => ({ default: () => <div>races screen</div> }));
-vi.mock('../../src/views/MoreSectionView.jsx', () => ({
+vi.mock('../../src/views/SettingsView/SettingsView.jsx', () => ({ default: () => <div>settings screen</div> }));
+vi.mock('../../src/views/RacesView/RacesView.jsx', () => ({ default: () => <div>races screen</div> }));
+vi.mock('../../src/views/MoreSectionView/MoreSectionView.jsx', () => ({
   default: ({ sectionId }) => <div>{sectionId} screen</div>,
   moreSectionTitles: { schedule: 'Расписание' },
 }));
-vi.mock('../../src/components/MoreMenu.jsx', () => ({ default: () => <div>menu screen</div> }));
-vi.mock('../../src/components/CrewResults.jsx', () => ({
+vi.mock('../../src/components/MoreMenu/MoreMenu.jsx', () => ({ default: () => <div>menu screen</div> }));
+vi.mock('../../src/components/CrewResults/CrewResults.jsx', () => ({
   default: () => <div>results screen</div>,
 }));
-vi.mock('../../src/components/EmptyScreenState.jsx', () => ({
+vi.mock('../../src/components/EmptyScreenState/EmptyScreenState.jsx', () => ({
   default: ({ onAction }) => <button onClick={onAction}>open races</button>,
 }));
 

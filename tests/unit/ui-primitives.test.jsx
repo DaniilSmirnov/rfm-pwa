@@ -2,16 +2,16 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import ActionGroup from '../../src/components/ActionGroup.jsx';
-import Badge from '../../src/components/Badge.jsx';
-import Button from '../../src/components/Button.jsx';
-import CollapsibleSection from '../../src/components/CollapsibleSection.jsx';
-import EmptyState from '../../src/components/EmptyState.jsx';
-import MountainTerrainIcon from '../../src/components/MountainTerrainIcon.jsx';
-import Panel from '../../src/components/Panel.jsx';
-import SearchField from '../../src/components/SearchField.jsx';
-import SelectField from '../../src/components/SelectField.jsx';
-import SectionHeader from '../../src/components/SectionHeader.jsx';
+import ActionGroup from '../../src/components/ActionGroup/ActionGroup.jsx';
+import Badge from '../../src/components/Badge/Badge.jsx';
+import Button from '../../src/components/Button/Button.jsx';
+import CollapsibleSection from '../../src/components/CollapsibleSection/CollapsibleSection.jsx';
+import EmptyState from '../../src/components/EmptyState/EmptyState.jsx';
+import MountainTerrainIcon from '../../src/components/MountainTerrainIcon/MountainTerrainIcon.jsx';
+import Panel from '../../src/components/Panel/Panel.jsx';
+import SearchField from '../../src/components/SearchField/SearchField.jsx';
+import SelectField from '../../src/components/SelectField/SelectField.jsx';
+import SectionHeader from '../../src/components/SectionHeader/SectionHeader.jsx';
 
 afterEach(cleanup);
 

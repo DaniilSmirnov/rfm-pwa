@@ -9,7 +9,7 @@ const lines = path => read(path).split(/\r?\n/).length;
 describe('architecture guardrails', () => {
   it('keeps React entrypoint minimal', () => expect(lines('src/main.jsx')).toBeLessThan(40));
   it('keeps React app composition below 500 lines', () =>
-    expect(lines('src/views/App.jsx')).toBeLessThan(500));
+    expect(lines('src/views/App/App.jsx')).toBeLessThan(500));
   it('keeps React application hook below 480 lines', () =>
     expect(lines('src/hooks/useRfmApp.js')).toBeLessThan(650));
   it('keeps package selection and browser point effects outside the app hook', () => {
@@ -82,9 +82,9 @@ describe('architecture guardrails', () => {
 
   it('organizes app UI into components, views, modals and hooks', () => {
     expect(() => read('src/react/App.jsx')).toThrow();
-    expect(read('src/views/App.jsx')).toContain("from '../hooks/useRfmApp.js'");
-    expect(read('src/modals/SafetyGate.jsx')).toContain('role="dialog"');
-    expect(read('src/components/SafetyMemo.jsx')).toContain("import './SafetyMemo.css'");
+    expect(read('src/views/App/App.jsx')).toContain("from '../../hooks/useRfmApp.js'");
+    expect(read('src/modals/SafetyGate/SafetyGate.jsx')).toContain('role="dialog"');
+    expect(read('src/components/SafetyMemo/SafetyMemo.jsx')).toContain("import './SafetyMemo.css'");
     expect(read('index.html')).not.toContain('/src/styles.css');
     expect(read('index.html')).not.toContain('id="catalogSection"');
     expect(() => read('tests/pwa/fixtures/migration-harness.html')).toThrow();
@@ -92,12 +92,12 @@ describe('architecture guardrails', () => {
 
   it('enforces shared React button and per-component coverage primitives', () => {
     const jsxFiles = ['components', 'views', 'modals'].flatMap(folder =>
-      readdirSync(`src/${folder}`)
+      readdirSync(`src/${folder}`, { recursive: true })
         .filter(name => name.endsWith('.jsx'))
         .map(name => `src/${folder}/${name}`),
     );
     const nativeButtonFiles = jsxFiles.filter(
-      file => file !== 'src/components/Button.jsx' && /<button\b/.test(read(file)),
+      file => file !== 'src/components/Button/Button.jsx' && /<button\b/.test(read(file)),
     );
     expect(nativeButtonFiles).toEqual([]);
     const config = read('vitest.config.js');
@@ -110,42 +110,43 @@ describe('architecture guardrails', () => {
     const cssFiles = [
       'src/styles/base.css',
       ...['components', 'views', 'modals'].flatMap(folder =>
-        readdirSync(`src/${folder}`)
+        readdirSync(`src/${folder}`, { recursive: true })
           .filter(name => name.endsWith('.css'))
           .map(name => `src/${folder}/${name}`),
       ),
     ];
+    cssFiles.push('src/styles/app-shell.css', 'src/styles/shared-controls.css');
     const css = cssFiles.map(read).join('\n');
-    expect(cssFiles).toContain('src/components/CrewResults.css');
-    expect(cssFiles).toContain('src/views/SettingsView.css');
-    expect(cssFiles).toContain('src/modals/SafetyGate.css');
-    expect(read('src/components/CrewResults.jsx')).toContain("import './CrewResults.css'");
-    expect(read('src/components/BasemapPopup.jsx')).toContain("import './BasemapPopup.css'");
-    expect(read('src/views/SettingsView.jsx')).toContain("import './SettingsView.css'");
-    expect(read('src/modals/SafetyGate.jsx')).toContain("import './SafetyGate.css'");
+    expect(cssFiles).toContain('src/components/CrewResults/CrewResults.css');
+    expect(cssFiles).toContain('src/views/SettingsView/SettingsView.css');
+    expect(cssFiles).toContain('src/modals/SafetyGate/SafetyGate.css');
+    expect(read('src/components/CrewResults/CrewResults.jsx')).toContain("import './CrewResults.css'");
+    expect(read('src/components/BasemapPopup/BasemapPopup.jsx')).toContain("import './BasemapPopup.css'");
+    expect(read('src/views/SettingsView/SettingsView.jsx')).toContain("import './SettingsView.css'");
+    expect(read('src/modals/SafetyGate/SafetyGate.jsx')).toContain("import './SafetyGate.css'");
     expect(css).toContain('@layer base, components, views, modals, theme, responsive');
     const base = read('src/styles/base.css');
     expect(base.match(/\.app-shell\[data-active-tab='today'\] \.legacy-more/g)).toHaveLength(1);
-    expect(read('src/components/SafetyMemo.jsx')).toContain("import './SafetyMemo.css'");
+    expect(read('src/components/SafetyMemo/SafetyMemo.jsx')).toContain("import './SafetyMemo.css'");
   });
 
-  it('keeps composed app screens paired with their own styles', () => {
-    const components = [
-      'src/components/AppTabBar',
-      'src/views/AppScreens',
-      'src/views/TodayScreen',
-      'src/views/ResultsScreen',
-      'src/views/MoreScreen',
-    ];
-    for (const component of components) {
-      expect(read(`${component}.jsx`)).toContain(`./${component.split('/').pop()}.css`);
-      expect(() => read(`${component}.css`)).not.toThrow();
+  it('keeps every React UI component in its own folder with paired JSX and CSS', () => {
+    const jsxFiles = ['components', 'views', 'modals'].flatMap(folder =>
+      readdirSync(`src/${folder}`, { recursive: true })
+        .filter(name => name.endsWith('.jsx'))
+        .map(name => `src/${folder}/${name}`),
+    );
+    for (const file of jsxFiles) {
+      const componentName = file.split('/').pop().replace(/\\.jsx$/, '');
+      expect(file.split('/').slice(-2, -1)[0]).toBe(componentName);
+      expect(read(file)).toContain(`import './${componentName}.css'`);
+      expect(() => read(file.replace(/\\.jsx$/, '.css'))).not.toThrow();
     }
   });
 
   it('forbids direct DOM mutation in React UI files', () => {
     const uiFiles = ['components', 'views', 'modals'].flatMap(folder =>
-      readdirSync(`src/${folder}`)
+      readdirSync(`src/${folder}`, { recursive: true })
         .filter(name => name.endsWith('.jsx'))
         .map(name => `src/${folder}/${name}`),
     );
