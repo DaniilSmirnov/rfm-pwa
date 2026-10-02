@@ -11,20 +11,18 @@ function directionPatternImage() {
   const height = 24;
   const data = new Uint8Array(width * height * 4);
   const white = [255, 255, 255, 255];
-  const orange = [240, 82, 23, 255];
-  const arrowTip = 56;
-  const arrowTailStart = 6;
-  const arrowTailEnd = 30;
   const halfHeight = (height - 1) / 2;
 
   for (let y = 0; y < height; y += 1) {
-    const distanceFromCenter = Math.abs(y - halfHeight) / halfHeight;
-    const arrowEnd =
-      arrowTailEnd + Math.round((arrowTip - arrowTailEnd) * (1 - distanceFromCenter));
-
     for (let x = 0; x < width; x += 1) {
-      const index = (y * width + x) * 4;
-      data.set(x >= arrowTailStart && x <= arrowEnd ? orange : white, index);
+      const inShaft = x >= 4 && x <= 30 && y >= 9 && y <= 14;
+      const progress = Math.max(0, Math.min(1, (x - 24) / 34));
+      const headHalfHeight = Math.max(0.75, 12 * (1 - progress));
+      const inHead =
+        x >= 24 && x <= 58 && Math.abs(y - halfHeight) <= headHalfHeight;
+
+      if (!inShaft && !inHead) continue;
+      data.set(white, (y * width + x) * 4);
     }
   }
 
@@ -86,7 +84,7 @@ export function routeKilometreMarkers(geometry) {
   let travelled = 0,
     next = ROUTE_DIRECTION_INTERVAL;
   for (const line of lines) {
-    for (let i = 1; i < (line || []).length; i++) {
+    for (let i = 1; i < (line || []).length; i += 1) {
       const a = line[i - 1],
         b = line[i];
       if (!valid(a) || !valid(b)) continue;
