@@ -72,7 +72,7 @@ jobs:
         run: npm run build
       - name: Start preview server
         run: |
-          npm run preview -- --host 0.0.0.0 --port 4173 > /tmp/rfm-vite-preview.log 2>&1 &
+          npx vite preview --host 0.0.0.0 --port 4173 > /tmp/rfm-vite-preview.log 2>&1 &
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
               exit 0
