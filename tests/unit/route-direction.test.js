@@ -21,7 +21,6 @@ describe('stage route direction markers', () => {
     expect(markers.every(marker => marker.rotation === 0)).toBe(true);
   });
 
-
   it('renders direction arrows as a repeated pattern inside route layers', () => {
     const map = {
       addImage: vi.fn(),
@@ -42,9 +41,7 @@ describe('stage route direction markers', () => {
       }),
       { pixelRatio: 1 },
     );
-    expect(map.addLayer.mock.calls[0][0].paint['line-pattern']).toBe(
-      ROUTE_DIRECTION_PATTERN_ID,
-    );
+    expect(map.addLayer.mock.calls[0][0].paint['line-pattern']).toBe(ROUTE_DIRECTION_PATTERN_ID);
     expect(map.addLayer.mock.calls[0][0].paint['line-width']).toEqual([
       'interpolate',
       ['linear'],
