@@ -1,40 +1,27 @@
 import '../components/SharedControls.css';
 import '../components/AppShell.css';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import Button from '../components/Button.jsx';
-import { CalendarDays, CircleEllipsis, Map, Trophy } from 'lucide-react';
 import { useRfmApp } from '../hooks/useRfmApp.js';
 import { resizeActiveMap } from '../map.js';
 import { syncWalletPassesForPackage } from '../app/wallet-client.js';
 import { pointElevationText } from '../app/elevation-ui.js';
-import TodayView from './TodayView.jsx';
 import { nearestStageDistance } from '../app/point-stage-distance.js';
 import SafetyGate from '../modals/SafetyGate.jsx';
-import SettingsView from './SettingsView.jsx';
 import PwaInstallPrompt from '../components/PwaInstallPrompt.jsx';
 import AppLayout from './AppLayout.jsx';
 import AppFooter from '../components/AppFooter.jsx';
 import PointList from '../components/PointList.jsx';
 import FavoritesList from '../components/FavoritesList.jsx';
 import RallyMap from '../components/RallyMap.jsx';
-import MoreMenu from '../components/MoreMenu.jsx';
 import ScheduleList from '../components/ScheduleList.jsx';
 import RaceMedia from '../components/RaceMedia.jsx';
-import CrewResults from '../components/CrewResults.jsx';
-import EmptyScreenState from '../components/EmptyScreenState.jsx';
 import BootDiagnostics from '../modals/BootDiagnostics.jsx';
 import { hasSafetyConsent, saveSafetyConsent } from '../app/safety-consent.js';
 import { selectedPackage } from '../app/rally-context.js';
-import RacesView from './RacesView.jsx';
-import MoreSectionView, { moreSectionTitles } from './MoreSectionView.jsx';
 import { useEdgeSwipeBack } from '../components/ScreenHeader.jsx';
+import AppScreens, { getScreenHeaderTitle } from './AppScreens.jsx';
+import AppTabBar from '../components/AppTabBar.jsx';
 
-const tabs = [
-  { key: 'today', label: 'Сегодня', Icon: CalendarDays },
-  { key: 'map', label: 'Карта', Icon: Map },
-  { key: 'results', label: 'Результаты', Icon: Trophy },
-  { key: 'more', label: 'Меню', Icon: CircleEllipsis },
-];
 function readTab() {
   const requested = new URLSearchParams(location.search).get('tab');
   if (requested === 'races') return 'more';
@@ -191,79 +178,35 @@ export default function App() {
     url.searchParams.set('tab', 'more');
     history.replaceState({ tab: 'more' }, '', url);
   }, []);
-  const screenHeaderTitle =
-    tab === 'more' && moreScreen !== 'menu'
-      ? {
-          races: 'Управление гонками',
-          settings: 'Настройки и диагностика',
-          ...moreSectionTitles,
-        }[moreScreen] || 'Раздел гонки'
-      : null;
+  const screenHeaderTitle = getScreenHeaderTitle(tab, moreScreen);
 
   useEdgeSwipeBack(returnToMoreMenu, Boolean(screenHeaderTitle));
-  const openCrewResults = () => setCrewResultsOpen(true);
-  const screenContent =
-    tab === 'today' ? (
-      <TodayView
-        app={app}
-        onMap={() => activate('map')}
-        onResults={() => activate('results')}
-        onRaces={openRaces}
-      />
-    ) : tab === 'results' ? (
-      <section className="results-tab-screen">
-        {app.packages?.length > 0 && pkg ? (
-          <CrewResults
-            pkg={pkg}
-            open={crewResultsOpen}
-            onOpen={openCrewResults}
-            onClose={() => setCrewResultsOpen(false)}
-            standalone
-          />
-        ) : (
-          <EmptyScreenState
-            className="results-empty-state"
-            description="Скачай Rally Pack в разделе управления гонками, чтобы открыть результаты."
-            onAction={openRaces}
-          />
-        )}
-      </section>
-    ) : tab === 'more' ? (
-      moreScreen === 'settings' ? (
-        <SettingsView
-          app={app}
-          onBack={closeSettings}
-          onDiagnostics={() => setDiagnosticsOpen(true)}
-        />
-      ) : moreScreen === 'races' ? (
-        <RacesView
-          app={app}
-          onBack={returnToMoreMenu}
-          onOpenRace={async id => {
-            await app.selectPackage(id);
-            activate('map');
-          }}
-        />
-      ) : moreScreen !== 'menu' ? (
-        <MoreSectionView
-          sectionId={moreScreen}
-          app={app}
-          onBack={returnToMoreMenu}
-          onOpenResults={() => activate('results')}
-          onOpenDiagnostics={() => setDiagnosticsOpen(true)}
-        />
-      ) : (
-        <MoreMenu
-          app={app}
-          onSettings={openSettings}
-          onRaces={() => setMoreScreen('races')}
-          onOpenSection={setMoreScreen}
-          onNotifications={openSettings}
-          onTheme={openSettings}
-          onDiagnostics={() => setDiagnosticsOpen(true)}
-        />
-      )
-    ) : null;
+  const screenContent = (
+    <AppScreens
+      app={app}
+      tab={tab}
+      moreScreen={moreScreen}
+      crewResultsOpen={crewResultsOpen}
+      onMap={() => activate('map')}
+      onResults={() => activate('results')}
+      onRaces={openRaces}
+      onOpenRaces={openRaces}
+      onOpenCrewResults={() => setCrewResultsOpen(true)}
+      onCloseCrewResults={() => setCrewResultsOpen(false)}
+      onSettings={openSettings}
+      onRacesMenu={() => setMoreScreen('races')}
+      onOpenSection={setMoreScreen}
+      onNotifications={openSettings}
+      onTheme={openSettings}
+      onDiagnostics={() => setDiagnosticsOpen(true)}
+      onBackSettings={closeSettings}
+      onBackMore={returnToMoreMenu}
+      onOpenRace={async id => {
+        await app.selectPackage(id);
+        activate('map');
+      }}
+    />
+  );
 
   return (
     <>
@@ -292,19 +235,7 @@ export default function App() {
       />
       <BootDiagnostics open={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
       <AppFooter />
-      <nav className="bottom-tabbar" aria-label="Основная навигация">
-        {tabs.map(({ key, label, Icon }) => (
-          <Button
-            key={key}
-            className={tab === key ? 'active' : ''}
-            aria-current={tab === key ? 'page' : undefined}
-            onClick={() => activate(key)}
-          >
-            <Icon aria-hidden="true" size={21} strokeWidth={tab === key ? 2.4 : 1.8} />
-            <b>{label}</b>
-          </Button>
-        ))}
-      </nav>
+      <AppTabBar activeTab={tab} onActivate={activate} />
 
       {requiresSafety && <SafetyGate pkg={pkg} onAccept={acceptSafety} />}
     </>
