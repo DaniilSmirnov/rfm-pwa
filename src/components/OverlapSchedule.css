@@ -19,7 +19,6 @@
     stroke-width: 1;
   }
   .overlap-tick,
-  .overlap-time-label,
   .overlap-stage-section {
     fill: #777;
     font:
@@ -46,6 +45,16 @@
     fill: #ffddd2;
     stroke: #ee795c;
     stroke-width: 1;
+  }
+  .overlap-boundary {
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+  .overlap-boundary.overlap-close {
+    stroke: #df5134;
+  }
+  .overlap-boundary.overlap-open {
+    stroke: #169873;
   }
   .overlap-marker {
     stroke: #fff;
@@ -91,6 +100,18 @@
     border-radius: 4px;
     background: #ee795c;
   }
+  .overlap-legend i.boundary-close,
+  .overlap-legend i.boundary-open {
+    width: 4px;
+    height: 12px;
+    border-radius: 2px;
+  }
+  .overlap-legend i.boundary-close {
+    background: #df5134;
+  }
+  .overlap-legend i.boundary-open {
+    background: #169873;
+  }
   .overlap-approximation-note {
     margin: 8px 0 0;
     color: #6b6b6b;
@@ -101,8 +122,7 @@
     fill: #f5f7fa;
   }
   :root[data-theme='dark'] .overlap-stage-section,
-  :root[data-theme='dark'] .overlap-tick,
-  :root[data-theme='dark'] .overlap-time-label {
+  :root[data-theme='dark'] .overlap-tick {
     fill: #aab2bd;
   }
   :root[data-theme='dark'] .overlap-legend,
