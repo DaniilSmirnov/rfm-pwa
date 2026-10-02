@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('../../src/navigation.js', () => ({
   googleMapsDirections: vi.fn(() => 'https://maps.google.test'),
