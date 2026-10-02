@@ -407,7 +407,11 @@ export default function MapView({
             >
               <img className="rfm-icon" src="/assets/location.svg" alt="" />
             </Button>
-            <span id="geoStatus" className={`map-locate-status ${app.geoClass}`} aria-live="polite">
+            <span
+              id="geoStatus"
+              className={`map-locate-status ${app.geoClass}`}
+              aria-live="polite"
+            >
               {app.geoStatus}
             </span>
           </div>
