@@ -1,6 +1,7 @@
 name: Format debug
 
 on:
+  pull_request:
   push:
     branches: [di/fix-map-rendering]
 
