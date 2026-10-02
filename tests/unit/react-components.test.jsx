@@ -450,7 +450,7 @@ describe('application components', () => {
 
     expect(
       document.querySelector(
-        '.results-tab-screen [role="region"][aria-label="Нет скачанных гонок"]',
+        '.map-empty-state[role="region"][aria-label="Нет скачанных гонок"]',
       ),
     ).toBeTruthy();
     expect(screen.queryByRole('combobox', { name: 'Гонка на карте' })).toBeNull();
@@ -971,7 +971,11 @@ describe('application components', () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: /Результаты/ }));
-    expect(screen.getByRole('region', { name: 'Нет скачанных гонок' })).toBeTruthy();
+    expect(
+      document.querySelector(
+        '.results-tab-screen [role="region"][aria-label="Нет скачанных гонок"]',
+      ),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Перейти к скачиванию' }));
     expect(screen.getByText('УПРАВЛЕНИЕ ГОНКАМИ')).toBeTruthy();
   });
