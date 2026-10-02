@@ -20,10 +20,8 @@ export default function BootDiagnostics({ open, onClose }) {
   useEffect(() => {
     const update = () => setRevision(value => value + 1);
     window.addEventListener('rfm:boot-mark', update);
-    if (open) document.body.classList.add('modal-open');
     return () => {
       window.removeEventListener('rfm:boot-mark', update);
-      document.body.classList.remove('modal-open');
     };
   }, [open]);
   const snapshot = bootSnapshot();

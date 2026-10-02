@@ -601,13 +601,13 @@
 
 /* Full-screen map composition from the rally design. */
 @layer views {
-  body[data-active-tab='map'] {
+  .app-shell[data-active-tab='map'] {
     overflow: hidden;
   }
-  body[data-active-tab='map'] .topbar {
+  .app-shell[data-active-tab='map'] .topbar {
     display: none;
   }
-  body[data-active-tab='map'] main {
+  .app-shell[data-active-tab='map'] main {
     display: block;
     position: static;
     width: auto;
@@ -616,11 +616,11 @@
     padding: 0;
     overflow: visible;
   }
-  body[data-active-tab='map'] #reactRoot,
-  body[data-active-tab='map'] #reactShell {
+  .app-shell[data-active-tab='map'] #reactRoot,
+  .app-shell[data-active-tab='map'] #reactShell {
     padding: 0;
   }
-  body[data-active-tab='map'] .bottom-tabbar {
+  .app-shell[data-active-tab='map'] .bottom-tabbar {
     z-index: 60;
   }
   .map-screen {
@@ -1062,8 +1062,8 @@
 }
 
 @layer theme {
-  body[data-active-tab='map'] .bottom-tabbar button.active,
-  :root[data-theme='dark'] body[data-active-tab='map'] .bottom-tabbar button.active {
+  .app-shell[data-active-tab='map'] .bottom-tabbar button.active,
+  :root[data-theme='dark'] .app-shell[data-active-tab='map'] .bottom-tabbar button.active {
     background: transparent;
     color: var(--brand-orange);
   }

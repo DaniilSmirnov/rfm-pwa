@@ -125,8 +125,28 @@ describe('architecture guardrails', () => {
     expect(read('src/modals/SafetyGate.jsx')).toContain("import './SafetyGate.css'");
     expect(css).toContain('@layer base, components, views, modals, theme, responsive');
     const base = read('src/styles/base.css');
-    expect(base.match(/body\[data-active-tab='today'\] \.legacy-more/g)).toHaveLength(1);
+    expect(base.match(/\.app-shell\[data-active-tab='today'\] \.legacy-more/g)).toHaveLength(1);
     expect(read('src/components/SafetyMemo.jsx')).toContain("import './SafetyMemo.css'");
+  });
+
+  it('forbids direct DOM mutation in React UI files', () => {
+    const uiFiles = ['components', 'views', 'modals'].flatMap(folder =>
+      readdirSync(`src/${folder}`)
+        .filter(name => name.endsWith('.jsx'))
+        .map(name => `src/${folder}/${name}`),
+    );
+    const forbidden = uiFiles.flatMap(file => {
+      const source = read(file);
+      return [
+        /document\.body/,
+        /\.classList\.(add|remove|toggle|replace)\(/,
+        /\.dataset\.[A-Za-z_$][\w$]*\s*=/,
+        /\.setAttribute\(/,
+      ]
+        .filter(pattern => pattern.test(source))
+        .map(pattern => `${file}: ${pattern}`);
+    });
+    expect(forbidden).toEqual([]);
   });
 
   it('uses Vite for the client production bundle', () => {

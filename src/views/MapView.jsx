@@ -242,7 +242,6 @@ export default function MapView({
         if (selectedPointRef.current === pointAtClick) closePoint();
       }, 0);
     };
-    if (pointDetailsOpen) document.body.classList.add('modal-open');
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('click', onDocumentClick);
     if (pointDetailsOpen)
@@ -250,7 +249,6 @@ export default function MapView({
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('click', onDocumentClick);
-      document.body.classList.remove('modal-open');
       if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
     };
   }, [selectedPoint, showPoint, pointDetailsOpen]);

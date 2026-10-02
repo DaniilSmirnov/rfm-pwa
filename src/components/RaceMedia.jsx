@@ -60,10 +60,8 @@ export default function RaceMedia({ pkg, sections = null }) {
       if (event.key === 'Escape') setSelectedImage('');
     };
     window.addEventListener('keydown', closeOnEscape);
-    document.body.classList.add('modal-open');
     return () => {
       window.removeEventListener('keydown', closeOnEscape);
-      document.body.classList.remove('modal-open');
     };
   }, [selectedImage]);
   if (!pkg) return null;

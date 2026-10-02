@@ -59,11 +59,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    document.body.dataset.activeTab = tab;
-    document.body.dataset.moreScreen = moreScreen;
-  }, [tab, moreScreen]);
-
-  useEffect(() => {
     setSafetyAccepted(hasSafetyConsent(pkg));
   }, [pkg]);
 
@@ -135,9 +130,6 @@ export default function App() {
     pointElevationText(pkg?.terrain, app.selectedPoint).then(text => {
       if (!cancelled) setPointElevation(text);
     });
-    document
-      .getElementById('pointActions')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return () => {
       cancelled = true;
     };
@@ -146,9 +138,6 @@ export default function App() {
   useEffect(() => setSelectedRoute(null), [pkg?.id]);
 
   const requiresSafety = tab === 'map' && !safetyAccepted;
-  useEffect(() => {
-    document.body.dataset.safetyGate = requiresSafety ? 'true' : 'false';
-  }, [requiresSafety]);
   const acceptSafety = () => {
     saveSafetyConsent(pkg);
     setSafetyAccepted(true);
@@ -209,7 +198,12 @@ export default function App() {
   );
 
   return (
-    <>
+    <div
+      className="app-shell"
+      data-active-tab={tab}
+      data-more-screen={moreScreen}
+      data-safety-gate={requiresSafety}
+    >
       <AppLayout
         app={app}
         selectedRoute={selectedRoute}
@@ -238,6 +232,6 @@ export default function App() {
       <AppTabBar activeTab={tab} onActivate={activate} />
 
       {requiresSafety && <SafetyGate pkg={pkg} onAccept={acceptSafety} />}
-    </>
+    </div>
   );
 }

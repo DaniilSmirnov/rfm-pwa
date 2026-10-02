@@ -121,7 +121,9 @@
   }
 }
 @layer base {
-  body.modal-open {
+  .app-shell:has(.pwa-install-prompt:not([hidden])),
+  .app-shell:has([role='dialog'][data-state='open']),
+  .app-shell:has(.map-point-sheet) {
     overflow: hidden;
   }
 }
@@ -160,22 +162,22 @@
   }
 }
 @layer base {
-  body[data-active-tab='today'] .legacy-more,
-  body[data-active-tab='today'] .legacy-map,
-  body[data-active-tab='map'] .legacy-more,
-  body[data-active-tab='more'] .legacy-map {
+  .app-shell[data-active-tab='today'] .legacy-more,
+  .app-shell[data-active-tab='today'] .legacy-map,
+  .app-shell[data-active-tab='map'] .legacy-more,
+  .app-shell[data-active-tab='more'] .legacy-map {
     display: none !important;
   }
 }
 @layer base {
-  body[data-active-tab='map'] .react-tab-content,
-  body[data-active-tab='more'] .today-screen,
-  body[data-active-tab='more'] .today-empty {
+  .app-shell[data-active-tab='map'] .react-tab-content,
+  .app-shell[data-active-tab='more'] .today-screen,
+  .app-shell[data-active-tab='more'] .today-empty {
     display: none;
   }
 }
 @layer base {
-  body:not([data-active-tab='more']) .app-footer {
+  .app-shell:not([data-active-tab='more']) .app-footer {
     display: none;
   }
 }
@@ -230,38 +232,38 @@
   }
 }
 @layer base {
-  body[data-active-tab='more'][data-more-screen='menu'] main > #settingsSection {
+  .app-shell[data-active-tab='more'][data-more-screen='menu'] main > #settingsSection {
     display: none !important;
   }
 }
 @layer base {
-  body[data-active-tab='more'][data-more-screen='settings']
+  .app-shell[data-active-tab='more'][data-more-screen='settings']
     main
     > .legacy-more:not(#settingsSection) {
     display: none !important;
   }
 }
 @layer base {
-  body[data-active-tab='more'][data-more-screen='settings'] #settingsSection {
+  .app-shell[data-active-tab='more'][data-more-screen='settings'] #settingsSection {
     display: block !important;
     margin: var(--space-3);
     padding-bottom: 18px;
   }
 }
 @layer base {
-  body[data-active-tab='more'] .react-tab-content {
+  .app-shell[data-active-tab='more'] .react-tab-content {
     padding-bottom: 0;
   }
 }
 @layer base {
-  body[data-safety-gate='true'] #mapSection {
+  .app-shell[data-safety-gate='true'] #mapSection {
     filter: blur(9px);
     pointer-events: none;
     user-select: none;
   }
 }
 @layer base {
-  body[data-safety-gate='true'] {
+  .app-shell[data-safety-gate='true'] {
     overflow: hidden;
     overscroll-behavior: none;
   }

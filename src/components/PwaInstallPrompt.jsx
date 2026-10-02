@@ -11,18 +11,6 @@ export default function PwaInstallPrompt() {
 
   useEffect(() => subscribePwaInstall(setSnapshot), []);
 
-  useEffect(() => {
-    document.documentElement.dataset.pwaInstalled = snapshot.installedLaunch ? 'true' : 'false';
-    document.documentElement.dataset.pwaContext = snapshot.installedLaunch ? 'app' : 'browser';
-  }, [snapshot.installedLaunch]);
-
-  useEffect(() => {
-    if (!snapshot.installedLaunch) {
-      document.body.classList.add('modal-open');
-    }
-    return () => document.body.classList.remove('modal-open');
-  }, [snapshot.installedLaunch]);
-
   const instructions = snapshot.instructions;
   const visible = !snapshot.installedLaunch;
 
@@ -34,6 +22,8 @@ export default function PwaInstallPrompt() {
       aria-modal="true"
       hidden={!visible}
       aria-live="polite"
+      data-pwa-installed={snapshot.installedLaunch ? 'true' : 'false'}
+      data-pwa-context={snapshot.installedLaunch ? 'app' : 'browser'}
     >
       <div className="pwa-install-screen">
         <div className="pwa-install-brand" aria-label="Rally Fans Map">
