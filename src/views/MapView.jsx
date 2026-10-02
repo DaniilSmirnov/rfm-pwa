@@ -305,7 +305,7 @@ export default function MapView({
             alt="Rally Fans Map"
           />
         </span>
-        {hasRaces ? (
+        {hasRaces && (
           <label className="current-rally-select map-rally-picker">
             <MapPin aria-hidden="true" size={20} className="current-rally-pin" />
             <span className="current-rally-copy">
