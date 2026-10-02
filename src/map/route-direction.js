@@ -2,6 +2,8 @@ import { distanceMeters } from '../app/geo.js';
 import { buildStageDescriptors, findStageDescriptorByFeature } from '../app/schedule.js';
 import { orientStageRoute } from './route-orientation.js';
 
+export const ROUTE_DIRECTION_INTERVAL = 750;
+
 const mercatorY = lat => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
 const valid = c =>
   Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1]) && Math.abs(c[1]) < 90;
@@ -15,7 +17,7 @@ export function routeKilometreMarkers(geometry) {
         : [];
   const markers = [];
   let travelled = 0,
-    next = 1500;
+    next = ROUTE_DIRECTION_INTERVAL;
   for (const line of lines) {
     for (let i = 1; i < (line || []).length; i++) {
       const a = line[i - 1],
