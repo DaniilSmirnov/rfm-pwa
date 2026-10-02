@@ -46,7 +46,8 @@ export default function PointDetailsSheet({
   copyPoint,
 }) {
   return (
-    {pointSheetPoint && (
+    <>
+      {pointSheetPoint && (
       <>
         <Button
           id="mapPointSheetBackdrop"
@@ -296,6 +297,7 @@ export default function PointDetailsSheet({
           </div>
         </aside>
       </>
-    )}
+      )}
+    </>
   );
 }

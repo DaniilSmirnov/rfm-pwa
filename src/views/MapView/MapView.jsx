@@ -1,5 +1,7 @@
 import './MapView.css';
 import PointDetailsSheet from '../../components/PointDetailsSheet/PointDetailsSheet.jsx';
+
+const mapsMeFallbackForPoint = point => `https://maps.me/${point.lat},${point.lon}`;
 import React, { useEffect, useRef, useState } from 'react';
 import { Settings, MapPin, ChevronDown, Star, Car } from 'lucide-react';
 import packageMeta from '../../../package.json';
@@ -15,7 +17,6 @@ import {
   mapsMeLink,
 } from '../../navigation.js';
 import { isFavoritePoint } from '../../app/local-points.js';
-import { formatDistance } from '../../app/geo.js';
 import {
   stageMapStatuses,
   pointFeatureDetails,
