@@ -66,6 +66,7 @@ describe('unit coverage for presentational components', () => {
       <AppHeader
         onLogoClick={onLogo}
         onSelectRally={onSelect}
+        currentPackage={{ id: 1, name: 'Sortavala', summary: { dates: '26–27 сентября' } }}
         packages={[
           { id: 1, name: 'Sortavala', summary: { dates: '26–27 сентября' } },
           { id: 2, raceId: 2 },
@@ -249,6 +250,7 @@ describe('unit coverage for presentational components', () => {
           packages: [
             { id: 1, name: 'Rally', summary: { dates: '26.09.2026' } },
             { id: 2, original: { id: 'bad' }, name: 'No id' },
+            { id: 3, name: 'Rally 3' },
           ],
           raceProgress: { 1: 'Обновляю…' },
         }}
@@ -259,9 +261,10 @@ describe('unit coverage for presentational components', () => {
     const updateButton = screen.getByRole('button', { name: 'Обновляю…' });
     expect(updateButton.disabled).toBe(false);
     fireEvent.click(updateButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Обновить' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0]);
     expect(onOpenRace).toHaveBeenCalledWith(1);
-    expect(app.downloadRace).toHaveBeenCalledWith(1);
+    expect(app.downloadRace).toHaveBeenCalledWith(3);
     expect(app.deleteRace).toHaveBeenCalledWith(1);
   });
 
@@ -291,13 +294,13 @@ describe('unit coverage for presentational components', () => {
     fireEvent.keyDown(stage, { key: 'Enter' });
     fireEvent.keyDown(stage, { key: ' ' });
     expect(onStageSelect).toHaveBeenCalledTimes(3);
-    fireEvent.click(screen.getByRole('button', { name: 'Уведомлять' }));
+    fireEvent.click(screen.getByRole('button', { name: /Уведомлять/ }));
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Выключить уведомления' })).toBeTruthy(),
+      expect(screen.getByRole('button', { name: /Выключить уведомления/ })).toBeTruthy(),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Выключить уведомления' }));
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Включить уведомления' })).toBeTruthy(),
+      expect(screen.getByRole('button', { name: /Включить уведомления/ })).toBeTruthy(),
     );
   });
 
