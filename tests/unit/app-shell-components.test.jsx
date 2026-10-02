@@ -70,7 +70,9 @@ describe('AppScreens', () => {
   });
 
   it('renders every top-level and nested screen through the screen component', () => {
-    const { rerender } = render(<AppScreens app={app} tab="today" moreScreen="menu" {...callbacks} />);
+    const { rerender } = render(
+      <AppScreens app={app} tab="today" moreScreen="menu" {...callbacks} />,
+    );
     expect(screen.getByText('today view')).toBeTruthy();
 
     rerender(<AppScreens app={app} tab="results" moreScreen="menu" {...callbacks} />);
