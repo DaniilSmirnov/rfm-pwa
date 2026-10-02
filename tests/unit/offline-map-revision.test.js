@@ -8,7 +8,7 @@ vi.mock('../../src/db.js', () => ({
 }));
 
 import { deleteMapTiles, getMapTile, saveMapTile } from '../../src/db.js';
-import { downloadOfflineMap } from '../../src/offline-map.js';
+import { downloadOfflineMap, mapSourceRevision } from '../../src/offline-map.js';
 
 const fc = {
   type: 'FeatureCollection',
@@ -68,8 +68,18 @@ describe('offline map revision safety', () => {
     const result = await downloadOfflineMap(pkg());
 
     expect(result.ready).toBe(true);
-    expect(result.storageId).toMatch(/^race-1@/);
+    expect(result.storageId).toMatch(/^race-1@[0-9a-f]{8}$/);
     expect(result.storageId).not.toBe('map-old');
+    expect(result.sourceRevision).toBe(
+      mapSourceRevision(
+        { tileType: 1 },
+        {
+          name: 'test-map',
+          version: '1',
+          vector_layers: [{ id: 'roads', fields: { kind: 'String' } }],
+        },
+      ),
+    );
     expect(result.tileCount).toBeGreaterThan(0);
     expect(saveMapTile).toHaveBeenCalled();
     expect(deleteMapTiles).not.toHaveBeenCalledWith('map-old');
@@ -89,6 +99,24 @@ describe('offline map revision safety', () => {
     expect(getMapTile).toHaveBeenCalled();
   });
 
+  it('skips a repeated update when the PMTiles source is unchanged', async () => {
+    installPmtiles();
+    const sourceRevision = mapSourceRevision(
+      { tileType: 1 },
+      {
+        name: 'test-map',
+        version: '1',
+        vector_layers: [{ id: 'roads', fields: { kind: 'String' } }],
+      },
+    );
+    const previousMap = { ...pkg().offlineMap, sourceRevision };
+    const result = await downloadOfflineMap(pkg(), () => {}, { previousMap });
+
+    expect(result.sourceRevision).toBe(sourceRevision);
+    expect(result.storageId).toBe('map-old');
+    expect(getMapTile).not.toHaveBeenCalled();
+    expect(saveMapTile).not.toHaveBeenCalled();
+  });
   it('reuses tiles already present in the staging slot', async () => {
     installPmtiles();
     getMapTile.mockResolvedValue({ data: new Uint8Array([9, 9]).buffer });
@@ -97,7 +125,7 @@ describe('offline map revision safety', () => {
       previousMap: { ready: true, storageId: 'race-1@slot-a' },
     });
 
-    expect(result.storageId).toBe('race-1@slot-b');
+    expect(result.storageId).toMatch(/^race-1@[0-9a-f]{8}$/);
     expect(result.reused).toBe(result.requested);
     expect(saveMapTile).not.toHaveBeenCalled();
   });

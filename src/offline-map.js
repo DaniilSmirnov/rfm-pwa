@@ -54,13 +54,36 @@ function normalizeVectorLayers(metadata) {
     .filter(layer => typeof layer.id === 'string' && layer.id.trim());
 }
 
-function mapRevisionId(pkgId, previousMap = null) {
+function stable(value) {
+  if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return (
+      '{' +
+      Object.keys(value)
+        .sort()
+        .map(key => JSON.stringify(key) + ':' + stable(value[key]))
+        .join(',') +
+      '}'
+    );
+  }
+  return JSON.stringify(value);
+}
+
+function hash(value) {
+  let result = 0;
+  for (const char of value) result = (result * 31 + char.charCodeAt(0)) >>> 0;
+  return result.toString(16).padStart(8, '0');
+}
+
+export function mapSourceRevision(header, metadata) {
+  return hash(stable({ header, metadata }));
+}
+
+function mapRevisionId(pkgId, sourceRevision) {
   const base = String(pkgId || 'race')
     .replace(/[^a-zA-Z0-9._-]/g, '-')
     .slice(0, 80);
-  const previous = String(previousMap?.storageId || '');
-  const slot = previous === `${base}@slot-a` ? 'slot-b' : 'slot-a';
-  return `${base}@${slot}`;
+  return `${base}@${sourceRevision || 'unknown'}`;
 }
 
 export async function discardOfflineMapRevision(meta, fallbackId = null) {
@@ -74,13 +97,20 @@ export async function downloadOfflineMap(pkg, onProgress = () => {}, { previousM
       'Библиотека PMTiles не загрузилась. Открой приложение онлайн и обнови страницу.',
     );
   const plan = buildDownloadPlan(pkg.geojson);
-  const storageId = mapRevisionId(pkg.id, previousMap);
-
   const archive = new window.pmtiles.PMTiles(SOURCE_URL);
   const [header, metadata] = await Promise.all([
     archive.getHeader(),
     archive.getMetadata().catch(() => ({})),
   ]);
+  const sourceRevision = mapSourceRevision(header, metadata);
+  if (previousMap?.ready && previousMap.sourceRevision === sourceRevision) {
+    return {
+      ...previousMap,
+      sourceRevision,
+      lastCheckedAt: new Date().toISOString(),
+    };
+  }
+  const storageId = mapRevisionId(pkg.id, sourceRevision);
   const vectorLayers = normalizeVectorLayers(metadata);
   const started = Date.now();
   const downloadStats = await downloadTileRevision({
@@ -119,6 +149,7 @@ export async function downloadOfflineMap(pkg, onProgress = () => {}, { previousM
     maxZoom: plan.maxZoom,
     downloadedAt: new Date().toISOString(),
     source: 'Protomaps / OpenStreetMap',
+    sourceRevision,
     sourceTileType: header?.tileType ?? null,
     vectorLayers,
     metadataName: metadata?.name || null,

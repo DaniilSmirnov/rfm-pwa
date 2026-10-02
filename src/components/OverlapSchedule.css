@@ -91,6 +91,11 @@
     border-radius: 4px;
     background: #ee795c;
   }
+  .overlap-approximation-note {
+    margin: 8px 0 0;
+    color: #6b6b6b;
+    font-size: 12px;
+  }
   :root[data-theme='dark'] .overlap-stage-number,
   :root[data-theme='dark'] .overlap-stage-name {
     fill: #f5f7fa;
@@ -101,7 +106,8 @@
     fill: #aab2bd;
   }
   :root[data-theme='dark'] .overlap-legend,
-  :root[data-theme='dark'] .overlap-date {
+  :root[data-theme='dark'] .overlap-date,
+  :root[data-theme='dark'] .overlap-approximation-note {
     color: #aab2bd;
   }
   :root[data-theme='dark'] .overlap-gridline,

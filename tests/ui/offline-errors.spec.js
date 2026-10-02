@@ -131,7 +131,7 @@ test.describe('offline, import and failure states', () => {
     await expect(page.locator('#offlineMapStatus')).toContainText('Будет скачано');
   });
 
-  test('failed offline map update keeps the previous revision active', async ({
+  test('reuses the previous revision when the offline map source is unchanged', async ({
     page,
     browserName,
   }) => {
@@ -162,13 +162,8 @@ test.describe('offline, import and failure states', () => {
         }),
     );
     expect(before?.ready).toBe(true);
-    await page.evaluate(() => {
-      window.__pmtilesFail = true;
-    });
-    const dialog = page.waitForEvent('dialog');
     await page.locator('#downloadMapBtn').click();
-    await (await dialog).dismiss();
-    await expect(page.locator('#offlineMapStatus')).toContainText('Не удалось скачать карту');
+    await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова');
     const after = await page.evaluate(
       () =>
         new Promise((resolve, reject) => {

@@ -369,13 +369,11 @@ export function useRfmApp() {
         );
         await refreshPackages(result.pkg.id);
         setCurrentPackage(await getPackage(result.pkg.id));
-        setRaceProgress(p => ({
-          ...p,
-          [id]: rallyPackProgressText(
-            { phase: 'done', assetDownload: result.assetDownload },
-            formatBytes,
-          ),
-        }));
+        setRaceProgress(p => {
+          const next = { ...p };
+          delete next[id];
+          return next;
+        });
       } catch (error) {
         alert(`Не удалось скачать Rally Pack: ${error.message}`);
         setRaceProgress(p => ({ ...p, [id]: null }));
