@@ -14,8 +14,8 @@ afterEach(cleanup);
 describe('MapView enhancements', () => {
   it('keeps separate map tools and favorites panels accessible', () => {
     const app = {
-      currentPackage: null,
-      packages: [],
+      currentPackage: { id: 'race-1', name: 'Rally' },
+      packages: [{ id: 'race-1', name: 'Rally' }],
       favorites: [],
       mapSubtitle: '',
       mapUi: { disabled: false, button: 'Скачать офлайн-карту', status: 'Не скачана' },
@@ -276,6 +276,7 @@ describe('MapView enhancements', () => {
         },
         original: {},
       },
+      packages: [{ id: 'race-1', name: 'Rally' }],
       mapSubtitle: '',
       favorites: [],
       mapUi: { disabled: true, button: '', status: '' },
