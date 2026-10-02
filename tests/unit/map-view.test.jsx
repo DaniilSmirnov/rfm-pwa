@@ -13,6 +13,23 @@ vi.mock('../../src/db.js', () => ({
 afterEach(cleanup);
 
 describe('MapView enhancements', () => {
+  it('renders the shared empty state when no races are downloaded', () => {
+    const onOpenRaces = vi.fn();
+    const app = {
+      currentPackage: null,
+      packages: [],
+      favorites: [],
+      mapSubtitle: '',
+      selectedPoint: null,
+      showPoint: vi.fn(),
+    };
+    render(<MapView app={app} onOpenRaces={onOpenRaces} />);
+
+    expect(screen.getByRole('region', { name: 'Нет скачанных гонок' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Перейти к скачиванию' }));
+    expect(onOpenRaces).toHaveBeenCalledOnce();
+  });
+
   it('keeps separate map tools and favorites panels accessible', () => {
     const app = {
       currentPackage: { id: 'race-1', name: 'Rally' },
