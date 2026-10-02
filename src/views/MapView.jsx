@@ -1,5 +1,3 @@
-[36;1mnpx prettier src/views/MapView.jsx[0m
-shell: /usr/bin/bash -e {0}
 import React, { useEffect, useRef, useState } from 'react';
 import { Settings, MapPin, ChevronDown, Star, ParkingSquare, Car } from 'lucide-react';
 import packageMeta from '../../package.json';
