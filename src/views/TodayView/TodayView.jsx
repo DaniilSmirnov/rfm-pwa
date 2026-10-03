@@ -226,7 +226,8 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
                 </strong>
                 <p className="muted">
                   {program.event?.time ? `${program.event.time} · ` : ''}
-                  {program.event?.text || 'По опубликованной программе'} · По расписанию
+                  {program.event?.text || 'По опубликованной программе'}{' '}
+                  <span className="muted">По расписанию</span>
                 </p>
                 {currentCrew && (
                   <p className="today-next-crew">
