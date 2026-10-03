@@ -116,7 +116,7 @@ function poiDetailedLabel() {
   ];
 }
 
-function nativeBasemapLabelLayers(source, layerName, index) {
+export function nativeBasemapLabelLayers(source, layerName, index) {
   const id = String(layerName).replace(/[^a-z0-9_-]/gi, '-');
   const n = String(layerName || '').toLowerCase();
   const prefix = `base-label-${index}-${id}`;

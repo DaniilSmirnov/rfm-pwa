@@ -1,4 +1,8 @@
 import { classifyStageScheduleEvent } from '../../MapView/logic/schedule-stages.js';
+import { parseScheduleDateTime } from './schedule-time.js';
+
+const asArray = value =>
+  Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
 
 export function reminderLeadLabel(minutes) {
   if (minutes === 60) return '1 час';

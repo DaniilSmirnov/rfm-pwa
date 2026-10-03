@@ -1,6 +1,6 @@
 import { formatRetirementReason } from '../../../../views/ResultsScreen/logic/crew-results.js';
 
-export function gapFromLeaderresult, rows) {
+export function gapFromLeader(result, rows) {
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
   if (result?.formattedFromLeader) return crewTimeLabel(result.formattedFromLeader);
   const resultTime = Number(result?.time);
@@ -12,15 +12,15 @@ export function gapFromLeaderresult, rows) {
   return `+${(difference / 1000).toFixed(1)} с`;
 }
 
-export function retirementLabelresult) {
+export function retirementLabel(result) {
   return formatRetirementReason(result);
 }
 
-export function crewTimeLabelvalue) {
+export function crewTimeLabel(value) {
   const text = String(value ?? '').trim();
   return text && !text.includes('NaN') ? text : 'Нет информации';
 }
 
-export function crewIdOfresult, resultLabel) {
+export function crewIdOf(result, resultLabel) {
   return String(result?.crew?.id || result?.crew?.number || resultLabel(result));
 }

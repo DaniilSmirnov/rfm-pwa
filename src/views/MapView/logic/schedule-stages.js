@@ -1,6 +1,9 @@
 import { distanceMeters } from '../../../app/geo.js';
 import { parseScheduleDateTime } from '../../TodayView/logic/schedule-time.js';
 
+const asArray = value =>
+  Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
+
 export function normalizeStageKey(name) {
   return String(name || '')
     .toLowerCase()

@@ -11,8 +11,6 @@ import {
   googleMapsDirections,
   mapsMeLink,
   openCustomSchemeWithFallback,
-  yandexNavigatorLink,
-  yandexWebFallback,
 } from '../../navigation.js';
 import { crewName } from '../../views/ResultsScreen/logic/crew-results.js';
 import { formatRallyTimeOfDay } from '../../views/MapView/logic/map-details.js';
