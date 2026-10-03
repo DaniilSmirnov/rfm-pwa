@@ -70,11 +70,26 @@ export default function ElevationProfile({ route, terrain }) {
       {profile ? (
         <>
           <div className="elevation-stats">
-            <strong>{(profile.distance / 1000).toFixed(1)} км</strong>
-            <span>мин. {Math.round(profile.min)} м</span>
-            <span>макс. {Math.round(profile.max)} м</span>
-            <span>набор +{Math.round(profile.gain)} м</span>
-            <span>сброс −{Math.round(profile.loss)} м</span>
+            <span className="elevation-stat">
+              <strong>{(profile.distance / 1000).toFixed(1)} км</strong>
+              <small>длина</small>
+            </span>
+            <span className="elevation-stat">
+              <strong>+{Math.round(profile.gain)} м</strong>
+              <small>набор</small>
+            </span>
+            <span className="elevation-stat">
+              <strong>−{Math.round(profile.loss)} м</strong>
+              <small>сброс</small>
+            </span>
+            <span className="elevation-stat">
+              <span>мин. {Math.round(profile.min)} м</span>
+              <small>высота</small>
+            </span>
+            <span className="elevation-stat">
+              <span>макс. {Math.round(profile.max)} м</span>
+              <small>высота</small>
+            </span>
           </div>
           <ElevationChart profile={profile} />
         </>
