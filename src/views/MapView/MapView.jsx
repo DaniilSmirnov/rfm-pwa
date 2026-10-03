@@ -80,6 +80,13 @@ export default function MapView({
     };
   }, [pkg?.id]);
   useEffect(() => {
+    if (selectedRoute) {
+      setToolsOpen(true);
+      setFavoritesOpen(false);
+      setCarOpen(false);
+    }
+  }, [selectedRoute]);
+  useEffect(() => {
     if (app.selectedPoint) {
       setToolsOpen(false);
       setFavoritesOpen(false);
