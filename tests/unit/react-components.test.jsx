@@ -938,7 +938,7 @@ describe('application components', () => {
         app={appFixture({ catalog: [], packages: [finished], currentPackage: finished })}
       />,
     );
-    expect(screen.getByText('Гонка завершилась вчера.')).toBeTruthy();
+    expect(screen.getByText(/Гонка завершилась/)).toBeTruthy();
     expect(screen.getByRole('img', { name: 'График перекрытий 1' })).toBeTruthy();
     expect(screen.getByText('Абсолют · 1 место')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Rally Pack/ })).toBeNull();

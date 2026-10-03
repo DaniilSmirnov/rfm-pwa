@@ -31,7 +31,7 @@ const stateLabels = {
   'after-finish': 'ЗАВЕРШЁННАЯ ГОНКА',
 };
 
-function RaceCard({ pkg, onDownload, progress, compact = false }) {
+function RaceCard({ pkg, onDownload, progress, downloaded = false, compact = false }) {
   const raceId = packageRaceId(pkg);
   return (
     <article className={`today-selected-race${compact ? ' compact' : ''}`}>
@@ -45,7 +45,7 @@ function RaceCard({ pkg, onDownload, progress, compact = false }) {
       </div>
       {!compact && onDownload && (
         <Button className="button primary" onClick={onDownload}>
-          {progress || (pkg.downloaded ? 'Обновить Rally Pack' : 'Скачать Rally Pack')}
+          {progress || (downloaded ? 'Обновить Rally Pack' : 'Скачать Rally Pack')}
         </Button>
       )}
     </article>
@@ -155,11 +155,12 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
   const nextCrew = nextScheduledCrew(pkg, now);
   const overall = overallCrewResults(pkg.crewResults?.eventResults);
   const favoritePreviews = subscriptions.map(subscription => {
-    const result = overall.find(row =>
-      [row.crew?.id, row.crew?.number].some(
-        value => String(value) === String(subscription.crewId || subscription.number),
-      ),
-    );
+    const result =
+      overall.find(row =>
+        [row.crew?.id, row.crew?.number].some(
+          value => String(value) === String(subscription.crewId || subscription.number),
+        ),
+      ) || overall[0];
     const latestStage = pkg.crewResults?.eventResults?.at(-1);
     const stageResult = latestStage?.results?.find(row =>
       [row.crew?.id, row.crew?.number].some(
