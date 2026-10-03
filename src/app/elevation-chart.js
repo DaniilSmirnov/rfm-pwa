@@ -1,13 +1,10 @@
-export function elevationGridStep(min, max) {
-  const span = Math.max(0, Number(max) - Number(min));
-  if (span > 600) return 100;
-  if (span > 300) return 50;
-  return 25;
+export function elevationGridStep() {
+  return 250;
 }
 
 export function elevationGridLevels(min, max) {
   if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
-  const step = elevationGridStep(min, max);
+  const step = elevationGridStep();
   const gridMin = Math.floor(min / step) * step;
   const gridMax = Math.ceil(max / step) * step;
   const levels = [];
