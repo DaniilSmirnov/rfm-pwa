@@ -226,8 +226,17 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
                 </strong>
                 <p className="muted">
                   {program.event?.time ? `${program.event.time} · ` : ''}
-                  {program.event?.text || 'По опубликованной программе'}
+                  {program.event?.text || 'По опубликованной программе'} · По расписанию
                 </p>
+                {currentCrew && (
+                  <p className="today-next-crew">
+                    <strong>Текущий экипаж:</strong>{' '}
+                    {currentCrew.row.crew?.name ||
+                      currentCrew.row.name ||
+                      currentCrew.row.pilot ||
+                      `№ ${currentCrew.row.crewNumber || currentCrew.row.number}`}
+                  </p>
+                )}
               </>
             ) : (
               <p className="muted">Ближайшее событие не указано в сохранённой программе.</p>
@@ -286,6 +295,19 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
         <section className="today-card" aria-label="Избранные экипажи">
           <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
           <p className="muted">Подписок для этой гонки: {relatedSubscriptions.length}</p>
+          {favoritePreviews.map(({ subscription, result, latestStage, stageResult }) => (
+            <p key={subscription.key || subscription.crewId}>
+              {result
+                ? `${crewName(result.crew) || subscription.name} · ${result.formattedTime || ''}`
+                : subscription.name}
+              {result?.formattedFromLeader
+                ? ` · ${result.formattedFromLeader === '00:00:00:0' ? 'лидер' : `+${result.formattedFromLeader}`}`
+                : ''}
+              {latestStage?.specialStage?.name
+                ? ` · ${latestStage.specialStage.name}: ${stageResult?.formattedTime || 'результат не опубликован'}`
+                : ''}
+            </p>
+          ))}
         </section>
       )}
 
