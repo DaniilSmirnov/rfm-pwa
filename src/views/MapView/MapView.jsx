@@ -1,5 +1,6 @@
 import './MapView.css';
 import PointDetailsSheet from '../../components/PointDetailsSheet/PointDetailsSheet.jsx';
+import ElevationProfileSheet from '../../components/ElevationProfileSheet/ElevationProfileSheet.jsx';
 import MapControls from '../../components/MapControls/MapControls.jsx';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -23,6 +24,8 @@ import EmptyScreenState from '../../components/EmptyScreenState/EmptyScreenState
 import Panel from '../../components/Panel/Panel.jsx';
 import { getCrewSubscriptions } from '../../db.js';
 import { overallCrewResults } from '../ResultsScreen/logic/crew-results.js';
+import sortavalaOverlapSchedule from '../../data/sortavala-overlap-schedule.json';
+import { isSortavalaRace } from '../TodayView/logic/overlap-schedule.js';
 export default function MapView({
   app,
   selectedRoute,
@@ -37,6 +40,7 @@ export default function MapView({
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [carOpen, setCarOpen] = useState(false);
   const [pointDetailsOpen, setPointDetailsOpen] = useState(false);
+  const [elevationProfileOpen, setElevationProfileOpen] = useState(false);
   const [pointSheetDragProgress, setPointSheetDragProgress] = useState(0);
   const [pointSheetPoint, setPointSheetPoint] = useState(app.selectedPoint);
   const [pointSheetClosing, setPointSheetClosing] = useState(false);
@@ -50,6 +54,10 @@ export default function MapView({
   selectedPointRef.current = app.selectedPoint;
   pointSheetPointRef.current = pointSheetPoint;
   const pkg = app.currentPackage;
+  const overlapSchedule =
+    pkg?.overlapSchedule ||
+    pkg?.original?.overlapSchedule ||
+    (isSortavalaRace(pkg) ? sortavalaOverlapSchedule : null);
   const hasRaces = app.packages?.length > 0;
   const favorite = Boolean(pkg && app.selectedPoint && isFavoritePoint(app.selectedPoint, pkg.id));
   const stages = pkg ? stageMapStatuses(pkg) : [];
@@ -87,11 +95,14 @@ export default function MapView({
     }
   }, [app.selectedPoint]);
   useEffect(() => {
-    if (!selectedRoute) return;
+    if (!selectedRoute) {
+      setElevationProfileOpen(false);
+      return;
+    }
     // A route click is the explicit entry point for the elevation profile.
-    // Open the same drawer as the other map tools so the profile is visible
-    // immediately without changing the map viewport or selected point.
-    setToolsOpen(true);
+    // Keep the profile in the same bottom-sheet modal family as point details.
+    setElevationProfileOpen(true);
+    setToolsOpen(false);
     setFavoritesOpen(false);
     setCarOpen(false);
   }, [selectedRoute]);
@@ -353,7 +364,6 @@ export default function MapView({
         carOpen={carOpen}
         setCarOpen={setCarOpen}
         liveStage={liveStage}
-        selectedRoute={selectedRoute}
         favoritesContent={favoritesContent}
         followedResults={followedResults}
         setCompassOpen={setCompassOpen}
@@ -385,6 +395,14 @@ export default function MapView({
         openYandex={openYandex}
         copyPoint={copyPoint}
       />
+      {elevationProfileOpen && (
+        <ElevationProfileSheet
+          route={selectedRoute}
+          terrain={pkg?.terrain}
+          overlapSchedule={overlapSchedule}
+          onClose={() => setElevationProfileOpen(false)}
+        />
+      )}
     </Panel>
   );
 }
