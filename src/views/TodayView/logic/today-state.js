@@ -6,8 +6,7 @@ const asArray = value =>
   Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
 
 export function raceDateKeys(pkg) {
-  const dates =
-    String(pkg?.original?.dates || pkg?.summary?.dates || '').match(DATE_RE) || [];
+  const dates = String(pkg?.original?.dates || pkg?.summary?.dates || '').match(DATE_RE) || [];
   const scheduleDates = asArray(pkg?.original?.schedule)
     .map(item => parseScheduleDateTime(item?.date, '12:00', pkg))
     .filter(Boolean)
@@ -36,11 +35,9 @@ export function getTodayState(pkg, now = new Date()) {
   const raceDay = keys[0] || '';
   const finishDay = keys.at(-1) || raceDay;
   const status = String(pkg?.original?.status_race || pkg?.summary?.status || '').toLowerCase();
-  const publishedFinished = /заверш|оконч|состоял|прош|finished|completed|\\bover\\b/.test(status);
+  const publishedFinished = /заверш|оконч|состоял|прош|finished|completed|\bover\b/.test(status);
   if (!keys.length || today < raceDay) return { state: 'before', timezone: raceTimezone(pkg), raceDay, finishDay };
-  if (today > finishDay) {
-    return { state: 'after-finish', timezone: raceTimezone(pkg), raceDay, finishDay };
-  }
+  if (today > finishDay) return { state: 'after-finish', timezone: raceTimezone(pkg), raceDay, finishDay };
   if (today === finishDay && publishedFinished) {
     return { state: 'finished-today', timezone: raceTimezone(pkg), raceDay, finishDay };
   }
