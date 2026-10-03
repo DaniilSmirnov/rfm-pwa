@@ -111,7 +111,6 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
     const targetState = getTodayState(target, now).state;
     return (
       <section className="today-screen" data-today-state={targetState}>
-        <div className="block-title">СЛЕДУЮЩАЯ ГОНКА</div>
         <RaceCard
           pkg={target}
           progress={app.raceProgress?.[id]}
