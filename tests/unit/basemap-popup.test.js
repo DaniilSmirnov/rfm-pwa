@@ -1,7 +1,9 @@
 import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import BasemapPopup, { getBasemapPopupData } from '../../src/components/BasemapPopup/BasemapPopup.jsx';
+import BasemapPopup, {
+  getBasemapPopupData,
+} from '../../src/components/BasemapPopup/BasemapPopup.jsx';
 
 describe('basemap popup component', () => {
   it('renders feature values as text and preserves the displayed metadata', () => {

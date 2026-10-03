@@ -10,8 +10,6 @@ import { crewIdOf, crewTimeLabel, gapFromLeader, retirementLabel } from './logic
 import { ChevronRight, Star } from 'lucide-react';
 import CrewDetailsDialog from '../../components/CrewDetailsDialog/CrewDetailsDialog.jsx';
 
-
-
 export default function CrewResultsModal({
   open,
   standalone = false,

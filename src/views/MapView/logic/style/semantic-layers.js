@@ -1,4 +1,20 @@
-import { basemapField, basemapNumber, basemapTruthy, featureSortRank, minZoomOpacity, basemapClass, roadClass, roadKind, roadWidth, roadColor, landColor, poiColor, waterClass, waterWidth, boundaryWidth } from './expressions.js';
+import {
+  basemapField,
+  basemapNumber,
+  basemapTruthy,
+  featureSortRank,
+  minZoomOpacity,
+  basemapClass,
+  roadClass,
+  roadKind,
+  roadWidth,
+  roadColor,
+  landColor,
+  poiColor,
+  waterClass,
+  waterWidth,
+  boundaryWidth,
+} from './expressions.js';
 
 export function semanticBasemapLayers(source, layerName, index) {
   const id = String(layerName).replace(/[^a-z0-9_-]/gi, '-');
@@ -87,7 +103,10 @@ export function semanticBasemapLayers(source, layerName, index) {
         'source-layer': layerName,
         filter: ['==', ['geometry-type'], 'Polygon'],
         layout: { 'fill-sort-key': sortKey },
-        paint: { 'fill-color': landColor(), 'fill-opacity': minZoomOpacity(0.9) },
+        paint: {
+          'fill-color': landColor(),
+          'fill-opacity': minZoomOpacity(0.9),
+        },
       },
       {
         id: `${prefix}-line`,

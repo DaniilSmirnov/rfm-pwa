@@ -22,7 +22,11 @@ export function explicitStageState(item, event) {
 
 export function nextProgramItem(pkg, now = new Date()) {
   const events = asArray(pkg?.original?.schedule).flatMap(item =>
-    asArray(item?.events).map(event => ({ item, event, moment: scheduleMoment(item, event, pkg) })),
+    asArray(item?.events).map(event => ({
+      item,
+      event,
+      moment: scheduleMoment(item, event, pkg),
+    })),
   );
   const liveEvents = events.filter(row => explicitStageState(row.item, row.event).kind === 'live');
   if (liveEvents.length)
@@ -41,7 +45,11 @@ export function nextScheduledCrew(pkg, now = new Date()) {
       ...asArray(item?.starts),
       ...asArray(item?.events),
     ];
-    return scheduleRows.map(row => ({ item, row, moment: scheduleMoment(item, row, pkg) }));
+    return scheduleRows.map(row => ({
+      item,
+      row,
+      moment: scheduleMoment(item, row, pkg),
+    }));
   });
   return (
     rows
@@ -126,7 +134,11 @@ export function latestPositionChange(eventResults) {
 export function updateSummary(pkg) {
   const update = pkg?.pendingUpdate || pkg?.lastSmartUpdate;
   return update
-    ? { update, changes: asArray(update.changes), pending: Boolean(pkg.pendingUpdate) }
+    ? {
+        update,
+        changes: asArray(update.changes),
+        pending: Boolean(pkg.pendingUpdate),
+      }
     : null;
 }
 
@@ -161,4 +173,3 @@ export function nextRaceDownloadSuggestion(pkg, catalog, now = new Date()) {
   if (!next) return null;
   return packageRaceId(pkg) === Number(next.id) ? null : next;
 }
-

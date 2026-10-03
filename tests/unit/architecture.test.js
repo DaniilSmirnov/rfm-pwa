@@ -120,9 +120,15 @@ describe('architecture guardrails', () => {
     expect(cssFiles).toContain('src/components/CrewResults/CrewResults.css');
     expect(cssFiles).toContain('src/views/SettingsView/SettingsView.css');
     expect(cssFiles).toContain('src/modals/SafetyGate/SafetyGate.css');
-    expect(read('src/components/CrewResults/CrewResults.jsx')).toContain("import './CrewResults.css'");
-    expect(read('src/components/BasemapPopup/BasemapPopup.jsx')).toContain("import './BasemapPopup.css'");
-    expect(read('src/views/SettingsView/SettingsView.jsx')).toContain("import './SettingsView.css'");
+    expect(read('src/components/CrewResults/CrewResults.jsx')).toContain(
+      "import './CrewResults.css'",
+    );
+    expect(read('src/components/BasemapPopup/BasemapPopup.jsx')).toContain(
+      "import './BasemapPopup.css'",
+    );
+    expect(read('src/views/SettingsView/SettingsView.jsx')).toContain(
+      "import './SettingsView.css'",
+    );
     expect(read('src/modals/SafetyGate/SafetyGate.jsx')).toContain("import './SafetyGate.css'");
     expect(css).toContain('@layer base, components, views, modals, theme, responsive');
     const base = read('src/styles/base.css');
@@ -137,7 +143,10 @@ describe('architecture guardrails', () => {
         .map(name => `src/${folder}/${name}`),
     );
     for (const file of jsxFiles) {
-      const componentName = file.split('/').pop().replace(/\.jsx$/, '');
+      const componentName = file
+        .split('/')
+        .pop()
+        .replace(/\.jsx$/, '');
       expect(file.split('/').slice(-2, -1)[0]).toBe(componentName);
       expect(read(file)).toContain(`import './${componentName}.css'`);
       expect(() => read(file.replace(/\.jsx$/, '.css'))).not.toThrow();
@@ -241,7 +250,11 @@ describe('architecture guardrails', () => {
       { getTile, buildMapPlan: buildPlan, buildTerrainPlan: buildPlan },
     );
     expect(result.checkedRevisions).toBe(1);
-    expect(result.samples[0]).toMatchObject({ kind: 'map', checked: 3, missing: 1 });
+    expect(result.samples[0]).toMatchObject({
+      kind: 'map',
+      checked: 3,
+      missing: 1,
+    });
     expect(calls).toBe(3);
   });
 

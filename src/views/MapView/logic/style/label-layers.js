@@ -1,4 +1,12 @@
-import { basemapField, basemapNumber, featureSortRank, minZoomOpacity, roadClass, roadKind, poiIconExpression } from './expressions.js';
+import {
+  basemapField,
+  basemapNumber,
+  featureSortRank,
+  minZoomOpacity,
+  roadClass,
+  roadKind,
+  poiIconExpression,
+} from './expressions.js';
 
 const BASEMAP_FONT_STACK = ['Roboto', 'Arial', 'Helvetica', 'Noto Sans'];
 
@@ -246,7 +254,10 @@ export function nativeBasemapLabelLayers(source, layerName, index) {
           'text-padding': 5,
           'text-keep-upright': true,
         },
-        paint: { ...nativeTextPaint('#3d5064', 2.2), 'text-halo-color': 'rgba(255,255,255,.98)' },
+        paint: {
+          ...nativeTextPaint('#3d5064', 2.2),
+          'text-halo-color': 'rgba(255,255,255,.98)',
+        },
       },
       {
         id: `${prefix}-oneway`,
@@ -270,7 +281,10 @@ export function nativeBasemapLabelLayers(source, layerName, index) {
           'text-keep-upright': false,
           'text-padding': 1,
         },
-        paint: { ...nativeTextPaint('#77736c', 0.6), 'text-opacity': minZoomOpacity(0.7) },
+        paint: {
+          ...nativeTextPaint('#77736c', 0.6),
+          'text-opacity': minZoomOpacity(0.7),
+        },
       },
     ];
   }
@@ -294,7 +308,10 @@ export function nativeBasemapLabelLayers(source, layerName, index) {
           ),
           'text-radial-offset': 0,
         },
-        paint: { ...nativeTextPaint('#394047', 0.8), 'text-opacity': minZoomOpacity(0.92) },
+        paint: {
+          ...nativeTextPaint('#394047', 0.8),
+          'text-opacity': minZoomOpacity(0.92),
+        },
       },
       {
         id: `${prefix}-label`,
