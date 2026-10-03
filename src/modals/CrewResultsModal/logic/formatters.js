@@ -1,4 +1,4 @@
-import { formatRetirementReason } from '../../../../views/ResultsScreen/logic/crew-results.js';
+import { formatRetirementReason } from '../../../views/ResultsScreen/logic/crew-results.js';
 
 export function gapFromLeader(result, rows) {
   if (result?.goingOff || result?.goingOffAfterSu) return '—';
