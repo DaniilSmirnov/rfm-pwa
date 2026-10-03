@@ -31,12 +31,17 @@ const stateLabels = {
   'after-finish': 'ЗАВЕРШЁННАЯ ГОНКА',
 };
 
-function RaceCard({ pkg, onDownload, progress, downloaded = false, compact = false }) {
+function RaceCard({ pkg, onDownload, progress, downloaded = false, compact = false, label }) {
   const raceId = packageRaceId(pkg);
   return (
-    <article className={`today-race-card today-selected-race${compact ? ' compact' : ''}`}>
+    <article
+      className={`today-race-card today-selected-race${compact ? ' compact' : ''}`}
+      style={{
+        '--race-bg': `url(${assetUrl(pkg.original?.image || pkg.image || '')})`,
+      }}
+    >
       <div>
-        <div className="eyebrow">ВЫБРАННАЯ ГОНКА</div>
+        <div className="eyebrow">{label || 'ВЫБРАННАЯ ГОНКА'}</div>
         <h2>{pkg.name || `Ралли #${raceId}`}</h2>
         <p>{pkg.summary?.dates || pkg.original?.dates || 'Даты уточняются'}</p>
         {(pkg.city_race_details || pkg.city_race) && (
@@ -111,6 +116,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
           pkg={target}
           progress={app.raceProgress?.[id]}
           downloaded={false}
+          label="СЛЕДУЮЩАЯ ГОНКА"
           onDownload={() => app.downloadRace(id)}
         />
         <section className="today-card">
