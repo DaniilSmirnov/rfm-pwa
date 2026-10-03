@@ -3,7 +3,6 @@ import React from 'react';
 import { Car, Settings, Star } from 'lucide-react';
 import ActionGroup from '../ActionGroup/ActionGroup.jsx';
 import Button from '../Button/Button.jsx';
-import ElevationProfile from '../ElevationProfile/ElevationProfile.jsx';
 import OfflineMapActions from '../OfflineMapActions/OfflineMapActions.jsx';
 import {
   coordinateText,
@@ -27,7 +26,6 @@ export default function MapControls({
   carOpen,
   setCarOpen,
   liveStage,
-  selectedRoute,
   favoritesContent,
   followedResults,
   setCompassOpen,
@@ -146,7 +144,6 @@ export default function MapControls({
                 </Button>
               </ActionGroup>
             </div>
-            <ElevationProfile route={selectedRoute} terrain={pkg?.terrain} />
             <div className="legend">
               <span>
                 <i style={{ background: '#f3f5f7' }} />
