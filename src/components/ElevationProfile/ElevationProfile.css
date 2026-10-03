@@ -17,6 +17,21 @@
   }
 }
 @layer components {
+  .elevation-stat {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+@layer components {
+  .elevation-stat small {
+    color: var(--muted, #6b7280);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+@layer components {
   .elevation-chart {
     display: block;
     width: 100%;
