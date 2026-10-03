@@ -320,10 +320,10 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
         <section className="today-card" aria-label="Избранные экипажи">
           <div className="block-title">ИЗБРАННЫЕ ЭКИПАЖИ</div>
           <p className="muted">Подписок для этой гонки: {relatedSubscriptions.length}</p>
-          {favoritePreviews.map(({ subscription, result, latestStage, stageResult }) => (
+          {favoritePreviews.map(({ subscription, result, latestStage, stageResult }, index) => (
             <p key={subscription.key || subscription.crewId}>
               {result
-                ? `${crewName(result.crew) || subscription.name} · ${result.formattedTime || ''}`
+                ? `${index + 1}. № ${result.crew?.number || subscription.number || '—'} · ${crewName(result.crew) || subscription.name} · ${result.formattedTime || ''}`
                 : `${index + 1}. № ${subscription.number || subscription.name?.match(/\\d+/)?.[0] || '—'} · ${subscription.name}`}
               {result?.formattedFromLeader
                 ? ` · ${result.formattedFromLeader === '00:00:00:0' ? 'лидер' : `+${result.formattedFromLeader}`}`
