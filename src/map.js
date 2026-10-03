@@ -75,6 +75,10 @@ function routePayload(feature) {
       feature?.properties?.name ||
         feature?.properties?.title ||
         feature?.properties?.caption ||
+        feature?.properties?.stage_name ||
+        feature?.properties?.stage ||
+        feature?.properties?.route_name ||
+        feature?.properties?.ref ||
         'Участок',
     ),
     geometry: feature?.geometry || null,
