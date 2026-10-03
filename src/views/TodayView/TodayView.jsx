@@ -34,7 +34,7 @@ const stateLabels = {
 function RaceCard({ pkg, onDownload, progress, downloaded = false, compact = false }) {
   const raceId = packageRaceId(pkg);
   return (
-    <article className={`today-selected-race${compact ? ' compact' : ''}`}>
+    <article className={`today-race-card today-selected-race${compact ? ' compact' : ''}`}>
       <div>
         <div className="eyebrow">ВЫБРАННАЯ ГОНКА</div>
         <h2>{pkg.name || `Ралли #${raceId}`}</h2>
@@ -56,7 +56,7 @@ function NextRaceCard({ race, progress, downloaded, onDownload }) {
   if (!race) return null;
   const id = Number(race.id);
   return (
-    <section className="today-card today-next-race" aria-label="Следующая гонка">
+    <section className="today-card today-race-card today-next-race" aria-label="Следующая гонка">
       <div className="block-title">СЛЕДУЮЩАЯ ГОНКА</div>
       <h2>{race.name || `Ралли #${id}`}</h2>
       <p className="muted">{race.dates || race.date_race || 'Дата будет опубликована'}</p>
