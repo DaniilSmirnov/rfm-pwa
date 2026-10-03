@@ -2,7 +2,7 @@ import { distanceMeters } from '../app/geo.js';
 import { buildStageDescriptors, findStageDescriptorByFeature } from '../app/schedule.js';
 import { orientStageRoute } from './route-orientation.js';
 
-export const ROUTE_DIRECTION_INTERVAL = 750;
+export const ROUTE_DIRECTION_INTERVAL = 2000;
 
 export const ROUTE_DIRECTION_PATTERN_ID = 'rfm-route-direction-pattern';
 
