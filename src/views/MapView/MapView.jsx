@@ -87,6 +87,15 @@ export default function MapView({
     }
   }, [app.selectedPoint]);
   useEffect(() => {
+    if (!selectedRoute) return;
+    // A route click is the explicit entry point for the elevation profile.
+    // Open the same drawer as the other map tools so the profile is visible
+    // immediately without changing the map viewport or selected point.
+    setToolsOpen(true);
+    setFavoritesOpen(false);
+    setCarOpen(false);
+  }, [selectedRoute]);
+  useEffect(() => {
     if (app.selectedPoint) {
       setPointSheetPoint(app.selectedPoint);
       setPointSheetClosing(false);
