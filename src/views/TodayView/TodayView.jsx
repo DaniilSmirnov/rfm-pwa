@@ -1,7 +1,6 @@
 import './TodayView.css';
 import React, { useEffect, useState } from 'react';
 import Button from '../../components/Button/Button.jsx';
-import Notice from '../../components/Notice/Notice.jsx';
 import ScheduleList from '../../components/ScheduleList/ScheduleList.jsx';
 import TodayLeaders from '../../components/TodayLeaders/TodayLeaders.jsx';
 import OverlapSchedule from '../../components/OverlapSchedule/OverlapSchedule.jsx';
@@ -15,7 +14,6 @@ import {
   offlineLabel,
   overlaps,
   packageRaceId,
-  raceImage,
   updateSummary,
 } from './logic/today-view-data.js';
 import { nextUpcomingRace } from './logic/catalog-dates.js';
