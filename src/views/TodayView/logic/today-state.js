@@ -12,9 +12,17 @@ export function raceDateKeys(pkg) {
     .filter(Boolean)
     .map(date => calendarKey(date, pkg));
   const keys = dates
-    .map(date => parseScheduleDateTime(date, '12:00', pkg))
-    .filter(Boolean)
+    .map(date => parseScheduleDateTime(date, '12:00', pkg) || new Date(date))
+    .filter(date => date instanceof Date && !Number.isNaN(date.getTime()))
     .map(date => calendarKey(date, pkg));
+  if (!keys.length) {
+    const fallback = String(pkg?.original?.dates || pkg?.summary?.dates || pkg?.dates || '')
+      .split(/\\s+[–—-]\\s+|\\s+to\\s+/i)
+      .map(value => new Date(value.trim()))
+      .filter(date => !Number.isNaN(date.getTime()))
+      .map(date => calendarKey(date, pkg));
+    keys.push(...fallback);
+  }
   return [...new Set([...keys, ...scheduleDates])].sort();
 }
 

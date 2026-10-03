@@ -152,9 +152,19 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
   const downloaded = Boolean(app.downloadedIds?.has?.(nextRaceId));
   const saved = Boolean(app.downloadedIds?.has?.(raceId));
   const currentCrew = currentScheduledCrew(pkg);
+  const followedCrews = [
+    ...subscriptions,
+    ...asArray(app.favoriteCrews).map(crew => ({
+      key: crew.id || crew.number,
+      crewId: crew.id,
+      number: crew.number,
+      name: crew.name,
+      raceId: pkg.raceId || pkg.id,
+    })),
+  ];
   const nextCrew = nextScheduledCrew(pkg, now);
   const overall = overallCrewResults(pkg.crewResults?.eventResults);
-  const favoritePreviews = subscriptions.map(subscription => {
+  const favoritePreviews = followedCrews.map(subscription => {
     const result =
       overall.find(row =>
         [row.crew?.id, row.crew?.number].some(
@@ -169,7 +179,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
     );
     return { subscription, result, latestStage, stageResult };
   });
-  const relatedSubscriptions = subscriptions.filter(
+  const relatedSubscriptions = followedCrews.filter(
     item => String(item.raceId) === String(pkg.raceId || pkg.id),
   );
 
@@ -314,7 +324,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
             <p key={subscription.key || subscription.crewId}>
               {result
                 ? `${crewName(result.crew) || subscription.name} · ${result.formattedTime || ''}`
-                : subscription.name}
+                : `${index + 1}. № ${subscription.number || subscription.name?.match(/\\d+/)?.[0] || '—'} · ${subscription.name}`}
               {result?.formattedFromLeader
                 ? ` · ${result.formattedFromLeader === '00:00:00:0' ? 'лидер' : `+${result.formattedFromLeader}`}`
                 : ''}
