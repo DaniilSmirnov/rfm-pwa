@@ -7,12 +7,8 @@ const asArray = value =>
 export function raceDateKeys(pkg) {
   const dates =
     String(pkg?.original?.dates || pkg?.summary?.dates || pkg?.dates || '').match(DATE_RE) || [];
-  const scheduleDates = asArray(pkg?.original?.schedule || pkg?.schedule)
-    .map(item => parseScheduleDateTime(item?.date, '12:00', pkg))
-    .filter(Boolean)
-    .map(date => calendarKey(date, pkg));
   const directKeys = dates
-    .map(value => value.match(/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})/))
+    .map(value => value.match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/))
     .filter(Boolean)
     .map(([, day, month, year]) => `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
   const keys = dates
@@ -21,12 +17,19 @@ export function raceDateKeys(pkg) {
     .map(date => calendarKey(date, pkg));
   if (!keys.length) {
     const fallback = String(pkg?.original?.dates || pkg?.summary?.dates || pkg?.dates || '')
-      .split(/\\s+[–—-]\\s+|\\s+to\\s+/i)
+      .split(/\s+[–—-]\s+|\s+to\s+/i)
       .map(value => new Date(value.trim()))
       .filter(date => !Number.isNaN(date.getTime()))
       .map(date => calendarKey(date, pkg));
     keys.push(...fallback);
   }
+  const hasExplicitDates = directKeys.length > 0 || keys.length > 0;
+  const scheduleDates = hasExplicitDates
+    ? []
+    : asArray(pkg?.original?.schedule || pkg?.schedule)
+        .map(item => parseScheduleDateTime(item?.date, '12:00', pkg))
+        .filter(Boolean)
+        .map(date => calendarKey(date, pkg));
   return [...new Set([...directKeys, ...keys, ...scheduleDates])].sort();
 }
 
