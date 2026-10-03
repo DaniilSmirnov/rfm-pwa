@@ -9,6 +9,7 @@ import { assetUrl } from '../../rallyfans.js';
 import { getCrewSubscriptions } from '../../db.js';
 import {
   asArray,
+  currentScheduledCrew,
   nextProgramItem,
   nextRaceDownloadSuggestion,
   offlineLabel,
@@ -16,10 +17,11 @@ import {
   packageRaceId,
   updateSummary,
 } from './logic/today-view-data.js';
-import { nextUpcomingRace } from './logic/catalog-dates.js';
+import { distanceFromTodayDays, nextUpcomingRace } from './logic/catalog-dates.js';
 import { getTodayState } from './logic/today-state.js';
 import { isSortavalaRace } from './logic/overlap-schedule.js';
 import { todaySummary } from './logic/today-summary.js';
+import { crewName, overallCrewResults } from '../ResultsScreen/logic/crew-results.js';
 
 const stateLabels = {
   before: 'ДО СТАРТА',
@@ -103,6 +105,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
     const targetState = getTodayState(target, now).state;
     return (
       <section className="today-screen" data-today-state={targetState}>
+        <div className="block-title">СЛЕДУЮЩАЯ ГОНКА</div>
         <RaceCard
           pkg={target}
           progress={app.raceProgress?.[id]}
@@ -120,7 +123,9 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
     return (
       <section className="today-empty">
         <div className="block-title">Сегодня</div>
-        <p className="muted">Нет выбранной гонки. Открой «Гонки», чтобы выбрать Rally Pack.</p>
+        <p className="muted">
+          Нет гонки сегодня и нет выбранной гонки. Открой «Гонки», чтобы выбрать Rally Pack.
+        </p>
         {onRaces && (
           <Button className="button primary" onClick={onRaces}>
             Открыть гонки
@@ -144,6 +149,22 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
   const generatedOverlapSchedule = isSortavalaRace(pkg) ? sortavalaOverlapSchedule : null;
   const downloaded = Boolean(app.downloadedIds?.has?.(nextRaceId));
   const saved = Boolean(app.downloadedIds?.has?.(raceId));
+  const currentCrew = currentScheduledCrew(pkg);
+  const overall = overallCrewResults(pkg.crewResults?.eventResults);
+  const favoritePreviews = subscriptions.map(subscription => {
+    const result = overall.find(row =>
+      [row.crew?.id, row.crew?.number].some(
+        value => String(value) === String(subscription.crewId || subscription.number),
+      ),
+    );
+    const latestStage = pkg.crewResults?.eventResults?.at(-1);
+    const stageResult = latestStage?.results?.find(row =>
+      [row.crew?.id, row.crew?.number].some(
+        value => String(value) === String(subscription.crewId || subscription.number),
+      ),
+    );
+    return { subscription, result, latestStage, stageResult };
+  });
   const relatedSubscriptions = subscriptions.filter(
     item => String(item.raceId) === String(pkg.raceId || pkg.id),
   );
@@ -178,6 +199,11 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
             onDownload={app.downloadRace}
           />
           <RaceCard pkg={pkg} compact />
+          <p className="muted">
+            {distanceFromTodayDays(pkg, now) === 1
+              ? 'Гонка завершилась вчера.'
+              : 'Гонка завершилась ранее.'}
+          </p>
           {pkg.crewResults?.eventResults?.length > 0 && (
             <TodayLeaders pkg={pkg} onResults={onResults} />
           )}

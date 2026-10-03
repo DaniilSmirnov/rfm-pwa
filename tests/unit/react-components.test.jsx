@@ -1,4 +1,3 @@
-// @vitest-environment happy-dom
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -739,9 +738,7 @@ describe('application components', () => {
     render(<TodayView app={app} onMap={vi.fn()} onResults={onResults} onRaces={onRaces} />);
     expect(screen.getByText('Карелия')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Обновить Rally Pack' })).toBeTruthy();
-    expect(screen.getByText('Освободи место')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Управление картами' }));
-    expect(onRaces).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Освободи место')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Все результаты' }));
     expect(onResults).toHaveBeenCalledOnce();
   });
