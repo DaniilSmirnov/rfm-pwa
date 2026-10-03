@@ -5,7 +5,7 @@ import {
   scheduledStageCrews,
   stagePointResults,
   stageMapStatuses,
-} from '../../src/app/map-details.js';
+} from '../../src/views/MapView/logic/map-details.js';
 
 describe('map-specific race details', () => {
   it('shows the latest published stage opening or closure and leaves missing status explicit', () => {

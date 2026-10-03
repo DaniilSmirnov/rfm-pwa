@@ -30,7 +30,7 @@ test('switches between offline-first main tabs', async ({ page }) => {
     'page',
   );
   await openMapWithAcceptedSafety(page);
-  await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'map');
+  await expect(page.locator('.app-shell')).toHaveAttribute('data-active-tab', 'map');
   await page.getByRole('button', { name: 'Результаты' }).click();
   await expect(page.locator('.results-tab-screen')).toBeVisible();
   await expect(page.locator('.crew-results-section')).toHaveCount(0);
@@ -53,7 +53,7 @@ test('switches between offline-first main tabs', async ({ page }) => {
   await page.getByRole('button', { name: 'Меню', exact: true }).click();
   await expect(page.locator('.react-tab-content')).toHaveCSS('padding-bottom', '0px');
   await expect(page.locator('.crew-results-section>.section-head')).toBeHidden();
-  await expect(page.locator('body')).toHaveAttribute('data-active-tab', 'more');
+  await expect(page.locator('.app-shell')).toHaveAttribute('data-active-tab', 'more');
 });
 
 test('keeps legacy races deep links pointed at race management', async ({ page }) => {

@@ -2,7 +2,7 @@
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import Notice from '../../src/components/Notice.jsx';
+import Notice from '../../src/components/Notice/Notice.jsx';
 
 afterEach(cleanup);
 

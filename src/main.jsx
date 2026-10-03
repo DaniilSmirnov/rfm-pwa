@@ -1,7 +1,7 @@
 import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/base.css';
-import App from './views/App.jsx';
+import App from './views/App/App.jsx';
 import { applyTheme, loadThemePreference, resolveTheme } from './app/preferences.js';
 import { startErudaIfEnabled } from './app/eruda.js';
 

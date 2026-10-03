@@ -96,50 +96,51 @@ vi.mock('../../src/app/safety-consent.js', () => ({
   hasSafetyConsent: mocks.hasSafetyConsent,
   saveSafetyConsent: mocks.saveSafetyConsent,
 }));
-vi.mock('../../src/app/crew-results.js', async importOriginal => {
+vi.mock('../../src/views/ResultsScreen/logic/crew-results.js', async importOriginal => {
   const actual = await importOriginal();
   return { ...actual, fetchAsmgResults: mocks.fetchAsmgResults };
 });
 
-import AppHeader from '../../src/components/AppHeader.jsx';
-import AppFooter from '../../src/components/AppFooter.jsx';
-import CatalogList from '../../src/components/CatalogList.jsx';
-import CatalogSection from '../../src/components/CatalogSection.jsx';
-import CompassReadout from '../../src/components/CompassReadout.jsx';
-import CrewResults from '../../src/components/CrewResults.jsx';
-import ElevationProfile from '../../src/components/ElevationProfile.jsx';
-import FallbackMap from '../../src/components/FallbackMap.jsx';
-import FavoritesList from '../../src/components/FavoritesList.jsx';
-import MoreMenu from '../../src/components/MoreMenu.jsx';
-import RacesView from '../../src/views/RacesView.jsx';
-import OfflineMapActions from '../../src/components/OfflineMapActions.jsx';
-import PointList from '../../src/components/PointList.jsx';
-import PushSettings from '../../src/components/PushSettings.jsx';
-import PwaInstallPrompt from '../../src/components/PwaInstallPrompt.jsx';
-import RaceMedia from '../../src/components/RaceMedia.jsx';
-import RallyMap from '../../src/components/RallyMap.jsx';
-import SafetyMemo from '../../src/components/SafetyMemo.jsx';
-import SavedOfflineSection from '../../src/components/SavedOfflineSection.jsx';
-import SavedPackagesList from '../../src/components/SavedPackagesList.jsx';
-import DownloadedRacesList from '../../src/components/DownloadedRacesList.jsx';
-import ScheduleList from '../../src/components/ScheduleList.jsx';
-import TodayLeaders from '../../src/components/TodayLeaders.jsx';
-import AppLayout from '../../src/views/AppLayout.jsx';
-import MapView from '../../src/views/MapView.jsx';
-import RaceDetails from '../../src/views/RaceDetails.jsx';
-import SettingsView from '../../src/views/SettingsView.jsx';
-import TodayView, {
+import AppHeader from '../../src/components/AppHeader/AppHeader.jsx';
+import AppFooter from '../../src/components/AppFooter/AppFooter.jsx';
+import CatalogList from '../../src/components/CatalogList/CatalogList.jsx';
+import CatalogSection from '../../src/components/CatalogSection/CatalogSection.jsx';
+import CompassReadout from '../../src/components/CompassReadout/CompassReadout.jsx';
+import CrewResults from '../../src/components/CrewResults/CrewResults.jsx';
+import ElevationProfile from '../../src/components/ElevationProfile/ElevationProfile.jsx';
+import FallbackMap from '../../src/components/FallbackMap/FallbackMap.jsx';
+import FavoritesList from '../../src/components/FavoritesList/FavoritesList.jsx';
+import MoreMenu from '../../src/components/MoreMenu/MoreMenu.jsx';
+import RacesView from '../../src/views/RacesView/RacesView.jsx';
+import OfflineMapActions from '../../src/components/OfflineMapActions/OfflineMapActions.jsx';
+import PointList from '../../src/components/PointList/PointList.jsx';
+import PushSettings from '../../src/components/PushSettings/PushSettings.jsx';
+import PwaInstallPrompt from '../../src/components/PwaInstallPrompt/PwaInstallPrompt.jsx';
+import RaceMedia from '../../src/components/RaceMedia/RaceMedia.jsx';
+import RallyMap from '../../src/components/RallyMap/RallyMap.jsx';
+import SafetyMemo from '../../src/components/SafetyMemo/SafetyMemo.jsx';
+import SavedOfflineSection from '../../src/components/SavedOfflineSection/SavedOfflineSection.jsx';
+import SavedPackagesList from '../../src/components/SavedPackagesList/SavedPackagesList.jsx';
+import DownloadedRacesList from '../../src/components/DownloadedRacesList/DownloadedRacesList.jsx';
+import ScheduleList from '../../src/components/ScheduleList/ScheduleList.jsx';
+import TodayLeaders from '../../src/components/TodayLeaders/TodayLeaders.jsx';
+import AppLayout from '../../src/views/AppLayout/AppLayout.jsx';
+import MapView from '../../src/views/MapView/MapView.jsx';
+import RaceDetails from '../../src/views/RaceDetails/RaceDetails.jsx';
+import SettingsView from '../../src/views/SettingsView/SettingsView.jsx';
+import TodayView from '../../src/views/TodayView/TodayView.jsx';
+import {
   countdownLabel,
   currentScheduledCrew,
   latestPositionChange,
   nextProgramItem,
   nextScheduledCrew,
-} from '../../src/views/TodayView.jsx';
-import App from '../../src/views/App.jsx';
-import BootDiagnostics from '../../src/modals/BootDiagnostics.jsx';
-import CrewResultsModal from '../../src/modals/CrewResultsModal.jsx';
-import ImageViewerModal from '../../src/modals/ImageViewerModal.jsx';
-import SafetyGate from '../../src/modals/SafetyGate.jsx';
+} from '../../src/views/TodayView/logic/today-view-data.js';
+import App from '../../src/views/App/App.jsx';
+import BootDiagnostics from '../../src/modals/BootDiagnostics/BootDiagnostics.jsx';
+import CrewResultsModal from '../../src/modals/CrewResultsModal/CrewResultsModal.jsx';
+import ImageViewerModal from '../../src/modals/ImageViewerModal/ImageViewerModal.jsx';
+import SafetyGate from '../../src/modals/SafetyGate/SafetyGate.jsx';
 
 const feature = {
   type: 'Feature',

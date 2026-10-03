@@ -58,6 +58,30 @@ export default [
     },
   },
   {
+    files: ['src/components/**/*.jsx', 'src/views/**/*.jsx', 'src/modals/**/*.jsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='document'][property.name='body']",
+          message: 'React UI must not mutate document.body; use React state and props.',
+        },
+        {
+          selector: "MemberExpression[property.name='classList']",
+          message: 'React UI must not mutate classList; use React className.',
+        },
+        {
+          selector: "MemberExpression[property.name='dataset']",
+          message: 'React UI must not mutate dataset; use React data-* props.',
+        },
+        {
+          selector: "CallExpression[callee.property.name='setAttribute']",
+          message: 'React UI must not call setAttribute; use JSX attributes.',
+        },
+      ],
+    },
+  },
+  {
     files: ['vite.config.js', 'vitest.config.js', 'playwright*.config.js'],
     rules: {
       // These packages expose config entry points through package exports that

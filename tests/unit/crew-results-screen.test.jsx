@@ -2,7 +2,7 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import CrewResultsModal from '../../src/modals/CrewResultsModal.jsx';
+import CrewResultsModal from '../../src/modals/CrewResultsModal/CrewResultsModal.jsx';
 
 afterEach(cleanup);
 

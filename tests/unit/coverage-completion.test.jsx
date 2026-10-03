@@ -45,15 +45,15 @@ vi.mock('../../src/app/wallet-client.js', () => ({
   syncWalletStage: vi.fn(async () => ({ updated: false })),
 }));
 
-import AppHeader from '../../src/components/AppHeader.jsx';
-import CatalogList from '../../src/components/CatalogList.jsx';
-import CompassReadout from '../../src/components/CompassReadout.jsx';
-import DownloadedRacesList from '../../src/components/DownloadedRacesList.jsx';
-import FallbackMap from '../../src/components/FallbackMap.jsx';
-import PointList from '../../src/components/PointList.jsx';
-import ScheduleList from '../../src/components/ScheduleList.jsx';
-import ScreenHeader, { useEdgeSwipeBack } from '../../src/components/ScreenHeader.jsx';
-import TodayLeaders from '../../src/components/TodayLeaders.jsx';
+import AppHeader from '../../src/components/AppHeader/AppHeader.jsx';
+import CatalogList from '../../src/components/CatalogList/CatalogList.jsx';
+import CompassReadout from '../../src/components/CompassReadout/CompassReadout.jsx';
+import DownloadedRacesList from '../../src/components/DownloadedRacesList/DownloadedRacesList.jsx';
+import FallbackMap from '../../src/components/FallbackMap/FallbackMap.jsx';
+import PointList from '../../src/components/PointList/PointList.jsx';
+import ScheduleList from '../../src/components/ScheduleList/ScheduleList.jsx';
+import ScreenHeader, { useEdgeSwipeBack } from '../../src/components/ScreenHeader/ScreenHeader.jsx';
+import TodayLeaders from '../../src/components/TodayLeaders/TodayLeaders.jsx';
 
 afterEach(() => {
   cleanup();

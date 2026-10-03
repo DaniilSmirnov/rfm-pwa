@@ -8,7 +8,7 @@ import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/v
 import { TerrainModeControl } from './map/terrain-control.js';
 import { installRouteDirectionPatterns } from './map/route-direction.js';
 import { createPointMarkerContent, pointWithMarkerIcon } from './map/point-marker.js';
-import BasemapPopup from './components/BasemapPopup.jsx';
+import BasemapPopup from './components/BasemapPopup/BasemapPopup.jsx';
 
 let activeMap = null;
 let activeRaceLabelMarkers = [];
