@@ -39,7 +39,7 @@ function ElevationChart({ profile }) {
   );
 }
 
-export default function ElevationProfile({ route, terrain }) {
+export default function ElevationProfile({ route, terrain, showTitle = true }) {
   const [result, setResult] = useState(null);
   useEffect(() => {
     if (!route) {
@@ -64,9 +64,11 @@ export default function ElevationProfile({ route, terrain }) {
   const profile = result?.profile;
   return (
     <section id="elevationProfilePanel" className="elevation-profile-panel">
-      <div className="block-title" id="elevationProfileTitle">
-        {route.name || 'ПРОФИЛЬ ВЫСОТ'}
-      </div>
+      {showTitle && (
+        <div className="block-title" id="elevationProfileTitle">
+          {route.name || 'ПРОФИЛЬ ВЫСОТ'}
+        </div>
+      )}
       {profile ? (
         <>
           <div className="elevation-stats">
