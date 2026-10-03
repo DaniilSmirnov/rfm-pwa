@@ -1,0 +1,55 @@
+@layer components {
+  .elevation-profile-sheet {
+    max-height: calc(78dvh + var(--safe-bottom));
+    padding-bottom: calc(20px + var(--safe-bottom));
+  }
+
+  .elevation-profile-sheet-content {
+    display: grid;
+    gap: 14px;
+    overflow: auto;
+  }
+
+  .elevation-profile-sheet .elevation-profile-panel {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .elevation-profile-sheet .elevation-chart {
+    max-height: 260px;
+  }
+
+  .elevation-timings {
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--surface-raised);
+  }
+
+  .elevation-timings p {
+    margin-bottom: 10px;
+  }
+
+  .elevation-timings dl {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .elevation-timings dl > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .elevation-timings dt {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .elevation-timings dd {
+    margin: 0;
+    font-weight: 700;
+  }
+}

@@ -7,7 +7,7 @@ import {
 } from '../../src/map/route-direction.js';
 
 describe('stage route direction markers', () => {
-  it('places frequent markers along a stage route', () => {
+  it('places markers every two kilometres along a stage route', () => {
     const markers = routeKilometreMarkers({
       type: 'LineString',
       coordinates: [
@@ -16,8 +16,8 @@ describe('stage route direction markers', () => {
       ],
     });
 
-    expect(ROUTE_DIRECTION_INTERVAL).toBe(750);
-    expect(markers.map(marker => marker.distance)).toEqual([750, 1500, 2250, 3000]);
+    expect(ROUTE_DIRECTION_INTERVAL).toBe(2000);
+    expect(markers.map(marker => marker.distance)).toEqual([2000]);
     expect(markers.every(marker => marker.rotation === 0)).toBe(true);
   });
 
@@ -81,6 +81,6 @@ describe('stage route direction markers', () => {
       ],
     });
 
-    expect(markers.map(marker => marker.distance)).toEqual([750, 1500]);
+    expect(markers.map(marker => marker.distance)).toEqual([2000]);
   });
 });
