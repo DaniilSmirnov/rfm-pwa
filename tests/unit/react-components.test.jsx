@@ -684,6 +684,37 @@ describe('application components', () => {
     expect(screen.getByText('КАРТА РАЛЛИ')).toBeTruthy();
   });
 
+  it('opens the elevation profile when a stage route is selected', async () => {
+    const app = appFixture();
+    const route = {
+      name: 'СУ 2',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [30, 61],
+          [30.01, 61.01],
+          [30.02, 61.02],
+        ],
+      },
+    };
+    const { rerender } = render(
+      <MapView app={app} selectedRoute={null} mapContent={<span>Карта</span>} />,
+    );
+
+    const tools = screen.getByRole('region', { name: 'Инструменты карты' });
+    expect(tools).toHaveAttribute('hidden');
+
+    rerender(<MapView app={app} selectedRoute={route} mapContent={<span>Карта</span>} />);
+
+    await waitFor(() => expect(tools).not.toHaveAttribute('hidden'));
+    expect(screen.getByText('СУ 2')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText(/км/)).toBeTruthy();
+      expect(screen.getByText(/набор/)).toBeTruthy();
+      expect(screen.getByText(/сброс/)).toBeTruthy();
+    });
+  });
+
   it('renders RallyMap loading, fallback, and map lifecycle', async () => {
     const app = appFixture();
     const { rerender } = render(<RallyMap app={appFixture({ currentPackage: null })} />);
