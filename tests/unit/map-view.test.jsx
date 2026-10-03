@@ -32,8 +32,8 @@ describe('MapView enhancements', () => {
 
   it('opens the elevation profile drawer after a stage is selected on the map', () => {
     const app = {
-      currentPackage: { id: 'race-1', name: 'Rally', terrain: { ready: false } },
-      packages: [{ id: 'race-1', name: 'Rally' }],
+      currentPackage: { id: 'race-1', name: 'Сортавала', terrain: { ready: false } },
+      packages: [{ id: 'race-1', name: 'Сортавала' }],
       favorites: [],
       mapSubtitle: '',
       mapUi: { disabled: true, button: '', status: '' },
@@ -55,9 +55,12 @@ describe('MapView enhancements', () => {
       />,
     );
 
-    expect(document.getElementById('mapToolsDrawer').hidden).toBe(false);
+    expect(document.getElementById('mapToolsDrawer').hidden).toBe(true);
+    expect(screen.getByRole('dialog', { name: 'СУ 1' })).toBeTruthy();
     expect(screen.getByText('СУ 1')).toBeTruthy();
     expect(screen.getByText('Скачай рельеф, чтобы построить профиль высот.')).toBeTruthy();
+    expect(screen.getByText('ТАЙМИНГИ ПЕРЕКРЫТИЯ')).toBeTruthy();
+    expect(screen.getByText('Закрытие дороги')).toBeTruthy();
   });
 
   it('keeps separate map tools and favorites panels accessible', () => {
