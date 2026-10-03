@@ -11,6 +11,10 @@ export function raceDateKeys(pkg) {
     .map(item => parseScheduleDateTime(item?.date, '12:00', pkg))
     .filter(Boolean)
     .map(date => calendarKey(date, pkg));
+  const directKeys = dates
+    .map(value => value.match(/(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})/))
+    .filter(Boolean)
+    .map(([, day, month, year]) => `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
   const keys = dates
     .map(date => parseScheduleDateTime(date, '12:00', pkg) || new Date(date))
     .filter(date => date instanceof Date && !Number.isNaN(date.getTime()))
@@ -23,7 +27,7 @@ export function raceDateKeys(pkg) {
       .map(date => calendarKey(date, pkg));
     keys.push(...fallback);
   }
-  return [...new Set([...keys, ...scheduleDates])].sort();
+  return [...new Set([...directKeys, ...keys, ...scheduleDates])].sort();
 }
 
 export function calendarKey(date, pkg) {
