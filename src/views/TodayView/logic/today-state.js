@@ -5,7 +5,8 @@ const asArray = value =>
   Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
 
 export function raceDateKeys(pkg) {
-  const dates = String(pkg?.original?.dates || pkg?.summary?.dates || pkg?.dates || '').match(DATE_RE) || [];
+  const dates =
+    String(pkg?.original?.dates || pkg?.summary?.dates || pkg?.dates || '').match(DATE_RE) || [];
   const scheduleDates = asArray(pkg?.original?.schedule || pkg?.schedule)
     .map(item => parseScheduleDateTime(item?.date, '12:00', pkg))
     .filter(Boolean)
