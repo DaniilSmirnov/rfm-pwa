@@ -12,6 +12,7 @@ vi.mock('../../src/db.js', () => ({
 
 afterEach(cleanup);
 
+// Elevation profile sheet regression coverage.
 describe('MapView enhancements', () => {
   it('renders the shared empty state when no races are downloaded', () => {
     const onOpenRaces = vi.fn();
