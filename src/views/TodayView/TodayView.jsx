@@ -37,6 +37,7 @@ function RaceCard({ pkg, onDownload, progress, downloaded = false, compact = fal
     <article
       className={`today-race-card today-selected-race${compact ? ' compact' : ''}`}
       style={{
+        backgroundImage: `url(${assetUrl(pkg.original?.image || pkg.image || '')})`,
         '--race-bg': `url(${assetUrl(pkg.original?.image || pkg.image || '')})`,
       }}
     >
