@@ -11,6 +11,7 @@ import {
   asArray,
   currentScheduledCrew,
   nextProgramItem,
+  nextScheduledCrew,
   nextRaceDownloadSuggestion,
   offlineLabel,
   overlaps,
@@ -44,7 +45,7 @@ function RaceCard({ pkg, onDownload, progress, compact = false }) {
       </div>
       {!compact && onDownload && (
         <Button className="button primary" onClick={onDownload}>
-          {progress || 'Обновить Rally Pack'}
+          {progress || (pkg.downloaded ? 'Обновить Rally Pack' : 'Скачать Rally Pack')}
         </Button>
       )}
     </article>
@@ -109,6 +110,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
         <RaceCard
           pkg={target}
           progress={app.raceProgress?.[id]}
+          downloaded={false}
           onDownload={() => app.downloadRace(id)}
         />
         <section className="today-card">
@@ -150,6 +152,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
   const downloaded = Boolean(app.downloadedIds?.has?.(nextRaceId));
   const saved = Boolean(app.downloadedIds?.has?.(raceId));
   const currentCrew = currentScheduledCrew(pkg);
+  const nextCrew = nextScheduledCrew(pkg, now);
   const overall = overallCrewResults(pkg.crewResults?.eventResults);
   const favoritePreviews = subscriptions.map(subscription => {
     const result = overall.find(row =>
@@ -213,6 +216,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
           <RaceCard
             pkg={pkg}
             progress={app.raceProgress?.[raceId]}
+            downloaded={saved}
             onDownload={saved ? () => app.downloadRace(raceId) : undefined}
           />
           <section className="today-card today-race-status" aria-label="Состояние ралли">
@@ -236,6 +240,15 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
                       currentCrew.row.name ||
                       currentCrew.row.pilot ||
                       `№ ${currentCrew.row.crewNumber || currentCrew.row.number}`}
+                  </p>
+                )}
+                {!currentCrew && nextCrew && (
+                  <p className="today-next-crew">
+                    <strong>Следующий экипаж:</strong>{' '}
+                    {nextCrew.row.crew?.name ||
+                      nextCrew.row.name ||
+                      nextCrew.row.pilot ||
+                      `№ ${nextCrew.row.crewNumber || nextCrew.row.number}`}
                   </p>
                 )}
               </>
