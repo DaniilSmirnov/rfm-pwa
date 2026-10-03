@@ -30,6 +30,36 @@ describe('MapView enhancements', () => {
     expect(onOpenRaces).toHaveBeenCalledOnce();
   });
 
+  it('opens the elevation profile drawer after a stage is selected on the map', () => {
+    const app = {
+      currentPackage: { id: 'race-1', name: 'Rally', terrain: { ready: false } },
+      packages: [{ id: 'race-1', name: 'Rally' }],
+      favorites: [],
+      mapSubtitle: '',
+      mapUi: { disabled: true, button: '', status: '' },
+      terrainUi: { disabled: true, button: '', status: '' },
+      carPoint: null,
+      geoStatus: '',
+      geoClass: '',
+      requestLocation: vi.fn(),
+      exportGpx: vi.fn(),
+      exportGeoJson: vi.fn(),
+      selectedPoint: null,
+      showPoint: vi.fn(),
+    };
+    render(
+      <MapView
+        app={app}
+        selectedRoute={{ name: 'СУ 1', geometry: { type: 'LineString', coordinates: [] } }}
+        mapContent={<span>Карта</span>}
+      />,
+    );
+
+    expect(document.getElementById('mapToolsDrawer').hidden).toBe(false);
+    expect(screen.getByText('СУ 1')).toBeTruthy();
+    expect(screen.getByText('Скачай рельеф, чтобы построить профиль высот.')).toBeTruthy();
+  });
+
   it('keeps separate map tools and favorites panels accessible', () => {
     const app = {
       currentPackage: { id: 'race-1', name: 'Rally' },
