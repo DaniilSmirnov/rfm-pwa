@@ -1,13 +1,12 @@
 import { parseScheduleDateTime, raceTimezone } from '../../../app/schedule.js';
 
 const DATE_RE = /\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}/g;
-
 const asArray = value =>
   Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
 
 export function raceDateKeys(pkg) {
-  const dates = String(pkg?.original?.dates || pkg?.summary?.dates || '').match(DATE_RE) || [];
-  const scheduleDates = asArray(pkg?.original?.schedule)
+  const dates = String(pkg?.original?.dates || pkg?.summary?.dates || pkg?.dates || '').match(DATE_RE) || [];
+  const scheduleDates = asArray(pkg?.original?.schedule || pkg?.schedule)
     .map(item => parseScheduleDateTime(item?.date, '12:00', pkg))
     .filter(Boolean)
     .map(date => calendarKey(date, pkg));
@@ -28,18 +27,27 @@ export function calendarKey(date, pkg) {
   }).format(date);
 }
 
+export function hasFinalProtocol(pkg) {
+  return Boolean(
+    pkg?.finalProtocol ||
+      pkg?.original?.finalProtocol ||
+      pkg?.original?.final_protocol ||
+      pkg?.crewResults?.final ||
+      pkg?.crewResults?.isFinal,
+  );
+}
+
 export function getTodayState(pkg, now = new Date()) {
-  if (!pkg) return { state: 'before', timezone: raceTimezone(pkg), raceDay: '', finishDay: '' };
+  const timezone = raceTimezone(pkg);
+  if (!pkg) return { state: 'before', timezone, raceDay: '', finishDay: '' };
   const keys = raceDateKeys(pkg);
   const today = calendarKey(now, pkg);
   const raceDay = keys[0] || '';
   const finishDay = keys.at(-1) || raceDay;
-  const status = String(pkg?.original?.status_race || pkg?.summary?.status || '').toLowerCase();
-  const publishedFinished = /заверш|оконч|состоял|прош|finished|completed|\bover\b/.test(status);
-  if (!keys.length || today < raceDay) return { state: 'before', timezone: raceTimezone(pkg), raceDay, finishDay };
-  if (today > finishDay) return { state: 'after-finish', timezone: raceTimezone(pkg), raceDay, finishDay };
-  if (today === finishDay && publishedFinished) {
-    return { state: 'finished-today', timezone: raceTimezone(pkg), raceDay, finishDay };
+  if (!keys.length || today < raceDay) return { state: 'before', timezone, raceDay, finishDay };
+  if (today > finishDay) return { state: 'after-finish', timezone, raceDay, finishDay };
+  if (today === finishDay && hasFinalProtocol(pkg)) {
+    return { state: 'finished-today', timezone, raceDay, finishDay };
   }
-  return { state: 'running', timezone: raceTimezone(pkg), raceDay, finishDay };
+  return { state: 'running', timezone, raceDay, finishDay };
 }
