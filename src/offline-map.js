@@ -1,6 +1,6 @@
-import { geometryBounds } from './normalize.js';
 import { saveMapTile, getMapTile, deleteMapTiles } from './db.js';
 import { downloadTileRevision, normalizeTileData } from './tile-revision-downloader.js';
+import { buildTilePlan } from './app/tile-grid.js';
 
 const SOURCE_URL = '/api/basemap.pmtiles';
 const MIN_ZOOM = 6;
@@ -30,60 +30,13 @@ export function resetOfflineMapDiagnostics() {
   diagnosticsListener?.({ ...stats });
 }
 
-function clampLat(lat) {
-  return Math.max(-85.05112878, Math.min(85.05112878, lat));
-}
-function lon2x(lon, z) {
-  return Math.floor(((lon + 180) / 360) * 2 ** z);
-}
-function lat2y(lat, z) {
-  const r = (clampLat(lat) * Math.PI) / 180;
-  return Math.floor(((1 - Math.asinh(Math.tan(r)) / Math.PI) / 2) * 2 ** z);
-}
-function bufferedBounds(fc) {
-  const b = geometryBounds(fc);
-  if (!b) return null;
-  const dx = Math.max(b.maxLon - b.minLon, 0.02),
-    dy = Math.max(b.maxLat - b.minLat, 0.02);
-  const padLon = Math.max(0.05, dx * 0.22),
-    padLat = Math.max(0.04, dy * 0.22);
-  return {
-    minLon: b.minLon - padLon,
-    maxLon: b.maxLon + padLon,
-    minLat: b.minLat - padLat,
-    maxLat: b.maxLat + padLat,
-  };
-}
-function tileRange(b, z) {
-  const n = 2 ** z;
-  const x0 = Math.max(0, lon2x(b.minLon, z)),
-    x1 = Math.min(n - 1, lon2x(b.maxLon, z));
-  const y0 = Math.max(0, lat2y(b.maxLat, z)),
-    y1 = Math.min(n - 1, lat2y(b.minLat, z));
-  return { x0, x1, y0, y1, count: Math.max(0, x1 - x0 + 1) * Math.max(0, y1 - y0 + 1) };
-}
-function tilesAtZoom(b, z) {
-  const { x0, x1, y0, y1 } = tileRange(b, z);
-  const out = [];
-  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) out.push({ z, x, y });
-  return out;
-}
 export function buildDownloadPlan(fc) {
-  const bounds = bufferedBounds(fc);
-  if (!bounds) throw new Error('У гонки нет геометрии для определения района карты');
-  for (let maxZoom = DESIRED_MAX_ZOOM; maxZoom >= MIN_ZOOM; maxZoom--) {
-    let total = 0;
-    for (let z = MIN_ZOOM; z <= maxZoom; z++) {
-      total += tileRange(bounds, z).count;
-      if (total > MAX_TILES) break;
-    }
-    if (total > MAX_TILES) continue;
-
-    const tiles = [];
-    for (let z = MIN_ZOOM; z <= maxZoom; z++) tiles.push(...tilesAtZoom(bounds, z));
-    return { bounds, minZoom: MIN_ZOOM, maxZoom, tiles };
-  }
-  throw new Error(`Район карты слишком большой для офлайн-загрузки (лимит ${MAX_TILES} тайлов)`);
+  return buildTilePlan(fc, {
+    minZoom: MIN_ZOOM,
+    maxZoom: DESIRED_MAX_ZOOM,
+    maxTiles: MAX_TILES,
+    errorMessage: 'У гонки нет геометрии для определения района карты',
+  });
 }
 function normalizeVectorLayers(metadata) {
   const raw = Array.isArray(metadata?.vector_layers) ? metadata.vector_layers : [];
@@ -101,13 +54,36 @@ function normalizeVectorLayers(metadata) {
     .filter(layer => typeof layer.id === 'string' && layer.id.trim());
 }
 
-function mapRevisionId(pkgId, previousMap = null) {
+function stable(value) {
+  if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return (
+      '{' +
+      Object.keys(value)
+        .sort()
+        .map(key => JSON.stringify(key) + ':' + stable(value[key]))
+        .join(',') +
+      '}'
+    );
+  }
+  return JSON.stringify(value);
+}
+
+function hash(value) {
+  let result = 0;
+  for (const char of value) result = (result * 31 + char.charCodeAt(0)) >>> 0;
+  return result.toString(16).padStart(8, '0');
+}
+
+export function mapSourceRevision(header, metadata) {
+  return hash(stable({ header, metadata }));
+}
+
+function mapRevisionId(pkgId, sourceRevision) {
   const base = String(pkgId || 'race')
     .replace(/[^a-zA-Z0-9._-]/g, '-')
     .slice(0, 80);
-  const previous = String(previousMap?.storageId || '');
-  const slot = previous === `${base}@slot-a` ? 'slot-b' : 'slot-a';
-  return `${base}@${slot}`;
+  return `${base}@${sourceRevision || 'unknown'}`;
 }
 
 export async function discardOfflineMapRevision(meta, fallbackId = null) {
@@ -121,16 +97,23 @@ export async function downloadOfflineMap(pkg, onProgress = () => {}, { previousM
       'Библиотека PMTiles не загрузилась. Открой приложение онлайн и обнови страницу.',
     );
   const plan = buildDownloadPlan(pkg.geojson);
-  const storageId = mapRevisionId(pkg.id, previousMap);
-
   const archive = new window.pmtiles.PMTiles(SOURCE_URL);
   const [header, metadata] = await Promise.all([
     archive.getHeader(),
     archive.getMetadata().catch(() => ({})),
   ]);
+  const sourceRevision = mapSourceRevision(header, metadata);
+  if (previousMap?.ready && previousMap.sourceRevision === sourceRevision) {
+    return {
+      ...previousMap,
+      sourceRevision,
+      lastCheckedAt: new Date().toISOString(),
+    };
+  }
+  const storageId = mapRevisionId(pkg.id, sourceRevision);
   const vectorLayers = normalizeVectorLayers(metadata);
   const started = Date.now();
-  const stats = await downloadTileRevision({
+  const downloadStats = await downloadTileRevision({
     tiles: plan.tiles,
     storageId,
     getTile: getMapTile,
@@ -150,7 +133,7 @@ export async function downloadOfflineMap(pkg, onProgress = () => {}, { previousM
       { cause: error },
     );
   });
-  const { saved, bytes, reused, failed } = stats;
+  const { saved, bytes, reused, failed } = downloadStats;
 
   return {
     ready: true,
@@ -166,6 +149,7 @@ export async function downloadOfflineMap(pkg, onProgress = () => {}, { previousM
     maxZoom: plan.maxZoom,
     downloadedAt: new Date().toISOString(),
     source: 'Protomaps / OpenStreetMap',
+    sourceRevision,
     sourceTileType: header?.tileType ?? null,
     vectorLayers,
     metadataName: metadata?.name || null,

@@ -2,7 +2,7 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import MoreMenu from '../../src/components/MoreMenu.jsx';
+import MoreMenu from '../../src/components/MoreMenu/MoreMenu.jsx';
 
 describe('MoreMenu', () => {
   afterEach(cleanup);

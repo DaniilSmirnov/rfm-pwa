@@ -1,4 +1,5 @@
 let deferredPrompt = null;
+let installedFromEvent = false;
 const listeners = new Set();
 let removeInstallListeners = null;
 
@@ -29,41 +30,73 @@ export function isStandalonePwa() {
   return pwaLaunchContext().installedLaunch;
 }
 
-export function installInstructions({ promptAvailable = Boolean(deferredPrompt) } = {}) {
-  if (isIOSDevice())
-    return {
-      title: 'Установи Rally Fans Map Offline на экран «Домой»',
-      text: 'Сейчас приложение открыто как обычная вкладка браузера. На iPhone/iPad часть PWA-возможностей доступна только после установки и запуска с домашнего экрана.',
+export function mobileBrowser() {
+  const userAgent = String(navigator.userAgent || '');
+  if (/YaBrowser/i.test(userAgent)) return 'yandex';
+  if (/CriOS|Chrome/i.test(userAgent) && !/Edg|OPR|SamsungBrowser/i.test(userAgent)) {
+    return 'chrome';
+  }
+  if (isIOSDevice() || (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent))) {
+    return 'safari';
+  }
+  return 'browser';
+}
+
+export function installInstructions() {
+  const browser = mobileBrowser();
+  const instructions = {
+    safari: {
+      title: 'Установка в Safari',
+      text: 'На iPhone или iPad установи приложение через меню «Поделиться».',
       steps: [
-        'Нажми «Поделиться» в браузере.',
-        'Выбери «На экран Домой» / «Add to Home Screen».',
-        'Нажми «Добавить», затем открой Rally Fans Map Offline с новой иконки.',
+        'Нажми «Поделиться» в Safari.',
+        'Выбери «На экран Домой».',
+        'Нажми «Добавить», затем открой Rally Fans Map с новой иконки.',
       ],
-      action: 'Показать инструкцию',
-    };
-  if (promptAvailable)
-    return {
-      title: 'Установи Rally Fans Map Offline',
-      text: 'Сейчас приложение открыто в браузере. Установи PWA, чтобы запускать его отдельно и надёжнее использовать офлайн-режим и уведомления.',
-      steps: [],
-      action: 'Установить приложение',
-    };
-  return {
-    title: 'Открой Rally Fans Map Offline как приложение',
-    text: 'Сейчас приложение открыто в браузере. Установи его через меню браузера: «Установить приложение» или «Добавить на главный экран».',
-    steps: [
-      'Открой меню браузера.',
-      'Выбери «Установить приложение» или «Добавить на главный экран».',
-      'После установки запускай Rally Fans Map Offline с иконки приложения.',
-    ],
-    action: 'Как установить',
-  };
+    },
+    chrome: {
+      title: 'Установка в Chrome',
+      text: 'Открой меню Chrome и добавь Rally Fans Map на главный экран устройства.',
+      steps: [
+        'Открой меню Chrome ⋮.',
+        'Выбери «Установить приложение» или «Добавить на главный экран».',
+        'Подтверди установку и открой Rally Fans Map с новой иконки.',
+      ],
+    },
+    yandex: {
+      title: 'Установка в Яндекс.Браузере',
+      text: 'Открой меню Яндекс.Браузера и добавь Rally Fans Map на главный экран.',
+      steps: [
+        'Открой меню Яндекс.Браузера ☰.',
+        'Выбери «Добавить на главный экран» или «Установить приложение».',
+        'Подтверди установку и открой Rally Fans Map с новой иконки.',
+      ],
+    },
+    browser: {
+      title: 'Установка через меню браузера',
+      text: 'Открой меню браузера и добавь Rally Fans Map на главный экран устройства.',
+      steps: [
+        'Открой меню браузера.',
+        'Выбери «Установить приложение» или «Добавить на главный экран».',
+        'Подтверди установку и открой Rally Fans Map с новой иконки.',
+      ],
+    },
+  }[browser];
+
+  return { browser, ...instructions, action: 'Как установить' };
 }
 
 export function getPwaInstallSnapshot() {
   const context = pwaLaunchContext();
   const promptAvailable = Boolean(deferredPrompt);
-  return { ...context, promptAvailable, instructions: installInstructions({ promptAvailable }) };
+  const installedLaunch = context.installedLaunch || installedFromEvent;
+  return {
+    ...context,
+    installedLaunch,
+    browserMode: !installedLaunch,
+    promptAvailable,
+    instructions: installInstructions(),
+  };
 }
 
 function publishInstallState() {
@@ -82,6 +115,7 @@ export function subscribePwaInstall(listener) {
       publishInstallState();
     };
     const onInstalled = () => {
+      installedFromEvent = true;
       deferredPrompt = null;
       publishInstallState();
     };

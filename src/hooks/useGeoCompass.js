@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteCarPoint, loadCarPoint, saveCarPoint } from '../app/local-points.js';
-import { publishCompassHeading } from '../hooks/compass-heading.js';
+import { publishCompassHeading } from './compass-heading.js';
 
 export function normalizeGeolocationCoords(coords, extras = {}) {
   if (!coords) return null;
@@ -29,9 +29,12 @@ export function useGeoCompass({ selectedPoint, setSelectedPoint, setNavStatus })
       setGeoStatus('Геолокация не поддерживается этим браузером.');
       return;
     }
-    if (geoWatchRef.current != null && userPos) {
-      setGeoStatus(`Геопозиция включена · точность ±${Math.round(userPos.accuracy || 0)} м`);
-      setGeoClass('geo-ok');
+    if (geoWatchRef.current != null) {
+      navigator.geolocation.clearWatch?.(geoWatchRef.current);
+      geoWatchRef.current = null;
+      setUserPos(null);
+      setGeoStatus('Геопозиция выключена.');
+      setGeoClass('');
       return;
     }
     setGeoStatus('Запрашиваю доступ к геопозиции…');
@@ -54,7 +57,7 @@ export function useGeoCompass({ selectedPoint, setSelectedPoint, setNavStatus })
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 },
     );
-  }, [userPos]);
+  }, []);
 
   const saveCar = useCallback(() => {
     if (!navigator.geolocation) {

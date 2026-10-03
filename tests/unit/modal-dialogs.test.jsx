@@ -2,9 +2,9 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import BootDiagnostics from '../../src/modals/BootDiagnostics.jsx';
-import CrewResultsModal from '../../src/modals/CrewResultsModal.jsx';
-import ImageViewerModal from '../../src/modals/ImageViewerModal.jsx';
+import BootDiagnostics from '../../src/modals/BootDiagnostics/BootDiagnostics.jsx';
+import CrewResultsModal from '../../src/modals/CrewResultsModal/CrewResultsModal.jsx';
+import ImageViewerModal from '../../src/modals/ImageViewerModal/ImageViewerModal.jsx';
 
 vi.mock('../../src/app/boot-diagnostics.js', () => ({
   bootSnapshot: () => ({

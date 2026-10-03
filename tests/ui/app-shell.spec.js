@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { openApp, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
+import { installAppMocks, openApp, raceFixture, secondRace, seedFixtureRace } from './helpers.js';
 
 const release = {
   ...JSON.parse(readFileSync(new URL('../../version.json', import.meta.url), 'utf8')),
@@ -8,7 +8,7 @@ const release = {
 };
 
 async function openRaceManagement(page) {
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
 }
 
@@ -17,20 +17,34 @@ test.describe('app shell and catalog', () => {
     await openApp(page);
     await expect(page).toHaveTitle('Rally Fans Map Offline');
     await expect(page.locator('.app-footer')).toBeHidden();
-    await page.getByRole('button', { name: 'Ещё' }).click();
+    await page.getByRole('button', { name: 'Меню' }).click();
     await expect(page.locator('.app-footer')).toContainText(release.version);
     await expect(page.locator('.header-wordmark')).toHaveText('RALLY FANS MAP');
   });
 
-  test('shows browser PWA installation CTA on Today only', async ({ page }) => {
-    await openApp(page);
-    const installPrompt = page.getByRole('region', { name: 'Установка PWA' });
+  test('blocks browser launches with a full-screen application installation gate', async ({
+    page,
+  }) => {
+    await installAppMocks(page);
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const installPrompt = page.getByRole('dialog', {
+      name: 'Установка приложения',
+    });
     await expect(installPrompt).toBeVisible();
-    await expect(installPrompt.getByRole('button')).toBeVisible();
-    await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
-    await page.getByRole('button', { name: 'Ещё' }).click();
-    await expect(installPrompt).toBeHidden();
-    await expect(installPrompt.getByRole('button')).toBeHidden();
+    await expect(installPrompt).toHaveCSS('position', 'fixed');
+    await expect(installPrompt.getByRole('heading', { name: 'Как установить?' })).toBeVisible();
+    await expect(installPrompt.getByRole('button', { name: 'Как установить' })).toHaveCount(0);
+    await expect(installPrompt).toContainText(/Chrome|Safari|Яндекс/);
+  });
+
+  test('keeps the active navigation icon free of a decorative outline', async ({ page }) => {
+    await openApp(page);
+    const activeTab = page.getByRole('button', { name: 'Сегодня' });
+    const activeIcon = activeTab.locator('svg');
+    await expect(activeTab).toHaveAttribute('aria-current', 'page');
+    await expect(activeIcon).toHaveCSS('outline-style', 'none');
   });
 
   test('shows the race selector instead of a network badge', async ({ page }) => {
@@ -85,8 +99,10 @@ test.describe('app shell and catalog', () => {
   test('offline map controls start disabled without selected package', async ({ page }) => {
     await openApp(page);
     await page.getByRole('button', { name: 'Карта' }).click();
-    await expect(page.locator('#downloadMapBtn')).toBeDisabled();
-    await expect(page.locator('#mapSubtitle')).toContainText('Выбери сохранённую гонку');
+    await expect(page.getByRole('region', { name: 'Нет скачанных гонок' })).toBeVisible();
+    await expect(page.locator('#downloadMapBtn')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Инструменты карты' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Избранное' })).toHaveCount(0);
   });
 
   test('opens the race catalog from More', async ({ page }) => {

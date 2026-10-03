@@ -14,14 +14,13 @@ import {
   cacheRaceAssets,
   enrichPackageWithYandex,
 } from '../rallyfans.js';
-import { yandexWebFallback, coordinateText } from '../navigation.js';
+import { geoJsonToGpx, safeFileName } from '../app/export.js';
 import {
   buildDownloadPlan,
   downloadOfflineMap,
   discardOfflineMapRevision,
 } from '../offline-map.js';
 import { buildTerrainDownloadPlan } from '../terrain-offline.js';
-import { safeFileName, geoJsonToGpx } from '../app/export.js';
 import {
   getPushSubscription,
   refreshPushUi,
@@ -44,7 +43,6 @@ import { downloadRallyPack } from '../app/rally-pack.js';
 import { rallyPackProgressText } from '../app/rally-pack-ui.js';
 import { processCachedRallyPackUpdates } from '../app/rally-pack-update.js';
 import { setupErrorTelemetry } from '../app/telemetry.js';
-import { raceWithinWeek, pickDefaultRace } from '../app/catalog-dates.js';
 import { markBoot } from '../app/boot-diagnostics.js';
 import { formatBytes } from '../app/format.js';
 import { loadSelectedRallyId, saveSelectedRallyId } from '../app/rally-context.js';
@@ -53,6 +51,9 @@ import { createConnectivityMonitor } from '../app/network-status.js';
 import { useGeoCompass } from './useGeoCompass.js';
 import { useCatalog } from './useCatalog.js';
 import { useRaceRetention } from './useRaceRetention.js';
+import { removeStorage } from '../app/storage.js';
+import { chooseVisiblePackages } from '../app/package-selection.js';
+import { downloadBlob, sharePointValue } from '../app/point-actions.js';
 
 let bootstrapPromise = null;
 let mapLibrePromise = null;
@@ -72,7 +73,7 @@ export async function ensureMapLibre() {
   }
   const maplibregl = await mapLibrePromise;
   if (typeof maplibregl.supported === 'function' && !maplibregl.supported())
-    throw new Error('WebGL2 недоступен в этом браузере/PWA');
+    throw new Error('WebGL2 недоступен в этом браузере или приложении');
   return maplibregl;
 }
 
@@ -111,62 +112,6 @@ function bootstrapRuntime() {
     return sw;
   })();
   return bootstrapPromise;
-}
-
-function downloadBlob(filename, type, text) {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-async function sharePointValue(point) {
-  if (!point) return false;
-  const title = point.name || 'Точка RallyFans Map';
-  const coords = coordinateText(point);
-  const url = yandexWebFallback(point);
-  const data = { title, text: `${title}\n${coords}`, url };
-  try {
-    if (navigator.share) {
-      await navigator.share(data);
-      return true;
-    }
-  } catch (e) {
-    if (e?.name === 'AbortError') return false;
-  }
-  try {
-    await navigator.clipboard.writeText(`${title}\n${coords}\n${url}`);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function chooseVisiblePackages(packages, query) {
-  const q = String(query || '')
-    .trim()
-    .toLowerCase();
-  if (q)
-    return packages.filter(p =>
-      [
-        p.name,
-        p.summary?.stage,
-        p.summary?.dates,
-        p.summary?.city,
-        p.summary?.category,
-        p.summary?.status,
-      ].some(v =>
-        String(v || '')
-          .toLowerCase()
-          .includes(q),
-      ),
-    );
-  const near = pickDefaultRace(packages.filter(raceWithinWeek));
-  return near ? [near] : packages[0] ? [packages[0]] : [];
 }
 
 export function useRfmApp() {
@@ -256,6 +201,7 @@ export function useRfmApp() {
     setCurrentPackage,
     refreshPackages,
   });
+  const { clearMapError } = offlineStorage;
 
   const raceRetention = useRaceRetention({
     packages,
@@ -264,6 +210,15 @@ export function useRfmApp() {
     setSelectedPoint,
     refreshPackages,
   });
+
+  const runtimeRef = useRef({});
+  runtimeRef.current = {
+    clearCatalog,
+    currentPackageId: currentPackage?.id,
+    loadCatalog,
+    refreshPackages,
+    setCatalogStatus,
+  };
 
   useEffect(() => {
     const refresh = () =>
@@ -280,7 +235,7 @@ export function useRfmApp() {
         const pkg = await getPackage(id);
         if (pkg) {
           setCurrentPackage(pkg);
-          offlineStorage.clearMapError();
+          clearMapError();
         }
         return pkg;
       } catch (error) {
@@ -289,27 +244,38 @@ export function useRfmApp() {
         return null;
       }
     },
-    [offlineStorage.clearMapError],
+    [clearMapError],
   );
 
   useEffect(() => {
     let alive = true;
     bootstrapRuntime().then(sw => {
-      if (alive) swRef.current = sw;
+      if (!alive) return;
+      swRef.current = sw;
+      // Bootstrap can activate a newer service worker and trigger a page
+      // reload. Refresh once after bootstrap as well, so the first branch
+      // render cannot keep a stale empty package list from the old shell.
+      void runtimeRef.current.refreshPackages(runtimeRef.current.currentPackageId).catch(error =>
+        markBoot('saved-data-post-bootstrap-refresh-failed', {
+          message: String(error?.message || error),
+        }),
+      );
     });
-    refreshPackages().catch(error =>
-      markBoot('saved-data-load-failed', { message: String(error?.message || error) }),
-    );
-    loadCatalog();
+    runtimeRef.current
+      .refreshPackages()
+      .catch(error =>
+        markBoot('saved-data-load-failed', { message: String(error?.message || error) }),
+      );
+    runtimeRef.current.loadCatalog();
     const connectivity = createConnectivityMonitor({
       onChange: reachable => {
         connectivityRef.current = reachable;
         setOnline(reachable);
         if (reachable) {
-          loadCatalog();
+          runtimeRef.current.loadCatalog();
           requestRallyPackBackgroundRefresh(swRef.current);
         } else {
-          clearCatalog();
+          runtimeRef.current.clearCatalog();
         }
       },
     });
@@ -320,13 +286,15 @@ export function useRfmApp() {
         savePackage,
         scheduleRaceReminders,
       }).catch(() => null);
-      if (result?.applied || result?.pending) await refreshPackages(currentPackage?.id);
+      if (result?.applied || result?.pending)
+        await runtimeRef.current.refreshPackages(runtimeRef.current.currentPackageId);
     };
     const onBackground = event => {
       const detail = event.detail || {};
-      if (detail.status === 'success') setCatalogStatus('Офлайн-материалы готовы ✓');
+      if (detail.status === 'success')
+        runtimeRef.current.setCatalogStatus('Офлайн-материалы готовы ✓');
       if (detail.status === 'failure')
-        setCatalogStatus('Не удалось скачать часть офлайн-материалов.');
+        runtimeRef.current.setCatalogStatus('Не удалось скачать часть офлайн-материалов.');
     };
     window.addEventListener('rfm:periodic-update', onPeriodic);
     window.addEventListener('rfm:background-fetch', onBackground);
@@ -346,10 +314,10 @@ export function useRfmApp() {
     () => new Set(packages.filter(x => x.raceId != null).map(x => Number(x.raceId))),
     [packages],
   );
-  const favorites = useMemo(
-    () => (currentPackage ? favoritesForPackage(currentPackage.id) : []),
-    [currentPackage?.id, favoritesRevision],
-  );
+  const favorites = useMemo(() => {
+    void favoritesRevision;
+    return currentPackage ? favoritesForPackage(currentPackage.id) : [];
+  }, [currentPackage, favoritesRevision]);
 
   useEffect(() => {
     if (!currentPackage && visiblePackages[0]) setCurrentPackage(visiblePackages[0]);
@@ -401,13 +369,11 @@ export function useRfmApp() {
         );
         await refreshPackages(result.pkg.id);
         setCurrentPackage(await getPackage(result.pkg.id));
-        setRaceProgress(p => ({
-          ...p,
-          [id]: rallyPackProgressText(
-            { phase: 'done', assetDownload: result.assetDownload },
-            formatBytes,
-          ),
-        }));
+        setRaceProgress(p => {
+          const next = { ...p };
+          delete next[id];
+          return next;
+        });
       } catch (error) {
         alert(`Не удалось скачать Rally Pack: ${error.message}`);
         setRaceProgress(p => ({ ...p, [id]: null }));
@@ -460,7 +426,7 @@ export function useRfmApp() {
       await deleteAllPackages();
       await clearMapTiles();
       if ('caches' in window) await caches.delete('rfm-race-assets-v1');
-      localStorage.removeItem(FAVORITES_KEY);
+      removeStorage(FAVORITES_KEY);
     } catch (error) {
       markBoot('offline-data-clear-failed', { message: String(error?.message || error) });
       await refreshPackages().catch(() => {});

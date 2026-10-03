@@ -262,6 +262,26 @@ test('migrates installed PWA from current main to branch without losing persiste
   page,
   context,
 }) => {
+  await page.addInitScript(() => {
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = query => {
+      if (query.includes('display-mode: standalone')) {
+        return {
+          matches: true,
+          media: query,
+          onchange: null,
+          addListener() {},
+          removeListener() {},
+          addEventListener() {},
+          removeEventListener() {},
+          dispatchEvent() {
+            return true;
+          },
+        };
+      }
+      return original(query);
+    };
+  });
   const reset = await page.request.post('/__migration/reset');
   expect(reset.ok()).toBe(true);
 
@@ -334,7 +354,7 @@ test('migrates installed PWA from current main to branch without losing persiste
   // controllerchange triggers an automatic reload in the app runtime. Once the
   // branch version and active worker are confirmed, wait for the restored UI
   // instead of racing that automatic navigation with a second reload.
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');
@@ -346,7 +366,7 @@ test('migrates installed PWA from current main to branch without losing persiste
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#networkBadge')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await expect(page.locator('#packageList')).toContainText('Main Migration Rally');
   await expect(page.locator('#favoritesList')).toContainText('Migration point');

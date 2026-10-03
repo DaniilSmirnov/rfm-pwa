@@ -1,4 +1,4 @@
-import { raceHasFinished } from './today-summary.js';
+import { raceHasFinished } from '../views/TodayView/logic/today-summary.js';
 
 export function filterSavedRaces(packages, query) {
   const value = String(query || '')

@@ -36,7 +36,7 @@ async function waitForWorker(page) {
 }
 
 async function openMoreTab(page) {
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
 }
 
 async function openSettings(page) {
@@ -53,6 +53,24 @@ test.describe('production service worker lifecycle', () => {
       Storage.prototype.getItem = function (key) {
         if (String(key).startsWith('rfm:safety-accepted:v1:')) return 'accepted';
         return getItem.call(this, key);
+      };
+      const originalMatchMedia = window.matchMedia.bind(window);
+      window.matchMedia = query => {
+        if (query.includes('display-mode: standalone')) {
+          return {
+            matches: true,
+            media: query,
+            onchange: null,
+            addListener() {},
+            removeListener() {},
+            addEventListener() {},
+            removeEventListener() {},
+            dispatchEvent() {
+              return true;
+            },
+          };
+        }
+        return originalMatchMedia(query);
       };
     });
   });

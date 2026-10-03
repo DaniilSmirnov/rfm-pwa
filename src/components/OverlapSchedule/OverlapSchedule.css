@@ -1,0 +1,168 @@
+@layer views {
+  .overlap-date {
+    margin: -8px 0 12px;
+    color: var(--muted, #777);
+    font-size: 13px;
+  }
+  .overlap-chart-layout {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    align-items: start;
+  }
+  .overlap-stage-labels {
+    padding-top: 38px;
+  }
+  .overlap-stage-label {
+    box-sizing: border-box;
+    height: 46px;
+    padding: 4px 8px 0 0;
+  }
+  .overlap-stage-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .overlap-chart-scroll {
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .overlap-chart {
+    display: block;
+    width: 100%;
+    min-width: 640px;
+    height: auto;
+    overflow: visible;
+  }
+  .overlap-gridline {
+    stroke: #e7e7e7;
+    stroke-width: 1;
+  }
+  .overlap-tick,
+  .overlap-stage-section {
+    fill: #777;
+    font:
+      11px Arial,
+      sans-serif;
+  }
+  .overlap-stage-number {
+    color: #191919;
+    fill: #191919;
+    font:
+      700 12px Arial,
+      sans-serif;
+  }
+  .overlap-stage-name {
+    min-width: 0;
+    overflow: hidden;
+    color: #191919;
+    fill: #191919;
+    font:
+      600 12px Arial,
+      sans-serif;
+    text-overflow: ellipsis;
+  }
+  .overlap-stage-section {
+    display: block;
+    margin-top: 1px;
+  }
+  .overlap-track {
+    stroke: #e8e8e8;
+    stroke-width: 2;
+  }
+  .overlap-closure {
+    fill: #ffddd2;
+    stroke: #ee795c;
+    stroke-width: 1;
+  }
+  .overlap-boundary {
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+  .overlap-boundary.overlap-close {
+    stroke: #df5134;
+  }
+  .overlap-boundary.overlap-open {
+    stroke: #169873;
+  }
+  .overlap-marker {
+    stroke: #fff;
+    stroke-width: 2;
+  }
+  .overlap-marker.zero,
+  .overlap-legend i.zero {
+    fill: #6c7785;
+    background: #6c7785;
+  }
+  .overlap-marker.first-crew,
+  .overlap-legend i.first {
+    fill: #169873;
+    background: #169873;
+  }
+  .overlap-marker.last-crew,
+  .overlap-legend i.last {
+    fill: #df9b18;
+    background: #df9b18;
+  }
+  .overlap-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 10px;
+    color: #6b6b6b;
+    font-size: 11px;
+  }
+  .overlap-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .overlap-legend i {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
+  .overlap-legend i.closure {
+    width: 14px;
+    height: 8px;
+    border-radius: 4px;
+    background: #ee795c;
+  }
+  .overlap-legend i.boundary-close,
+  .overlap-legend i.boundary-open {
+    width: 4px;
+    height: 12px;
+    border-radius: 2px;
+  }
+  .overlap-legend i.boundary-close {
+    background: #df5134;
+  }
+  .overlap-legend i.boundary-open {
+    background: #169873;
+  }
+  .overlap-approximation-note {
+    margin: 8px 0 0;
+    color: #6b6b6b;
+    font-size: 12px;
+  }
+  :root[data-theme='dark'] .overlap-stage-number,
+  :root[data-theme='dark'] .overlap-stage-name {
+    color: #f5f7fa;
+    fill: #f5f7fa;
+  }
+  :root[data-theme='dark'] .overlap-stage-section,
+  :root[data-theme='dark'] .overlap-tick {
+    fill: #aab2bd;
+  }
+  :root[data-theme='dark'] .overlap-legend,
+  :root[data-theme='dark'] .overlap-date,
+  :root[data-theme='dark'] .overlap-approximation-note {
+    color: #aab2bd;
+  }
+  :root[data-theme='dark'] .overlap-gridline,
+  :root[data-theme='dark'] .overlap-track {
+    stroke: #343a43;
+  }
+}

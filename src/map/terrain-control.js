@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import React from 'react';
-import TerrainModeButton from '../components/TerrainModeButton.jsx';
+import TerrainModeButton from '../components/TerrainModeButton/TerrainModeButton.jsx';
 
 export class TerrainModeControl {
   constructor({ initialMode = 'hillshade', onModeChange = () => {} } = {}) {

@@ -1,0 +1,32 @@
+@layer components {
+  .empty-screen-state {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 18px;
+    padding: 40px 20px;
+    box-sizing: border-box;
+    background: var(--surface);
+    color: var(--text);
+    text-align: center;
+  }
+
+  .empty-screen-state strong {
+    font-size: clamp(26px, 7vw, 36px);
+    line-height: 1.1;
+  }
+
+  .empty-screen-state p {
+    max-width: 420px;
+    margin: 0;
+    color: var(--muted);
+    font-size: clamp(16px, 4.5vw, 20px);
+    line-height: 1.4;
+  }
+
+  .empty-screen-state .button {
+    min-height: 52px;
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+}

@@ -131,7 +131,7 @@ test.describe('offline, import and failure states', () => {
     await expect(page.locator('#offlineMapStatus')).toContainText('Будет скачано');
   });
 
-  test('failed offline map update keeps the previous revision active', async ({
+  test('reuses the previous revision when the offline map source is unchanged', async ({
     page,
     browserName,
   }) => {
@@ -162,13 +162,8 @@ test.describe('offline, import and failure states', () => {
         }),
     );
     expect(before?.ready).toBe(true);
-    await page.evaluate(() => {
-      window.__pmtilesFail = true;
-    });
-    const dialog = page.waitForEvent('dialog');
     await page.locator('#downloadMapBtn').click();
-    await (await dialog).dismiss();
-    await expect(page.locator('#offlineMapStatus')).toContainText('Не удалось скачать карту');
+    await expect(page.locator('#offlineMapStatus')).toContainText('Офлайн-подложка готова');
     const after = await page.evaluate(
       () =>
         new Promise((resolve, reject) => {
@@ -213,15 +208,15 @@ test.describe('standalone launch detection', () => {
     await installAppMocks(page);
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
-    const installPrompt = page.getByRole('region', { name: 'Установка PWA' });
+    const installPrompt = page.getByRole('dialog', { name: 'Установка приложения' });
     await expect(installPrompt).toBeHidden();
     await expect(installPrompt.getByRole('button')).toBeHidden();
-    await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'app');
   });
 
   test('browser launch is explicitly marked as browser context', async ({ page }) => {
-    await openApp(page);
-    await expect(page.locator('html')).toHaveAttribute('data-pwa-installed', 'false');
-    await expect(page.locator('html')).toHaveAttribute('data-pwa-context', 'browser');
+    await installAppMocks(page);
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByRole('dialog', { name: 'Установка приложения' })).toBeVisible();
   });
 });

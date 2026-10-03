@@ -96,50 +96,51 @@ vi.mock('../../src/app/safety-consent.js', () => ({
   hasSafetyConsent: mocks.hasSafetyConsent,
   saveSafetyConsent: mocks.saveSafetyConsent,
 }));
-vi.mock('../../src/app/crew-results.js', async importOriginal => {
+vi.mock('../../src/views/ResultsScreen/logic/crew-results.js', async importOriginal => {
   const actual = await importOriginal();
   return { ...actual, fetchAsmgResults: mocks.fetchAsmgResults };
 });
 
-import AppHeader from '../../src/components/AppHeader.jsx';
-import AppFooter from '../../src/components/AppFooter.jsx';
-import CatalogList from '../../src/components/CatalogList.jsx';
-import CatalogSection from '../../src/components/CatalogSection.jsx';
-import CompassReadout from '../../src/components/CompassReadout.jsx';
-import CrewResults from '../../src/components/CrewResults.jsx';
-import ElevationProfile from '../../src/components/ElevationProfile.jsx';
-import FallbackMap from '../../src/components/FallbackMap.jsx';
-import FavoritesList from '../../src/components/FavoritesList.jsx';
-import MoreMenu from '../../src/components/MoreMenu.jsx';
-import RacesView from '../../src/views/RacesView.jsx';
-import OfflineMapActions from '../../src/components/OfflineMapActions.jsx';
-import PointList from '../../src/components/PointList.jsx';
-import PushSettings from '../../src/components/PushSettings.jsx';
-import PwaInstallPrompt from '../../src/components/PwaInstallPrompt.jsx';
-import RaceMedia from '../../src/components/RaceMedia.jsx';
-import RallyMap from '../../src/components/RallyMap.jsx';
-import SafetyMemo from '../../src/components/SafetyMemo.jsx';
-import SavedOfflineSection from '../../src/components/SavedOfflineSection.jsx';
-import SavedPackagesList from '../../src/components/SavedPackagesList.jsx';
-import DownloadedRacesList from '../../src/components/DownloadedRacesList.jsx';
-import ScheduleList from '../../src/components/ScheduleList.jsx';
-import TodayLeaders from '../../src/components/TodayLeaders.jsx';
-import AppLayout from '../../src/views/AppLayout.jsx';
-import MapView from '../../src/views/MapView.jsx';
-import RaceDetails from '../../src/views/RaceDetails.jsx';
-import SettingsView from '../../src/views/SettingsView.jsx';
-import TodayView, {
+import AppHeader from '../../src/components/AppHeader/AppHeader.jsx';
+import AppFooter from '../../src/components/AppFooter/AppFooter.jsx';
+import CatalogList from '../../src/components/CatalogList/CatalogList.jsx';
+import CatalogSection from '../../src/components/CatalogSection/CatalogSection.jsx';
+import CompassReadout from '../../src/components/CompassReadout/CompassReadout.jsx';
+import CrewResults from '../../src/components/CrewResults/CrewResults.jsx';
+import ElevationProfile from '../../src/components/ElevationProfile/ElevationProfile.jsx';
+import FallbackMap from '../../src/components/FallbackMap/FallbackMap.jsx';
+import FavoritesList from '../../src/components/FavoritesList/FavoritesList.jsx';
+import MoreMenu from '../../src/components/MoreMenu/MoreMenu.jsx';
+import RacesView from '../../src/views/RacesView/RacesView.jsx';
+import OfflineMapActions from '../../src/components/OfflineMapActions/OfflineMapActions.jsx';
+import PointList from '../../src/components/PointList/PointList.jsx';
+import PushSettings from '../../src/components/PushSettings/PushSettings.jsx';
+import PwaInstallPrompt from '../../src/components/PwaInstallPrompt/PwaInstallPrompt.jsx';
+import RaceMedia from '../../src/components/RaceMedia/RaceMedia.jsx';
+import RallyMap from '../../src/components/RallyMap/RallyMap.jsx';
+import SafetyMemo from '../../src/components/SafetyMemo/SafetyMemo.jsx';
+import SavedOfflineSection from '../../src/components/SavedOfflineSection/SavedOfflineSection.jsx';
+import SavedPackagesList from '../../src/components/SavedPackagesList/SavedPackagesList.jsx';
+import DownloadedRacesList from '../../src/components/DownloadedRacesList/DownloadedRacesList.jsx';
+import ScheduleList from '../../src/components/ScheduleList/ScheduleList.jsx';
+import TodayLeaders from '../../src/components/TodayLeaders/TodayLeaders.jsx';
+import AppLayout from '../../src/views/AppLayout/AppLayout.jsx';
+import MapView from '../../src/views/MapView/MapView.jsx';
+import RaceDetails from '../../src/views/RaceDetails/RaceDetails.jsx';
+import SettingsView from '../../src/views/SettingsView/SettingsView.jsx';
+import TodayView from '../../src/views/TodayView/TodayView.jsx';
+import {
   countdownLabel,
   currentScheduledCrew,
   latestPositionChange,
   nextProgramItem,
   nextScheduledCrew,
-} from '../../src/views/TodayView.jsx';
-import App from '../../src/views/App.jsx';
-import BootDiagnostics from '../../src/modals/BootDiagnostics.jsx';
-import CrewResultsModal from '../../src/modals/CrewResultsModal.jsx';
-import ImageViewerModal from '../../src/modals/ImageViewerModal.jsx';
-import SafetyGate from '../../src/modals/SafetyGate.jsx';
+} from '../../src/views/TodayView/logic/today-view-data.js';
+import App from '../../src/views/App/App.jsx';
+import BootDiagnostics from '../../src/modals/BootDiagnostics/BootDiagnostics.jsx';
+import CrewResultsModal from '../../src/modals/CrewResultsModal/CrewResultsModal.jsx';
+import ImageViewerModal from '../../src/modals/ImageViewerModal/ImageViewerModal.jsx';
+import SafetyGate from '../../src/modals/SafetyGate/SafetyGate.jsx';
 
 const feature = {
   type: 'Feature',
@@ -247,6 +248,7 @@ function appFixture(overrides = {}) {
       [
         'setCatalogQuery',
         'setPackageQuery',
+        'refreshPackages',
         'loadCatalog',
         'clearAll',
         'importFiles',
@@ -315,10 +317,10 @@ beforeEach(() => {
     installedLaunch: false,
     promptAvailable: false,
     instructions: {
-      title: 'Добавь приложение',
-      text: 'На главный экран',
+      title: 'Установка в Chrome',
+      text: 'Открой меню Chrome',
       action: 'Как установить',
-      steps: ['Открой меню'],
+      steps: ['Открой меню Chrome ⋮', 'Выбери установку', 'Открой приложение'],
     },
   });
   mocks.subscribePwaInstall.mockReturnValue(() => {});
@@ -405,12 +407,59 @@ describe('application components', () => {
       </>,
     );
     expect(document.querySelector('#networkBadge')).toBeNull();
-    expect(screen.getByText('RALLY FANS MAP')).toBeTruthy();
+    expect(document.querySelector('.header-wordmark')?.textContent).toBe('RALLY FANS MAP');
     expect(screen.getByText(/Companion v/)).toBeTruthy();
     expect(screen.getByText('Карелия')).toBeTruthy();
     expect(screen.getByRole('searchbox', { name: 'Найти гонку или этап' })).toBeTruthy();
-    expect(screen.getByText('Добавь приложение')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Установка приложения' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Установи приложение' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Как установить' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Как установить?' })).toBeTruthy();
+    expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0);
     await waitFor(() => expect(mocks.subscribePwaInstall).toHaveBeenCalled());
+  });
+
+  it('shows browser installation instructions even when native install is available', () => {
+    mocks.getPwaInstallSnapshot.mockReturnValue({
+      installedLaunch: false,
+      promptAvailable: true,
+      instructions: {
+        title: 'Установка в Chrome',
+        text: 'Открой меню Chrome',
+        action: 'Как установить',
+        steps: ['Открой меню Chrome ⋮'],
+      },
+    });
+
+    render(<PwaInstallPrompt />);
+
+    expect(screen.getByRole('heading', { name: 'Как установить?' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Установить приложение' })).toBeNull();
+  });
+
+  it('shows a download prompt on the map when no races are saved', () => {
+    const onOpenRaces = vi.fn();
+    render(
+      <MapView
+        app={appFixture({ currentPackage: null, packages: [] })}
+        mapContent={<div />}
+        pointsContent={<div />}
+        favoritesContent={<div />}
+        onOpenRaces={onOpenRaces}
+      />,
+    );
+
+    expect(
+      document.querySelector('.map-empty-state[role="region"][aria-label="Нет скачанных гонок"]'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: 'Гонка на карте' })).toBeNull();
+    expect(screen.queryByText('Выбери сохранённую гонку')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Инструменты карты' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Избранное' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Моя машина' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Показать где я' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Перейти к скачиванию' }));
+    expect(onOpenRaces).toHaveBeenCalledOnce();
   });
 
   it('covers catalog empty and downloaded/progress rendering', () => {
@@ -436,6 +485,7 @@ describe('application components', () => {
     };
     const app = appFixture({ packages: [pkg] });
     render(<RacesView app={app} />);
+    expect(app.refreshPackages).toHaveBeenCalledWith();
     expect(screen.getByLabelText('Удалять автоматически по завершению гонки').checked).toBe(false);
     expect(screen.getByText('Sortavala Rally')).toBeTruthy();
     expect(screen.queryByText(/hero\.jpg|тайлов/i)).toBeNull();
@@ -637,10 +687,16 @@ describe('application components', () => {
   it('renders RallyMap loading, fallback, and map lifecycle', async () => {
     const app = appFixture();
     const { rerender } = render(<RallyMap app={appFixture({ currentPackage: null })} />);
-    expect(screen.getByText('Выбери сохранённую гонку')).toBeTruthy();
+    expect(screen.queryByText('Выбери сохранённую гонку')).toBeNull();
     rerender(<RallyMap app={app} />);
     await waitFor(() => expect(mocks.renderMap).toHaveBeenCalled());
     expect(screen.getByLabelText('Карта ралли')).toBeTruthy();
+
+    mocks.renderMap.mockImplementationOnce(() => {
+      throw new Error('map failed');
+    });
+    rerender(<RallyMap app={appFixture()} />);
+    await waitFor(() => expect(screen.getByText(/Интерактивная карта недоступна/)).toBeTruthy());
   });
 
   it('covers settings and the Today empty state', () => {
@@ -683,9 +739,7 @@ describe('application components', () => {
     render(<TodayView app={app} onMap={vi.fn()} onResults={onResults} onRaces={onRaces} />);
     expect(screen.getByText('Карелия')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Обновить Rally Pack' })).toBeTruthy();
-    expect(screen.getByText('Освободи место')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Управление картами' }));
-    expect(onRaces).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Освободи место')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Все результаты' }));
     expect(onResults).toHaveBeenCalledOnce();
   });
@@ -884,7 +938,7 @@ describe('application components', () => {
         app={appFixture({ catalog: [], packages: [finished], currentPackage: finished })}
       />,
     );
-    expect(screen.getByText('Гонка завершилась вчера.')).toBeTruthy();
+    expect(screen.getByText(/Гонка завершилась/)).toBeTruthy();
     expect(screen.getByRole('img', { name: 'График перекрытий 1' })).toBeTruthy();
     expect(screen.getByText('Абсолют · 1 место')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Rally Pack/ })).toBeNull();
@@ -902,8 +956,25 @@ describe('application components', () => {
       screen.getByRole('img', { name: /Временная шкала перекрытия дорог: 8 спецучастков/ }),
     ).toBeTruthy();
     expect(screen.getByText('ГРАФИК ПЕРЕКРЫТИЙ · БЕЛЫЕ НОЧИ')).toBeTruthy();
+    expect(document.querySelector('.overlap-stage-labels')).toBeTruthy();
+    expect(document.querySelector('.overlap-chart-scroll')).toBeTruthy();
     expect(screen.getAllByText('ВЯЛИМЯКИ')).toHaveLength(2);
     expect(screen.queryByRole('img', { name: 'График перекрытий 1' })).toBeNull();
+  });
+
+  it('shows the shared empty state on the results tab without downloaded races', () => {
+    const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
+    mocks.useRfmApp.mockReturnValue(app);
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Результаты/ }));
+    expect(
+      document.querySelector(
+        '.results-tab-screen [role="region"][aria-label="Нет скачанных гонок"]',
+      ),
+    ).toBeTruthy();
+    fireEvent.click(document.querySelector('.results-tab-screen').querySelector('button'));
+    expect(screen.getByText('УПРАВЛЕНИЕ ГОНКАМИ')).toBeTruthy();
   });
 
   it('mounts the app, switches tabs, opens settings, and reveals diagnostics by logo taps', async () => {
@@ -912,7 +983,7 @@ describe('application components', () => {
     const app = appFixture({ currentPackage: null, packages: [], catalog: [], favorites: [] });
     mocks.useRfmApp.mockReturnValue(app);
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Ещё/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Меню/ }));
     fireEvent.click(screen.getByRole('button', { name: /Настройки и диагностика/ }));
     expect(screen.getByRole('heading', { name: 'Настройки и диагностика' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Назад' }));

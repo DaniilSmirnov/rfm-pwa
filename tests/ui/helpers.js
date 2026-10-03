@@ -162,6 +162,8 @@ export class Map{
     this.sources={};
     this.layers=[];
     this.handlers={};
+    this.terrain=null;
+    window.__mapCreateCount=(window.__mapCreateCount||0)+1;
     queueMicrotask(()=>{this.emit('load',{});this.emit('style.load',{});});
   }
   on(type,a,b){
@@ -173,6 +175,9 @@ export class Map{
   emit(type,event){for(const fn of this.handlers[type]||[])fn(event);}
   addSource(id,source){this.sources[id]={...source,setData:data=>{this.sources[id].data=data;}};}
   addLayer(layer){this.layers.push(layer);}
+  setTerrain(value){this.terrain=value;window.__mapTerrain=value;return this;}
+  setLayoutProperty(id,name,value){const layer=this.getLayer(id);if(layer)(layer.layout||(layer.layout={}))[name]=value;}
+  getBearing(){return 0;}
   addControl(){return this;}
   getSource(id){return this.sources[id]||null;}
   getLayer(id){return this.layers.find(x=>x.id===id)||null;}
@@ -438,9 +443,31 @@ export async function installAppMocks(page, options = {}) {
 
 export async function openApp(page, options = {}) {
   await installAppMocks(page, options);
+  if (options.standalone !== false) {
+    await page.addInitScript(() => {
+      const original = window.matchMedia.bind(window);
+      window.matchMedia = query => {
+        if (query.includes('display-mode: standalone')) {
+          return {
+            matches: true,
+            media: query,
+            onchange: null,
+            addListener() {},
+            removeListener() {},
+            addEventListener() {},
+            removeEventListener() {},
+            dispatchEvent() {
+              return true;
+            },
+          };
+        }
+        return original(query);
+      };
+    });
+  }
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
   await page.waitForFunction(
     () =>
@@ -452,7 +479,7 @@ export async function openApp(page, options = {}) {
 }
 
 export async function openRaceManagement(page) {
-  await page.getByRole('button', { name: 'Ещё', exact: true }).click();
+  await page.getByRole('button', { name: 'Меню', exact: true }).click();
   await page.getByRole('button', { name: 'Гонки и Rally Pack' }).click();
 }
 
@@ -501,9 +528,9 @@ export async function openCarPanel(page) {
   await page.locator('#mapCarDrawer').waitFor({ state: 'visible' });
 }
 
-export async function seedFixtureRace(page, { pointProperties = {} } = {}) {
+export async function seedFixtureRace(page, { pointProperties = {}, terrainReady = false } = {}) {
   await page.evaluate(
-    async ({ race, results, pointProperties }) => {
+    async ({ race, results, pointProperties, terrainReady }) => {
       const request = indexedDB.open('rallyfans-offline', 3);
       request.onupgradeneeded = () => {
         const db = request.result;
@@ -573,6 +600,17 @@ export async function seedFixtureRace(page, { pointProperties = {} } = {}) {
           days: race.days_race || '',
         },
         yandexMapEmbed: null,
+        terrain: terrainReady
+          ? {
+              ready: true,
+              storageId: 'test-terrain',
+              minZoom: 8,
+              maxZoom: 14,
+              tileSize: 512,
+              encoding: 'terrarium',
+              bounds: { minLon: 30.68, minLat: 61.69, maxLon: 30.71, maxLat: 61.72 },
+            }
+          : null,
       };
       await new Promise((resolve, reject) => {
         const tx = db.transaction('packages', 'readwrite');
@@ -583,7 +621,7 @@ export async function seedFixtureRace(page, { pointProperties = {} } = {}) {
       db.close();
       window.dispatchEvent(new Event('rfm:refresh-local-data'));
     },
-    { race: raceFixture, results: asmgResultsFixture, pointProperties },
+    { race: raceFixture, results: asmgResultsFixture, pointProperties, terrainReady },
   );
   await page.getByRole('button', { name: 'Карта', exact: true }).click();
   await page.locator('.race-page').waitFor({ state: 'visible' });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { todaySummary, raceHasFinished } from '../../src/app/today-summary.js';
+import { todaySummary, raceHasFinished } from '../../src/views/TodayView/logic/today-summary.js';
 
 describe('today summary', () => {
   it('shows the current day while it still has scheduled events', () => {

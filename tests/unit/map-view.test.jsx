@@ -2,7 +2,8 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import MapView from '../../src/views/MapView.jsx';
+import MapView from '../../src/views/MapView/MapView.jsx';
+import { BRAND_ORANGE } from '../../src/app/design-tokens.js';
 import { getCrewSubscriptions } from '../../src/db.js';
 
 vi.mock('../../src/db.js', () => ({
@@ -12,10 +13,57 @@ vi.mock('../../src/db.js', () => ({
 afterEach(cleanup);
 
 describe('MapView enhancements', () => {
-  it('keeps separate map tools and favorites panels accessible', () => {
+  it('renders the shared empty state when no races are downloaded', () => {
+    const onOpenRaces = vi.fn();
     const app = {
       currentPackage: null,
       packages: [],
+      favorites: [],
+      mapSubtitle: '',
+      selectedPoint: null,
+      showPoint: vi.fn(),
+    };
+    render(<MapView app={app} onOpenRaces={onOpenRaces} />);
+
+    expect(screen.getByRole('region', { name: 'Нет скачанных гонок' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Перейти к скачиванию' }));
+    expect(onOpenRaces).toHaveBeenCalledOnce();
+  });
+
+  it('opens the elevation profile drawer after a stage is selected on the map', () => {
+    const app = {
+      currentPackage: { id: 'race-1', name: 'Rally', terrain: { ready: false } },
+      packages: [{ id: 'race-1', name: 'Rally' }],
+      favorites: [],
+      mapSubtitle: '',
+      mapUi: { disabled: true, button: '', status: '' },
+      terrainUi: { disabled: true, button: '', status: '' },
+      carPoint: null,
+      geoStatus: '',
+      geoClass: '',
+      requestLocation: vi.fn(),
+      exportGpx: vi.fn(),
+      exportGeoJson: vi.fn(),
+      selectedPoint: null,
+      showPoint: vi.fn(),
+    };
+    render(
+      <MapView
+        app={app}
+        selectedRoute={{ name: 'СУ 1', geometry: { type: 'LineString', coordinates: [] } }}
+        mapContent={<span>Карта</span>}
+      />,
+    );
+
+    expect(document.getElementById('mapToolsDrawer').hidden).toBe(false);
+    expect(screen.getByText('СУ 1')).toBeTruthy();
+    expect(screen.getByText('Скачай рельеф, чтобы построить профиль высот.')).toBeTruthy();
+  });
+
+  it('keeps separate map tools and favorites panels accessible', () => {
+    const app = {
+      currentPackage: { id: 'race-1', name: 'Rally' },
+      packages: [{ id: 'race-1', name: 'Rally' }],
       favorites: [],
       mapSubtitle: '',
       mapUi: { disabled: false, button: 'Скачать офлайн-карту', status: 'Не скачана' },
@@ -49,11 +97,13 @@ describe('MapView enhancements', () => {
     const drawer = document.getElementById('mapToolsDrawer');
     expect(drawer.hidden).toBe(false);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(trigger.querySelector('svg').style.color).toBe(BRAND_ORANGE);
     expect(within(drawer).getByText('ИНСТРУМЕНТЫ КАРТЫ')).toBeTruthy();
 
     fireEvent.click(trigger);
     expect(drawer.hidden).toBe(true);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.querySelector('svg').style.color).toBe('');
 
     fireEvent.click(trigger);
     expect(drawer.hidden).toBe(false);
@@ -66,6 +116,8 @@ describe('MapView enhancements', () => {
     const favoritesDrawer = document.getElementById('mapFavoritesDrawer');
     expect(favoritesDrawer.hidden).toBe(false);
     expect(favoritesTrigger.getAttribute('aria-expanded')).toBe('true');
+    expect(favoritesTrigger.querySelector('svg').style.color).toBe(BRAND_ORANGE);
+    expect(trigger.querySelector('svg').style.color).toBe('');
     expect(drawer.hidden).toBe(true);
     expect(within(favoritesDrawer).getByText('ИЗБРАННЫЕ ТОЧКИ')).toBeTruthy();
     expect(within(favoritesDrawer).getByText('Пока ничего нет')).toBeTruthy();
@@ -75,6 +127,8 @@ describe('MapView enhancements', () => {
     const carDrawer = document.getElementById('mapCarDrawer');
     expect(carDrawer.hidden).toBe(false);
     expect(carTrigger.getAttribute('aria-expanded')).toBe('true');
+    expect(carTrigger.querySelector('svg').style.color).toBe(BRAND_ORANGE);
+    expect(favoritesTrigger.querySelector('svg').style.color).toBe('');
     expect(favoritesDrawer.hidden).toBe(true);
     expect(within(carDrawer).getByText('ГДЕ МАШИНА?')).toBeTruthy();
 
@@ -276,6 +330,7 @@ describe('MapView enhancements', () => {
         },
         original: {},
       },
+      packages: [{ id: 'race-1', name: 'Rally' }],
       mapSubtitle: '',
       favorites: [],
       mapUi: { disabled: true, button: '', status: '' },

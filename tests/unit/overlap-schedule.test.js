@@ -5,7 +5,7 @@ import {
   isSortavalaRace,
   timeToMinutes,
   validateOverlapSchedule,
-} from '../../src/app/overlap-schedule.js';
+} from '../../src/views/TodayView/logic/overlap-schedule.js';
 
 describe('overlap schedule', () => {
   it('recognizes Sortavala races by Russian or Latin city and event name', () => {

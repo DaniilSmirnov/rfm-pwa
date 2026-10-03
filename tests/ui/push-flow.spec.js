@@ -40,6 +40,26 @@ async function openPushApp(
       body: JSON.stringify({ ok: true }),
     }),
   );
+  await page.addInitScript(() => {
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = query => {
+      if (query.includes('display-mode: standalone')) {
+        return {
+          matches: true,
+          media: query,
+          onchange: null,
+          addListener() {},
+          removeListener() {},
+          addEventListener() {},
+          removeEventListener() {},
+          dispatchEvent() {
+            return true;
+          },
+        };
+      }
+      return original(query);
+    };
+  });
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
   await openRaceManagement(page);
@@ -47,7 +67,7 @@ async function openPushApp(
     document.querySelector('#catalogStatus')?.textContent?.includes('гонок'),
   );
   await page.getByRole('button', { name: 'Сегодня' }).click();
-  await page.getByRole('button', { name: 'Ещё' }).click();
+  await page.getByRole('button', { name: 'Меню' }).click();
   await page.getByRole('button', { name: /Настройки и диагностика/ }).click();
 }
 

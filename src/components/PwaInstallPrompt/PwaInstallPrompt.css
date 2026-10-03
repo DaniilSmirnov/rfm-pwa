@@ -1,0 +1,169 @@
+/* Full-screen installation gate. The application remains mounted behind it, but is inaccessible until installation. */
+@layer modals {
+  .pwa-install-prompt {
+    position: fixed;
+    z-index: 100010;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100dvh;
+    min-height: 100svh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background:
+      radial-gradient(circle at 8% 0%, rgb(240 82 23 / 18%), transparent 28%),
+      radial-gradient(circle at 100% 100%, rgb(240 82 23 / 24%), transparent 26%), #111217;
+    color: #f5f7fa;
+  }
+}
+
+@layer modals {
+  .pwa-install-screen {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 620px);
+    min-height: 100%;
+    margin: 0 auto;
+    padding: max(32px, calc(var(--safe-top) + 28px)) max(24px, calc(var(--safe-right) + 24px))
+      max(28px, calc(var(--safe-bottom) + 24px)) max(24px, calc(var(--safe-left) + 24px));
+  }
+}
+
+@layer modals {
+  .pwa-install-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding-top: 8px;
+    text-align: center;
+  }
+
+  .pwa-install-brand span {
+    color: #f5f7fa;
+    font:
+      italic 900 clamp(24px, 7vw, 38px) / 1 'RF Dewi Expanded Italic',
+      Arial,
+      sans-serif;
+    letter-spacing: -0.045em;
+    white-space: nowrap;
+  }
+
+  .pwa-install-logo {
+    display: block;
+    width: clamp(92px, 24vw, 132px);
+    height: clamp(92px, 24vw, 132px);
+    border-radius: 27%;
+    box-shadow: 0 14px 34px rgb(0 0 0 / 28%);
+  }
+}
+
+@layer modals {
+  .pwa-install-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(20px, 4vh, 34px);
+    padding: clamp(42px, 8vh, 92px) 0 clamp(24px, 5vh, 64px);
+  }
+
+  .pwa-install-copy {
+    text-align: center;
+  }
+
+  .pwa-install-copy h1 {
+    margin: 0;
+    color: #f5f7fa;
+    font:
+      700 clamp(30px, 8vw, 48px) / 1.08 'RF Dewi Expanded Bold',
+      Arial,
+      sans-serif;
+    letter-spacing: -0.035em;
+  }
+
+  .pwa-install-copy p {
+    margin: 24px auto 0;
+    max-width: 560px;
+    color: #f4dfc0;
+    font-size: clamp(18px, 4.6vw, 24px);
+    line-height: 1.45;
+  }
+}
+
+@layer modals {
+  .pwa-install-help {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+    padding: 28px;
+    border: 1px solid #343943;
+    border-radius: 20px;
+    background: rgb(27 29 35 / 76%);
+  }
+
+  .pwa-install-help-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 3px solid #ff4d1f;
+    border-radius: 50%;
+    color: #ff4d1f;
+    font:
+      700 28px / 1 Arial,
+      sans-serif;
+  }
+
+  .pwa-install-help h2 {
+    margin: 0;
+    color: #f5f7fa;
+    font:
+      700 clamp(20px, 5.4vw, 28px) / 1.2 'RF Dewi Expanded Bold',
+      Arial,
+      sans-serif;
+  }
+
+  .pwa-install-help p,
+  .pwa-install-steps {
+    color: #aeb5c1;
+    font-size: clamp(16px, 4.2vw, 20px);
+    line-height: 1.45;
+  }
+
+  .pwa-install-help p {
+    margin: 12px 0 0;
+  }
+
+  .pwa-install-steps {
+    margin: 14px 0 0;
+    padding-left: 22px;
+  }
+
+  .pwa-install-steps li + li {
+    margin-top: 8px;
+  }
+}
+
+@layer responsive {
+  @media (max-height: 720px) {
+    .pwa-install-brand {
+      gap: 12px;
+    }
+
+    .pwa-install-logo {
+      width: 76px;
+      height: 76px;
+    }
+
+    .pwa-install-content {
+      gap: 18px;
+      padding-top: 28px;
+    }
+
+    .pwa-install-copy p {
+      margin-top: 14px;
+    }
+  }
+}

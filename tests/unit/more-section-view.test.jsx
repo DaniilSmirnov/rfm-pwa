@@ -2,7 +2,7 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import MoreSectionView from '../../src/views/MoreSectionView.jsx';
+import MoreSectionView from '../../src/views/MoreSectionView/MoreSectionView.jsx';
 
 afterEach(cleanup);
 
