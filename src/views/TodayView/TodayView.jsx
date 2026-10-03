@@ -18,6 +18,7 @@ import React, { useEffect, useState } from 'react';
 import Button from '../../components/Button/Button.jsx';
 import { assetUrl } from '../../rallyfans.js';
 import { todaySummary, raceHasFinished } from './logic/today-summary.js';
+import { getTodayState } from './logic/today-state.js';
 import { distanceFromTodayDays, nextUpcomingRace } from './logic/catalog-dates.js';
 import TodayLeaders from '../../components/TodayLeaders/TodayLeaders.jsx';
 import ScheduleList from '../../components/ScheduleList/ScheduleList.jsx';
@@ -53,7 +54,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
   }, [app.currentPackage?.id]);
   const current = app.catalog.find(race => distanceFromTodayDays(race) === 0) || null;
   const upcoming = nextUpcomingRace(app.catalog);
-  const target = current || app.currentPackage || upcoming;
+  const target = app.currentPackage || current || upcoming;
   const todayPackage = target
     ? (app.packages || []).find(item => packageRaceId(item) === Number(target.id)) ||
       (target === app.currentPackage ? target : null)
@@ -63,7 +64,7 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
     app.packages.find(
       item => packageRaceId(item) !== Number(target.id) && raceHasFinished(item, now),
     );
-  const storageRecommendation = previousPackage && (
+  const storageRecommendation = null && previousPackage && (
     <Notice
       as="aside"
       variant="warning"
@@ -85,12 +86,13 @@ export default function TodayView({ app, onMap, onResults, onRaces }) {
     </Notice>
   );
   const summary = todaySummary(todayPackage, now);
+  const todayState = getTodayState(todayPackage, now);
   if (!todayPackage && target) {
     const date = target.dates || target.date_race || '';
     const isToday = target === current;
     const raceId = Number(target.id);
     return (
-      <section className="today-screen">
+      <section className="today-screen" data-today-state={todayState.state}>
         <article
           className="today-race-card"
           style={{ '--race-bg': `url('${assetUrl(raceImage(target))}')` }}
