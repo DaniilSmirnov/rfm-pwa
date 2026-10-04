@@ -3,6 +3,7 @@ import { buildStageDescriptors, findStageDescriptorByFeature } from '../app/sche
 import { orientStageRoute } from './route-orientation.js';
 
 export const ROUTE_DIRECTION_INTERVAL = 2000;
+export const ROUTE_DIRECTION_GLYPH = '↑';
 
 export const ROUTE_DIRECTION_PATTERN_ID = 'rfm-route-direction-pattern';
 
@@ -125,7 +126,8 @@ export function installRouteDirections(map, maplibregl, collections, pkg = {}) {
       for (const point of routeKilometreMarkers(geometry)) {
         const el = document.createElement('span');
         el.className = 'map-route-direction';
-        el.textContent = '➜';
+        // Rotation is calculated from a north-facing baseline, so keep the glyph north-facing.
+        el.textContent = ROUTE_DIRECTION_GLYPH;
         Object.assign(el.style, {
           color: '#fff',
           display: 'block',

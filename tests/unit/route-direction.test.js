@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   installRouteDirectionPatterns,
+  ROUTE_DIRECTION_GLYPH,
   ROUTE_DIRECTION_INTERVAL,
   ROUTE_DIRECTION_PATTERN_ID,
   routeKilometreMarkers,
@@ -17,6 +18,7 @@ describe('stage route direction markers', () => {
     });
 
     expect(ROUTE_DIRECTION_INTERVAL).toBe(2000);
+    expect(ROUTE_DIRECTION_GLYPH).toBe('↑');
     expect(markers.map(marker => marker.distance)).toEqual([2000]);
     expect(markers.every(marker => marker.rotation === 0)).toBe(true);
   });
