@@ -6,12 +6,13 @@ import { geometryBounds } from './normalize.js';
 import { baseStyle } from './map/style.js';
 import { applyOfflineViewportConstraints, offlineViewportOptions } from './map/viewport-policy.js';
 import { TerrainModeControl } from './map/terrain-control.js';
-import { installRouteDirectionPatterns } from './map/route-direction.js';
+import { installRouteDirections } from './map/route-direction.js';
 import { createPointMarkerContent, pointWithMarkerIcon } from './map/point-marker.js';
 import BasemapPopup from './components/BasemapPopup/BasemapPopup.jsx';
 
 let activeMap = null;
 let activeRaceLabelMarkers = [];
+let activeRouteDirectionMarkers = [];
 
 function clearMarkers(list) {
   for (const marker of list) {
@@ -276,6 +277,7 @@ function renderMapLibre(container, fc, userPos, onPointClick, options = {}) {
     activeMap = null;
   }
   clearAllLabels();
+  clearMarkers(activeRouteDirectionMarkers);
   container.replaceChildren();
   const terrainMode = options.terrainMode === '3d' ? '3d' : 'hillshade';
   const camera = options.cameraState || null;
@@ -376,7 +378,12 @@ function renderMapLibre(container, fc, userPos, onPointClick, options = {}) {
         'line-opacity': 1,
       },
     });
-    installRouteDirectionPatterns(map);
+    activeRouteDirectionMarkers = installRouteDirections(
+      map,
+      maplibregl,
+      [lines, yandexLines],
+      options.routePackage || {},
+    );
 
     map.addSource('rfm-selected-stage', {
       type: 'geojson',
