@@ -123,8 +123,18 @@ export function installRouteDirections(map, maplibregl, collections, pkg = {}) {
       const stage = findStageDescriptorByFeature(stages, feature);
       const geometry = orientStageRoute(feature, pkg.geojson?.features, stage);
       for (const point of routeKilometreMarkers(geometry)) {
-        const el = document.createElement('div');
+        const el = document.createElement('span');
         el.className = 'map-route-direction';
+        el.textContent = '➜';
+        Object.assign(el.style, {
+          color: '#fff',
+          display: 'block',
+          fontSize: '22px',
+          fontWeight: '900',
+          lineHeight: '1',
+          pointerEvents: 'none',
+          textShadow: '0 0 2px #111318, 0 0 4px #111318',
+        });
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', `Направление движения: ${name}, ${point.distance / 1000} км`);
         markers.push(
