@@ -11,9 +11,18 @@ function calendarKey(date, pkg) {
   }).format(date);
 }
 
+// The API starts each day's group with a date; subsequent locations omit it.
+function datedSchedule(pkg) {
+  let date = '';
+  return asArray(pkg?.original?.schedule).map(item => {
+    if (String(item?.date || '').trim()) date = item.date;
+    return { ...item, date, events: asArray(item?.events) };
+  });
+}
+
 export function scheduleForDate(pkg, date = new Date()) {
   const key = calendarKey(date, pkg);
-  return asArray(pkg?.original?.schedule)
+  return datedSchedule(pkg)
     .filter(item => {
       const parsed = parseScheduleDateTime(item?.date, '12:00', pkg);
       return parsed && calendarKey(parsed, pkg) === key;
@@ -33,7 +42,7 @@ function hasFinished(schedule, pkg, now) {
 export function raceHasFinished(pkg, now = new Date()) {
   const status = String(pkg?.original?.status_race || pkg?.summary?.status || '').toLowerCase();
   if (/заверш|оконч|состоял|прош|finished|completed|\bover\b/.test(status)) return true;
-  const schedule = asArray(pkg?.original?.schedule);
+  const schedule = datedSchedule(pkg);
   const moments = schedule.flatMap(item =>
     asArray(item?.events)
       .map(event => parseScheduleDateTime(item?.date, event?.time, pkg))
@@ -69,7 +78,7 @@ export function todaySummary(pkg, now = new Date()) {
   let label = 'ПРОГРАММА НА ЗАВТРА';
   if (!today.length && !next.length) {
     const todayKey = calendarKey(now, pkg);
-    const future = asArray(pkg?.original?.schedule)
+    const future = datedSchedule(pkg)
       .map(item => ({ item, date: parseScheduleDateTime(item?.date, '12:00', pkg) }))
       .filter(value => value.date && calendarKey(value.date, pkg) > todayKey)
       .sort((a, b) => a.date - b.date);
